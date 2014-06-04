@@ -56,6 +56,8 @@ my $adm = {
     config => undef,
     # Current logged in user
     user   => undef,
+    # Must authenticate ? Global setting.
+    global_user_check => 1
 };
 
 
@@ -84,7 +86,7 @@ sub _adm {
         $adm->{schema} = _connectdb(config => $adm->{config});
     }
 
-    if (not $args{no_user_check}) {
+    unless ($args{no_user_check} or ! $adm->{global_user_check}) {
         if (not exists $ENV{EID} or not defined $ENV{EID}) {
             $err = "No valid session registered:";
             $err .= " authenticate must be call with a valid login/password pair";
@@ -132,6 +134,19 @@ sub schema {
     return _adm->{schema};
 }
 
+=pod
+=begin classdoc
+
+@return A DBI handle for direct database access.
+This should only be used by migration scripts written in Perl.
+
+=end classdoc
+=cut
+
+sub dbh {
+    return schema->storage->dbh;
+}
+
 
 =pod
 =begin classdoc
@@ -143,6 +158,29 @@ sub schema {
 
 sub user {
     return _adm->{user};
+}
+
+=pod
+=begin classdoc
+
+Whether the current singleton must authenticate the user or not
+(parameter "value" must be 1 if authentication is desired, 0 otherwise).
+This is a global setting for the whole Kanopya::Database.
+If it's just for one access, use the "no_user_check" option to _adm().
+
+@return the config singleton.
+
+=end classdoc
+=cut
+sub global_user_check {
+    my (%args) = @_;
+    General::checkParams(args => \%args, required => ['value']);
+    if ($args{value} != 0 and $args{value} != 1) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+            error => "Kanopya::Database::global_user_check: value must be 1 or 0"
+        );
+    }
+    $adm->{global_user_check} = $args{value};
 }
 
 

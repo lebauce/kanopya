@@ -1321,8 +1321,33 @@ CREATE TABLE `clustermetric` (
   PRIMARY KEY (`clustermetric_id`),
   FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `collector_indicator` (`collector_indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`clustermetric_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`clustermetric_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`clustermetric_id`) REFERENCES `metric` (`metric_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `metric`
+--
+
+CREATE TABLE `metric` (
+  `metric_id` int(8) unsigned NOT NULL,
+  `param_preset_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`metric_id`),
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
+  FOREIGN KEY (`metric_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `anomaly`
+--
+
+CREATE TABLE `anomaly` (
+  `anomaly_id` int(8) unsigned NOT NULL,
+  `related_metric_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`anomaly_id`),
+  FOREIGN KEY (`related_metric_id`) REFERENCES `metric` (`metric_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`anomaly_id`) REFERENCES `metric` (`metric_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 
 --
@@ -1333,7 +1358,7 @@ CREATE TABLE `combination` (
   `combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `service_provider_id` int(8) unsigned NOT NULL,
   `combination_unit` TEXT,
-  FOREIGN KEY (`combination_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`combination_id`) REFERENCES `metric` (`metric_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
@@ -1762,6 +1787,16 @@ CREATE TABLE `entity_tag` (
   FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`tag_id`) REFERENCES `tag` (`tag_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `database_migration`
+--
+CREATE TABLE `database_migration` (
+  -- `database_migration_id` int(8) unsigned NOT NULL,
+  `name`                  varchar(255) NOT NULL,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 SET foreign_key_checks=1;
 

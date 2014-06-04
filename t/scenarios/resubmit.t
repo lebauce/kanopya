@@ -33,11 +33,11 @@ use Entity;
 use Entity::Component::Virtualization::Opennebula3;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
-use Entity::Clustermetric;
+use Entity::Metric::Clustermetric;
 use Entity::AggregateCondition;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use Entity::Rule::AggregateRule;
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
@@ -198,10 +198,10 @@ sub resubmit_hv_on_state {
         );
 
         #  Nodemetric combination
-        my $ncomb = Entity::Combination::NodemetricCombination->new(
-            service_provider_id             => $hv_cluster->id,
-            nodemetric_combination_formula  => 'id'.($indic->id),
-        );
+        my $ncomb = Entity::Metric::Combination::NodemetricCombination->new(
+                        service_provider_id             => $hv_cluster->id,
+                        nodemetric_combination_formula  => 'id'.($indic->id),
+                    );
 
         my $ncond = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $hv_cluster->id,
@@ -361,10 +361,10 @@ sub resubmit_vm_on_state {
         );
 
         #  Nodemetric combination
-        my $ncomb = Entity::Combination::NodemetricCombination->new(
-            service_provider_id             => $vm_cluster->id,
-            nodemetric_combination_formula  => 'id'.($indic->id),
-        );
+        my $ncomb = Entity::Metric::Combination::NodemetricCombination->new(
+                        service_provider_id             => $vm_cluster->id,
+                        nodemetric_combination_formula  => 'id'.($indic->id),
+                    );
 
         my $ncond = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $vm_cluster->id,

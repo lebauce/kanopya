@@ -95,8 +95,8 @@ sub storeNodeMetricsValues {
         while (my ($indicators_oid, $value) = each %$indicators_values) {
             eval {
                 my $metric_uid = $args{indicators}->{$indicators_oid}->id . '_' . $node_name;
-                TimeData::RRDTimeData::updateTimeDataStore(
-                    clustermetric_id => $metric_uid,
+                TimeData::RRDTimeData->updateTimeDataStore(
+                    metric_id        => $metric_uid,
                     time             => $args{timestamp},
                     value            => $value,
                     time_step        => $args{time_step},
@@ -168,17 +168,17 @@ sub _nodeMetricLastValueFromStorage {
     my %value_by_objects;
     for my $object_name (@{$args{monitored_objects_names}}) {
         my $metric_uid = $args{indicator}->id . '_' . $object_name;
-        my ($timestamp, $value);
+        my $values;
         eval {
-            ($timestamp, $value) = TimeData::RRDTimeData::getLastUpdatedValue(
-                                       metric_uid => $metric_uid,
-                                       fresh_only => 1
-                                   );
+            $values = TimeData::RRDTimeData->getLastUpdatedValue(
+                          metric_uid => $metric_uid,
+                          fresh_only => 1
+                      );
         };
         if ($@) {
-            $value = undef;
+            $values = {};
         }
-        $value_by_objects{$object_name} = $value;
+        $value_by_objects{$object_name} = $values->{value};
     }
     return \%value_by_objects;
 }
@@ -212,9 +212,9 @@ sub nodeMetricFetch {
     if ($NODEMETRIC_STORAGE_ACTIVE) {
         for my $object_name (@{$args{node_names}}) {
             my $metric_uid = $args{indicator}->id . '_' . $object_name;
-            my %data = ();
+            my $data = {};
             eval {
-                %data = TimeData::RRDTimeData::fetchTimeDataStore(
+                $data = TimeData::RRDTimeData->fetchTimeDataStore(
                           name   => $metric_uid,
                           start  => $args{start_time},
                           end    => $args{end_time}
@@ -223,7 +223,7 @@ sub nodeMetricFetch {
             if ($@) {
                 $log->info($@);
             }
-            $values_by_nodes{$object_name} = \%data;
+            $values_by_nodes{$object_name} = $data;
         }
     }
     else {

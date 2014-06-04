@@ -470,7 +470,7 @@ Update the last evaluation of the rule in DB according to the given evaluation
 
 sub setEvaluation {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['evaluation']);
+    General::checkParams(args => \%args, optional => {evaluation => {}});
 
     # Loop on each nodes and its evaluation
     while (my ($node_id, $evaluation) = each(%{$args{evaluation}})) {
@@ -503,7 +503,7 @@ Launch a workflow when rule is linked to a WorkflowDef according to its evaluati
 
 sub manageWorkflows {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['evaluation']);
+    General::checkParams(args => \%args, optional => {evaluation => {}});
 
     my $workflow_manager;
     my $sp = $self->service_provider;
@@ -536,8 +536,8 @@ sub manageWorkflows {
             # Skip workflow management when service provider has no workflow_def or rule
             # is not verified for this node
 
+
             $log->debug('Managing workflow state of rule <'.$self->id."> for node <$node_id> :
-                         WorkflowDefId <" . $workflow_def->id . ">
                          Evaluation <$evaluation> => No workflow triggered");
             return;
         }

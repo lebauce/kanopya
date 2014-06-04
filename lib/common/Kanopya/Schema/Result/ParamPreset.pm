@@ -94,6 +94,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 metrics
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Metric>
+
+=cut
+
+__PACKAGE__->has_many(
+  "metrics",
+  "Kanopya::Schema::Result::Metric",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 old_operations
 
 Type: has_many
@@ -200,8 +215,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:34:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3u+JwfqBWraOqzQLyf1p2g
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-17 12:34:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QByn+2W5hcwA3lm4GkuMjA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

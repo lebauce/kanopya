@@ -142,14 +142,14 @@ __PACKAGE__->set_primary_key("clustermetric_id");
 
 Type: belongs_to
 
-Related object: L<Kanopya::Schema::Result::Entity>
+Related object: L<Kanopya::Schema::Result::Metric>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "clustermetric",
-  "Kanopya::Schema::Result::Entity",
-  { entity_id => "clustermetric_id" },
+  "Kanopya::Schema::Result::Metric",
+  { metric_id => "clustermetric_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
@@ -184,8 +184,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:40Okb0qFQwZREi7Jgihumg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-10 11:38:04
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:za7r83FN57+TH5iNsw/inw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

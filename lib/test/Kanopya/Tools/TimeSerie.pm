@@ -271,9 +271,16 @@ Allow mocking historical values of a metric.
 sub linkToMetric {
     my ($self, %args) = @_;
 
-    my $metric_uid = $args{metric}->id;
+    my $db_name;
 
-    $self->_copyRRD(metric_uid => $metric_uid);
+    if (defined $args{metric}) {
+        $db_name = $args{metric}->id;
+    }
+
+    if (defined $args{node} && defined $args{indicator}) {
+        $db_name = $args{indicator}->id . '_' . $args{node}->node_hostname;
+    }
+    $self->_copyRRD(metric_uid => $db_name);
 }
 
 =pod
@@ -370,6 +377,37 @@ sub getTimeserieDatafromCSV {
 
 =begin classdoc
 
+Generate data with generator and link them to a clustermetric (through a RRD database)
+
+@param clustermetric instance to which datas will be linked
+
+=end classdoc
+
+=cut
+
+sub generatemetric {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args);
+
+
+    $self->generate(func      => $args{'func'},
+                    srand     => $args{'srand'},
+                    rows      => $args{'rows'},
+                    step      => $args{'step'},
+                    precision => $args{'precision'},
+                    season    => $args{'season'},
+                    'time'    => $args{'time'});
+
+    $self->store();
+    $self->linkToMetric(%args);
+    return;
+}
+
+
+=pod
+
+=begin classdoc
+
 Read the data values from a CSV file. The CSV contains one column with header
 
 @param file File name
@@ -407,5 +445,23 @@ sub getValuesfromCSV {
     close $io;
 
     return \@data;
+}
+
+sub addPeak {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['func','row'],
+                         optional => {height => 1, width => 100});
+
+    my $start = $args{row} - $args{width};
+    my $stop  = $args{row} + $args{width};
+
+    my $peak = "(X < $start     ) ? 0 :"
+               ."(X < $args{row} ) ? $args{height} * (X - $start) / $args{width} :"
+               ."(X < $stop      ) ? $args{height} * ($stop -  X) / $args{width} :"
+               .'0';
+
+    return "($peak)+($args{func})";
 }
 1;

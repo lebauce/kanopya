@@ -21,11 +21,26 @@ package TimeData;
 
 use strict;
 use warnings;
+use General;
+use TimeData::RRDTimeData;
+
+sub new {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'store' ]);
+
+    if ($args{store} eq 'rrd') {
+        return TimeData::RRDTimeData->new();
+    }
+
+    throw Kanopya::Exception::Internal::WrongValue(
+              error => 'Unknown value <' . $args{store} . '> stored in param preset'
+          );
+}
 
 sub createTimeDataStore;
 sub deleteTimeDataStore;
 sub fetchTimeDataStore;
 sub updateTimeDataStore;
-sub getTimeDataStoreInfo;
 sub getLastUpdatedValue;
 1;
