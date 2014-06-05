@@ -29,7 +29,7 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 
-Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4');
 
 Kanopya::Database::beginTransaction;
 
@@ -296,7 +296,6 @@ sub testNodemetricCombination {
     my $service_provider = $args{service_provider};
 
     lives_ok {
-
         # Combinations
         my $ncomb_ident = Entity::Metric::Combination::NodemetricCombination->new(
                               service_provider_id             => $service_provider->id,
@@ -305,8 +304,7 @@ sub testNodemetricCombination {
 
         my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
                          service_provider_id             => $service_provider->id,
-                         nodemetric_combination_formula  => '(id' . ($indic1->id)
-                                                            . ' + 5) * id' . ($indic2->id),
+                         nodemetric_combination_formula  => '(id' . ($indic1->id) . ' + 5) * id' . ($indic2->id),
                      );
 
         my $mock_conf  = "{'default':{'const':null}}";
@@ -319,13 +317,14 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (defined $ncomb_ident->evaluate(node => $node_1)) {
-            die 'Identity combination defined while no value for indicator'.($ncomb_ident->evaluate(node => $node_1));
+        my $evaluation = $ncomb_ident->evaluate(node => $node_1);
+        if (defined $evaluation) {
+            die 'Identity combination defined while no value for indicator' . $evaluation;
         }
 
-
-        if (defined $ncomb2->evaluate(node => $node_1)) {
-            die 'Combination defined while all indicator values are undef =>'.($ncomb2->evaluate(node => $node_1));
+        $evaluation = $ncomb2->evaluate(node => $node_1);
+        if (defined $evaluation) {
+            die 'Combination defined while all indicator values are undef =>'.$evaluation;
         }
 
         # More complex config:
@@ -343,7 +342,8 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (! ($ncomb_ident->evaluate(node => $node_1) == 42)) {
+        $evaluation = $ncomb_ident->evaluate(node => $node_1);
+        if (! (defined $evaluation && $evaluation == 42)) {
             die 'Identity combination as same value than indicator';
         }
 
@@ -574,8 +574,14 @@ sub test_rrd_remove {
                       clustermetric_service_provider_id => $service_provider->id
                   });
 
-        my @cm_ids = map {$_->id} @cms;
-        while (@cms) { (pop @cms)->delete(); };
+        my @nodeids = map { $_->id } $service_provider->nodes;
+        my @nms = Entity::Metric::Nodemetric->search (hash => {
+                      nodemetric_node_id => \@nodeids
+                  });
+
+        my @metrics = (@cms, @nms);
+        my @mids = map { $_->id } @metrics;
+        while (@metrics ) { (pop @metrics )->delete(); };
 
         my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
                       service_provider_id => $service_provider->id
@@ -584,8 +590,8 @@ sub test_rrd_remove {
         if (! ((scalar @acs) == 0)) {die 'Fail '.(scalar @acs).' aggregate combinations have not been deleted'}
 
         my $one_rrd_remove = 0;
-        for my $cm_id (@cm_ids) {
-            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+        for my $mid (@mids) {
+            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$mid.'.rrd')) {
                 $one_rrd_remove++;
             }
             close(FILE);
