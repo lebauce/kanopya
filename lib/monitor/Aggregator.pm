@@ -288,8 +288,7 @@ sub update {
                         my $hostname = $nodemetric->nodemetric_node->node_hostname;
                         my $indicator_oid = $nodemetric->nodemetric_indicator->indicator->indicator_oid;
 
-                        my $value = $monitored_values->{$hostname}->{$indicator_oid};
-                        if (! defined $value) {
+                        if (! exists $monitored_values->{$hostname}->{$indicator_oid}) {
                             throw Kanopya::Exception::Internal::Inconsistency(
                                       error => "No monitoring data found for node \"$hostname\" " .
                                                "and indicator \"$indicator_oid\""
@@ -298,7 +297,7 @@ sub update {
 
                         $nodemetric->updateData(
                             time             => $timestamp,
-                            value            => $value,
+                            value            => $monitored_values->{$hostname}->{$indicator_oid},
                             time_step        => $self->{config}->{time_step},
                             storage_duration => $self->{config}->{storage_duration}
                         );
