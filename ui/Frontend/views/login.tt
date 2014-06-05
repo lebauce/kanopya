@@ -28,6 +28,7 @@
 
     <label for="password">Password: </label>
     <input name="password" id="password" type="password" />
+    <br />
     <input type="submit" name="loguser" value="ok" />
-
+    <br />
 </form>

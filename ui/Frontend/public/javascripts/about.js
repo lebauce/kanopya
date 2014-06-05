@@ -6,7 +6,7 @@ function openAbout () {
             jQuery(document.createElement('div'))
             .html(html)
             .dialog({
-                title       : 'About Kanopya',
+                title       : 'About HCM',
                 buttons     : [ { text : 'OK', click : function(){ $(this).dialog('close'); }, id : 'button-ok'} ],
                 close       : function(){
                     $(this).remove();

@@ -255,7 +255,7 @@ function vsphereBrowser (vsphere_id) {
                         success     : function() {
                             dialog.remove();
                             reloadServices();
-                            alert ('Data imported successfully in Kanopya');
+                            alert ('Data imported successfully into HCM');
                         },
                         error       : function() {
                             dialog.remove();

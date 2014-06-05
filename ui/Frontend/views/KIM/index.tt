@@ -13,7 +13,7 @@
 </div>
 <div class="ui-layout-north">
     <div id='header'>
-        <h1><span id='product-name'>Kanopya Infrastructure Manager</span></h1>
+        <h1><span id='product-name'>HCM Infrastructure Manager</span></h1>
         <h2 id="breadcrump"></h2>
         <div id="header-links">
            <span class="logout"><span class='ui-icon ui-icon-power'></span><a href="/logout">Logout</a></span>
