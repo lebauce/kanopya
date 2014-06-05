@@ -115,3 +115,7 @@ INSERT INTO component_node (component_id, node_id, master_node)
 	SELECT kanopya_anomaly_detector_id,  node_id, '1' FROM kanopya_anomaly_detector, node
 		WHERE service_provider_id = (SELECT cluster_id FROM cluster WHERE cluster_name = 'Kanopya')
 
+-- DOWN --
+DROP TABLE IF EXISTS `kanopya_anomaly_detector`;
+DROP TABLE IF EXISTS `anomaly`;
+DROP TABLE IF EXISTS `metric`;

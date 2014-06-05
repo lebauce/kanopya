@@ -36,7 +36,7 @@ DatabaseMigration::Transient->runAll();
 
 
 
-sub showHelp() {
+sub showHelp {
     print <<"HELP";
 Usage: update.pl [ --mark_as_applied_until YearMonthDayHourMinute ]
 
