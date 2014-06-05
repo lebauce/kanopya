@@ -104,21 +104,21 @@ function loadServicesDetails(cid, eid, is_iaas) {
                         condition   : (new RegExp('^down')).test(details.cluster_state)
                     },
                     {
-                        label       : 'Start service',
+                        label       : 'Start instance',
                         sprite      : 'start',
                         action      : '/api/cluster/' + eid + '/start',
                         condition   : (new RegExp('^down')).test(details.cluster_state),
                         confirm     : 'This will start your instance'
                     },
                     {
-                        label       : 'Stop service',
+                        label       : 'Stop instance',
                         sprite      : 'stop',
                         action      : '/api/cluster/' + eid + '/stop',
                         condition   : (new RegExp('^up')).test(details.cluster_state),
                         confirm     : 'This will stop all your running instances'
                     },
                     {
-                        label       : 'Force stop service',
+                        label       : 'Force stop instance',
                         sprite      : 'stop',
                         action      : '/api/cluster/' + eid + '/forceStop',
                         condition   : (!(new RegExp('^down')).test(details.cluster_state)),
