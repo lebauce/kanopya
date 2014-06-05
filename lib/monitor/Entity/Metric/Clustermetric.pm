@@ -98,8 +98,8 @@ sub methods {
 sub _labelAttr {
     return 'clustermetric_formula_string';
 }
-=pod
 
+=pod
 =begin classdoc
 
 @constructor
@@ -110,7 +110,6 @@ Set the formula string, the unit and the label if not defined.
 @return a class instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -134,7 +133,7 @@ sub new {
 
     # Create Nodemetrics for all existing nodes fo the service provider
     for my $node ($service_provider->nodes) {
-        Entity::Metric::Nodemetric->new(
+        Entity::Metric::Nodemetric->findOrCreate(
             nodemetric_node_id      => $node->id,
             nodemetric_indicator_id => $self->clustermetric_indicator_id
         );

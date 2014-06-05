@@ -210,7 +210,7 @@ sub registerNode {
     # Create the nodemetric for the new node from the existing clustermetrics indicators
     # Create Nodemetrics for all existing nodes fo the service provider
     for my $clustermetric ($self->clustermetrics) {
-        Entity::Metric::Nodemetric->new(
+        Entity::Metric::Nodemetric->findOrCreate(
             nodemetric_node_id      => $node->id,
             nodemetric_indicator_id => $clustermetric->clustermetric_indicator_id
         );
