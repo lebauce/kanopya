@@ -392,8 +392,8 @@ sub updateTimeDataStore {
                                    time              => $args{time});
     }
 
-    my $cmd = $rrd . ' updatev ' . $dir . $self->_formatName(name => $args{metric_id})
-              . ' -t ' . $args{datasource} . ' ' . $args{time} . ':' . $args{value};
+    my $cmd = $rrd . ' updatev ' . $dir . $self->_formatName(name => $args{metric_id}) . ' -t ' .
+              $args{datasource} . ' ' . $args{time} . ':' . (defined $args{value} ? $args{value} : '');
 
     $log->debug($cmd);
 
