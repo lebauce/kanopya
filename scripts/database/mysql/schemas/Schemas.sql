@@ -1349,6 +1349,7 @@ CREATE TABLE `nodemetric` (
   `nodemetric_node_id` int(8) unsigned NOT NULL,
   `nodemetric_indicator_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`nodemetric_id`),
+  UNIQUE KEY (`nodemetric_node_id`,`nodemetric_indicator_id`),
   FOREIGN KEY (`nodemetric_indicator_id`) REFERENCES `collector_indicator` (`collector_indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`nodemetric_node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`nodemetric_id`) REFERENCES `metric` (`metric_id`) ON DELETE CASCADE ON UPDATE NO ACTION
