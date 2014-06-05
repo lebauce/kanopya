@@ -71,30 +71,38 @@ sub lastValue {
     my %id_values;
     my @missing_nodes = ();
 
+    $log->debug("Retrieving the last value for " . scalar(@{ $args{nodes} }) . " nodes");
     for my $node (@{$args{nodes}}) {
         if (exists $args{memoization}->{$self->id}->{$node->id}) {
+            $log->debug("Use memoization value for indicator <" . $self->label .
+                        "> for node <" . $node->label . ">");
             $id_values{$node->id} = $args{memoization}->{$self->id}->{$node->id};
         }
         else {
+            $log->debug("No memoization value for indicator <" . $self->label .
+                        "> for node <" . $node->label . ">, retrieve from the node metric.");
             push @missing_nodes, $node;
         }
     }
 
     if (scalar @missing_nodes == 0) {
+        $log->debug("All last values retrieved from memoization.");
         return \%id_values;
     }
 
-    my @node_hostnames = map { $_->node_hostname } @missing_nodes;
-
     # Get all node metric related to nodes
-    my @nodemetrics = Entity::Metric::Nodemetric->search(
-                          hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
-                      );
+    my @nodeids = map { $_->id } @missing_nodes;
+    my @nodemetrics = Entity::Metric::Nodemetric->search(hash => {
+                          nodemetric_indicator_id => $self->id,
+                          nodemetric_node_id      => \@nodeids
+                      });
 
     my %hostname_values;
+    $log->debug("Retrieving last value from " . scalar(@nodemetrics) . " node metric(s)");
     for my $nodemetric (@nodemetrics) {
        my $node = $nodemetric->nodemetric_node;
        $hostname_values{$node->node_hostname} = $id_values{$node->id} = $nodemetric->lastValue;
+
        if (defined $args{memoization}) {
            $args{memoization}->{$self->id}->{$node->id} = $id_values{$node->id};
        }
@@ -103,6 +111,7 @@ sub lastValue {
     $self->throwUndefAlert(hostname_values  => \%hostname_values,
                            service_provider => $missing_nodes[0]->service_provider);
 
+    $log->debug("Returning last value for " . scalar(keys(%id_values)) . " node metric(s)");
     return \%id_values;
 }
 
