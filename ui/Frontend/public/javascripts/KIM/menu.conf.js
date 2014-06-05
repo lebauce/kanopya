@@ -93,7 +93,7 @@ var mainmenu_def = {
         }
     },
     'Administration'    : {
-        'Kanopya'          : [
+        'HCM'          : [
             { label : 'Overview',        id : 'service_overview',      onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, kanopya_cluster); }, icon : 'dashboard' },
             { label : 'Details',         id : 'service_details',       onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, kanopya_cluster); }, icon : 'search' },
             { label : 'Configuration',   id : 'service_configuration', onLoad : function(cid, eid) { require('KIM/services_config.js'); loadServicesConfig(cid, kanopya_cluster); }, icon : 'system' },
