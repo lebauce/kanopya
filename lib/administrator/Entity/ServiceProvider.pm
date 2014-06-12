@@ -153,12 +153,20 @@ sub registerNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'hostname', 'number' ],
+                         required => [ 'hostname' ],
                          optional => { 'host'             => undef,
                                        'systemimage'      => undef,
+                                       'number'           => undef,
                                        'state'            => 'out',
                                        'monitoring_state' => 'enabled',
                                        'components'       => [ $self->components ] });
+
+    # Compute the node number from existing nodes if not defined
+    if (! defined $args{number}) {
+        my @nodes = $self->nodes;
+        $args{number} = max(map { $_->node_number } @nodes) + 1;
+        $log->debug("Node number <$args{number}> computed for node $args{hostname}");
+    }
 
     my $node = Node->new(
                    service_provider_id => $self->id,
