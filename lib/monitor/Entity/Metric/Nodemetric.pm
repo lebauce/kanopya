@@ -114,66 +114,22 @@ sub indicatorLabel {
 }
 
 
-# =pod
+=pod
+=begin classdoc
 
-# =begin classdoc
+Compute a hierarchical tree of the names of the objects which depend on the nodemetric instance.
 
-# Compute the aggregate combinations instances which depend on the clustermetric instance.
+@return hash reference of the tree.
 
-# @return Array of dependent aggregate combinations.
+=end classdoc
+=cut
 
-# =end classdoc
+sub getDependencies {
+    my $self = shift;
+    my @combinations = $self->getDependentCombinations;
 
-# =cut
-
-# sub getDependentCombinations {
-#     my $self = shift;
-
-#     my @combs = Entity::Metric::Combination::AggregateCombination->search(hash => {
-#                     service_provider_id => $self->clustermetric_service_provider_id
-#                 });
-
-#     my $id = $self->id;
-
-#     my @combinations =();
-#     LOOP:
-#     for my $aggregate_combination (@combs) {
-#         my @metric_ids = $aggregate_combination->dependentMetricIds;
-
-#         for my $metric_id (@metric_ids) {
-#             if ($id == $metric_id) {
-#                 push @combinations, $aggregate_combination;
-#                 next LOOP;
-#             }
-#         }
-#     }
-
-#     return @combinations;
-# }
-
-
-# =pod
-
-# =begin classdoc
-
-# Compute a hierarchical tree of the names of the objects which depend on the clustermetric instance.
-
-# @return hash reference of the tree.
-
-# =end classdoc
-
-# =cut
-
-# sub getDependencies {
-#     my $self = shift;
-#     my @combinations = $self->getDependentCombinations;
-
-#     my %dependencies;
-#     for my $combination (@combinations) {
-#         $dependencies{$combination->aggregate_combination_label} = $combination->getDependencies;
-#     }
-#     return \%dependencies;
-# }
-
+    # TODO: Retrieve node metric combination that have the current node metric in ite formula
+    return {};
+}
 
 1;
