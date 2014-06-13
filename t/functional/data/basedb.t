@@ -3,10 +3,10 @@
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
-use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
@@ -19,16 +19,18 @@ my $log = get_logger("");
 my $testing = 1;
 
 use BaseDB;
-use Kanopya::Database;
-use General;
-use Entity;
-use Entity::User;
-use Entity::Host;
-use Entity::Policy::HostingPolicy;
-use Lvm2Vg;
-use Entity::Component::Physicalhoster0;
 use ClassType;
+use Entity;
 use Entity::Component::KanopyaAggregator;
+use Entity::Component::Physicalhoster0;
+use Entity::Host;
+use Entity::Metric::Clustermetric;
+use Entity::Policy::HostingPolicy;
+use Entity::Processormodel;
+use Entity::User;
+use General;
+use Lvm2Vg;
+use Kanopya::Database;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -52,6 +54,8 @@ sub main {
     test_dafault_values();
 
     test_specific_relations();
+    
+    test_delete_on_cascade();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
@@ -525,3 +529,49 @@ sub test_specific_relations {
     } 'Get values for relation repositories on NovaController';
 }
 
+sub test_delete_on_cascade {
+    diag('Test invalid creation of Clustermetric...');
+    throws_ok {
+        Entity::Metric::Clustermetric->new(
+            clustermetric_service_provider_id => '1',
+            clustermetric_statistics_function_name => 'mean',
+            clustermetric_indicator_id => Entity::CollectorIndicator->find()->id
+        );
+    } 'Kanopya::Exception::DB::ForeignKeyConstraint', 'Error New Model has non-existent foreign key';
+    
+    # This is just an arbitrary class with a reference "ON DELETE NO ACTION".
+    diag('Test invalid deletion of referenced object...');
+    my $host;
+    my $host_was_manipulated = 0;
+    my @hosts = Entity::Host->search(hash => { processormodel_id => { '!=', undef } });
+    if (@hosts > 0) {
+        # we found a suitable Host in the database
+        $host = $hosts[0];
+    } else {
+        # we have to construct a suitable Host
+        @hosts = Entity::Host->search();
+        my @processormodels = Entity::Processormodel->search(); 
+        if (@hosts > 0 and @processormodels > 0) {
+            $host = $hosts[0];
+            $host->processormodel($processormodels[0]);
+            $host_was_manipulated = 1;
+        } else {
+            if (@hosts > 0) {
+                diag("Could not run test, there is no Host in the database");
+            } else {
+                diag("Could not run test, there is no Processormodel in the database");
+            }
+        }
+    }
+    
+    if (defined $host) {
+        my $processormodel = $host->processormodel;
+        throws_ok {
+            $processormodel->delete;
+        } 'Kanopya::Exception::DB::DeleteCascade', 'Error Model must not allow foreign key to be deleted';
+        
+        if ($host_was_manipulated) {
+            $host->processormodel_id(undef);
+        }
+    }
+}
