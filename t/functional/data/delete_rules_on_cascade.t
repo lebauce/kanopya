@@ -204,19 +204,12 @@ sub rrd_creation {
             }
         }
 
-        my @nms = Entity::Metric::Clustermetric->search (hash => {
-                      clustermetric_service_provider_id => $service_provider->id
-                  });
-
-
-        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
-                                                              include_nodemetric   => 1);
-
-        for my $indicator (values %{$used_indicators->{indicators}}) {
-            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node->node_hostname.'.rrd';
+        my @nms = $node->nodemetrics;
+        for my $nm (@nms) {
+            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$nm->id.'.rrd';
             if (! defined open(FILE,$rrd_name)) {
-                die('RRD Datacache for node <'.$node->node_hostname
-                     .'> and indicator <'.$indicator->id.'> ('.$rrd_name.')not created');
+                die('Nodemetric <' . $nm->id . '> of node <'.$node->node_hostname .
+                    '> (' . $rrd_name . ') not created');
                 close(FILE);
             }
         }
