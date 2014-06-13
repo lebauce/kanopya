@@ -1,0 +1,26 @@
+Problème de décalage de 2 octets vers le bas sur le clic dans le svg et pendant le drag d'un bloc :
+suppression dans blockly_compressed.js des lignes équivalentes suivantes :
+
+dans blockly.js :
+
+Blockly.onMouseDown_
+ligne 259 :
+Blockly.svgResize();
+blockly_compressed.js : ligne 921 : Blockly.svgResize();
+
+
+dans block.js :
+
+Blockly.Block.prototype.onMouseDown_
+ligne 506 :
+Blockly.svgResize();
+blockly_compressed.js : ligne 1160 : Blockly.svgResize();
+
+Blockly.Block.terminateDrag_
+ligne 292 :
+selected.render();
+blockly_compressed.js : ligne 913 : a.render();
+
+ligne 296 :
+Blockly.fireUiEvent(window, 'resize');
+blockly_compressed.js : ligne 914 : ;Blockly.fireUiEvent(window,"resize")

@@ -1,0 +1,29 @@
+<div id="metric-editor" class="dialog-container" title="Create new metric">
+    <form id="metric-form" method="POST">
+        <div id="metric-identity">
+            <p>
+                <label for="name">Name :</label>
+                <input type="text" name="name" id="name" />
+            </p>
+            <p>
+                <label for="description">Description :</label>
+                <input type="text" name="description" id="description" />
+            </p>
+        </div>
+
+        <div class="line"></div>
+
+<!-- 
+        <div id="category">
+            <button id="btnCPU">CPU</button>
+            <button id="btnMemory">Memory</button>
+        </div>
+ -->
+
+
+        <div id="metric-formula">
+            <div id="blockly-container"></div>
+            <div id="formula"></div>
+        </div>
+    </form>
+</div>
