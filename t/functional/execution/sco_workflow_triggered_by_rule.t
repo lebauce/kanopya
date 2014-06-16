@@ -612,14 +612,14 @@ sub _node_rule_objects_creation {
     # Create nodemetric rule objects
     my $ncomb1 = Entity::Metric::Combination::NodemetricCombination->new(
                      service_provider_id             => $service_provider->id,
-                     nodemetric_combination_formula  => 'id' . ((pop @indicators)->id)
-                                                        . ' + id' . ((pop @indicators)->id),
+                     nodemetric_combination_formula  => 'id' . ($indicators[0]->id)
+                                                        . ' + id' . ($indicators[1]->id),
                  );
 
     my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
                      service_provider_id             => $service_provider->id,
-                     nodemetric_combination_formula  => 'id' . ((pop @indicators)->id)
-                                                        . ' + id' . ((pop @indicators)->id),
+                     nodemetric_combination_formula  => 'id' . ($indicators[2]->id)
+                                                        . ' + id' . ($indicators[3]->id),
                  );
 
     my $nc1 = Entity::NodemetricCondition->new(
