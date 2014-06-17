@@ -29,12 +29,14 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 
+use Kanopya::Tools::TestUtils 'expectedException';
+
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4');
 
 Kanopya::Database::beginTransaction;
 
-my ($indic1, $indic2);
-my ($node_1, $node_2);
+my ($indic1, $indic2, $indic3);
+my ($node_1, $node_2, $node_3);
 my $service_provider;
 my $aggregator;
 eval{
@@ -83,9 +85,22 @@ eval{
         }
     );
 
+    # Indicator not used in Clustermetric
+    $indic3 = Entity::CollectorIndicator->find (
+        hash => {
+            collector_manager_id        => $mock_monitor->id,
+            'indicator.indicator_oid'   => 'Memory/Available MBytes'
+        }
+    );
+
     testCombinationUnit();
     # Tests
     testClusterMetric(
+        service_provider    => $service_provider,
+        aggregator          => $aggregator,
+    );
+
+    testNodeMetric(
         service_provider    => $service_provider,
         aggregator          => $aggregator,
     );
@@ -116,6 +131,113 @@ if($@) {
     Kanopya::Database::rollbackTransaction;
     fail('Exception occurs');
 
+}
+
+sub testNodeMetric {
+    my %args = @_;
+
+    my $service_provider = $args{service_provider};
+    my $aggregator       = $args{aggregator};
+
+    lives_ok {
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'default':{'const':7}}"
+        );
+
+        # Combinations
+        my $ncomb = Entity::Metric::Combination::NodemetricCombination->new(
+                        service_provider_id            => $service_provider->id,
+                        nodemetric_combination_formula => 'id' . ($indic3->id),
+                    );
+
+        expectedException {
+            Entity::Metric::Nodemetric->find(hash => {
+                nodemetric_node_id => $node_1->id,
+                nodemetric_indicator_id => $indic3->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound', 'Nodemetric not automatly created';
+
+        $aggregator->update();
+
+        Entity::Metric::Nodemetric->find(hash => {
+            nodemetric_node_id => $node_1->id,
+            nodemetric_indicator_id => $indic3->id,
+        });
+
+        # Create node 3
+        $node_3 = $service_provider->registerNode(hostname         => 'node_3',
+                                                  monitoring_state => 'up',
+                                                  number           => 1);
+
+        # When registering a new node, only nodemetrics linked to an indicator already linked to a
+        # clustermetric are created.
+
+        Entity::Metric::Nodemetric->find(hash => {
+            nodemetric_node_id => $node_3->id,
+            nodemetric_indicator_id => $indic2->id,
+        });
+
+        expectedException {
+            Entity::Metric::Nodemetric->find(hash => {
+                nodemetric_node_id => $node_3->id,
+                nodemetric_indicator_id => $indic3->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound', 'Nodemetric linked to an indicator not linked to
+           a clustermetric are not created';
+
+        $aggregator->update();
+
+        Entity::Metric::Nodemetric->find(hash => {
+            nodemetric_node_id => $node_3->id,
+            nodemetric_indicator_id => $indic3->id,
+        });
+
+    } 'Test nodemetric creation with aggregator and node registration';
+
+    lives_ok {
+
+        my $nm = Entity::Metric::Nodemetric->find(hash => {
+                     nodemetric_node_id => $node_3->id,
+                     nodemetric_indicator_id => $indic3->id,
+                 });
+
+        my $last_value = $nm->lastValue();
+
+        if ($last_value ne '7') {
+            die 'Wrong value got <' . $last_value . '> exepect <7>';
+        }
+
+        my $last_values = $indic3->lastValue(nodes => [$node_1, $node_2, $node_3]);
+
+        if (scalar keys %$last_values ne 3) {
+            die 'Expect 3 keys in hashtable';
+        }
+
+        if (! defined $last_values->{$node_1->id} ||
+            ! defined $last_values->{$node_2->id} ||
+            ! defined $last_values->{$node_3->id} ||
+            $last_values->{$node_3->id} ne '7' ||
+            $last_values->{$node_3->id} ne '7' ||
+            $last_values->{$node_3->id} ne '7'
+            ) {
+
+            die 'Wrong collector indicator value';
+        }
+
+        $node_3->remove();
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'default':{'const':null}}"
+        );
+
+        $aggregator->update();
+
+    } 'Check nodemetric values after aggregator update';
 }
 
 sub testClusterMetric {
