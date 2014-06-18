@@ -226,8 +226,8 @@ sub rrd_metric {
 
         if (defined $fetch->{$time_synchro-10}
             || (! defined $fetch->{$time_synchro-5})
-            || $fetch->{$time_synchro-5} ne '1.0000000000e+02'
-            || $fetch->{$time_synchro} ne '1.0000000000e+02') {
+            || $fetch->{$time_synchro-5} ne '100'
+            || $fetch->{$time_synchro} ne '100') {
             die 'Wrong values fetch';
         }
 
