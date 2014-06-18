@@ -1,5 +1,5 @@
 var blocklyHandler = {
-    
+
     currentMetricCategory: {},
     metricCategoryList: [],
     metricList: [],
@@ -43,46 +43,40 @@ var blocklyHandler = {
         return defaultXml;
     },
 
-    init: function() {
+    init: function(metricCategoryData, metricData) {
 
         var this_ = this;
 
-        function loadMetricCategoryList() {
-            $.getJSON( "ajax/metric-category.json", function(data) {
-                afterLoadMetricCategoryList(data);
-            });
-        }
+        this.metricCategoryList = metricCategoryData['metric-category'];
 
-        function afterLoadMetricCategoryList(data) {
-            this_.metricCategoryList = data;
-            this_.currentMetricCategory = this_.metricCategoryList[0];
-            loadMetricList();
-        }
+        this.currentMetricCategory = this.metricCategoryList[0];
+        this.metricList = metricData;
 
-        function loadMetricList() {
-            $.getJSON( "ajax/metric.json", function(data) {
-                afterLoadMetricList(data);
-            });
-        }
+        var toolbox = this_.toolbox().replace('[default]', 'this.getMetricList()[0].id');
+        Blockly.inject($('#blockly-container')[0],
+            {path: '/javascripts/vendor/blockly/', toolbox: toolbox});
+        this.setDefaultWorkspace();
+        Blockly.addChangeListener(this.updateOutputFormula);
 
-        function afterLoadMetricList(data) {
-            this_.metricList = data;
-            var toolbox = this_.toolbox().replace('[default]', this_.getMetricList()[0].id);
-            Blockly.inject($('#blockly-container')[0],
-                {path: '/javascripts/vendor/blockly/', toolbox: toolbox});
-            this_.setDefaultWorkspace();
-            Blockly.addChangeListener(this_.updateOutputFormula);
+        var metricCategory = $('#metric-category');
+        metricCategory.change(function() {
+            var categoryId = parseInt(metricCategory.val(), 10);
+            this_.setMetricCategory(categoryId);
+        });
+        metricCategory.trigger('change');
 
-            var blocklyDiv = $('#blockly-container');
-            var onresize = function(e) {
-                blocklyDiv.css('width', ($('#metric-editor').css('width') - 40) + 'px');
-                blocklyDiv.css('height', ($('#metric-editor').css('height') - 40) + 'px');
-            }
-            onresize();
-            window.addEventListener('resize', onresize);
-        }
+        // Blockly.onMouseMove_;
 
-        loadMetricCategoryList();
+        // var onresize = function(e) {
+        //     console.debug($('#metric-editor').width());
+        //     $('#blockly-container').width($('#metric-editor').width() - 40);
+        // }
+        // onresize();
+        // window.addEventListener('resize', onresize);
+        // Blockly.svgResize();
+        // $('#blockly-container').width(200);
+        // $('#blockly-container').height(200);
+
     },
 
     setDefaultWorkspace: function() {
@@ -95,7 +89,7 @@ var blocklyHandler = {
 
         var startIndex = code.indexOf('|') + 1;
         var endIndex = code.indexOf('|',startIndex);
-        
+
         return code.substring(startIndex, endIndex);
     },
 

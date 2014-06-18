@@ -11,19 +11,25 @@
             </p>
         </div>
 
-        <div class="line"></div>
+        <!-- <div class="line"></div> -->
 
-<!-- 
-        <div id="category">
-            <button id="btnCPU">CPU</button>
-            <button id="btnMemory">Memory</button>
-        </div>
- -->
-
-
-        <div id="metric-formula">
+        <div id="metric-blockly">
+            <div id="metric-items">
+                <p class="first">
+                    <label for="metric-category">Metrics category</label>
+                    <select id="metric-category">
+                        {{#metric-category}}
+                            <option value="{{id}}">{{label}}</option>
+                        {{/metric-category}}
+                    </select>
+                </p>
+                <p>Function</p>
+                <p>Operator group</p>
+                <p>Value</p>
+            </div>
             <div id="blockly-container"></div>
-            <div id="formula"></div>
+            <div id="metric-blockly-down"></div>
         </div>
+        <div id="formula"></div>
     </form>
 </div>

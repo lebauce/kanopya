@@ -2,11 +2,6 @@
     z-index: 99999 !important;
 }
 
-#blockly-container {
-    /*width: 660px;*/
-    height: 230px;
-}
-
 #metric-identity {
     font-size: 1rem;
 }
@@ -26,8 +21,44 @@
     background-color: #cccccc;
 }
 
-#metric-formula {
-    margin-top: 20px;
+#metric-blockly {
+    margin-top: 30px;
+}
+
+#metric-items {
+    float:left;
+    width: 120px;
+    height: 232px;
+    padding-left: 20px;
+    padding-right: 10px;
+    background-color: #e4e4e4;
+}
+
+#metric-items p {
+    margin-top : 20px;
+    margin-bottom : 38px;
+    text-align: right;
+    font-size: normal;
+}
+
+#metric-items p.first {
+    margin-top : 5px;
+    margin-bottom : 0;
+}
+
+#metric-category {
+    display: block;
+    margin-top: 2px;
+}
+
+#blockly-container {
+    float:left;
+    width: 600px;
+    height: 230px;
+}
+
+#metric-blockly-down {
+    clear: left;
 }
 
 #formula {
@@ -36,3 +67,4 @@
     background-color: #dddddd;
     padding: 10px;
 }
+    

@@ -1,10 +1,12 @@
-[
-    {
-        "id": 1,
-        "label": "Memory"
-    },
-    {
-        "id": 2,
-        "label": "CPU"
-    }
-]
+{
+    "metric-category": [
+        {
+            "id": 1,
+            "label": "Memory"
+        },
+        {
+            "id": 2,
+            "label": "CPU"
+        }
+    ]
+}

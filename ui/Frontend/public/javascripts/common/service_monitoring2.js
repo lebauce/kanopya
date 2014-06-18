@@ -159,6 +159,7 @@ function createServiceCombination(container_id, elem_id, options) {
 function createMetricCombination(containerId, elementId, ext, options) {
 
     var dialogContainerClass = 'dialog-container';
+    var metricCategoryData, metricData;
 
     function addCreateButton() {
         var button = $("<button>", {html: 'Add a metric'});
@@ -192,43 +193,37 @@ function createMetricCombination(containerId, elementId, ext, options) {
                         click: function() {}
                     }
                 ]
-                // open: function(ev, ui) {
-                //          $('#myIframe').attr('src','templates/blockly.html');
-                //       }                
             });
         });
 
         $('#' + containerId).append(button);
     }
 
+    function loadMetricCategoryData() {
+        $.getJSON("ajax/metric-category.json", function(data) {
+            metricCategoryData = data;
+            loadMetricData();
+        });
+    }
+
+    function loadMetricData() {
+        $.getJSON("ajax/metric.json", function(data) {
+            metricData = data;
+            renderDialogTemplate();
+        });
+    }
+
     function renderDialogTemplate() {
         var templateFile = '/templates/metric-editor.tmpl.html';
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
-            $('body').append(template());
-            afterRenderDialogTemplate();
-        });
-    }
-
-    function afterRenderDialogTemplate() {
-        activateCategoryButtons();
-        blocklyHandler.init();
-    }
-
-    function activateCategoryButtons() {
-        $('#btnCPU').click(function() {
-            blocklyHandler.setMetricCategory(2);
-            return false;
-        });
-
-        $('#btnMemory').click(function() {
-            blocklyHandler.setMetricCategory(1);
-            return false;
+            $('body').append(template(metricCategoryData));
+            blocklyHandler.init(metricCategoryData, metricData);
         });
     }
 
     addCreateButton();
-    renderDialogTemplate();
+    loadMetricCategoryData();
 
     // var dialogModal = $("<div>", {id: "dialog-modal", title: "Create new metric"});
     
@@ -424,9 +419,8 @@ function createMetricCombination(containerId, elementId, ext, options) {
 
 function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
 
-    var container   = $("#" + container_id);
-
-    var external        = ext || '';
+    var container = $("#" + container_id);
+    var external = ext || '';
 
     // Nodemetric bargraph details handler
     function nodeMetricDetailsBargraph(cid, nodeMetric_id) {
@@ -478,29 +472,23 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
       });
     }
 
-    ////////////////////////MONITORING ACCORDION//////////////////////////////////
+    /**
+     * Metric list
+     */
 
-    var divacc = $('<div id="accordion_monitoring_rule">').appendTo(container);
+    var content = $('<div id="metric-list-content">').appendTo(container);
     
-    // Node
-    // $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
+    content
+        .append( $('<div>', {id : 'node_metrics_action_buttons', class : 'action_buttons'}) )
+        .append( $('<div>', {id : 'node_metrics_container'}) );
 
-    var node_monitoring_accordion_container = $('<div>', {id : 'node_monitoring_accordion_container'});
-    divacc.append(
-        node_monitoring_accordion_container.append(
-            $('<div>')
-                .append( $('<div>', {id : 'node_metrics_action_buttons', class : 'action_buttons'}) )
-                .append( $('<div>', {id : 'node_metrics_container'}) )
-        )
-    );
-
-    var nodemetriccombi_grid_id = 'service_resources_nodemetric_combination_' + elem_id;
+    var gridId = 'metric-list-grid' + elem_id;
     // Create button + modal
     createMetricCombination('node_metrics_action_buttons', elem_id, (external !== '') ? true : false);
     // Import button
     if (!mode_policy) {
         importItemButton(
-                node_monitoring_accordion_container.find('#node_metrics_action_buttons'),
+                content.find('#node_metrics_action_buttons'),
                 elem_id,
                 {
                     name        : 'combination',
@@ -508,56 +496,127 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
                     desc_attr   : 'formula_label',
                     type        : 'nodemetric_combination'
                 },
-                [nodemetriccombi_grid_id]
+                [gridId]
         );
     }
 
-    create_grid( {
-        caption : '',
-        url: '/api/nodemetriccombination?service_provider_id=' + elem_id,
-        content_container_id: 'node_metrics_container',
-        grid_id: nodemetriccombi_grid_id,
-        colNames: [ 'id', 'Name', 'Formula'],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 90 },
-            { name: 'formula_label', index: 'formula_label', width: 200 }
-        ],
-        details: {
-            tabs : [
-                    { label : 'Nodes graph', id : 'nodesgraph', onLoad : nodeMetricDetailsBargraph },
-                    { label : 'Histogram'  , id : 'histogram' , onLoad : nodeMetricDetailsHistogram },
-                    { label : 'Historical' , id : 'historical', onLoad : nodeMetricDetailsHistorical }
-                ],
-            title   : { from_column : 'nodemetric_combination_label' },
-            height  : 600,
-            buttons : ['button-ok']
-        },
-        deactivate_details  : mode_policy,
-        action_delete: {
-            callback : function (id) {
-                confirmDeleteWithDependencies('/api/nodemetriccombination/', id, [nodemetriccombi_grid_id]);
-            }
-        },
-        multiselect : !mode_policy,
-        multiactions : {
-            multiDelete : {
-                label       : 'Delete metric(s)',
-                action      : removeGridEntry,
-                url         : '/api/nodemetriccombination',
-                icon        : 'ui-icon-trash',
-                extraParams : {multiselect : true}
-            }
+    var nodeMetricCombination, serviceMetricCombination;
+
+    function addPropertiesToCombination(list, labelName, level) {
+        for (var i = 0; i < list.length; i++) {
+            list[i].label = list[i][labelName];
+            list[i].level = level;
+        };
+        return list;
+    }
+
+    function getValueFromList(rowId, columnName) {
+        return $('#' + gridId).jqGrid('getCell', rowId, columnName);
+    }
+
+    function getDeleteActionUrl(rowId) {
+        var url;
+        var level = getValueFromList(rowId, 'level');
+        switch(level) {
+            case 'node':
+                url = '/api/nodemetriccombination';
+                break;
+            case 'service':
+                url = '/api/aggregatecombination';
+                break;
         }
-    } );
+        return url;
+    }
+
+    function loadNodeMetricCombination() {
+        $.getJSON('/api/nodemetriccombination?service_provider_id=' + elem_id, function(data) {
+            nodeMetricCombination = addPropertiesToCombination(data, 'nodemetric_combination_label', 'node');
+            loadServiceMetricCombination();
+        });
+    }
+
+    function loadServiceMetricCombination() {
+        $.getJSON('/api/aggregatecombination?service_provider_id=' + elem_id, function(data) {
+            serviceMetricCombination = addPropertiesToCombination(data, 'aggregate_combination_label', 'service');
+            displayList();
+        });
+    }
+
+    function getDetailsTabs() {
+        return function(rowId) {
+            var level = getValueFromList(rowId, 'level');
+            var tabs;
+            switch(level) {
+                case 'node':
+                    tabs = [
+                        {label: 'Nodes graph', id: 'nodesgraph', onLoad: nodeMetricDetailsBargraph},
+                        {label: 'Histogram', id: 'histogram', onLoad: nodeMetricDetailsHistogram},
+                        {label: 'Historical', id: 'historical', onLoad: nodeMetricDetailsHistorical}
+                    ];
+                    break;
+                case 'service':
+                    tabs = [
+                        {label: 'Historical graph', id: 'servicehistoricalgraph', onLoad: clusterMetricCombinationDetailsHistorical}
+                    ];
+                    break;
+            }
+            return tabs;
+        };
+    }
+
+    function displayList() {
+
+        var data = nodeMetricCombination.concat(serviceMetricCombination);
+
+        create_grid({
+            caption: '',
+            datatype: 'local',
+            data: data,
+            content_container_id: 'node_metrics_container',
+            grid_id: gridId,
+            colNames: ['id', 'Name', 'Formula', 'Level'],
+            colModel: [
+                {name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
+                {name: 'label', index: 'label', width: 90},
+                {name: 'formula_label', index: 'formula_label', width: 200},
+                {name: 'level', index: 'level', hidden: true}
+            ],
+            rowNum: 100,
+            details: {
+                tabs: getDetailsTabs(),
+                title: {from_column: 'label'},
+                height: 600,
+                buttons: ['button-ok']
+            },
+            deactivate_details: mode_policy,
+            action_delete: {
+                callback: function (id) {
+                    var url = getDeleteActionUrl(id) + '/';
+                    confirmDeleteWithDependencies(url, id, [gridId]);
+                }
+            },
+            multiselect: !mode_policy,
+            multiactions: {
+                multiDelete: {
+                    label: 'Delete metric(s)',
+                    action: removeGridEntry,
+                    url: '/api/nodemetriccombination',
+                    icon: 'ui-icon-trash',
+                    extraParams: {multiselect: true}
+                }
+            }
+        });
+    }
+
+    loadNodeMetricCombination();
 
     // Service
-    // $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
+    // $('<h3><a href="#">Service</a></h3>').appendTo(content);
 
     // var clustermetric_grid_id = 'service_resources_clustermetrics_' + elem_id;
     // var aggregatecombi_grid_id = 'service_resources_aggregate_combinations_' + elem_id;
     // var service_monitoring_accordion_container = $('<div>', {id : 'service_monitoring_accordion_container'});
-    // divacc.append(
+    // content.append(
     //     service_monitoring_accordion_container.append(
     //         $('<div>')
     //             .append( $('<div>', {id : 'service_metrics_action_buttons', class : 'action_buttons'}) )
