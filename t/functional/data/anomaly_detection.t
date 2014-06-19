@@ -28,7 +28,7 @@ use Kanopya::Tools::Create;
 use Entity::Component::MockMonitor;
 use Entity::Component::Physicalhoster0;
 use Entity::Host;
-use Node;
+use Entity::Node;
 use Entity::Metric::Clustermetric;
 use Kanopya::Tools::TimeSerie;
 use AnomalyDetector;
@@ -99,11 +99,11 @@ sub setup {
     my $host = Entity::Host->new(host_serial_number => 'AnomalyDetectionTestHost1',
                               host_manager_id    => Entity::Component::Physicalhoster0->find()->id);
 
-    my $node = Node->new(node_hostname       => 'AnomalyDetectionTestNode1',
-                         service_provider_id => $cluster->id,
-                         monitoring_state    => 'up',
-                         host_id             => $host->id,
-                         node_state          => 'in:'.time(),);
+    my $node = Entity::Node->new(node_hostname       => 'AnomalyDetectionTestNode1',
+                                 service_provider_id => $cluster->id,
+                                 monitoring_state    => 'up',
+                                 host_id             => $host->id,
+                                 node_state          => 'in:'.time());
 
     my $indicator = Entity::Indicator->find(hash => {indicator_oid => '.1.3.6.1.4.1.2021.4.5.0'});
 

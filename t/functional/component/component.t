@@ -26,7 +26,7 @@ my $componenttype = "Lvm2";
 my $ip = "10.0.0.1";
 my $hostname = `hostname`;
 
-Kanopya::Database::authenticate(login => 'admin', password => '_tamere23');
+Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 eval {
     # Firstly initialize the execution lib with the local host on which the code is running.
