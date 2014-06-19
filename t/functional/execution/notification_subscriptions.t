@@ -219,7 +219,7 @@ sub main {
                     );
 
         Kanopya::Test::Execution->executeOne(entity => $add_host);
-    } 'Kanopya::Exception::Internal', 'Run workflow AddHost with mandatory attr required';
+    } 'Kanopya::Exception::Test', 'Run workflow AddHost with mandatory attr required';
 
     # Enqueue an operation that should fail
     throws_ok {
