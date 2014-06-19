@@ -428,9 +428,9 @@ sub halt {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    my $hostip = $args{host}->adminIp;
+    my $hostip = $args{node}->adminIp;
     my $masternodeip = $self->getMasterNode->adminIp;
 
     if ((defined $masternodeip) && ($masternodeip eq $hostip)) {

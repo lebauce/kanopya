@@ -53,13 +53,13 @@ Check if host is up
 sub isUp {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ "host" ]);
+    General::checkParams(args => \%args, required => [ "node" ]);
 
     try {
-        $args{host}->getEContext->execute(command => "uptime");
+        $args{node}->getEContext->execute(command => "uptime");
     }
     catch (Kanopya::Exception $err) {
-        $log->info("Try to contact host <" . $args{host}->adminIp . ">, host not sshable");
+        $log->info("Try to contact node <" . $args{node}->adminIp . ">, node not sshable");
         return 0;
     }
     catch ($err) {

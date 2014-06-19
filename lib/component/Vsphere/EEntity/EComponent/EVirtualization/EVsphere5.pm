@@ -923,7 +923,7 @@ Determine whether a host is up or down
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     return 1;
 }

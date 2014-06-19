@@ -131,7 +131,7 @@ sub oneRun {
 
                 my $compmsg = "Component $component_name unreachable on Host $hostname";
 
-                if (! $ecomponent->isUp(host => $ehost, cluster => $cluster)) {
+                if (! $ecomponent->isUp(node => EEntity->new(entity => $node))) {
                     my $msg = $component_name .
                               " not available on node (" . $node->node->node_hostname .
                               ") in cluster (" . $cluster->cluster_name . ")";

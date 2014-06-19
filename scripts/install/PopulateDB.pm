@@ -1599,12 +1599,8 @@ sub registerKanopyaMaster {
                 system_component => $distro,
             }
         },
-        {
-            name => 'KanopyaAnomalyDetector'
-        },
-        {
-            name => 'KanopyaRulesEngine'
-        },
+        'KanopyaAnomalyDetector' => {},
+        'KanopyaRulesEngine' => {},
         'KanopyaServiceManager' => {
             require => { executor_component => 'KanopyaExecutor' },
         },
@@ -1886,7 +1882,7 @@ sub registerKanopyaMaster {
     foreach my $component (map { EEntity->new(entity => $_) } @components) {
         print "\t\t- Checking component " . $component->label . "...\n";
         try {
-            if ($component->isUp(host => $admin_node->host)) {
+            if ($component->isUp(node => EEntity->new(entity => $admin_node))) {
                 print "\t\t\t=> up\n";
             }
             else {

@@ -155,17 +155,16 @@ sub applyConfiguration {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    my @nodes = map { $_->node } ($args{host});
-    $self->applyConfiguration(nodes => \@nodes);
+    $self->applyConfiguration(nodes => [ $args{node} ]);
 
     # Build the nodes to reconfigure by browsing the node components and thier dependencies.
     # Sort nodes to reconfigure by corresponding puppetagent component to optimize the number
     # of calls to applyConfiguration.
     # TODO: Need to reconfigure all active nodes of the current node components ?
     my $reconfigure = {};
-    for my $component ($args{host}->node->components) {
+    for my $component ($args{node}->components) {
         for my $dependency (@{ $component->getDependentComponents}) {
             for my $node (@{ $dependency->getActiveNodes }) {
                 my $agent = $node->getComponent(category => "Configurationagent");
@@ -192,7 +191,7 @@ sub isUp {
 
     # Reconfigure the current node if we have reconfigured the dependencies
     if (scalar (keys %{ $reconfigure })) {
-        $self->applyConfiguration(nodes => \@nodes);
+        $self->applyConfiguration(nodes => [ $args{node} ]);
     }
 
     return 1;

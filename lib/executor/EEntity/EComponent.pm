@@ -190,20 +190,33 @@ sub cleanNode {
     eval { $self->postStopNode(%args); };
 }
 
+
+=pod
+=begin classdoc
+
+Check the network availability of the component on a node, could
+execute commands defined in the concrete components to ensure the system
+availability on the specified node.
+
+@param node the node where to test the component availability
+
+=end classdoc
+=cut
+
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams( args => \%args, required => [ 'host' ] );
+    General::checkParams( args => \%args, required => [ 'node' ] );
 
     my $availability = 1;
-    my $execution_list = $self->getExecToTest(host => $args{host});
+    my $execution_list = $self->getExecToTest(node => $args{node});
     my $net_conf = $self->getNetConf();
 
     # Test executable
     foreach my $i (keys %$execution_list) {
         my $ret;
         eval {
-            $ret = $args{host}->getEContext->execute(command => $execution_list->{$i}->{cmd});
+            $ret = $args{node}->getEContext->execute(command => $execution_list->{$i}->{cmd});
         };
         if ($@ || (not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
             return 0;
@@ -211,7 +224,7 @@ sub isUp {
     }
 
     # Test Services
-    my $ip = $args{host}->adminIp;
+    my $ip = $args{node}->adminIp;
     while (my ($daemon, $conf) = each %$net_conf) {
         my $cmd = "nmap -n ";
         PROTO:

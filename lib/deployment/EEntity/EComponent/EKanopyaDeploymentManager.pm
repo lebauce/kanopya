@@ -373,9 +373,8 @@ sub checkNodeDown {
         foreach my $component (map { EEntity->new(entity => $_) } @components) {
             $log->debug("Browsing component: " . $component->label);
 
-            if ($component->isUp(host => EEntity->new(entity => $args{node}->host))) {
-                $log->info("Component " . $component->label .
-                           " still up on node " . $args{node}->label);
+            if ($component->isUp(node => $args{node})) {
+                $log->info("Component " . $component->label . " still up on node " . $args{node}->label);
                 return $delay;
             }
             $log->info("Component " . $component->label . " do not respond any more");

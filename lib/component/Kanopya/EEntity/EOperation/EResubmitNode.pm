@@ -197,7 +197,7 @@ sub postrequisites {
 
         my $ecomponent = EEntity->new(data => $component);
 
-        if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster =>$self->{context}->{vm_cluster})) {
+        if (not $ecomponent->isUp(node => EEntity->new(entity => $self->{context}->{host}->node))) {
             $log->info("Component <$component_name> not yet operational on host <$host_id>");
             return $delay;
         }
