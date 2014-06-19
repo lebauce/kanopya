@@ -41,8 +41,7 @@ sub execute {
     my ($self, %args) = @_;
 
     # Check disk manager state
-    my ($state, $timestamp) = $self->{context}->{disk_manager}->getMasterNode->getState();
-    if ($state ne 'up'){
+    if (! $self->{context}->{disk_manager}->isAvailable()) {
         $errmsg = "Disk manager has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);

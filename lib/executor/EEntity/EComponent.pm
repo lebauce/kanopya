@@ -18,7 +18,11 @@
 =pod
 =begin classdoc
 
-EComponent is the general abstract type for components.
+Execution lib for Component class inherited by components.
+
+@since    2010-Nov-23
+@instance hash
+@self     $self
 
 =end classdoc
 =cut
@@ -43,6 +47,17 @@ use EEntity;
 my $log = get_logger("");
 my $errmsg;
 
+
+=pod
+=begin classdoc
+
+Install the system service corresponding to the component on the mounted system image.
+
+@param mountpoint the directory where is mounted the system image
+@param scriptname the name of the service script to install
+
+=end classdoc
+=cut
 
 sub addInitScripts {
     my ($self, %args) = @_;
@@ -109,8 +124,6 @@ sub generateFile {
 =begin classdoc
 
 Generate a file on a remote host.
-
-@param dst_host the destination host on which execute commands.
 
 @return the econtext instance
 
@@ -188,6 +201,24 @@ sub cleanNode {
     eval { $self->preStopNode(%args); };
     eval { $self->stopNode(%args); };
     eval { $self->postStopNode(%args); };
+}
+
+=pod
+=begin classdoc
+
+Base method to test if component is available. Basically check if the component
+is up on its master node.
+
+Should be overriden in conrete component to replace or improve
+the check the availability of the component.
+
+=end classdoc
+=cut
+
+sub isAvailable {
+    my ($self, %args) = @_;
+
+    return $self->isUp(node => $self->getMasterNode());
 }
 
 

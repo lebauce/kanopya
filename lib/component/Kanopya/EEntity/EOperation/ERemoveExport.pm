@@ -39,8 +39,7 @@ sub execute {
     my ($self, %args) = @_;
 
     # Check export manager state
-    my ($state, $timestamp) = $self->{context}->{export_manager}->getMasterNode->getState();
-    if ($state ne 'up'){
+    if (! $self->{context}->{export_manager}->isAvailable()) {
         $errmsg = "Export manager has to be up !";
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
