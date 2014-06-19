@@ -500,46 +500,34 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
         );
     }
 
-    var nodeMetricCombination, serviceMetricCombination;
-
-    function addPropertiesToCombination(list, labelName, level) {
+    function addLevelToCombination(list) {
+        var level;
         for (var i = 0; i < list.length; i++) {
-            list[i].label = list[i][labelName];
-            list[i].level = level;
+            list[i].level = 'node';
+            if (list[i].hasOwnProperty('aggregate_combination_id')) {
+                list[i].level = 'service';
+            };
         };
-        return list;
     }
 
     function getValueFromList(rowId, columnName) {
         return $('#' + gridId).jqGrid('getCell', rowId, columnName);
     }
 
-    function getDeleteActionUrl(rowId) {
-        var url;
-        var level = getValueFromList(rowId, 'level');
-        switch(level) {
-            case 'node':
-                url = '/api/nodemetriccombination';
-                break;
-            case 'service':
-                url = '/api/aggregatecombination';
-                break;
-        }
-        return url;
-    }
-
-    function loadNodeMetricCombination() {
-        $.getJSON('/api/nodemetriccombination?service_provider_id=' + elem_id, function(data) {
-            nodeMetricCombination = addPropertiesToCombination(data, 'nodemetric_combination_label', 'node');
-            loadServiceMetricCombination();
-        });
-    }
-
-    function loadServiceMetricCombination() {
-        $.getJSON('/api/aggregatecombination?service_provider_id=' + elem_id, function(data) {
-            serviceMetricCombination = addPropertiesToCombination(data, 'aggregate_combination_label', 'service');
-            displayList();
-        });
+    function getDeleteActionUrl() {
+        return function(rowId) {
+            var url;
+            var level = getValueFromList(rowId, 'level');
+            switch(level) {
+                case 'node':
+                    url = '/api/nodemetriccombination';
+                    break;
+                case 'service':
+                    url = '/api/aggregatecombination';
+                    break;
+            }
+            return url;
+        };
     }
 
     function getDetailsTabs() {
@@ -566,12 +554,12 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
 
     function displayList() {
 
-        var data = nodeMetricCombination.concat(serviceMetricCombination);
-
         create_grid({
             caption: '',
-            datatype: 'local',
-            data: data,
+            url: '/api/combination?combination_formula_string=LIKE,%[a-zA-Z]%&service_provider_id=' + elem_id,
+            loadComplete: function(data) {
+                addLevelToCombination(data.rows);
+            },
             content_container_id: 'node_metrics_container',
             grid_id: gridId,
             colNames: ['id', 'Name', 'Formula', 'Level'],
@@ -591,7 +579,7 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
             deactivate_details: mode_policy,
             action_delete: {
                 callback: function (id) {
-                    var url = getDeleteActionUrl(id) + '/';
+                    var url = getDeleteActionUrl().call(null, id) + '/';
                     confirmDeleteWithDependencies(url, id, [gridId]);
                 }
             },
@@ -600,7 +588,7 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
                 multiDelete: {
                     label: 'Delete metric(s)',
                     action: removeGridEntry,
-                    url: '/api/nodemetriccombination',
+                    url: getDeleteActionUrl(),
                     icon: 'ui-icon-trash',
                     extraParams: {multiselect: true}
                 }
@@ -608,7 +596,7 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
         });
     }
 
-    loadNodeMetricCombination();
+    displayList();
 
     // Service
     // $('<h3><a href="#">Service</a></h3>').appendTo(content);

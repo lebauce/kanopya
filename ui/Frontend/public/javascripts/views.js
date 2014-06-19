@@ -210,8 +210,15 @@ function _gridActionModalCommonParams() {
 
 // Callback when click on remove icon for a row
 function removeGridEntry (grid_id, rowid, url, method, extraParams) {
-    var delete_url      = url.split('?')[0] + '/' + rowid;
-    var call_type       = 'DELETE';
+
+    // Enables the dynamic loading of url
+    var delete_url = url;
+    if (typeof url === 'function') {
+        delete_url = url.call(null, rowid);
+    };
+
+    delete_url = delete_url.split('?')[0] + '/' + rowid;
+    var call_type = 'DELETE';
     if (method) {
         delete_url += '/' + method;
         call_type = 'POST';
@@ -231,7 +238,7 @@ function removeGridEntry (grid_id, rowid, url, method, extraParams) {
                     if (json.operation_id != undefined) {
                         handleCreateOperation(json, $("#"+grid_id), rowid);
                     } else {
-                        $("#"+grid_id).trigger('gridChange')
+                        $("#"+grid_id).trigger('gridChange');
                     }
                 },
             })
@@ -573,6 +580,9 @@ function create_grid(options) {
 
             var thegrid = jQuery('#' + options.grid_id)[0];
             $.getJSON(options.url, data, function (data) {
+                if (options.loadComplete) {
+                    options.loadComplete.call(null, data);
+                };
                 thegrid.addJSONData(data);
             });
         } : 'local',

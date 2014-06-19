@@ -346,7 +346,9 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
                         type    : 'DELETE',
                         url     : url + id,
                         success : function() {
-                            $.each( grid_ids, function(idx,grid_id) {$('#' + grid_id).trigger('reloadGrid')});
+                            $.each(grid_ids, function(idx, grid_id) {
+                                $('#' + grid_id).trigger('reloadGrid')
+                            });
                         }
                     });
                     $(this).dialog("close");
