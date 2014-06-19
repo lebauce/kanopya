@@ -37,4 +37,20 @@ use Kanopya::Schema::Result::Component;
 
 Kanopya::Schema::Result::Component->many_to_many("nodes", "component_nodes", "node");
 
+
+=head2 kanopya_deployment_manager_kanopya_deployment_manager
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+Kanopya::Schema::Result::Component->might_have(
+  "kanopya_deployment_manager",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.kanopya_deployment_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;
