@@ -280,7 +280,8 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "vg_id", "name", "size", "filesystem" ]);
+                         required => [ "name", "size", "filesystem" ],
+                         optional => { "vg_id" => undef });
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
     $self->executor_component->enqueue(
