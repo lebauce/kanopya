@@ -42,8 +42,8 @@ use Entity::Metric::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Rule::AggregateRule;
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::Execution;
+use Kanopya::Test::TestUtils 'expectedException';
 use Entity::Node;
 
 use TryCatch;
@@ -67,12 +67,12 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
-    Kanopya::Tools::Execution->purgeQueues();
+    Kanopya::Test::Execution->purgeQueues();
 
     sco_workflow_triggered_by_rule();
     clean_infra();
 
-    Kanopya::Tools::Execution->purgeQueues();
+    Kanopya::Test::Execution->purgeQueues();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
@@ -245,23 +245,23 @@ sub sco_workflow_triggered_by_rule {
         # TODO try to use executeOperation + handleResult like the followed commented part
 
         # Run the both workflows
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
 
         # Execute and handle result of both first ProcessRule operations
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
 
         # Execute and handle result of both second LaunchSCOWorkflow operations,
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
         # Kee the connection after fetvch the first operation result as the first operation will be reported
         # and if the connection rest for the next fetch, the operation has been re inserted in queue and
         # will be fetched infinitly.
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1, keep_connection => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1, keep_connection => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
 
 #        my $executor = Executor->new(duration => 'SECOND');
 #        my @processes_rules = Entity::Operation->search(hash => {'operationtype.operationtype_name' => 'ProcessRule'});
@@ -352,7 +352,7 @@ sub sco_workflow_triggered_by_rule {
         $service_sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
         $service_sco_operation->save();
 
-        Kanopya::Tools::Execution->executeAll(timeout => 660);
+        Kanopya::Test::Execution->executeAll(timeout => 660);
 
         expectedException {
             Entity::Operation->find( hash => {

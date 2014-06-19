@@ -25,8 +25,8 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Network;
@@ -64,7 +64,7 @@ sub main {
     `ip addr add $ip/24 dev eth1`;
 
     lives_ok {
-        my $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        my $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     my $builder;
@@ -158,7 +158,7 @@ sub main {
     my $build_stack;
     lives_ok {
        $build_stack = $builder->buildStack(stack => $stack, owner_id => $customer->id);
-       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+       Kanopya::Test::Execution->executeOne(entity => $build_stack);
     } 'Run workflow BuildStack';
 
     lives_ok {
@@ -271,7 +271,7 @@ sub main {
     my $end_stack;
     lives_ok {
        $end_stack = $builder->endStack(stack_id => 123, owner_id => $customer->id);
-       Kanopya::Tools::Execution->executeOne(entity => $end_stack);
+       Kanopya::Test::Execution->executeOne(entity => $end_stack);
     } 'Run workflow EndStack';
 
     if ($testing == 1) {

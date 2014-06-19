@@ -13,7 +13,7 @@ use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
 use Entity::Node;
 
 use File::Basename;
@@ -85,7 +85,7 @@ sub rule_predict {
 }
 
 sub fill_rrd {
-    my $time_serie = Kanopya::Tools::TimeSerie->new();
+    my $time_serie = Kanopya::Test::TimeSerie->new();
 
         $time_serie->generate(func => 'X',
                               srand => 1,

@@ -29,7 +29,7 @@ Kanopya module for profiling tools.
 
 =cut
 
-package Kanopya::Tools::Profiler;
+package Kanopya::Test::Profiler;
 use base qw<DBIx::Class::Storage::Statistics>;
 
 use strict;

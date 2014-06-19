@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Test::More 'no_plan';
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use Test::Exception;
 
 use File::Basename;

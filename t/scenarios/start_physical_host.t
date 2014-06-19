@@ -26,10 +26,10 @@ Log::Log4perl->easy_init({
 
 use Kanopya::Database;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 use Entity::Systemimage;
 
@@ -43,7 +43,7 @@ sub main {
     if ($testing == 1) {
         Kanopya::Database::beginTransaction;
 
-        Kanopya::Tools::Register->registerHost(board => {
+        Kanopya::Test::Register->registerHost(board => {
             ram  => 1073741824,
             core => 4,
             serial_number => 0,
@@ -54,13 +54,13 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
             cluster_name => "default_cluster_name_with_maximum_length_of_db_200" .
                             "default_cluster_name_with_maximum_length_of_db_200" .
                             "default_cluster_name_with_maximum_length_of_db_200" .
@@ -73,7 +73,7 @@ sub main {
 
     diag('Start physical host');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
 
     diag('Stopping cluster');
@@ -82,13 +82,13 @@ sub main {
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
+        Kanopya::Test::Execution->executeOne(entity => $cluster->stop());
     } 'Stopping cluster';
 
     diag('Remove cluster');
     lives_ok {
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate());
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->remove());
+        Kanopya::Test::Execution->executeOne(entity => $cluster->deactivate());
+        Kanopya::Test::Execution->executeOne(entity => $cluster->remove());
     } 'Removing cluster';
 
     my @systemimages = Entity::Systemimage->search();

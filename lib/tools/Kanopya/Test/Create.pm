@@ -29,7 +29,7 @@ Kanopya module to create items
 
 =cut
 
-package Kanopya::Tools::Create;
+package Kanopya::Test::Create;
 
 use strict;
 use warnings;
@@ -50,8 +50,8 @@ use Entity::Container;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ServiceProvider::Cluster;
 use ClassType::ComponentType;
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
 use EEntity;
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -100,7 +100,7 @@ sub createCluster {
     my $cluster_conf;
 
     diag('Retrieve the Kanopya cluster');
-    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $kanopya_cluster = Kanopya::Test::Retrieve->retrieveCluster();
 
     diag('Get physical hoster');
     my $physical_hoster = $kanopya_cluster->getHostManager();
@@ -250,9 +250,9 @@ sub createCluster {
     diag('Create cluster');
     my $cluster_create = Entity::ServiceProvider::Cluster->create(%$cluster_conf);
 
-    Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
+    Kanopya::Test::Execution->executeOne(entity => $cluster_create);
 
-    return Kanopya::Tools::Retrieve->retrieveCluster(criteria => { cluster_name => $cluster_conf->{cluster_name} });
+    return Kanopya::Test::Retrieve->retrieveCluster(criteria => { cluster_name => $cluster_conf->{cluster_name} });
 }
 
 =pod
@@ -284,7 +284,7 @@ sub createVmCluster {
     my $iaas = $args{iaas};
     my $host_manager = $iaas->getComponent(category => 'HostManager');
 
-    my $kanopya = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $kanopya = Kanopya::Test::Retrieve->retrieveCluster();
 
     my $managers = {
         host_manager => {
@@ -307,7 +307,7 @@ sub createVmCluster {
         my $fileimagemanager = $kanopya->getComponent(name    => "Fileimagemanager",
                                                       version => 0);
 
-        my $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+        my $nfs = Kanopya::Test::Retrieve->retrieveContainerAccess(
                       name => $container_name,
                       type => $container_type,
                   );
@@ -371,7 +371,7 @@ sub createIaasCluster {
                             );
     }
 
-    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $kanopya_cluster = Kanopya::Test::Retrieve->retrieveCluster();
 
     my $disk_manager = EEntity->new(
                            entity => $kanopya_cluster->getComponent(name => "Lvm")
@@ -420,7 +420,7 @@ sub createIaasCluster {
                     fileimagemanager => {},
                 };
             if (not defined $args{cluster_conf}{masterimage_id}) {
-                $masterimage_id = Kanopya::Tools::Register::registerMasterImage()->id;
+                $masterimage_id = Kanopya::Test::Register::registerMasterImage()->id;
             }
             else {
                 $masterimage_id = $args{cluster_conf}{masterimage_id};
@@ -441,7 +441,7 @@ sub createIaasCluster {
                     amqp           => {},
                 };
             if (not defined $args{cluster_conf}{masterimage_id}) {
-                $masterimage_id = Kanopya::Tools::Register::registerMasterImage(
+                $masterimage_id = Kanopya::Test::Register::registerMasterImage(
                                    'sles-11-simple-host.tar.bz2'
                 )->id;
             }
@@ -452,7 +452,7 @@ sub createIaasCluster {
         case 'vsphere' {
             $components = { vsphere => {}, };
             if (not defined $args{cluster_conf}{masterimage_id}) {
-                $masterimage_id = Kanopya::Tools::Register::registerMasterImage()->id;
+                $masterimage_id = Kanopya::Test::Register::registerMasterImage()->id;
             }
             else {
                 $masterimage_id = $args{cluster_conf}{masterimage_id};
@@ -477,11 +477,11 @@ sub createIaasCluster {
 
     my $iaas = $self->createCluster(%$cluster_conf);
 
-    my $system_datastore = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+    my $system_datastore = Kanopya::Test::Retrieve->retrieveContainerAccess(
                                name => 'system_datastore',
                                type => 'nfs'
                            );
-    my $test_image_repository = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+    my $test_image_repository = Kanopya::Test::Retrieve->retrieveContainerAccess(
                                     name => 'test_image_repository',
                                     type => 'nfs'
                                 );

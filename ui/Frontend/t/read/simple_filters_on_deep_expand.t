@@ -10,7 +10,7 @@ use Frontend;
 use REST::api;
 use APITestLib;
 use Test::Exception;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 use Data::Dumper;
 $DB::deep = 500;

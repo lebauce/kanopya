@@ -37,7 +37,7 @@ use Entity::Metric::Combination::NodemetricCombination;
 use VerifiedNoderule;
 use Entity::Node;
 
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 use String::Random;
 my $random = String::Random->new;

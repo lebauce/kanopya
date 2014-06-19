@@ -57,11 +57,11 @@ sub test3d {
         }
     };
     # Create Cluster and add network interfaces to it
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
         cluster_conf => $host_manager_conf,
     );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     for my $interface ($cluster->interfaces) {
         $interface->delete();
@@ -81,7 +81,7 @@ sub test3d {
     ######################
 
     # Create Host 1
-    my $host1 = Kanopya::Tools::Register->registerHost(
+    my $host1 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 1,
             core          => 1,
@@ -96,7 +96,7 @@ sub test3d {
     );
     # Create Host 2
     my $master_iface_name2 = 'eth0';
-    my $host2 = Kanopya::Tools::Register->registerHost(
+    my $host2 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 2,
             core          => 1,
@@ -121,7 +121,7 @@ sub test3d {
     );
     # Create Host 3
     my $master_iface_name3 = 'eth0';
-    my $host3 = Kanopya::Tools::Register->registerHost(
+    my $host3 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 3,
             core          => 1,
@@ -141,7 +141,7 @@ sub test3d {
     );
     # Create Host 4
     my $master_iface_name4 = 'eth0';
-    my $host4 = Kanopya::Tools::Register->registerHost(
+    my $host4 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 4,
             core          => 1,
@@ -171,7 +171,7 @@ sub test3d {
     );
     # Create Host 5
     my $master_iface_name5 = 'eth0';
-    my $host5 = Kanopya::Tools::Register->registerHost(
+    my $host5 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 5,
             core          => 1,
@@ -206,7 +206,7 @@ sub test3d {
     );
     # Create Host 6
     my $master_iface_name6 = 'eth0';
-    my $host6 = Kanopya::Tools::Register->registerHost(
+    my $host6 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 6,
             core          => 1,

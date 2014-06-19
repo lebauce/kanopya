@@ -38,10 +38,10 @@ use Entity::Netconf;
 use Entity::Poolip;
 use Entity::Operation;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 my $testing = 0;
 
@@ -68,13 +68,13 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
+        $masterimage = Kanopya::Test::Register::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
     } 'Register master image';
 
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
             cluster_conf => {
                 cluster_name         => 'HACluster',
                 cluster_basehostname => 'hanode',
@@ -119,7 +119,7 @@ sub main {
     # start first keepalived node
 
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
     
     my $master = get_node_by_number(cluster => $cluster, number => 1);
@@ -145,7 +145,7 @@ sub main {
     
     diag("start a keepalived backup node");
     $cluster->addNode();
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
     
     my $backup = get_node_by_number(cluster => $cluster, number => 2);
     ok($backup, "retrieve node 2");
@@ -202,7 +202,7 @@ sub main {
     
     diag("start a third node");
     $cluster->addNode();
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
     
     my $othernode = get_node_by_number(cluster => $cluster, number => 3);
     ok($othernode, "retrieve node 3");

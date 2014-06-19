@@ -29,10 +29,10 @@ use BaseDB;
 use Entity::ServiceProvider::Cluster;
 use Entity::Masterimage;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -45,12 +45,12 @@ sub main {
     }
 
     diag('Register master image');
-    my $masterimage = Kanopya::Tools::Register::registerMasterImage();
+    my $masterimage = Kanopya::Test::Register::registerMasterImage();
     
     diag('Create and configure NAS cluster');
     my $nas;
     lives_ok {
-        $nas = Kanopya::Tools::Create->createCluster(
+        $nas = Kanopya::Test::Create->createCluster(
             cluster_conf => {
                 masterimage_id       => $masterimage->id,
                 cluster_name         => 'NAS',
@@ -77,7 +77,7 @@ sub main {
     # the cluster has been started
     diag('Start NAS');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $nas);
+        Kanopya::Test::Execution->startCluster(cluster => $nas);
     } 'Start NAS';
 
     diag('Create and configure cluster with the NAS as its disk manager');
@@ -88,7 +88,7 @@ sub main {
     my @iscsi_portals = map { $_->id } $iscsitarget->iscsi_portals;
 
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
             cluster_conf => {
                 masterimage_id       => $masterimage->id,
                 cluster_name         => 'UseNAS',
@@ -116,7 +116,7 @@ sub main {
 
     diag('Start cluster');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
 
     diag('Stopping cluster');
@@ -125,8 +125,8 @@ sub main {
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+        Kanopya::Test::Execution->executeOne(entity => $cluster->stop());
+        Kanopya::Test::Execution->executeAll(timeout => 3600);
     } 'Stopping cluster';
 
     diag('Stopping NAS');
@@ -135,8 +135,8 @@ sub main {
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
-        Kanopya::Tools::Execution->executeOne(entity => $nas->stop());
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+        Kanopya::Test::Execution->executeOne(entity => $nas->stop());
+        Kanopya::Test::Execution->executeAll(timeout => 3600);
     } 'Stopping NAS';
 
     if ($testing == 1) {

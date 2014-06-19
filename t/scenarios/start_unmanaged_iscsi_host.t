@@ -37,10 +37,10 @@ use IscsiPortal;
 use ClassType::ComponentType;
 use Entity::Component::DummyHostManager;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::TestUtils 'expectedException';
 
 use String::Random;
 
@@ -83,10 +83,10 @@ sub main {
 sub start_iscsi_host {
     lives_ok {
         diag('retrieve Cluster via name');
-        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => $cluster_name});
+        my $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => {cluster_name => $cluster_name});
 
         diag('Cluster start operation');
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
+        Kanopya::Test::Execution->executeOne(entity => $cluster->start());
 
         my ($state, $timestemp) = $cluster->reload->getState;
         if ($state eq 'up') {
@@ -103,12 +103,12 @@ sub stop_deactivate_and_remove_iscsi_host {
 
     lives_ok {
         diag('retrieve Cluster via name');
-        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => $cluster_name});
+        my $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => {cluster_name => $cluster_name});
         my $cluster_name = $cluster->cluster_name;
         my $cluster_id = $cluster->id;
 
         diag('Cluster stop operation');
-        Kanopya::Tools::Execution->executeOne(entity => $args{force} ? $cluster->forceStop : $cluster->stop);
+        Kanopya::Test::Execution->executeOne(entity => $args{force} ? $cluster->forceStop : $cluster->stop);
 
         my ($state, $timestemp) = $cluster->reload->getState;
         if ($state eq 'down') {
@@ -119,7 +119,7 @@ sub stop_deactivate_and_remove_iscsi_host {
         }
 
         diag('Cluster deactivate operation');
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate);
+        Kanopya::Test::Execution->executeOne(entity => $cluster->deactivate);
 
         my $active = $cluster->reload->active;
         if ($active == 0) {
@@ -130,7 +130,7 @@ sub stop_deactivate_and_remove_iscsi_host {
         }
 
         diag('Cluster remove operation');
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->remove);
+        Kanopya::Test::Execution->executeOne(entity => $cluster->remove);
 
         expectedException {
             $cluster = Entity::ServiceProvider::Cluster->get(id => $cluster->id);
@@ -141,7 +141,7 @@ sub stop_deactivate_and_remove_iscsi_host {
 
 sub _create_and_configure_cluster {
     diag('Retrieve the Kanopya cluster');
-    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $kanopya_cluster = Kanopya::Test::Retrieve->retrieveCluster();
 
     diag('Get physical hoster');
     my $dummy_host_manager = Entity::Component::DummyHostManager->find;
@@ -249,5 +249,5 @@ sub _create_and_configure_cluster {
     }
     my $cluster_create = Entity::ServiceProvider::Cluster->create(%$cluster_def);
 
-    Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
+    Kanopya::Test::Execution->executeOne(entity => $cluster_create);
 }

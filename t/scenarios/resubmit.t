@@ -46,8 +46,8 @@ use Entity::WorkflowDef;
 use Kanopya::Config;
 use Entity::Component::Kanopyacollector1;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::Execution;
+use Kanopya::Test::TestUtils 'expectedException';
 
 use Data::Dumper;
 
@@ -294,7 +294,7 @@ sub resubmit_hv_on_state {
 
         die '### operation ResubmitHypervisor not enqueued' if ( (shift @operations)->type ne 'ResubmitHypervisor');
 
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         @operations = Entity::Operation->search(hash => {}, order_by => 'execution_rank asc');
         shift @operations; # Remove old ResubmitHypervisor operation
@@ -312,7 +312,7 @@ sub resubmit_hv_on_state {
         die '### operation ScaleCpuHost not enqueued' if ( (shift @operations)->type ne 'ScaleCpuHost');
         die '### operation ScaleMemoryHost not enqueued' if ( (shift @operations)->type ne 'ScaleMemoryHost');
 
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         $rulesengine->oneRun();
         sleep(10);
@@ -475,7 +475,7 @@ sub resubmit_vm_on_state {
         die 'operation ScaleCpuHost not enqueued' if ( (shift @operations)->type ne 'ScaleCpuHost');
         die 'operation ScaleMemoryHost not enqueued' if ( (shift @operations)->type ne 'ScaleMemoryHost');
 
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_ram(vm =>$vm, ram => $old_ram);
         _check_vm_cpu(vm =>$vm, cpu => $old_cpu);
@@ -542,7 +542,7 @@ sub resubmit_hypervisor {
 
         $hv2->resubmitVms;
         diag('EResubmitHypervisor execution');
-        Kanopya::Tools::Execution->oneRun;
+        Kanopya::Test::Execution->oneRun;
 
         my @ops = Entity::Operation->search(hash => {}, order_by => 'execution_rank ASC');
 
@@ -556,7 +556,7 @@ sub resubmit_hypervisor {
         die 'No operation ScaleCpuHost' if ($ops[$id++]->type ne 'ScaleCpuHost');
         die 'No operation ScaleMemoryHost' if ($ops[$id++]->type ne 'ScaleMemoryHost');
 
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_no_operation_and_no_lock();
 
@@ -579,7 +579,7 @@ sub maintenance_hypervisor {
 
         $hv2->maintenance;
         diag('EFlushHypervisor execution');
-        Kanopya::Tools::Execution->oneRun;
+        Kanopya::Test::Execution->oneRun;
 
         my @ops = Entity::Operation->search(hash => {}, order_by => 'execution_rank ASC');
 
@@ -588,7 +588,7 @@ sub maintenance_hypervisor {
         die 'Operation 3 is not MigrateHost' if ($ops[2]->type ne 'MigrateHost');
         die 'Operation 4 is not DeactivateHost' if ($ops[3]->type ne 'DeactivateHost');
 
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         @hv1_vms = $hv1->virtual_machines;
         @hv2_vms = $hv2->virtual_machines;
@@ -620,7 +620,7 @@ sub _split_2_2 {
             my $vm = (pop @vms);
             $vm->migrate(hypervisor => $hv2);
 
-            Kanopya::Tools::Execution->executeAll();
+            Kanopya::Test::Execution->executeAll();
             if ($vm->reload->hypervisor->id != $hv2->id) {die 'Vm has not migrated';}
         }
     }
@@ -630,7 +630,7 @@ sub _split_2_2 {
             my $vm = (pop @vms);
             $vm->migrate(hypervisor => $hv1);
 
-            Kanopya::Tools::Execution->executeAll();
+            Kanopya::Test::Execution->executeAll();
             if ($vm->reload->hypervisor->id != $hv1->id) {die 'Vm has not migrated'};
         }
     }

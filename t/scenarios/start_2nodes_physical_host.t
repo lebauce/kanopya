@@ -36,10 +36,10 @@ use Entity::Poolip;
 use Entity::Operation;
 use Entity::Systemimage;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -51,13 +51,13 @@ sub main {
     if ($testing == 1) {
         Kanopya::Database::beginTransaction;
 
-        Kanopya::Tools::Register->registerHost(board => {
+        Kanopya::Test::Register->registerHost(board => {
             ram  => 1073741824,
             core => 4,
             serial_number => 0,
             ifaces => [ { name => 'eth0', pxe => 1, mac => '00:00:00:00:00:00' } ]
         });
-        Kanopya::Tools::Register->registerHost(board => {
+        Kanopya::Test::Register->registerHost(board => {
             ram  => 1073741824,
             core => 4,
             serial_number => 1,
@@ -68,13 +68,13 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
             cluster_conf => {
                 masterimage_id   => $masterimage->id,
                 cluster_min_node => 2
@@ -84,7 +84,7 @@ sub main {
 
     diag('Start physical host');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
 
     diag('Stopping cluster');
@@ -93,15 +93,15 @@ sub main {
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+        Kanopya::Test::Execution->executeOne(entity => $cluster->stop());
+        Kanopya::Test::Execution->executeAll(timeout => 3600);
     } 'Stopping cluster';
 
     diag('Remove cluster');
     lives_ok {
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate());
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->remove());
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+        Kanopya::Test::Execution->executeOne(entity => $cluster->deactivate());
+        Kanopya::Test::Execution->executeOne(entity => $cluster->remove());
+        Kanopya::Test::Execution->executeAll(timeout => 3600);
     } 'Removing cluster';
 
     my @systemimages = Entity::Systemimage->search();

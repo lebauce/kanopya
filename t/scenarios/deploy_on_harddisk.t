@@ -35,10 +35,10 @@ use Entity::Netconf;
 use Entity::Poolip;
 use Entity::Operation;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 main();
 
@@ -46,12 +46,12 @@ sub main {
     Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     diag('Register master image');
-    my $masterimage = Kanopya::Tools::Register::registerMasterImage();
+    my $masterimage = Kanopya::Test::Register::registerMasterImage();
 
     my $cluster;
     lives_ok {
         diag('Create and configure cluster');
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
                        cluster_conf => {
                            masterimage_id => $masterimage->id,
                        },
@@ -67,7 +67,7 @@ sub main {
 
     diag('Start physical host');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'cluster started and image deployed on harddisk';
 }
 

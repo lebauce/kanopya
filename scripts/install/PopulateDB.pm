@@ -10,7 +10,8 @@ use lib qw(/opt/kanopya/lib/common/
            /opt/kanopya/lib/monitor/
            /opt/kanopya/lib/orchestrator/
            /opt/kanopya/lib/external
-           /opt/kanopya/lib/mock);
+           /opt/kanopya/lib/mock
+           /opt/kanopya/lib/tools);
 
 use General;
 use Kanopya::Database;

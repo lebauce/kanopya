@@ -25,7 +25,7 @@ use Entity::Workflow;
 use Entity::Operationtype;
 use Entity::Component::KanopyaExecutor;
 
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 

@@ -29,7 +29,7 @@ Kanopya test utility methods
 
 =cut
 
-package Kanopya::Tools::TestUtils;
+package Kanopya::Test::TestUtils;
 
 use Exporter 'import';
 @EXPORT_OK = qw(expectedException);
@@ -47,7 +47,7 @@ Code block represents a post condition of a test.
 
 
 Sample usage:
- use Kanopya::Tools::TestUtils 'expectedException';
+ use Kanopya::Test::TestUtils 'expectedException';
  expectedException { Entity->get(id => -1) } 'Kanopya::Exception::Internal::NotFound', 'Entity -1 does not exist';
 
 @param &code code block

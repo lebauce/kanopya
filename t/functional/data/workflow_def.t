@@ -22,7 +22,7 @@ use General;
 use Entity;
 use Entity::WorkflowDef;
 use ParamPreset;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use Entity::Operationtype;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');

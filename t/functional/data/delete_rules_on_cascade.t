@@ -27,7 +27,7 @@ use WorkflowNoderule;
 use Entity::Metric::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Metric::Combination::AggregateCombination;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use TryCatch;
 use Daemon::Aggregator;
 

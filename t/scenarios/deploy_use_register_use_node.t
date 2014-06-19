@@ -25,10 +25,10 @@ Log::Log4perl->easy_init({
 
 use Kanopya::Database;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 use Entity::Systemimage;
 use Entity::Node;
@@ -82,18 +82,18 @@ sub main {
 
     my $node;
     lives_ok {
-        $node = Kanopya::Tools::Register->registerNode(%{ $register_params });
+        $node = Kanopya::Test::Register->registerNode(%{ $register_params });
     } 'Create the node and register components';
 
     diag('Deploy the node');
     lives_ok {
-        Kanopya::Tools::Execution->deployNode(node => $node);
+        Kanopya::Test::Execution->deployNode(node => $node);
 
     } 'Deploy the node';
 
     diag('Check for node up');
     lives_ok {
-        Kanopya::Tools::Execution->checkNodeUp(node => $node);
+        Kanopya::Test::Execution->checkNodeUp(node => $node);
 
     } 'Check for node up';
 
@@ -115,14 +115,14 @@ sub main {
     Kanopya::Database::restoreDatabase(filepath => $dumpfile);
 
     lives_ok {
-        $node = Kanopya::Tools::Register->registerNode(existing => 1,
+        $node = Kanopya::Test::Register->registerNode(existing => 1,
                                                        ip_addr  => $ip_addr,
                                                        %{ $register_params });
     } 'Register the existing node or the existing running host';
 
     diag('Check for node up');
     lives_ok {
-        Kanopya::Tools::Execution->checkNodeUp(node => $node);
+        Kanopya::Test::Execution->checkNodeUp(node => $node);
 
     } 'Check for node up';
 }

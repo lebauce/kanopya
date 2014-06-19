@@ -13,7 +13,7 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::OpenStack;
+use Kanopya::Test::OpenStack;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -35,18 +35,18 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
-    Kanopya::Tools::OpenStack->start1OpenStackOn3Clusters();
+    Kanopya::Test::OpenStack->start1OpenStackOn3Clusters();
 
     my $cloud = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "CloudController" });
     my $compute = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "Compute" });
     my $cinder = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "CinderVmCluster" });
     
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cinder);
+        Kanopya::Test::Execution->startCluster(cluster => $cinder);
     } 'Starting CinderVM Cluster';
 
     lives_ok {
-        Kanopya::Tools::Execution->addNode(cluster => $compute);
+        Kanopya::Test::Execution->addNode(cluster => $compute);
     } 'Starting a 2nd Compute node';
     
     $controller = $cloud->getComponent(name => "NovaController");

@@ -12,8 +12,8 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'start_vsphere_host.t.log', layout=>'%F %L %p %m%n'});
 
 use Kanopya::Database;
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Create;
 
 # 1) Create a Iaas Cluster of vSphere type
 # 2) Register a vSphere infrastructure
@@ -38,13 +38,13 @@ if ($testing == 1) {
 diag('Register master image');
 my $masterimage;
 lives_ok {
-    $masterimage = Kanopya::Tools::Register::registerMasterImage();
+    $masterimage = Kanopya::Test::Register::registerMasterImage();
 } 'Register master image';
 
 diag('Create a Iaas cluster holding vSphere component');
 my $vsphere_cluster;
 lives_ok{
-    $vsphere_cluster = Kanopya::Tools::Create->createIaasCluster(
+    $vsphere_cluster = Kanopya::Test::Create->createIaasCluster(
                               iaas_type    => 'vsphere',
                               vsphere_conf => $vsphere_conf,
                               cluster_conf => {
@@ -95,7 +95,7 @@ lives_ok {
 diag('Create diskless vms cluster with vSphere cluster as host manager');
 my $diskless_vm_cluster;
 lives_ok{
-    $diskless_vm_cluster = Kanopya::Tools::Create->createVmCluster(
+    $diskless_vm_cluster = Kanopya::Test::Create->createVmCluster(
                                iaas           => $vsphere_cluster,
                                container_type => 'iscsi',
                                cluster_conf => {
@@ -109,7 +109,7 @@ lives_ok{
 diag('Create NFS vms cluster with vSphere cluster as host manager');
 my $nfs_vm_cluster;
 lives_ok{
-    $nfs_vm_cluster = Kanopya::Tools::Create->createVmCluster(
+    $nfs_vm_cluster = Kanopya::Test::Create->createVmCluster(
                           iaas => $vsphere_cluster,
                           container_type => 'nfs',
                           cluster_conf => {
@@ -128,12 +128,12 @@ lives_ok{
 
 diag('Start Diskless VM cluster');
 lives_ok{
-    Kanopya::Tools::Execution->startCluster(cluster => $diskless_vm_cluster);
+    Kanopya::Test::Execution->startCluster(cluster => $diskless_vm_cluster);
 } 'Start Diskless VM cluster';
 
 diag('Start NFS VM cluster');
 lives_ok{
-    Kanopya::Tools::Execution->startCluster(cluster => $nfs_vm_cluster);
+    Kanopya::Test::Execution->startCluster(cluster => $nfs_vm_cluster);
 } 'Start NFS VM cluster';
 
 if ($testing == 1) {

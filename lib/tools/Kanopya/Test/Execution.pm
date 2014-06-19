@@ -29,7 +29,7 @@ Kanopya module to handle operation and workflow execution
 
 =cut
 
-package Kanopya::Tools::Execution;
+package Kanopya::Test::Execution;
 
 use strict;
 use warnings;
@@ -63,7 +63,7 @@ BEGIN {
 
 my $executor = Daemon::MessageQueuing::Executor->new();
 
-Kanopya::Tools::Execution->purgeQueues();
+Kanopya::Test::Execution->purgeQueues();
 
 
 =pod
@@ -271,11 +271,11 @@ sub startCluster {
 
     my $cluster = $args{cluster};
 
-    Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
+    Kanopya::Test::Execution->executeOne(entity => $cluster->start());
     $cluster = $cluster->reload();
 
     if (scalar ($cluster->nodes) < $cluster->cluster_min_node) {
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+        Kanopya::Test::Execution->executeAll(timeout => 3600);
         $cluster = $cluster->reload();
     }
 
@@ -308,7 +308,7 @@ sub addNode {
 
     my $old_node_number = scalar ($cluster->nodes);
 
-    Kanopya::Tools::Execution->executeOne(entity => $cluster->addNode(%$components_params));
+    Kanopya::Test::Execution->executeOne(entity => $cluster->addNode(%$components_params));
 
     $cluster = $cluster->reload();
     if (scalar ($cluster->nodes) != $old_node_number+1) {
@@ -338,7 +338,7 @@ sub deployNode {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create the system image for the node to deploy');
@@ -363,7 +363,7 @@ sub deployNode {
 
     # Copy the masterimage container contents to the new container
     $master_container->copy(dest     => $container,
-                            econtext => Kanopya::Tools::Execution->_executor->_host->getEContext);
+                            econtext => Kanopya::Test::Execution->_executor->_host->getEContext);
 
     # Remove the temporary container
     $master_container->remove();
@@ -385,7 +385,7 @@ sub deployNode {
                         boot_policy  => 'PXE Boot via ISCSI',
                     );
 
-    Kanopya::Tools::Execution->executeOne(entity => $operation);
+    Kanopya::Test::Execution->executeOne(entity => $operation);
 }
 
 sub checkNodeUp {

@@ -6,7 +6,7 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use Data::Compare;
 
 use File::Basename;

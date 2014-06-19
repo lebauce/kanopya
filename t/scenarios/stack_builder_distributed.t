@@ -13,8 +13,8 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Network;
@@ -38,7 +38,7 @@ sub main {
     }
 
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     my $builder;
@@ -131,7 +131,7 @@ sub main {
     my $build_stack;
     lives_ok {
        $build_stack = $builder->buildStack(stack => $stack);
-       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+       Kanopya::Test::Execution->executeOne(entity => $build_stack);
     } 'Run workflow BuildStack';
 
     if ($testing == 1) {

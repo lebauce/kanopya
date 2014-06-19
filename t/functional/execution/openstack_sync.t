@@ -21,14 +21,14 @@ use BaseDB;
 use General;
 use Entity;
 use ParamPreset;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use Entity::Node;
 use Entity::Component::Virtualization::NovaController;
 use Entity::Component::KanopyaExecutor;
 use Daemon::MessageQueuing::OpenstackSync;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Create;
+use Kanopya::Test::Execution;
 
 use String::Random;
 
@@ -60,11 +60,11 @@ sub register_infrastructure {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     # Add a fake hypervisor
-    my $noda_host = Kanopya::Tools::Register->registerHost(
+    my $noda_host = Kanopya::Test::Register->registerHost(
                         board => {
                             serial_number => 1,
                             core          => 10,
@@ -73,7 +73,7 @@ sub register_infrastructure {
                         },
                     );
 
-    my $nova_cluster = Kanopya::Tools::Create->createCluster(
+    my $nova_cluster = Kanopya::Test::Create->createCluster(
                            cluster_conf => {
                                cluster_name => 'nova_cluster' . $postfix,
                                cluster_basehostname => 'nova',
@@ -91,7 +91,7 @@ sub register_infrastructure {
                                 number   => 1);
 
     # Add a fake hypervisor
-    my $hv_host_1 = Kanopya::Tools::Register->registerHost(
+    my $hv_host_1 = Kanopya::Test::Register->registerHost(
                          board => {
                              serial_number => 1,
                              core          => 10,
@@ -100,7 +100,7 @@ sub register_infrastructure {
                          },
                      );
 
-    my $hv_host_2 = Kanopya::Tools::Register->registerHost(
+    my $hv_host_2 = Kanopya::Test::Register->registerHost(
                          board => {
                              serial_number => 1,
                              core          => 10,
@@ -113,7 +113,7 @@ sub register_infrastructure {
     $hv_host_1 = $nova_controller->addHypervisor(host => $hv_host_1);
     $hv_host_2 = $nova_controller->addHypervisor(host => $hv_host_2);
 
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
                       cluster_conf => {
                           cluster_name         => 'compute_clustera' . $postfix,
                           cluster_basehostname => 'computea',

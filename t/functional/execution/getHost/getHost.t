@@ -49,8 +49,8 @@ use Kanopya::Exceptions;
 
 use Entity::Netconf;
 use Entity::Component::Physicalhoster0;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Create;
+use Kanopya::Test::Register;
 
 use Kanopya::Database;
 

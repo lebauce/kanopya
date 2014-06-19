@@ -24,7 +24,7 @@ use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::KanopyaExecutor;
 use Entity::Component::Sco;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use Data::Compare;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');

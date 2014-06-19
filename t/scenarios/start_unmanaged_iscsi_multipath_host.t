@@ -39,9 +39,9 @@ use IscsiPortal;
 use ClassType::ComponentType;
 use Entity::Workflow;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
 
 my $testing = 0;
 
@@ -68,10 +68,10 @@ sub main {
 sub start_unmanaged_multipath_host {
     lives_ok {
         diag('retrieve Cluster via name');
-        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'UnmanagedMulStorageCluster'});
+        my $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => {cluster_name => 'UnmanagedMulStorageCluster'});
 
         diag('Cluster start operation');
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
+        Kanopya::Test::Execution->executeOne(entity => $cluster->start());
 
         my ($state, $timestemp) = $cluster->getState;
         if ($state eq 'up') {
@@ -149,7 +149,7 @@ sub _create_and_configure_cluster {
     my $hostmodel = Entity::Hostmodel->find(hash => {});
 
     diag('Retrieve the Kanopya cluster');
-    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $kanopya_cluster = Kanopya::Test::Retrieve->retrieveCluster();
 
     diag('Get physical hoster');
     my $physical_hoster = $kanopya_cluster->getHostManager();
@@ -295,5 +295,5 @@ sub _create_and_configure_cluster {
             },
         },
     );
-    Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
+    Kanopya::Test::Execution->executeOne(entity => $cluster_create);
 }

@@ -14,7 +14,7 @@ use Vsphere5Datacenter;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 
-use Kanopya::Tools::Create;
+use Kanopya::Test::Create;
 
 # 1) Retrieve (separately for each type) vSphere items
 # 2) Register items in Kanopya
@@ -37,7 +37,7 @@ if ($testing == 1) {
 
 my $vsphere_cluster;
 lives_ok {
-    $vsphere_cluster = Kanopya::Tools::Create->createCluster(
+    $vsphere_cluster = Kanopya::Test::Create->createCluster(
                     cluster_conf => {
                         cluster_name         => 'VSphere',
                         cluster_basehostname => 'vsphere'

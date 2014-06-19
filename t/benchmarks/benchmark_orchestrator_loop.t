@@ -12,11 +12,11 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({ level=>'DEBUG', file=>'/tmp/benchmark_orchestrator_loop.log', layout=>'%F %L %p %m%n' });
 my $log = get_logger("");
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::Profiler;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
+use Kanopya::Test::Profiler;
 
 lives_ok {
     use Kanopya::Database;
@@ -35,7 +35,7 @@ lives_ok {
 
 my $aggregator   = Daemon::Aggregator->new();
 my $rulesengine  = Daemon::RulesEngine->new();
-my $profiler     = Kanopya::Tools::Profiler->new(schema => Kanopya::Database::schema);
+my $profiler     = Kanopya::Test::Profiler->new(schema => Kanopya::Database::schema);
 
 Kanopya::Database::beginTransaction;
 
@@ -55,7 +55,7 @@ my $indic1 = Entity::CollectorIndicator->find (hash => {});
 sub registerCluster {
     my ($self, %args) = @_;
 
-    my $cluster = Kanopya::Tools::Create->createCluster(cluster_conf => {
+    my $cluster = Kanopya::Test::Create->createCluster(cluster_conf => {
                       cluster_name         => "Cluster" . $serviceload,
                       cluster_basehostname => "default" . $serviceload
                   });
@@ -75,7 +75,7 @@ sub addNode {
     my (%args) = @_;
 
     # Register a host for the new service
-    my $host = Kanopya::Tools::Register->registerHost(board => {
+    my $host = Kanopya::Test::Register->registerHost(board => {
                    ram  => 1073741824,
                    core => 4,
                });

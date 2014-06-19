@@ -27,7 +27,7 @@ Kanopya time series generation, manipulation (print, graph, rrd storage) and lin
 
 =cut
 
-package Kanopya::Tools::TimeSerie;
+package Kanopya::Test::TimeSerie;
 
 use strict;
 use warnings;

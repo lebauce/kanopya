@@ -34,7 +34,8 @@ PERL5LIB=\
 /opt/kanopya/lib/external:\
 /opt/kanopya/lib/external/NetApp:\
 /opt/kanopya/lib/orchestrator:\
-/opt/kanopya/lib/mock
+/opt/kanopya/lib/mock:\
+/opt/kanopya/lib/tools
 
 export PERL5LIB
 KANOPYA_RULESENGINE_RUN=yes

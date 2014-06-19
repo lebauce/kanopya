@@ -24,13 +24,13 @@ use Log::Log4perl qw(:easy get_logger);
 
 use Kanopya::Database; Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-use Kanopya::Tools::Create;
+use Kanopya::Test::Create;
 use Entity::Component::MockMonitor;
 use Entity::Component::Physicalhoster0;
 use Entity::Host;
 use Entity::Node;
 use Entity::Metric::Clustermetric;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
 use AnomalyDetector;
 use TryCatch;
 use Entity::Metric::Anomaly;
@@ -78,12 +78,12 @@ sub setup {
     my $cluster_name = 'AnomalyDetectionTest';
     my $mock_cluster_name = 'AnomalyDetectionTestMock';
 
-    $cluster = Kanopya::Tools::Create->createCluster(
+    $cluster = Kanopya::Test::Create->createCluster(
                        cluster_conf => {cluster_name => $cluster_name},
                        no_execution => 1,
                    );
 
-    $mock_cluster = Kanopya::Tools::Create->createCluster(
+    $mock_cluster = Kanopya::Test::Create->createCluster(
                         cluster_conf => {cluster_name => $mock_cluster_name},
                         no_execution => 1,
                     );
@@ -287,7 +287,7 @@ sub anomaly_detector {
             die 'computeAnomaly should not be defined';
         }
 
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
 
         my %fonction_conf = (func => 'X', # Frequency 300*288 = daily
                              rows => 50,

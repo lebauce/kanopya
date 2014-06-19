@@ -24,7 +24,7 @@ Log::Log4perl -> easy_init({
 });
 
 use Utils::TimeSerieAnalysis;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
 use Entity::Metric::Combination::AggregateCombination;
 use DataModelSelector;
 use Entity::CollectorIndicator;
@@ -66,7 +66,7 @@ sub get_values_fromCSV {
     lives_ok {
         #Historical data
         my $file = $path.'test_values.csv';
-        my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV('file' => $file, 'sep' => ';');
+        my $data_values = Kanopya::Test::TimeSerie->getValuesfromCSV('file' => $file, 'sep' => ';');
         #Expected values
         my @expected_values = (315.42, 316.31, 316.50 , 317.56, 318.13);
 
@@ -91,7 +91,7 @@ sub get_timeserie_data_fromCSV {
     lives_ok {
         #Historical data
         my $file = $path.'test_data.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $data = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
         #Expected values
         my %expected_values = ( 5901 => 315.42,
                                 5902 => 316.31,
@@ -127,7 +127,7 @@ sub split_data {
 
         #Historical data
         my $file = $path.'test_data.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $data = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
         my %temp = %{Utils::TimeSerieAnalysis->splitData('data' => $data)};
         my ($times, $data_values) = ($temp{timestamps_ref}, $temp{values_ref});
@@ -158,11 +158,11 @@ sub compute_ACF {
 
         #data values
         my $file        = $path.'data_values_co2.csv';
-        my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
+        my $data_values = Kanopya::Test::TimeSerie->getValuesfromCSV ('file' => $file);
 
         #Expected values of the acf
         $file = $path.'acf_co2.csv';
-        my $expected_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
+        my $expected_values = Kanopya::Test::TimeSerie->getValuesfromCSV ('file' => $file);
 
         my $lag = int (($#$data_values+1)/2 + 1);
 
@@ -192,7 +192,7 @@ sub confidence_autocorrelation {
 
         #data values
         my $file        = $path.'data_values_co2.csv';
-        my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
+        my $data_values = Kanopya::Test::TimeSerie->getValuesfromCSV ('file' => $file);
 
         my $IC = Utils::TimeSerieAnalysis->confidenceAutocorrelation('data_values' => $data_values);
 
@@ -211,7 +211,7 @@ sub detect_peaks {
 
         #The values for which the peaks are detected
         my $file = $path.'acf_co2.csv';
-        my $tab  = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
+        my $tab  = Kanopya::Test::TimeSerie->getValuesfromCSV ('file' => $file);
 
         #The confidence interval
         my $IC = 0.09245003;
@@ -243,7 +243,7 @@ sub detect_periodicity {
 
         #The values of the autocorrelation function
         my $file = $path.'acf_co2.csv';
-        my $acf  = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
+        my $acf  = Kanopya::Test::TimeSerie->getValuesfromCSV ('file' => $file);
         #The positions (array index) of the peaks of the @acf array
         my @peaks = (10, 22, 34, 46, 58, 69, 81, 93, 105, 129, 141);
 
@@ -268,7 +268,7 @@ sub find_seasonality_DSP {
 
         #data values
         my $file        = $path.'data_values_co2.csv';
-        my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
+        my $data_values = Kanopya::Test::TimeSerie->getValuesfromCSV ('file' => $file);
         my $seasonal    = Utils::TimeSerieAnalysis->findSeasonalityDSP('data_values' => $data_values);
 
         if ( $seasonal != 12 ) {
@@ -285,7 +285,7 @@ sub find_seasonality_ACF {
 
         #data values
         my $file = $path.'data_values_co2.csv';
-        my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
+        my $data_values = Kanopya::Test::TimeSerie->getValuesfromCSV ('file' => $file);
 
         my $seasons = Utils::TimeSerieAnalysis->findSeasonalityACF('data_values' => $data_values);
 
@@ -722,7 +722,7 @@ sub find_seasonality {
 
 sub find_seasonality_data{
     my %args = @_;
-    my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $args{'file'},
+    my $data    = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV('file' => $args{'file'},
                                                                      'sep'  => $args{'sep'}
                                                                     );
     my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
@@ -772,7 +772,7 @@ sub forecast {
         my $prediction = $args->{'values'};
 
         my $file = $path_predict.'predict_season=10.csv';
-        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $expected_values = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
         if (($#$timestamps) == (scalar keys(%{$expected_values}))) {
             foreach my $i (0..$#$timestamps) {
@@ -822,7 +822,7 @@ sub forecast {
         }
 
         my $file = $path_predict.'predict_season=53.csv';
-        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $expected_values = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
         if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
             foreach my $i (0..$#$timestamps) {
@@ -870,7 +870,7 @@ sub forecast {
         }
 
         my $file = $path_predict.'predict_season_additive.csv';
-        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV(
+        my $expected_values = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV(
                                   'file' => $file,
                                   'sep' => ';'
                               );
@@ -918,7 +918,7 @@ sub forecast {
         my $prediction = $args->{'values'};
 
         my $file = $path_predict.'predict_noise.csv';
-        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $expected_values = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
         if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
             foreach my $i (0..$#$timestamps) {
@@ -967,7 +967,7 @@ sub forecast {
         }
 
         my $file = $path_predict.'predict_downward_trend.csv';
-        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $expected_values = Kanopya::Test::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
         if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
             foreach my $i (0..$#$timestamps) {
@@ -1032,7 +1032,7 @@ sub createCombinationMetric {
 
 sub linkTimeSerietoAggregateCombination {
     my %args = @_;
-    my $time_serie = Kanopya::Tools::TimeSerie->new();
+    my $time_serie = Kanopya::Test::TimeSerie->new();
     #get on parameter args func rows and step
 
     $time_serie->generate(func      => $args{'func'},

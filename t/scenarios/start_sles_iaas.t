@@ -28,10 +28,10 @@ use NetconfPoolip;
 use Entity::Operation;
 use Entity::ServiceTemplate;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 my $testing = 0;
 
@@ -43,17 +43,17 @@ eval {
     }
 
     diag('Register master image');
-    my $sles_on = Kanopya::Tools::Register::registerMasterImage();
+    my $sles_on = Kanopya::Test::Register::registerMasterImage();
 
     diag('Setting the default gateway');
-    my $kanopya = Kanopya::Tools::Retrieve::retrieveCluster();
+    my $kanopya = Kanopya::Test::Retrieve::retrieveCluster();
     my $network = Entity::Network->find(hash => { network_name => "admin" });
     $network->setAttr(name  => "network_gateway",
                       value => $kanopya->getMasterNode->adminIp);
     $network->save();
 
     diag ('create iaas cluster');
-    my $iaas = Kanopya::Tools::Create->createIaasCluster(
+    my $iaas = Kanopya::Test::Create->createIaasCluster(
                    iaas_type    => 'opennebula',
                    cluster_conf => {
                        cluster_name         => 'OpenNebula',
@@ -65,14 +65,14 @@ eval {
 
     diag('Start hypervisor');
     lives_ok {
-        # Kanopya::Tools::Execution->startCluster(cluster => $iaas);
+        # Kanopya::Test::Execution->startCluster(cluster => $iaas);
     } 'Start opennebula iaas cluster';
 
     diag('Register master image');
-    my $sles = Kanopya::Tools::Register::registerMasterImage("sles-11-simple-host.tar.bz2");
+    my $sles = Kanopya::Test::Register::registerMasterImage("sles-11-simple-host.tar.bz2");
 
     diag ('create vm cluster');
-    my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
+    my $vm_cluster = Kanopya::Test::Create->createVmCluster(
                          iaas => $iaas,
                          cluster_conf => {
                              cluster_name => 'VmCluster',
@@ -87,7 +87,7 @@ eval {
 
     diag('Start vm');
     lives_ok {
-        # Kanopya::Tools::Execution->startCluster(cluster => $vm_cluster);
+        # Kanopya::Test::Execution->startCluster(cluster => $vm_cluster);
     } 'Start vm cluster';
 
 

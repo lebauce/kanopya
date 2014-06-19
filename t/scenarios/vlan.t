@@ -24,11 +24,11 @@ use Kanopya::Database;
 use NetconfVlan;
 use Entity::Vlan;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
+use Kanopya::Test::TestUtils 'expectedException';
 
 my $testing = 0;
 
@@ -44,13 +44,13 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
             cluster_conf => {
                 masterimage_id       => $masterimage->id,
             },
@@ -58,7 +58,7 @@ sub main {
     } 'Create cluster';
 
     diag('add two vlans to admin netconf');
-    my $adminnetconf = Kanopya::Tools::Retrieve->retrieveNetconf(criteria => { netconf_name => 'Kanopya admin' });
+    my $adminnetconf = Kanopya::Test::Retrieve->retrieveNetconf(criteria => { netconf_name => 'Kanopya admin' });
     my $vlan1 = Entity::Vlan->new(vlan_name => 'prodvlan1', vlan_number => '20');
     my $vlan2 = Entity::Vlan->new(vlan_name => 'prodvlan2', vlan_number => '50');
     NetconfVlan->new(netconf_id => $adminnetconf->id, vlan_id => $vlan1->id);
@@ -66,7 +66,7 @@ sub main {
 
     diag('Start physical host');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
 
     if ($testing == 1) {

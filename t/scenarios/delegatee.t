@@ -27,10 +27,10 @@ use Entity::ServiceProvider;
 use Entity::User::Customer;
 use Entity::Metric::Combination::AggregateCombination;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 use String::Random;
 
@@ -55,7 +55,7 @@ sub main {
     my $admin = Entity::User->find(hash => { user_login => 'admin' });
 
     # Create a cluster for the customer
-    my $customercluster = Kanopya::Tools::Create->createCluster(owner_id => $customer->id);
+    my $customercluster = Kanopya::Test::Create->createCluster(owner_id => $customer->id);
 
     # Retrieve a cluster on which the customer do not have any permissions
     my $admincluster = Entity::ServiceProvider::Cluster->find(hash => { owner_id => $admin->id });

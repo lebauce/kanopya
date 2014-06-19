@@ -13,8 +13,8 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
 
 use Entity::User::Customer;
 use Entity::Component::Physicalhoster0;
@@ -187,7 +187,7 @@ sub main {
                             host_ram           => 1
                         }
                     );
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
+        Kanopya::Test::Execution->executeOne(entity => $add_host);
     } 'Run workflow AddHost';
 
     # Enqueue an operation that should timeout
@@ -204,7 +204,7 @@ sub main {
                         },
                         timeout => 1,
                     );
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
+        Kanopya::Test::Execution->executeOne(entity => $add_host);
     } 'Run workflow AddHost with timeout';
 
     # Enqueue an operation that should cancel
@@ -218,7 +218,7 @@ sub main {
                         }
                     );
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
+        Kanopya::Test::Execution->executeOne(entity => $add_host);
     } 'Kanopya::Exception::Internal', 'Run workflow AddHost with mandatory attr required';
 
     # Enqueue an operation that should fail
@@ -233,7 +233,7 @@ sub main {
                         }
                     );
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
+        Kanopya::Test::Execution->executeOne(entity => $add_host);
     } 'Kanopya::Exception::Internal', 'Run workflow AddHost with mandatory attr required';
 
     # Enqueue an operation that should interrupted
@@ -250,11 +250,11 @@ sub main {
                         }
                     );
 
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
     
         $add_host->workflow->interrupt();
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
+        Kanopya::Test::Execution->executeOne(entity => $add_host);
     } 'Kanopya::Exception::Internal', 'Run workflow AddHost with interrupted workflow';
 
     # Enqueue an operation that should statereported
@@ -275,7 +275,7 @@ sub main {
         $physicalhoster->unlock(consumer => $customer);
         $physicalhoster->lock(consumer => $customer);
 
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         $physicalhoster->unlock(consumer => $customer);
     } 'Run workflow AddHost with already locked context';
@@ -304,7 +304,7 @@ sub main {
                             host_ram           => 1
                         },
                     );
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         $subsciption->validation(0);
     } 'Run workflow AddHost';
@@ -313,7 +313,7 @@ sub main {
     lives_ok {
         $add_host->validate();
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
+        Kanopya::Test::Execution->executeOne(entity => $add_host);
 
     } 'Run workflow AddHost';
 
@@ -332,17 +332,17 @@ sub main {
                             host_ram           => 1
                         },
                     );
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         $prereport = 0;
         $postreport = 1;
 
         sleep 10;
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         $postreport = 0;
 
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
     } 'Run workflow AddHost';
 

@@ -28,7 +28,7 @@ use Entity::User;
 use Entity::WorkflowDef;
 use Entity::Node;
 use NotificationSubscription;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use String::Random;
 my $random = String::Random->new;
 

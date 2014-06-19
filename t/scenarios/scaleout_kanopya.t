@@ -17,10 +17,10 @@ use Kanopya::Database;
 use Entity::ServiceProvider::Cluster;
 use Entity::Container::LocalContainer;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 my $testing = 0;
 
@@ -34,7 +34,7 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
@@ -59,7 +59,7 @@ sub main {
             container_size => "1000000",
         );
 
-        Kanopya::Tools::Execution->executeOne(
+        Kanopya::Test::Execution->executeOne(
             entity => $nfs->createExport(
                           container => $folder,
                           client_name => "*",
@@ -80,7 +80,7 @@ sub main {
 
     diag('Adding new executor node');
     lives_ok {
-        my $node = Kanopya::Tools::Execution->addNode(
+        my $node = Kanopya::Test::Execution->addNode(
                        cluster => $kanopya,
                        component_types => [
                            $executor->component_type_id,

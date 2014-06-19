@@ -28,10 +28,10 @@ use Kanopya::Database;
 
 use Entity::ServiceProvider::Cluster;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 use Entity::Systemimage;
 
@@ -44,7 +44,7 @@ sub main {
     if ($testing == 1) {
         Kanopya::Database::beginTransaction;
 
-        Kanopya::Tools::Register->registerHost(board => {
+        Kanopya::Test::Register->registerHost(board => {
             ram  => 1073741824,
             core => 4,
             serial_number => 0,
@@ -55,13 +55,13 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
                        cluster_name => "default_cluster_name",
                        cluster_conf => {
                            cluster_min_node => 2,
@@ -85,7 +85,7 @@ sub main {
 
     diag('Start physical host that should fail');
     throws_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Kanopya::Exception::Internal', 'Start second node';
 
     lives_ok {

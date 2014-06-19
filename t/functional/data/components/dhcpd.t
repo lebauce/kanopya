@@ -23,7 +23,7 @@ use Kanopya::Database;
 # For components lib oaded at runtime
 use BaseDB;
 
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 
 use_ok ('Entity::Component::Dhcpd3');

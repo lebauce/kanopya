@@ -17,12 +17,12 @@ use Entity::ServiceProvider::Cluster;
 use Net::Ping;
 use Ip;
 use Entity::Iface;
-use Kanopya::Tools::Retrieve;
+use Kanopya::Test::Retrieve;
 
 eval {
     Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-    $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
+    $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
 
     lives_ok {
         my @bonded_ifaces;

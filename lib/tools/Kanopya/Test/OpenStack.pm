@@ -27,7 +27,7 @@ Kanopya time series generation, manipulation (print, graph, rrd storage) and lin
 
 =cut
 
-package Kanopya::Tools::OpenStack;
+package Kanopya::Test::OpenStack;
 
 use strict;
 use warnings;
@@ -40,11 +40,11 @@ use Entity::Vlan;
 use Lvm2Vg;
 use Lvm2Pv;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
+use Kanopya::Test::TestUtils 'expectedException';
 
 
 sub start1OpenStackOn3Clusters {
@@ -53,7 +53,7 @@ sub start1OpenStackOn3Clusters {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     my $vms_netconf = Entity::Netconf->find(hash => { netconf_name => 'Virtual machines bridge' } );
@@ -62,7 +62,7 @@ sub start1OpenStackOn3Clusters {
     diag('Create and configure MySQL and RabbitMQ cluster');
     my $db;
     lives_ok {
-        $db = Kanopya::Tools::Create->createCluster(
+        $db = Kanopya::Test::Create->createCluster(
                         cluster_conf => {
                             cluster_name         => 'Database',
                             cluster_basehostname => 'database',
@@ -89,7 +89,7 @@ sub start1OpenStackOn3Clusters {
     diag('Create and configure Nova controller');
     my $cloud;
     lives_ok {
-        $cloud = Kanopya::Tools::Create->createCluster(
+        $cloud = Kanopya::Test::Create->createCluster(
                         cluster_conf => {
                             cluster_name         => 'CloudController',
                             cluster_basehostname => 'cloud',
@@ -177,7 +177,7 @@ sub start1OpenStackOn3Clusters {
 
     my $compute;
     lives_ok {
-        $compute = Kanopya::Tools::Create->createCluster(
+        $compute = Kanopya::Test::Create->createCluster(
                        cluster_conf => {
                            cluster_name         => 'Compute',
                            cluster_basehostname => 'compute',
@@ -211,7 +211,7 @@ sub start1OpenStackOn3Clusters {
                    );
     } 'Create Nova Compute cluster';
 
-    my $kanopya = Kanopya::Tools::Retrieve::retrieveCluster();
+    my $kanopya = Kanopya::Test::Retrieve::retrieveCluster();
     my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
     my $nfs = EEntity->new(data => $kanopya->getComponent(name => "Nfsd"));
     my $shared;
@@ -243,7 +243,7 @@ sub start1OpenStackOn3Clusters {
     }
 
     lives_ok {
-        my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
+        my $vm_cluster = Kanopya::Test::Create->createVmCluster(
                              iaas => $cloud,
                              container_type => 'iscsi',
                              cluster_conf => {
@@ -255,7 +255,7 @@ sub start1OpenStackOn3Clusters {
     } 'Create VM cluster';
 
     lives_ok {
-        my $cinder_vm = Kanopya::Tools::Create->createVmCluster(
+        my $cinder_vm = Kanopya::Test::Create->createVmCluster(
                             iaas => $cloud,
                             container_type => 'iscsi',
                             cluster_conf => {
@@ -280,15 +280,15 @@ sub start1OpenStackOn3Clusters {
     } 'Create VM cluster with Cinder as disk manager manager';
 
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $db);
+        Kanopya::Test::Execution->startCluster(cluster => $db);
     } 'Start database cluster';
 
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cloud);
+        Kanopya::Test::Execution->startCluster(cluster => $cloud);
     } 'Start Cloud controller cluster';
 
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $compute);
+        Kanopya::Test::Execution->startCluster(cluster => $compute);
     } 'Start Nova Compute cluster';
 }
 

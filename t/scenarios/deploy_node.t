@@ -25,10 +25,10 @@ Log::Log4perl->easy_init({
 
 use Kanopya::Database;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 use Entity::Systemimage;
 use Entity::Node;
@@ -47,7 +47,7 @@ sub main {
     if ($testing == 1) {
         Kanopya::Database::beginTransaction;
 
-        Kanopya::Tools::Register->registerHost(board => {
+        Kanopya::Test::Register->registerHost(board => {
             ram  => 1073741824,
             core => 4,
             serial_number => 0,
@@ -58,7 +58,7 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Get any executor');
@@ -129,7 +129,7 @@ sub main {
 
         # Copy the masterimage container contents to the new container
         $master_container->copy(dest     => $container,
-                                econtext => Kanopya::Tools::Execution->_executor->_host->getEContext);
+                                econtext => Kanopya::Test::Execution->_executor->_host->getEContext);
 
         # Remove the temporary container
         $master_container->remove();
@@ -153,7 +153,7 @@ sub main {
                             kernel_id    => $masterimage->masterimage_defaultkernel_id,
                             boot_policy  => 'PXE Boot via ISCSI',
                         );
-        Kanopya::Tools::Execution->executeOne(entity => $operation);
+        Kanopya::Test::Execution->executeOne(entity => $operation);
     } 'Deploy the node via the KanopyaDeploymentManager';
 
     if ($testing == 1) {

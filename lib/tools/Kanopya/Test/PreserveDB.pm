@@ -23,17 +23,17 @@ Preserve original Kanopya DB after a test
 
 Usage :
 
-    perl -MKanopya::Tools::PreserveDB foo.t
+    perl -MKanopya::Test::PreserveDB foo.t
 
 or
 
-    prove --exec 'perl -MKanopya::Tools::PreserveDB' *.t
+    prove --exec 'perl -MKanopya::Test::PreserveDB' *.t
 
 =end classdoc
 
 =cut
 
-package Kanopya::Tools::PreserveDB;
+package Kanopya::Test::PreserveDB;
 
 use Kanopya::Database;
 

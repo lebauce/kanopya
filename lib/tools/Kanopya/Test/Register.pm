@@ -29,7 +29,7 @@ Kanopya module to handle register actions
 
 =cut
 
-package Kanopya::Tools::Register;
+package Kanopya::Test::Register;
 
 use strict;
 use warnings;
@@ -38,8 +38,8 @@ use Test::More;
 use Test::Exception;
 
 use Kanopya::Exceptions;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Execution;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Execution;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Cluster;
@@ -74,7 +74,7 @@ sub registerHost {
 
     my $board = $args{board};
 
-    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $kanopya_cluster = Kanopya::Test::Retrieve->retrieveCluster();
     my $physical_hoster = $kanopya_cluster->getHostManager();
 
     my $host = Entity::Host->new(
@@ -155,7 +155,7 @@ sub registerMasterImage {
                      keep_file => 1
                  );
 
-    Kanopya::Tools::Execution->executeOne(entity => $deploy);
+    Kanopya::Test::Execution->executeOne(entity => $deploy);
 
     return Entity::Masterimage->find(hash     => { },
                                      order_by => 'masterimage_id');

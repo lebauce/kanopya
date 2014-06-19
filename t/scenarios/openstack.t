@@ -13,7 +13,7 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::OpenStack;
+use Kanopya::Test::OpenStack;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -35,7 +35,7 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
-    Kanopya::Tools::OpenStack->start1OpenStackOn3Clusters();
+    Kanopya::Test::OpenStack->start1OpenStackOn3Clusters();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;

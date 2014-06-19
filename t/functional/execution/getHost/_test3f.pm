@@ -73,11 +73,11 @@ sub test3f {
         }
     };
     # Create Cluster and add network interface to it
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
         cluster_conf => $host_manager_conf,
     );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     for my $interface ($cluster->interfaces) {
         $interface->delete();
@@ -97,7 +97,7 @@ sub test3f {
     ######################
 
     # Create Host 1
-    my $host1 = Kanopya::Tools::Register->registerHost(
+    my $host1 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 1,
             core          => 2,
@@ -117,7 +117,7 @@ sub test3f {
     );
 
     # Create Host 2
-    my $host2 = Kanopya::Tools::Register->registerHost(
+    my $host2 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 2,
             core          => 2,
@@ -137,7 +137,7 @@ sub test3f {
     );
 
     # Create Host 3
-    my $host3 = Kanopya::Tools::Register->registerHost(
+    my $host3 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 3,
             core          => 2,
@@ -157,7 +157,7 @@ sub test3f {
     );
 
     # Create Host 4
-    my $host4 = Kanopya::Tools::Register->registerHost(
+    my $host4 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 4,
             core          => 2,
@@ -177,7 +177,7 @@ sub test3f {
     );
 
     # Create Host 5
-    my $host5 = Kanopya::Tools::Register->registerHost(
+    my $host5 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 5,
             core          => 2,
@@ -197,7 +197,7 @@ sub test3f {
     );
 
     # Create Host 6
-    my $host6 = Kanopya::Tools::Register->registerHost(
+    my $host6 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 6,
             core          => 2,

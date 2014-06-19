@@ -21,13 +21,13 @@ lives_ok {
 
 } 'All uses';
 
-use Kanopya::Tools::Execution;  
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::Profiler;
+use Kanopya::Test::Execution;  
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
+use Kanopya::Test::Profiler;
 
-my $profiler = Kanopya::Tools::Profiler->new(schema => Kanopya::Database::schema);
+my $profiler = Kanopya::Test::Profiler->new(schema => Kanopya::Database::schema);
 
 
 Kanopya::Database::beginTransaction;
@@ -43,7 +43,7 @@ my $adminiface = $hosts[0]->getAdminIface;
 sub registerCluster {
     my ($self, %args) = @_;
 
-    my $cluster = Kanopya::Tools::Create->createCluster(cluster_conf => {
+    my $cluster = Kanopya::Test::Create->createCluster(cluster_conf => {
                       cluster_name         => "Cluster" . $serviceload, 
                       cluster_basehostname => "default" . $serviceload
                   });
@@ -57,7 +57,7 @@ sub addNode {
     my (%args) = @_;
 
     # Register a host for the new service
-    my $host = Kanopya::Tools::Register->registerHost(board => {
+    my $host = Kanopya::Test::Register->registerHost(board => {
                    ram  => 1073741824,
                    core => 4,
                });

@@ -33,7 +33,7 @@ use Entity::Workflow;
 use Entity::WorkflowDef;
 use Kanopya::Config;
 
-use Kanopya::Tools::Execution;
+use Kanopya::Test::Execution;
 
 my $testing = 0;
 
@@ -81,7 +81,7 @@ sub scale_memory_place_ok {
             scalein_type  => 'memory',
             scalein_value => 1*$coefGb2Bytes,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_ram(vm => $vm1, ram => 1*$coefGb2Bytes);
         _check_good_hypervisor(
@@ -93,7 +93,7 @@ sub scale_memory_place_ok {
             scalein_type  => 'memory',
             scalein_value => 1*$coefGb2Bytes,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_ram(vm => $vm2, ram => 1*$coefGb2Bytes);
         _check_good_hypervisor(
@@ -112,7 +112,7 @@ sub scale_memory_need_to_migrate {
             scalein_type  => 'memory',
             scalein_value => 2*$coefGb2Bytes,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_ram(vm => $vm3, ram => 2*$coefGb2Bytes);
         _check_good_hypervisor(
@@ -131,7 +131,7 @@ sub scale_memory_need_to_migrate_other {
             scalein_type  => 'memory',
             scalein_value => 1.5*$coefGb2Bytes,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_ram(vm => $vm1, ram => 1.5*$coefGb2Bytes);
         _check_good_hypervisor(
@@ -143,7 +143,7 @@ sub scale_memory_need_to_migrate_other {
             scalein_type  => 'memory',
             scalein_value => 1.5*$coefGb2Bytes,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_ram(vm => $vm4, ram => 1.5*$coefGb2Bytes);
         _check_good_hypervisor(
@@ -167,7 +167,7 @@ sub scale_memory_no_place {
             scalein_type  => 'memory',
             scalein_value => 2.5*$coefGb2Bytes,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
         _check_vm_ram(vm => $vm3, ram => 2*$coefGb2Bytes);
         _check_good_hypervisor(
             vm => $vm3,
@@ -185,7 +185,7 @@ sub scale_cpu_place_ok {
             scalein_type  => 'cpu',
             scalein_value => 3,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_core(vm => $vm1, core => 3);
         _check_good_hypervisor(
@@ -197,7 +197,7 @@ sub scale_cpu_place_ok {
             scalein_type  => 'cpu',
             scalein_value => 3,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_core(vm => $vm2, core => 3);
         _check_good_hypervisor(
@@ -216,7 +216,7 @@ sub scale_cpu_need_to_migrate {
             scalein_type  => 'cpu',
             scalein_value => 5,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_core(vm => $vm3, core => 5);
         _check_good_hypervisor(
@@ -235,7 +235,7 @@ sub scale_cpu_need_to_migrate_other {
             scalein_type  => 'cpu',
             scalein_value => 4,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_core(vm => $vm1, core => 4);
         _check_good_hypervisor(
@@ -247,7 +247,7 @@ sub scale_cpu_need_to_migrate_other {
             scalein_type  => 'cpu',
             scalein_value => 4,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_core(vm => $vm4, core => 4);
         _check_good_hypervisor(
@@ -270,7 +270,7 @@ sub scale_cpu_no_place {
             scalein_type  => 'cpu',
             scalein_value => 6,
         );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         _check_vm_core(vm => $vm3, core => 5);
         _check_good_hypervisor(
@@ -333,7 +333,7 @@ sub _reinit_infra_memory {
         );
         $vm->migrate(hypervisor => $hv1);
     }
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 }
 
 sub _reinit_infra_cpu {
@@ -344,7 +344,7 @@ sub _reinit_infra_cpu {
         );
         $vm->migrate(hypervisor => $hv1);
     }
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 }
 
 sub _check_init {
