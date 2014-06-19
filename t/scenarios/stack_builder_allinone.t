@@ -217,8 +217,8 @@ sub main {
         my $controllerhost = EEntity->new(data =>  @{$controller->getHosts()}[0]);
 
         ## Needed for build a context out of Executor
-        my $context = EContext->new(src_host => $kanopyahost,
-                                    dst_host => $controllerhost,
+        my $context = EContext->new(src_ip => $kanopyahost->adminIp,
+                                    dst_ip => $controllerhost->adminIp,
                                     key      => '/var/lib/kanopya/private/kanopya_rsa' );
 
         my $command = 'grep OS_PASSWORD /root/openrc.sh';

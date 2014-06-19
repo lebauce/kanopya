@@ -206,7 +206,7 @@ sub eclass {
 
 Build the econtext instance to execute commands.
 
-@param dst_host the destination host on which execute commands.
+@param dst_ip the destination host ip on which execute commands.
 
 @return the econtext instance
 
@@ -216,11 +216,11 @@ Build the econtext instance to execute commands.
 sub getEContext {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'dst_host' ]);
+    General::checkParams(args => \%args, required => [ 'dst_ip' ]);
 
-    return EContext->new(src_host => $self->_host,
-                         dst_host => $args{dst_host},
-                         key      => $self->_executor->private_directory . "/kanopya_rsa");
+    return EContext->new(src_ip => $self->_host->adminIp,
+                         dst_ip => $args{dst_ip},
+                         key    => $self->_executor->private_directory . "/kanopya_rsa");
 }
 
 

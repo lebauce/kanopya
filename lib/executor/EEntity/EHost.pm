@@ -165,7 +165,7 @@ sub getTotalCpu {
 sub getEContext {
     my $self = shift;
 
-    return $self->SUPER::getEContext(dst_host => $self);
+    return $self->SUPER::getEContext(dst_ip => $self->adminIp);
 }
 
 1;

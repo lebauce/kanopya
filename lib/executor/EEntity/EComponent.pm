@@ -235,10 +235,19 @@ sub isUp {
     return 1;
 }
 
+
+=pod
+=begin classdoc
+
+Return the econtext instance to connect on the master node.
+
+=end classdoc
+=cut
+
 sub getEContext { 
     my ($self) = @_;
 
-    return $self->SUPER::getEContext(dst_host => $self->getMasterNode->host);
+    return $self->SUPER::getEContext(dst_ip => $self->getMasterNode->adminIp);
 }
 
 

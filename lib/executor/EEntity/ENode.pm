@@ -66,7 +66,7 @@ sub checkComponents {
 sub getEContext {
     my $self = shift;
 
-    return EEntity->new(entity => $self->host)->getEContext();
+    return $self->SUPER::getEContext(dst_ip => $self->adminIp);
 }
 
 
