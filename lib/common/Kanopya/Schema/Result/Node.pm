@@ -98,6 +98,12 @@ __PACKAGE__->table("node");
   is_nullable: 0
   size: 32
 
+=head2 admin_ip_addr
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 15
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -144,6 +150,8 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
     size => 32,
   },
+  "admin_ip_addr",
+  { data_type => "char", is_nullable => 1, size => 15 },
 );
 
 =head1 PRIMARY KEY
@@ -339,8 +347,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 12:03:40
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:plpiomc4tuRGlYb2lImNWA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-17 12:38:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ab37YB3L1bdVrGbDarvNbw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -114,6 +114,7 @@ CREATE TABLE `node` (
   `node_state` char(32),
   `node_prev_state` char(32),
   `monitoring_state` char(32) NOT NULL DEFAULT 'enabled',
+  `admin_ip_addr` char(15) DEFAULT NULL,
   PRIMARY KEY (`node_id`),
   FOREIGN KEY (`node_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`host_id`),

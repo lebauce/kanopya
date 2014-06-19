@@ -208,7 +208,13 @@ Returns Node instance admin ip.
 sub adminIp {
     my $self = shift;
 
-    return (defined $self->host_id) ? $self->host->adminIp : undef;
+    if (defined $self->admin_ip_addr) {
+        return $self->admin_ip_addr;
+    }
+    elsif (defined $self->host_id) {
+        return $self->host->adminIp;
+    }
+    return undef;
 }
 
 
