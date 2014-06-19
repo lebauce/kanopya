@@ -347,6 +347,7 @@ sub getNextRank {
 }
 
 
+
 =pod
 =begin classdoc
 
@@ -395,6 +396,38 @@ sub prepareNextOperation {
     }
 
     return $next;
+}
+
+
+=pod
+=begin classdoc
+
+Return the operation that has failed in the workflow if exists
+
+=end classdoc
+=cut
+
+sub getFailedOperation {
+    my $self = shift;
+
+    my $operation;
+    try {
+        $operation = $self->find(
+                         related => 'old_operations',
+                         hash     => {
+                             -or => [ execution_status => 'cancelled',  execution_status => 'failed' ]
+                         },
+                         order_by => 'operation_id ASC'
+                     );
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        return undef;
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+
+    return $operation;
 }
 
 

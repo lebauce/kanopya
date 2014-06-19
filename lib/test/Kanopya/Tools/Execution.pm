@@ -202,13 +202,19 @@ sub executeOne {
             diag('Workflow ' . $workflow->id . ' done');
             last WORKFLOW;
         }
-        elsif ($state eq 'failed') {
-            diag('Workflow ' . $workflow->id . ' failed');
-            throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') failed');
-        }
-        elsif ($state eq 'cancelled') {
-            diag('Workflow ' . $workflow->id . ' cancelled');
-            throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') cancelled');
+        elsif ($state eq 'failed' || $state eq 'cancelled') {
+            my $failed = $workflow->getFailedOperation;
+            my $exception;
+            if (defined $failed &&
+                defined $failed->param_preset &&
+                defined $failed->param_preset->load()->{exception}) {
+                $exception = $failed->param_preset->load()->{exception};
+            }
+            else {
+                $exception = "Workflow <" . $workflow->label . "> failed. " . $failed->id
+            }
+
+            throw Kanopya::Exception::Test(error => $exception);
         }
         elsif ($state eq 'interrupted') {
             diag('Workflow ' . $workflow->id . ' interrupted');
