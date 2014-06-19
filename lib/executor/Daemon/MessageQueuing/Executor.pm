@@ -400,6 +400,9 @@ sub terminateOperation {
     # the operation executions steps.
     my $params = delete $operation->{params};
     $params->{context} = delete $operation->{context};
+    if (defined $args{exception}) {
+        $params->{exception} = $args{exception};
+    }
     $operation->serializeParams(params => $params);
 
     # Produce a result on the operation_result channel

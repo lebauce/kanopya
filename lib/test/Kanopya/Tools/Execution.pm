@@ -43,7 +43,6 @@ my $log = get_logger("");
 
 use Kanopya::Exceptions;
 use Daemon;
-use Executor;
 use General;
 use EEntity;
 use Entity::Component::Lvm2;

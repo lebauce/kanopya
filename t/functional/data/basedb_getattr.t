@@ -87,7 +87,7 @@ sub main {
                         my $classname = BaseDB->_className(class => $dbix->relationship_info($attrname)->{class});
                         my $relclass;
                         try {
-                            $relclass = BaseDB->_classType(class => $classname);
+                            $relclass = BaseDB->_classType(classname => $classname);
                         }
                         catch ($err) {
                             $relclass = $classname;

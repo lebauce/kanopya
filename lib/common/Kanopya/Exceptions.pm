@@ -245,6 +245,10 @@ use Exception::Class (
         description => 'Unable to publish on channel',
         fields      => [ 'queue', 'body' ],
     },
+    Kanopya::Exception::Test => {
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya Test Exception'
+    },
 );
 
 # Force print trace when exception is stringified
