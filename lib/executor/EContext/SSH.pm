@@ -39,12 +39,8 @@ use Kanopya::Exceptions;
 
 use Net::Ping;
 
-# Handle no cross plateform Net perl module...
-if ($^O eq 'linux') {
-    require Net::OpenSSH;
-} elsif ( $^O eq 'MSWin32') {
-    require Net::SSH::Perl;
-}
+use Net::OpenSSH;
+
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("command");

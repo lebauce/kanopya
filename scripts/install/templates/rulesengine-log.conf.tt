@@ -1,4 +1,4 @@
-log4perl.rootLogger=INFO [% windows ? ", EventLog" : "" %], A1
+log4perl.rootLogger=INFO, A1
 log4perl.logger.basedb=INFO, A1
 log4perl.logger.command=WARN, A1
 log4perl.logger.timedata=WARN, A1
@@ -9,12 +9,5 @@ log4perl.appender.A1.filename=[% logdir %]rulesengine.log
 log4perl.appender.A1.mode=append
 log4perl.appender.A1.layout=Log::Log4perl::Layout::PatternLayout
 log4perl.appender.A1.layout.ConversionPattern=%d [ %H - %P ] %p -> %M - %m%n
-
-[% IF windows %]
-log4perl.appender.EventLog=Kanopya::EventLogAppender
-log4perl.appender.EventLog.source=KanopyaRulesEngine
-log4perl.appender.EventLog.layout=Log::Log4perl::Layout::PatternLayout
-log4perl.appender.EventLog.layout.ConversionPattern=%M %m%n
-[% END %]
 
 log4perl.oneMessagePerAppender = 1
