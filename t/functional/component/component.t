@@ -45,9 +45,9 @@ my $hostname = $envargs->{NODE_HOSTNAME};
 
 # Firstly initialize the execution lib with the local host on which the code is running.
 # TODO: Do not require a Host object for the execution lib initialization...
-my $hostname = `hostname`;
-chomp($hostname);
-EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
+my $localhostname = `hostname`;
+chomp($localhostname);
+EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $localhostname }));
 
 diag("Running test suite of components $envargs->{COMPONENTS} installed on existing node $hostname ($ip)");
 

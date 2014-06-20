@@ -212,7 +212,7 @@ sub executeOne {
                 $exception = $failed->param_preset->load()->{exception};
             }
             else {
-                $exception = "Workflow <" . $workflow->label . "> failed. " . $failed->id
+                $exception = "Workflow <" . $workflow->label . "> failed. "
             }
 
             throw Kanopya::Exception::Test(error => $exception);
