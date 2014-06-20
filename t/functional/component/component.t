@@ -20,6 +20,7 @@ Log::Log4perl->easy_init({
     layout => '%F %L %p %m%n'
 });
 
+Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 my $envargs = \%ENV;
 
@@ -39,8 +40,6 @@ General::checkParams(args     => $envargs,
 my $componenttype = pop(split(',', $envargs->{COMPONENTS}));
 my $ip = $envargs->{NODE_IP};
 my $hostname = $envargs->{NODE_HOSTNAME};
-
-Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 eval {
     # Firstly initialize the execution lib with the local host on which the code is running.
