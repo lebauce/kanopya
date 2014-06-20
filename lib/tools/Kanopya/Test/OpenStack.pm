@@ -53,7 +53,7 @@ sub start1OpenStackOn3Clusters {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Test::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Execution::registerMasterImage();
     } 'Register master image';
 
     my $vms_netconf = Entity::Netconf->find(hash => { netconf_name => 'Virtual machines bridge' } );

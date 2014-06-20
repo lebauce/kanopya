@@ -42,7 +42,7 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Test::Register::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
+        $masterimage = Kanopya::Test::Execution::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
     } 'Register master image';
 
     diag('Create and configure MySQL and RabbitMQ cluster');

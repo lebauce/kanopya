@@ -49,6 +49,7 @@ use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Systemimage;
 use Entity::Component::KanopyaDeploymentManager;
+use Entity::Masterimage;
 
 use Daemon::MessageQueuing::Executor;
 
@@ -338,7 +339,7 @@ sub deployNode {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Test::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Execution::registerMasterImage();
     } 'Register master image';
 
     diag('Create the system image for the node to deploy');
@@ -399,6 +400,36 @@ sub checkNodeUp {
     if (! EEntity->new(entity => $args{node}->reload)->checkComponents()) {
         die 'Components of the node ' . $args{node}->label . ' are not up.'
     }
+}
+
+
+=pod
+
+=begin classdoc
+
+Register a masterimage into kanopya
+
+@param masterimage_name (unamed argument)
+
+@return masterimage the created masterimage
+
+=end classdoc
+
+=cut
+
+sub registerMasterImage {
+    my $name = shift || $ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2";
+
+    diag('Deploy master image');
+    my $deploy = Entity::Masterimage->create(
+                     file_path => "/masterimages/" . $name,
+                     keep_file => 1
+                 );
+
+    Kanopya::Test::Execution->executeOne(entity => $deploy);
+
+    return Entity::Masterimage->find(hash     => { },
+                                     order_by => 'masterimage_id');
 }
 
 

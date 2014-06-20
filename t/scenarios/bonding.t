@@ -72,7 +72,7 @@ sub main {
     $eth2->save();
     
     diag('register masterimage');
-    my $masterimage = Kanopya::Test::Register::registerMasterImage();
+    my $masterimage = Kanopya::Test::Execution::registerMasterImage();
 
     diag('retrieve admin netconf');
     my $adminnetconf = Kanopya::Test::Retrieve->retrieveNetconf(criteria => { netconf_name => 'Kanopya admin' });

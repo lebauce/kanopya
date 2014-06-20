@@ -39,13 +39,11 @@ use Test::Exception;
 
 use Kanopya::Exceptions;
 use Kanopya::Test::Retrieve;
-use Kanopya::Test::Execution;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Cluster;
 use Entity::Component::Openssh5;
 use Entity::Component::Linux::Debian;
-use Entity::Masterimage;
 use Entity::Vlan;
 use Entity::Tag;
 use EntityTag;
@@ -132,34 +130,6 @@ sub registerHost {
     return $host;
 }
 
-=pod
-
-=begin classdoc
-
-Register a masterimage into kanopya
-
-@param masterimage_name (unamed argument)
-
-@return masterimage the created masterimage
-
-=end classdoc
-
-=cut
-
-sub registerMasterImage {
-    my $name = shift || $ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2";
-
-    diag('Deploy master image');
-    my $deploy = Entity::Masterimage->create(
-                     file_path => "/masterimages/" . $name,
-                     keep_file => 1
-                 );
-
-    Kanopya::Test::Execution->executeOne(entity => $deploy);
-
-    return Entity::Masterimage->find(hash     => { },
-                                     order_by => 'masterimage_id');
-}
 
 =pod
 

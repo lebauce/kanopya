@@ -38,7 +38,7 @@ if ($testing == 1) {
 diag('Register master image');
 my $masterimage;
 lives_ok {
-    $masterimage = Kanopya::Test::Register::registerMasterImage();
+    $masterimage = Kanopya::Test::Execution::registerMasterImage();
 } 'Register master image';
 
 diag('Create a Iaas cluster holding vSphere component');

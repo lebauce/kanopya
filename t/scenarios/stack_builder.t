@@ -38,7 +38,7 @@ sub main {
     }
 
     lives_ok {
-        $masterimage = Kanopya::Test::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Execution::registerMasterImage();
     } 'Register master image';
 
     my $builder;

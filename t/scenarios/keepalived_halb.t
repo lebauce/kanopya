@@ -57,7 +57,7 @@ sub main {
 
     diag('Register master image');
     lives_ok {
-        Kanopya::Test::Register::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
+        Kanopya::Test::Execution::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
     } 'Register master image';
 
     diag('Create and configure cluster');

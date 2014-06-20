@@ -52,7 +52,7 @@ sub main {
     }
 
     diag('Register master image');
-    my $masterimage = Kanopya::Test::Register::registerMasterImage();
+    my $masterimage = Kanopya::Test::Execution::registerMasterImage();
     
     diag('Create and configure cluster');
     my $cluster;

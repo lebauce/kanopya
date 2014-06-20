@@ -64,7 +64,7 @@ sub main {
     `ip addr add $ip/24 dev eth1`;
 
     lives_ok {
-        my $masterimage = Kanopya::Test::Register::registerMasterImage();
+        my $masterimage = Kanopya::Test::Execution::registerMasterImage();
     } 'Register master image';
 
     my $builder;

@@ -46,7 +46,7 @@ sub main {
     Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     diag('Register master image');
-    my $masterimage = Kanopya::Test::Register::registerMasterImage();
+    my $masterimage = Kanopya::Test::Execution::registerMasterImage();
 
     my $cluster;
     lives_ok {

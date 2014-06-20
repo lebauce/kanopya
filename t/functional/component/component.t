@@ -21,7 +21,6 @@ Log::Log4perl->easy_init({
 });
 
 
-
 my $componenttype = "Lvm2";
 my $ip = "10.0.0.1";
 my $hostname = `hostname`;
@@ -34,6 +33,7 @@ eval {
     my $hostname = `hostname`;
     chomp($hostname);
     EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
+    diag("------------------ " . Dumper(%ENV));
 
     # Firstly find/register the node where to test the running component
     diag('Find/Register the node where to test the component ' . $componenttype);

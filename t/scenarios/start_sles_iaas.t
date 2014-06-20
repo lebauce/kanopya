@@ -43,7 +43,7 @@ eval {
     }
 
     diag('Register master image');
-    my $sles_on = Kanopya::Test::Register::registerMasterImage();
+    my $sles_on = Kanopya::Test::Execution::registerMasterImage();
 
     diag('Setting the default gateway');
     my $kanopya = Kanopya::Test::Retrieve::retrieveCluster();
@@ -69,7 +69,7 @@ eval {
     } 'Start opennebula iaas cluster';
 
     diag('Register master image');
-    my $sles = Kanopya::Test::Register::registerMasterImage("sles-11-simple-host.tar.bz2");
+    my $sles = Kanopya::Test::Execution::registerMasterImage("sles-11-simple-host.tar.bz2");
 
     diag ('create vm cluster');
     my $vm_cluster = Kanopya::Test::Create->createVmCluster(

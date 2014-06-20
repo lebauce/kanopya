@@ -420,7 +420,7 @@ sub createIaasCluster {
                     fileimagemanager => {},
                 };
             if (not defined $args{cluster_conf}{masterimage_id}) {
-                $masterimage_id = Kanopya::Test::Register::registerMasterImage()->id;
+                $masterimage_id = Kanopya::Test::Execution::registerMasterImage()->id;
             }
             else {
                 $masterimage_id = $args{cluster_conf}{masterimage_id};
@@ -441,7 +441,7 @@ sub createIaasCluster {
                     amqp           => {},
                 };
             if (not defined $args{cluster_conf}{masterimage_id}) {
-                $masterimage_id = Kanopya::Test::Register::registerMasterImage(
+                $masterimage_id = Kanopya::Test::Execution::registerMasterImage(
                                    'sles-11-simple-host.tar.bz2'
                 )->id;
             }
@@ -452,7 +452,7 @@ sub createIaasCluster {
         case 'vsphere' {
             $components = { vsphere => {}, };
             if (not defined $args{cluster_conf}{masterimage_id}) {
-                $masterimage_id = Kanopya::Test::Register::registerMasterImage()->id;
+                $masterimage_id = Kanopya::Test::Execution::registerMasterImage()->id;
             }
             else {
                 $masterimage_id = $args{cluster_conf}{masterimage_id};
