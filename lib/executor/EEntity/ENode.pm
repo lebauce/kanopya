@@ -53,7 +53,7 @@ sub checkComponents {
     foreach my $component (map { EEntity->new(entity => $_) } @components) {
         $log->debug("Browsing component: " . $component->label);
 
-        if (! $component->isUp(node => $self->host)) {
+        if (! $component->isUp(node => $self)) {
             $log->info("Component <" . $component->label . "> not yet operational " .
                        "on node <" . $self->label .  ">");
             return 0;
