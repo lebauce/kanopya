@@ -86,7 +86,7 @@ sub main {
     diag('Start physical host that should fail');
     throws_ok {
         Kanopya::Test::Execution->startCluster(cluster => $cluster);
-    } 'Kanopya::Exception::Internal', 'Start second node';
+    } 'Kanopya::Exception::Test', 'Start second node';
 
     lives_ok {
         my ($state, $timestamp) = $cluster->reload->getState();
