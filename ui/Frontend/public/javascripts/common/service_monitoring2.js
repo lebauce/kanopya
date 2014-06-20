@@ -159,7 +159,7 @@ function createServiceCombination(container_id, elem_id, options) {
 function openCreateDialog() {
 
     var dialogContainerId = 'metric-editor';
-    var metricCategoryData, metricData;
+    var metricCategoryData, metricData, statisticFunctionData;
 
     function loadMetricCategoryData() {
         $.getJSON("ajax/metric-category.json", function(data) {
@@ -171,6 +171,13 @@ function openCreateDialog() {
     function loadMetricData() {
         $.getJSON("ajax/metric.json", function(data) {
             metricData = data;
+            loadStatisticFunctionData();
+        });
+    }
+
+    function loadStatisticFunctionData() {
+        $.getJSON("ajax/statistic-function.json", function(data) {
+            statisticFunctionData = data;
             renderDialogTemplate();
         });
     }
@@ -180,7 +187,7 @@ function openCreateDialog() {
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
             $('body').append(template(metricCategoryData));
-            blocklyHandler.init(metricCategoryData, metricData);
+            blocklyHandler.init(metricCategoryData, metricData, statisticFunctionData);
             openDialog();
         });
     }

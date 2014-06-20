@@ -3,6 +3,7 @@ var blocklyHandler = {
     currentMetricCategory: {},
     metricCategoryList: [],
     metricList: [],
+    statisticFunctionList: [],
 
     getMetricCategoryById: function(id) {
         var resultList = this.metricCategoryList.filter(function(obj) {
@@ -43,14 +44,14 @@ var blocklyHandler = {
         return defaultXml;
     },
 
-    init: function(metricCategoryData, metricData) {
+    init: function(metricCategoryData, metricData, statisticFunctionData) {
 
         var this_ = this;
 
         this.metricCategoryList = metricCategoryData['metric-category'];
-
         this.currentMetricCategory = this.metricCategoryList[0];
         this.metricList = metricData;
+        this.statisticFunctionList = statisticFunctionData;
 
         var toolbox = this_.toolbox().replace('[default]', 'this.getMetricList()[0].id');
         Blockly.inject($('#blockly-container')[0],
@@ -125,6 +126,14 @@ var blocklyHandler = {
         var blockList = [];
         for (var i = 0; i < metricList.length; i++) {
             blockList.push([metricList[i].label, metricList[i].id]);
+        };
+        return blockList;
+    },
+
+    statisticFunctionBlockList: function(field) {
+        var blockList = [];
+        for (var i = 0; i < this.statisticFunctionList.length; i++) {
+            blockList.push([this.statisticFunctionList[i][field], this.statisticFunctionList[i].id]);
         };
         return blockList;
     },
