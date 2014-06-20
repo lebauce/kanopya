@@ -37,65 +37,61 @@ General::checkParams(args     => $envargs,
                      optional => { 'NODE_IP' => Entity::Node->find(hash => { 'node_hostname' => 'kanopyamaster' })->adminIp,
                                    'NODE_HOSTNAME' => 'kanopyamaster' });
 
-my $componenttype = pop(split(',', $envargs->{COMPONENTS}));
+my @types = split(',', $envargs->{COMPONENTS});
+my $componenttype = pop(@types);
 my $ip = $envargs->{NODE_IP};
 my $hostname = $envargs->{NODE_HOSTNAME};
 
+
+# Firstly initialize the execution lib with the local host on which the code is running.
+# TODO: Do not require a Host object for the execution lib initialization...
+my $hostname = `hostname`;
+chomp($hostname);
+EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
+
+diag("Running test suite of components $envargs->{COMPONENTS} installed on existing node $hostname ($ip)");
+
+# Firstly find/register the node where to test the running component
+diag('Find/Register the node where to test the component ' . $componenttype);
+my $node = Entity::Node->findOrCreate(node_hostname => $hostname);
+if (! defined $node->adminIp) {
+    $node->admin_ip_addr($ip);
+}
+
+my $component;
 eval {
-    # Firstly initialize the execution lib with the local host on which the code is running.
-    # TODO: Do not require a Host object for the execution lib initialization...
-    my $hostname = `hostname`;
-    chomp($hostname);
-    EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
-
-    diag("Running test suite of components $envargs->{COMPONENTS} installed on existing node $hostname ($ip)");
-
-    # Firstly find/register the node where to test the running component
-    diag('Find/Register the node where to test the component ' . $componenttype);
-    my $node = Entity::Node->findOrCreate(node_hostname => $hostname);
-    if (! defined $node->adminIp) {
-        $node->admin_ip_addr($ip);
-    }
-
-    my $component;
-    eval {
-        (my $componentname = $componenttype) =~ s/\d+//g;
-        $component = $node->getComponent(name => $componentname);
-        diag('Component ' . $componenttype . ' found on node ' . $node->label);
-    };
-    if ($@) {
-        my $componentclass = BaseDB->_classType(classname => $componenttype);
-
-        General::requireClass($componentclass);
-
-        diag('Get any executor');
-        my $executor = Entity::Component::KanopyaExecutor->find();
-
-        # Create the component
-        $component = $componentclass->new(executor_component => $executor);
-
-        # And register it on the node
-        $component->registerNode(node => $node, master_node => 1);
-        diag('Created and registred ' . $componenttype . ' on node ' . $node->label);
-    }
-
-    diag('Check for component ' . $component->label . ' up');
-    lives_ok {
-        if (! EEntity->new(entity => $component)->isUp(node => EEntity->new(entity => $node))) {
-            die 'Component ' . $component->label . ' not up';
-        }
-
-    } 'Check for component ' . $component->label . ' up';
-
-    diag('Run test suite for component ' . $component->label);
-    my $testsuiteclass = "Kanopya::Test::Test" . $componenttype;
-
-    General::requireClass($testsuiteclass);
-
-    $testsuiteclass->runTestSuite(component => $component);
-
+    (my $componentname = $componenttype) =~ s/\d+//g;
+    $component = $node->getComponent(name => $componentname);
+    diag('Component ' . $componenttype . ' found on node ' . $node->label);
 };
 if ($@) {
-    my $error = $@;
-    print Dumper $error;
-};
+    my $componentclass = BaseDB->_classType(classname => $componenttype);
+
+    General::requireClass($componentclass);
+
+    diag('Get any executor');
+    my $executor = Entity::Component::KanopyaExecutor->find();
+
+    # Create the component
+    $component = $componentclass->new(executor_component => $executor);
+
+    # And register it on the node
+    $component->registerNode(node => $node, master_node => 1);
+    diag('Created and registred ' . $componenttype . ' on node ' . $node->label);
+}
+
+diag('Check for component ' . $component->label . ' up');
+lives_ok {
+    if (! EEntity->new(entity => $component)->isUp(node => EEntity->new(entity => $node))) {
+        die 'Component ' . $component->label . ' not up';
+    }
+
+} 'Check for component ' . $component->label . ' up';
+
+diag('Run test suite for component ' . $component->label);
+my $testsuiteclass = "Kanopya::Test::Test" . $componenttype;
+
+General::requireClass($testsuiteclass);
+
+$testsuiteclass->runTestSuite(component => $component);
+
