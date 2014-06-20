@@ -21,9 +21,24 @@ Log::Log4perl->easy_init({
 });
 
 
-my $componenttype = "Lvm2";
-my $ip = "10.0.0.1";
-my $hostname = `hostname`;
+my $envargs = \%ENV;
+
+# Arg the optional mechanism accept undef values
+if (exists $envargs->{NODE_IP} && (! defined $envargs->{NODE_IP} || $envargs->{NODE_IP} eq '')) {
+    delete $envargs->{NODE_IP};
+}
+if (exists $envargs->{NODE_HOSTNAME} && (! defined $envargs->{NODE_HOSTNAME} || $envargs->{NODE_HOSTNAME} eq '')) {
+    delete $envargs->{NODE_HOSTNAME};
+}
+
+General::checkParams(args     => $envargs,
+                     required => [ 'COMPONENTS' ],
+                     optional => { 'NODE_IP' => Entity::Node->find(hash => { 'node_hostname' => 'kanopyamaster' })->adminIp,
+                                   'NODE_HOSTNAME' => 'kanopyamaster' });
+
+my $componenttype = pop(split(',', $envargs->{COMPONENTS}));
+my $ip = $envargs->{NODE_IP};
+my $hostname = $envargs->{NODE_HOSTNAME};
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -33,12 +48,13 @@ eval {
     my $hostname = `hostname`;
     chomp($hostname);
     EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
-    diag("------------------ " . Dumper(%ENV));
+
+    diag("Running test suite of components $envargs->{COMPONENTS} installed on existing node $hostname ($ip)");
 
     # Firstly find/register the node where to test the running component
     diag('Find/Register the node where to test the component ' . $componenttype);
     my $node = Entity::Node->findOrCreate(node_hostname => $hostname);
-    if (! defined $node->admin_ip_addr) {
+    if (! defined $node->adminIp) {
         $node->admin_ip_addr($ip);
     }
 
