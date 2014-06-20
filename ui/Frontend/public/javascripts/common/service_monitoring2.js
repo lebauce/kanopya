@@ -156,48 +156,10 @@ function createServiceCombination(container_id, elem_id, options) {
     $('#' + container_id).append(button);
 };
 
-function createMetricCombination(containerId, elementId, ext, options) {
+function openCreateDialog() {
 
-    var dialogContainerClass = 'dialog-container';
+    var dialogContainerId = 'metric-editor';
     var metricCategoryData, metricData;
-
-    function addCreateButton() {
-        var button = $("<button>", {html: 'Add a metric'});
-        button.button({icons: {primary: 'ui-icon-plusthick'}});
-
-        $(button).click(function() {
-            $('.' + dialogContainerClass).dialog({
-                resizable: true,
-                modal: true,
-                dialogClass: "no-close",
-                width: 800,
-                height: 600,
-                buttons : [
-                    {
-                        id: 'but-cancel',
-                        text: 'Cancel',
-                        click: function() {
-                            $(this).dialog('close');
-                        }
-                    },
-                    {
-                        id: 'but-create',
-                        text: 'Create',
-                        click: function() {
-                            $(this).dialog('close');
-                        }
-                    },
-                    {
-                        id: 'but-create-continue',
-                        text: 'Create and Continue',
-                        click: function() {}
-                    }
-                ]
-            });
-        });
-
-        $('#' + containerId).append(button);
-    }
 
     function loadMetricCategoryData() {
         $.getJSON("ajax/metric-category.json", function(data) {
@@ -219,10 +181,53 @@ function createMetricCombination(containerId, elementId, ext, options) {
             var template = Handlebars.compile(templateHtml);
             $('body').append(template(metricCategoryData));
             blocklyHandler.init(metricCategoryData, metricData);
+            openDialog();
         });
     }
 
-    addCreateButton();
+    function openDialog() {
+        $('#' + dialogContainerId).dialog({
+            resizable: true,
+            modal: true,
+            dialogClass: "no-close",
+            width: 800,
+            height: 600,
+            buttons : [
+                {
+                    id: 'but-cancel',
+                    text: 'Cancel',
+                    click: function() {
+                        closeDialog(this);
+                    }
+                },
+                {
+                    id: 'but-create',
+                    text: 'Create',
+                    click: function() {
+                        if (createMetric()) {
+                            closeDialog(this);
+                        };
+                    }
+                },
+                {
+                    id: 'but-create-continue',
+                    text: 'Create and Continue',
+                    click: function() {}
+                }
+            ]
+        });
+    }
+
+    function createMetric() {
+        console.debug(blocklyHandler.getFormula());
+        return false;
+    }
+
+    function closeDialog(this_) {
+        $(this_).dialog('close');
+        $(this_).remove();
+    }
+
     loadMetricCategoryData();
 
     // var dialogModal = $("<div>", {id: "dialog-modal", title: "Create new metric"});
@@ -476,19 +481,29 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
      * Metric list
      */
 
-    var content = $('<div id="metric-list-content">').appendTo(container);
-    
-    content
-        .append( $('<div>', {id : 'node_metrics_action_buttons', class : 'action_buttons'}) )
-        .append( $('<div>', {id : 'node_metrics_container'}) );
-
+    var content = $('<div>', {id : 'metric-list-content'});
+    var buttonsContainer = $('<div>', {id: 'metric-list-buttons-container', class: 'action_buttons'});
+    var gridContainer = $('<div>', {id: 'metric-list-grid-container'});
     var gridId = 'metric-list-grid' + elem_id;
-    // Create button + modal
-    createMetricCombination('node_metrics_action_buttons', elem_id, (external !== '') ? true : false);
-    // Import button
-    if (!mode_policy) {
-        importItemButton(
-                content.find('#node_metrics_action_buttons'),
+
+    function addButtons() {
+
+        // Create button
+        var button = $("<button>", {html: 'Add a metric'});
+        button.button({icons: {primary: 'ui-icon-plusthick'}});
+
+        $(button).click(function() {
+            openCreateDialog();
+        });
+
+        buttonsContainer.append(button);
+
+        // Delete button is created by displayList function below
+
+        // Import button
+        if (!mode_policy) {
+            importItemButton(
+                buttonsContainer,
                 elem_id,
                 {
                     name        : 'combination',
@@ -497,7 +512,15 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
                     type        : 'nodemetric_combination'
                 },
                 [gridId]
-        );
+                );
+        }
+    }
+
+    function createHtmlStructure() {
+        content
+            .append(buttonsContainer)
+            .append(gridContainer)
+            .appendTo(container);
     }
 
     function addLevelToCombination(list) {
@@ -560,7 +583,7 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
             loadComplete: function(data) {
                 addLevelToCombination(data.rows);
             },
-            content_container_id: 'node_metrics_container',
+            content_container_id: gridContainer.attr('id'),
             grid_id: gridId,
             colNames: ['id', 'Name', 'Formula', 'Level'],
             colModel: [
@@ -596,6 +619,8 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
         });
     }
 
+    addButtons();
+    createHtmlStructure();
     displayList();
 
     // Service
