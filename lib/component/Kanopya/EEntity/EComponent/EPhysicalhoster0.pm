@@ -95,7 +95,7 @@ sub startHost {
         if (not -e $wol) {
             $wol = '/usr/bin/wol';
             if (not -e $wol) {
-                $errmsg = "EOperation::EStartNode->startNode : Neither 'etherwake' nor 'wol' command where found";
+                $errmsg = "Neither 'etherwake' nor 'wol' command where found";
                 throw Kanopya::Exception::Execution(error => $errmsg);
             }
             $wol .= " --host " . $args{host}->getPXEIface->getIPAddr;

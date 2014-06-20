@@ -40,20 +40,15 @@ sub methods {
     return {
         scaleHost => {
             description => 'scale host\'s cpu / memory',
-            perm_holder => 'entity',
         },
         migrate => {
             description => 'migrate a host',
-            perm_holder => 'entity',
         },
         optimiaas  => {
             description => 'optimize IaaS (packing)',
-            perm_holder => 'entity',
         },
-        # TODO(methods): Remove this method from the api once the merge of component/connector
         hypervisors => {
             description => 'get the hypervisors manzaged by the cloud component',
-            perm_holder => 'entity',
             is_virtual  => 1
         },
     };
