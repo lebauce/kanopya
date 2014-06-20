@@ -51,6 +51,29 @@ use constant BOOT_POLICIES => {
     local_disk   => 'BootOnLocalDisk'
 };
 
+sub methods {
+    return {
+        createHost => {
+            description => 'create a host',
+        },
+        removeHost => {
+            description => 'remove a host',
+        },
+        startHost  => {
+            description => 'start a host',
+        },
+        stopHost => {
+            description => 'stop a host',
+        },
+        releaseHost => {
+            description => 'release a host',
+        },
+        getFreeHost => {
+            description => 'get an available host',
+        },
+    };
+}
+
 sub getHostManagerParams {
     my $self = shift;
     my %args = @_;

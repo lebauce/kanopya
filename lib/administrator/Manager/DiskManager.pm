@@ -38,6 +38,21 @@ my $log = get_logger("");
 my $errmsg;
 
 
+sub methods {
+    return {
+        createDisk => {
+            description => 'create a disk',
+        },
+        removeDisk => {
+            description => 'remove a disk',
+        },
+        mkfs => {
+            description => 'Format a disk',
+        },
+    };
+}
+
+
 =pod
 =begin classdoc
 
