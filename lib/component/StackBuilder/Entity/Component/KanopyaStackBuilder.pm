@@ -374,7 +374,8 @@ sub subscribeSupportNotifications {
 
     # The support will be notified on every timeouted operation
     Entity::Operationtype->subscribe(subscriber_id   => $support->id,
-                                     operation_state => "timeouted");
+                                     operation_state => "timeouted",
+                                     entity_id       => $self->id,);
 }
 
 sub subscribeOwnerNotifications {

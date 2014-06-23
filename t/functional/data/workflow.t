@@ -62,8 +62,7 @@ sub enqueueBefore {
     lives_ok {
         # Enqueue one operation before all operations;
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my $op =  { priority      => 200,
-                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' }) };
+        my $op =  { priority => 200, type => "LaunchSCOWorkflow" };
 
         $workflow->enqueueBefore(current_operation => $operations[0], operation => $op);
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
@@ -128,8 +127,7 @@ sub enqueueNow {
         $operations[0]->state('succeeded');
         $operations[1]->state('processing');
 
-        my $op =  { priority => 200,
-                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'ActivateHost' }) };
+        my $op = { priority => 200, type => 'ActivateHost' };
 
         $workflow->enqueueNow(operation => $op);
 
@@ -144,9 +142,6 @@ sub enqueueNow {
     } 'EnqueueNow one Operation';
 
     lives_ok {
-        my $op =  { priority => 200,
-                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'ActivateHost' }) };
-
         my $workflow_to_enqueue = { name => 'StopNode' };
         $workflow->enqueueNow(workflow => $workflow_to_enqueue);
 
@@ -175,14 +170,14 @@ sub paramPresetTransmission {
         $operation->state('succeeded');
 
         my $op1 =  {priority => 200,
-                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'ActivateHost' }),
+                    type     => 'ActivateHost',
                     params   => {
                         param1 => 'parameter_1_1',
                         param2 => 'parameter_2_1',
                     }};
 
         my $op2 =  {priority => 200,
-                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'SynchronizeInfrastructure' }),
+                    type     => 'SynchronizeInfrastructure',
                     params   => {
                         param1 => 'parameter_1_2',
                         param3 => 'parameter_3_2',

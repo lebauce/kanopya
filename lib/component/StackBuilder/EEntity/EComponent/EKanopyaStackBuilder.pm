@@ -140,6 +140,7 @@ sub buildStack {
                        ", add version number to the service name: $cluster_name");
         }
 
+        my $hcm = Entity::ServiceProvider::Cluster->getKanopyaCluster;
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
                          # Add the specific params
@@ -148,13 +149,15 @@ sub buildStack {
                          %{ clone($common_params) }
                      );
 
+        $params->{context}->{service_manager} = $hcm->getComponent(name => "KanopyaServiceManager");
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',
             priority   => 200,
-            params     => $params,
+            params     => $params
         });
     }
 }
+
 
 sub startStack {
     my ($self, %args) = @_;
@@ -267,7 +270,7 @@ sub startStack {
 
     # Create a logical volume on Kanopya to store nova instance meta data.
     my $nova_lv_name = "nova-instances-" . 
-                       $components->{novacompute}->{serviceprovider}->cluster_name;
+                       $components->{novacompute}->{serviceprovider}->id;
 
     $log->info("Creating and exporting logical volume $nova_lv_name");
     
@@ -419,6 +422,7 @@ sub startStack {
             params     => {
                 context => {
                     cluster => $cluster,
+                    service_manager => $cluster->service_manager,
                 },
             },
         });
@@ -644,6 +648,7 @@ sub stopStack {
                     params     => {
                         context => {
                             cluster => $cluster,
+                            service_manager => $cluster->service_manager,
                         },
                     },
                 },
@@ -694,6 +699,7 @@ sub endStack {
                     params     => {
                         context => {
                             cluster => $cluster,
+                            service_manager => $cluster->service_manager,
                         },
                     },
                 });

@@ -651,6 +651,10 @@ sub _getOperationsToEnqueue {
         $operations_to_enqueue[0]->{params} = $args{workflow}->{params};
     }
     elsif (defined $args{operation}) {
+        $args{operation}->{operationtype} = Entity::Operationtype->find(hash => {
+                                                operationtype_name => delete $args{operation}->{type}
+                                            });
+
         push @operations_to_enqueue, $args{operation};
     }
 
