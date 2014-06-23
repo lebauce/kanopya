@@ -282,60 +282,20 @@ sub update {
                 # Nodes metrics values cache
                 $start = time();
 
-                # Clone monitoring value to check nodemetrics
-                my $nodes_oid = clone($monitored_values);
-                while(my ($name,$hash_oid) = each (%$nodes_oid)) {
-                    for my $oid (keys %$hash_oid) {
-                        $hash_oid->{$oid} = undef;
-                    }
-                }
+                $self->_storeNodeMetricsValues(monitored_values  => $monitored_values,
+                                               collector_manager => $collector_manager,
+                                               timestamp         => $timestamp);
 
-                my @node_hostnames = keys %{ $monitored_values };
-                my @nodemetrics = Entity::Metric::Nodemetric->search(
-                                      hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
-                                  );
-
-                for my $nodemetric (@nodemetrics) {
-                    eval {
-                        my $hostname = $nodemetric->nodemetric_node->node_hostname;
-                        my $indicator_oid = $nodemetric->nodemetric_indicator->indicator->indicator_oid;
-
-                        if (! exists $monitored_values->{$hostname}->{$indicator_oid}) {
-                            throw Kanopya::Exception::Internal::Inconsistency(
-                                      error => "No monitoring data found for node \"$hostname\" " .
-                                               "and indicator \"$indicator_oid\""
-                                  );
-                        }
-
-                        $nodes_oid->{$hostname}->{$indicator_oid} = 1;
-                        $nodemetric->updateData(
-                            time             => $timestamp,
-                            value            => $monitored_values->{$hostname}->{$indicator_oid},
-                            time_step        => $self->{config}->{time_step},
-                            storage_duration => $self->{config}->{storage_duration}
-                        );
-                    };
-                    if ($@) {
-                        $log->warn($@);
-                    }
-                }
-
-                $self->_manageMissingNodemetrics(nodemetric_num => scalar @nodemetrics,
-                                                 nodes_oid => $nodes_oid,
-                                                 monitored_values => $monitored_values,
-                                                 timestamp => $timestamp,
-                                                 collector_manager => $collector_manager);
 
                 $timeinfo .= "Nodes data storage: ".(time() - $start).", ";
 
                 # Parse retriever return, compute clustermetric values and store in DB
                 if ($checker == 1) {
                     $start = time();
-                    $self->_computeCombinationAndFeedTimeDB(
-                        values           => $monitored_values,
-                        timestamp        => $timestamp,
-                        service_provider => $service_provider
-                    );
+                    $self->_computeCombinationAndFeedTimeDB(values           => $monitored_values,
+                                                            timestamp        => $timestamp,
+                                                            service_provider => $service_provider);
+
                     $timeinfo .= "Cluster metric compute: ".(time() - $start);
                 }
                 $log->info($timeinfo);
@@ -349,6 +309,71 @@ sub update {
         }
     }
 }
+
+
+=pod
+=begin classdoc
+
+Store the node metric monitored data in local cache.
+
+@param monitored_values hash table {node => oid => value} indicating the received monitoring value
+@param timestamp timestamp indicating the update time
+@param collector_manager collector manager instance
+
+=end classdoc
+=cut
+
+sub _storeNodeMetricsValues {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'monitored_values', 'collector_manager', 'timestamp' ]);
+
+    # Clone monitoring value to check nodemetrics
+    my $nodes_oid = clone($args{monitored_values});
+    while(my ($name,$hash_oid) = each (%$nodes_oid)) {
+        for my $oid (keys %$hash_oid) {
+            $hash_oid->{$oid} = undef;
+        }
+    }
+
+    my @node_hostnames = keys %{ $args{monitored_values} };
+    my @nodemetrics = Entity::Metric::Nodemetric->search(
+                          hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
+                      );
+
+    for my $nodemetric (@nodemetrics) {
+        eval {
+            my $hostname = $nodemetric->nodemetric_node->node_hostname;
+            my $indicator_oid = $nodemetric->nodemetric_indicator->indicator->indicator_oid;
+
+            if (! exists $args{monitored_values} ->{$hostname}->{$indicator_oid}) {
+                throw Kanopya::Exception::Internal::Inconsistency(
+                          error => "No monitoring data found for node \"$hostname\" " .
+                                   "and indicator \"$indicator_oid\""
+                      );
+            }
+
+            $nodes_oid->{$hostname}->{$indicator_oid} = 1;
+            $nodemetric->updateData(
+                time             => $args{timestamp},
+                value            => $args{monitored_values} ->{$hostname}->{$indicator_oid},
+                time_step        => $self->{config}->{time_step},
+                storage_duration => $self->{config}->{storage_duration}
+            );
+        };
+        if ($@) {
+            $log->warn($@);
+        }
+    }
+
+    $self->_manageMissingNodemetrics(nodemetric_num => scalar @nodemetrics,
+                                     nodes_oid => $nodes_oid,
+                                     monitored_values => $args{monitored_values},
+                                     timestamp => $args{timestamp},
+                                     collector_manager => $args{collector_manager});
+}
+
 
 
 =pod
