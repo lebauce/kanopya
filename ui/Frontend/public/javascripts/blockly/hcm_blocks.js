@@ -15,7 +15,7 @@ Blockly.Blocks['hcm_statistic_function'] = {
     this.setColour(230);
     this.setOutput(true, 'Function');
     this.interpolateMsg('%1 %2',
-        ['FCT', new Blockly.FieldDropdown(blocklyHandler.statisticFunctionBlockList('label'))],
+        ['FCT', new Blockly.FieldDropdown(blocklyHandler.statisticFunctionBlockList())],
         ['NUM', 'Metric', Blockly.ALIGN_RIGHT],
         Blockly.ALIGN_RIGHT);
     // Assign 'this' to a variable for use in the tooltip closure below.
@@ -38,7 +38,7 @@ Blockly.JavaScript['hcm_statistic_function'] = function(block) {
     var arg = Blockly.JavaScript.valueToCode(block, 'NUM', Blockly.JavaScript.ORDER_NONE) || '0';
     var code;
 
-    var statisticFunctionList = blocklyHandler.statisticFunctionBlockList('code');
+    var statisticFunctionList = blocklyHandler.statisticFunctionBlockList();
     for (var i = 0; i < statisticFunctionList.length; i++) {
         if (statisticFunctionList[i][1] == statisticFunction) {
             code = statisticFunctionList[i][0] + '(' + arg + ')';

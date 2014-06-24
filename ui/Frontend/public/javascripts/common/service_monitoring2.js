@@ -156,7 +156,7 @@ function createServiceCombination(container_id, elem_id, options) {
     $('#' + container_id).append(button);
 };
 
-function openCreateDialog() {
+function openCreateDialog(serviceProviderId, gridId) {
 
     var dialogContainerId = 'metric-editor';
     var metricCategoryData, metricData, statisticFunctionData;
@@ -169,10 +169,16 @@ function openCreateDialog() {
     }
 
     function loadMetricData() {
-        $.getJSON("ajax/metric.json", function(data) {
-            metricData = data;
-            loadStatisticFunctionData();
-        });
+        metricData = [];
+        var indicators = getIndicators(serviceProviderId);
+        for(indicator in indicators) {
+            metricData.push({
+                label: indicator,
+                id: indicators[indicator].pk,
+                categoryId: -1
+            });
+        }
+        loadStatisticFunctionData();
     }
 
     function loadStatisticFunctionData() {
@@ -184,10 +190,15 @@ function openCreateDialog() {
 
     function renderDialogTemplate() {
         var templateFile = '/templates/metric-editor.tmpl.html';
+        var options = {
+            changeFormula: function() {
+                formulaChanged();
+            }
+        };
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
             $('body').append(template(metricCategoryData));
-            blocklyHandler.init(metricCategoryData, metricData, statisticFunctionData);
+            blocklyHandler.init(metricCategoryData, metricData, statisticFunctionData, options);
             openDialog();
         });
     }
@@ -197,42 +208,209 @@ function openCreateDialog() {
             resizable: true,
             modal: true,
             dialogClass: "no-close",
+            closeOnEscape: false,
             width: 800,
             height: 600,
             buttons : [
                 {
-                    id: 'but-cancel',
+                    id: dialogContainerId + '-cancel-button',
                     text: 'Cancel',
                     click: function() {
-                        closeDialog(this);
+                        closeDialog();
                     }
                 },
                 {
-                    id: 'but-create',
+                    id: dialogContainerId + '-create-button',
                     text: 'Create',
+                    disabled: true,
+                    class: 'ui-state-disabled',
                     click: function() {
-                        if (createMetric()) {
-                            closeDialog(this);
-                        };
+                        createMetric();
                     }
-                },
-                {
-                    id: 'but-create-continue',
-                    text: 'Create and Continue',
-                    click: function() {}
                 }
-            ]
+            ],
+            //custom handler for ESC key
+            create: function() {
+                $(this).closest('.ui-dialog').on('keydown', function(ev) {
+                    if (ev.keyCode === $.ui.keyCode.ESCAPE) {
+                        closeDialog();
+                    }
+                });
+            }
         });
     }
 
-    function createMetric() {
-        console.debug(blocklyHandler.getFormula());
-        return false;
+    function formulaChanged() {
+        var formula = blocklyHandler.getFormula();
+        var createButton = $('#' + dialogContainerId + '-create-button');
+        // Check if at least one metric is used in the formula
+        var isValid = (formula.indexOf('[') > -1);
+        // Check if 0 value is used
+        if (isValid) {
+            var i = 0;
+            var j = formula.indexOf('0');
+            var str;
+            while (j > -1) {
+                // 0 in first position or the previous character is not a number
+                if (j === 0 || isNaN(parseInt(formula.charAt(j - 1), 10))) {
+                    isValid = false;
+                    break;
+                }
+                j = formula.indexOf('0', j + 1);
+            }
+        }
+
+        if (isValid) {
+            createButton
+                .removeAttr('disabled')
+                .removeClass('ui-state-disabled');
+        } else {
+            createButton
+                .attr('disabled', 'disabled')
+                .addClass('ui-state-disabled');
+        }
     }
 
-    function closeDialog(this_) {
-        $(this_).dialog('close');
-        $(this_).remove();
+    function createMetric() {
+        var fields = {
+            name: $('#metric-name').val(),
+            description: $('#metric-description').val(),
+            formula: blocklyHandler.getFormula()
+        }
+
+        var level = getFormulaLevel();
+        switch(level) {
+            case 'node':
+                createNodeMetric(fields);
+                break;
+            case 'service':
+                createServiceMetric(fields);
+                break;
+        }
+    }
+
+    function getFormulaLevel() {
+        var formula = blocklyHandler.getFormula();
+        var level = 'node';
+        for (var i = 0; i < statisticFunctionData.length; i++) {
+            if (formula.indexOf(statisticFunctionData[i].label) > -1) {
+                level = 'service';
+                break;
+            }
+        }
+        return level;
+    }
+
+    function createNodeMetric(fields) {
+        var formula = formatNodeIndicator(fields.formula);
+
+        $.ajax({
+            url: '/api/nodemetriccombination',
+            type: 'POST',
+            data: {
+                'nodemetric_combination_label': fields.name,
+                'nodemetric_combination_formula': formula,
+                'comment': fields.description,
+                'service_provider_id': serviceProviderId,
+            },
+            success: function() {
+                $('#' + gridId).trigger('reloadGrid');
+            },
+            complete: function() {
+                closeDialog();
+            }
+        });
+    }
+
+    function formatNodeIndicator(formula) {
+        formula = formula.replace(/\[/g, 'id');
+        formula = formula.replace(/\]/g, '');
+        return formula;
+    }
+
+    function createServiceMetric(fields) {
+        var formula = formatServiceIndicator(fields.formula);
+        console.debug('createServiceMetric', formula);
+
+        $.ajax({
+            url: '/api/aggregatecombination',
+            type: 'POST',
+            data: {
+                'aggregate_combination_label': fields.name,
+                'aggregate_combination_formula': formula,
+                'comment': fields.description,
+                'service_provider_id': serviceProviderId,
+            },
+            success: function() {
+                $('#' + gridId).trigger('reloadGrid');
+            },
+            complete: function() {
+                closeDialog();
+            }
+        });
+    }
+
+    function formatServiceIndicator(formula) {
+        var statStartIndex, statEndIndex, metricStartIndex, metricEndIndex, nodeIndicatorId, serviceIndicatorId;
+        for (var i = 0; i < statisticFunctionData.length; i++) {
+            statStartIndex = formula.indexOf(statisticFunctionData[i].label);
+            while (statStartIndex > -1) {
+                statEndIndex = formula.indexOf(')', statStartIndex);
+                metricStartIndex = formula.indexOf('[', statStartIndex);
+                metricEndIndex = formula.indexOf(']', statStartIndex);
+                nodeIndicatorId = formula.substring(metricStartIndex + 1, metricEndIndex);
+                serviceIndicatorId = getServiceIndicatorId(nodeIndicatorId, statisticFunctionData[i].code, serviceProviderId);
+                formula = formula.substring(0, statStartIndex) + 'id' + serviceIndicatorId + formula.substring(statEndIndex + 1);
+                statStartIndex = formula.indexOf(statisticFunctionData[i].label);
+            }
+        }
+        return formula;
+    }
+
+    function getServiceIndicatorId(nodeIndicatorId, statisticFunctionName, serviceProviderId) {
+        var serviceIndicatorId;
+        $.ajax({
+            url: '/api/clustermetric',
+            data: {
+                'clustermetric_statistics_function_name': statisticFunctionName,
+                'clustermetric_indicator_id': nodeIndicatorId,
+                'clustermetric_service_provider_id': serviceProviderId
+            },
+            async: false,
+            success: function(data) {
+                if (data.length > 0) {
+                    serviceIndicatorId = data[0].pk;
+                } else {
+                    serviceIndicatorId = createServiceIndicator(nodeIndicatorId, statisticFunctionName, serviceProviderId);
+                    console.debug('create indicatorId', serviceIndicatorId);
+                }
+            }
+        });
+        return serviceIndicatorId;
+    }
+
+    function createServiceIndicator(nodeIndicatorId, statisticFunctionName, serviceProviderId) {
+        var serviceIndicatorId;
+        $.ajax({
+            url: '/api/clustermetric',
+            type: 'POST',
+            data: {
+                'clustermetric_statistics_function_name': statisticFunctionName,
+                'clustermetric_indicator_id': nodeIndicatorId,
+                'clustermetric_service_provider_id': serviceProviderId,
+                'clustermetric_window_time': 1200
+            },
+            async: false,
+            success: function(data) {
+                serviceIndicatorId = data.pk;
+            }
+        });
+        return serviceIndicatorId;
+    }
+
+    function closeDialog() {
+        $('#' + dialogContainerId).dialog('close');
+        $('#' + dialogContainerId).remove();
     }
 
     loadMetricCategoryData();
@@ -500,7 +678,7 @@ function loadServicesMonitoring2(container_id, elem_id, ext, mode_policy) {
         button.button({icons: {primary: 'ui-icon-plusthick'}});
 
         $(button).click(function() {
-            openCreateDialog();
+            openCreateDialog(elem_id, gridId);
         });
 
         buttonsContainer.append(button);

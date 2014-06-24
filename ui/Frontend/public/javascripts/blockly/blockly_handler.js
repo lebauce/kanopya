@@ -4,6 +4,7 @@ var blocklyHandler = {
     metricCategoryList: [],
     metricList: [],
     statisticFunctionList: [],
+    options: {},
 
     getMetricCategoryById: function(id) {
         var resultList = this.metricCategoryList.filter(function(obj) {
@@ -38,13 +39,13 @@ var blocklyHandler = {
 
     defaultWorkspaceXml: function() {
         var defaultXml = '<xml>';
-        defaultXml += '  <block type="hcm_set" deletable="false" x="85" y="100">';
+        defaultXml += '  <block type="hcm_set" deletable="false" x="-80" y="100">';
         defaultXml += '  </block>';
         defaultXml += '</xml>';
         return defaultXml;
     },
 
-    init: function(metricCategoryData, metricData, statisticFunctionData) {
+    init: function(metricCategoryData, metricData, statisticFunctionData, options) {
 
         var this_ = this;
 
@@ -52,8 +53,11 @@ var blocklyHandler = {
         this.currentMetricCategory = this.metricCategoryList[0];
         this.metricList = metricData;
         this.statisticFunctionList = statisticFunctionData;
+        this.options = options;
 
-        var toolbox = this_.toolbox().replace('[default]', 'this.getMetricList()[0].id');
+        var metricList = this.getMetricList();
+        var defaultMetricId = (metricList.length > 0) ? metricList[0].id : ''; 
+        var toolbox = this.toolbox().replace('[default]', defaultMetricId);
         Blockly.inject($('#blockly-container')[0],
             {path: '/javascripts/vendor/blockly/', toolbox: toolbox});
         this.setDefaultWorkspace();
@@ -108,7 +112,11 @@ var blocklyHandler = {
             });
             formula = formula.replace('[' + metricId + ']', resultList[0].label);
         }
-        $('#formula').text('Formula = ' + formula);
+        $('#metric-formula').text('Formula = ' + formula);
+
+        if (blocklyHandler.options.changeFormula && typeof blocklyHandler.options.changeFormula == 'function') {
+            blocklyHandler.options.changeFormula.call(null);
+        }
     },
 
     setMetricCategory: function(categoryId) {
@@ -117,23 +125,29 @@ var blocklyHandler = {
     },
 
     refreshMetricList: function() {
-        var toolbox = this.toolbox().replace('[default]', this.getMetricList()[0].id);
+        var metricList = this.getMetricList();
+        var defaultMetricId = (metricList.length > 0) ? metricList[0].id : '';
+        var toolbox = this.toolbox().replace('[default]', defaultMetricId);
         Blockly.updateToolbox(toolbox);
     },
 
     metricBlockList: function() {
         var metricList = this.getMetricList();
         var blockList = [];
-        for (var i = 0; i < metricList.length; i++) {
-            blockList.push([metricList[i].label, metricList[i].id]);
-        };
+        if (metricList.length === 0) {
+            blockList.push([]);
+        } else {
+            for (var i = 0; i < metricList.length; i++) {
+                blockList.push([metricList[i].label, metricList[i].id]);
+            }
+        }
         return blockList;
     },
 
-    statisticFunctionBlockList: function(field) {
+    statisticFunctionBlockList: function() {
         var blockList = [];
         for (var i = 0; i < this.statisticFunctionList.length; i++) {
-            blockList.push([this.statisticFunctionList[i][field], this.statisticFunctionList[i].id]);
+            blockList.push([this.statisticFunctionList[i].label, this.statisticFunctionList[i].id]);
         };
         return blockList;
     },
@@ -155,8 +169,6 @@ var blocklyHandler = {
 
         var formula = blocklyHandler.getFormula();
         formula = formula.replace(/[\[\]]+/g, '');
-
-        console.log(formula);
     }
 
 };

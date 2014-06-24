@@ -1,6 +1,10 @@
 {
     "metric-category": [
         {
+            "id": -1,
+            "label": "None"
+        },
+        {
             "id": 1,
             "label": "Memory"
         },
