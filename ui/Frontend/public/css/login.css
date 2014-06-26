@@ -1,8 +1,7 @@
 * {
   margin: 0;
   padding: 0;
-  font-family: Monospace;
-  font-size: 1.05em;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
@@ -22,7 +21,6 @@ div#container {
   width: 350px;
   margin-top: -12px;
   background-color: #FFFFFF;
-  border: thin solid #7E388A;
   padding: 25px;
 }
 
@@ -31,21 +29,28 @@ h2 {
 }
 
 form {
-  margin: 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  text-align: center;
 }
 
 label {
   display: inline-block;
+  text-align: left;
   width: 100px;
 }
 
 input {
   width: 120px;
   margin-top: 12px;
+  /* For same sizes in "submit" and "text" inputs, see http://stackoverflow.com/a/6625873/322464 */
+  -moz-box-sizing:border-box;
+  -webkit-box-sizing:border-box;
+  box-sizing:border-box;
 }
 
 [type="submit"] {
-  margin-left: 109px;
+  margin-left: 104px;
 }
 
 img#biglogo {

@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
-        <title>Kanopya API</title>
+        <title>HCM API</title>
         <link rel="stylesheet" href="<% request.uri_base %>/css/bootstrap.min.css" />
         <script src="/javascripts/jquery/jquery-1.7.2.js"></script>
         <script src="/javascripts/bootstrap/bootstrap.min.js"></script>
@@ -32,7 +32,7 @@
 
         <div class="navbar navbar-fixed-top">
           <div class="navbar-inner">
-            <a class="brand" href="/doc/api/general">Kanopya API <% version %></a>
+            <a class="brand" href="/doc/api/general">HCM API <% version %></a>
             <ul class="nav">
                 <li><a href="/doc/api/general">Documentation</a></li>
                 <li><a href="/doc/api/resources">Resources</a></li>
