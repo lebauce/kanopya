@@ -10,7 +10,11 @@ class kanopya::mysql::params {
       }
 
       package { 'galera':
-        ensure  => installed,
+        ensure => installed,
+      }
+
+      package { 'socat':
+        ensure => installed,
       }
     }
     /(?i)(redhat|centos)/ : {
