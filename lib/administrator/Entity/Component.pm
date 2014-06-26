@@ -398,7 +398,7 @@ sub checkDependency {
     # The state is the node state no "in" seems "up"
     if ($state ne "in") {
         throw Kanopya::Exception::InvalidConfiguration(
-                  error     => $args{component}->label . " has to be up to start " .
+                  error     => $args{component}->label . " has to be up (in) to start " .
                                $self->label . " (not $state)",
                   component => $self
               );
@@ -416,8 +416,6 @@ Assuming that the state of a component is the state of the master node of the co
 
 sub getState {
     my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'component' ]);
 
     return $self->getMasterNode->getState();
 }

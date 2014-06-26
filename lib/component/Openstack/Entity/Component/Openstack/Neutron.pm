@@ -103,7 +103,8 @@ sub checkConfiguration {
         $self->checkAttribute(attribute => $attr);
     }
 
-    for my $component ($self->mysql5, $self->nova_controller->keystone, $self->nova_controller->amqp) {
+    for my $component ($self->getDependentComponents()) {
+        $log->debug("Checking dependency for related component $component");
         $self->checkDependency(component => $component);
     }
 }
