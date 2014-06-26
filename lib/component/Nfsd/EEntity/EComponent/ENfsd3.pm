@@ -69,7 +69,7 @@ sub createExport {
 
         # Update the configuration of the component Mounttable of the cluster,
         # to automatically mount the images repositories.
-        my $system = $self->getComponent(category => "System");
+        my $system = $self->getMasterNode->getComponent(category => "System");
         my $esystem = EEntity->new(entity => $system);
 
         $esystem->addMount(
