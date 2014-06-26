@@ -223,6 +223,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 nodemetrics
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Nodemetric>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodemetrics",
+  "Kanopya::Schema::Result::Nodemetric",
+  { "foreign.nodemetric_node_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_provider
 
 Type: belongs_to
@@ -289,8 +304,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:34:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mLQMF6/ls5n4OYrL9d8L7Q
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-30 11:56:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:26njX/CXJ6NoA0wl7Q/Rjw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -29,12 +29,14 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 
-Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
+use Kanopya::Tools::TestUtils 'expectedException';
+
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4');
 
 Kanopya::Database::beginTransaction;
 
-my ($indic1, $indic2);
-my ($node_1, $node_2);
+my ($indic1, $indic2, $indic3);
+my ($node_1, $node_2, $node_3);
 my $service_provider;
 my $aggregator;
 eval{
@@ -59,18 +61,14 @@ eval{
     );
 
     # Create node 1
-    $node_1 = Node->new(
-        node_hostname => 'node_1',
-        service_provider_id   => $service_provider->id,
-        monitoring_state    => 'up',
-    );
+    $node_1 = $service_provider->registerNode(hostname         => 'node_1',
+                                              monitoring_state => 'up',
+                                              number           => 1);
 
     # Create node 2
-    $node_2 = Node->new(
-        node_hostname => 'node_2',
-        service_provider_id   => $service_provider->id,
-        monitoring_state    => 'up',
-    );
+    $node_2 = $service_provider->registerNode(hostname         => 'node_2',
+                                              monitoring_state => 'up',
+                                              number           => 1);
 
     # Get indicators
     $indic1 = Entity::CollectorIndicator->find (
@@ -87,9 +85,22 @@ eval{
         }
     );
 
+    # Indicator not used in Clustermetric
+    $indic3 = Entity::CollectorIndicator->find (
+        hash => {
+            collector_manager_id        => $mock_monitor->id,
+            'indicator.indicator_oid'   => 'Memory/Available MBytes'
+        }
+    );
+
     testCombinationUnit();
     # Tests
     testClusterMetric(
+        service_provider    => $service_provider,
+        aggregator          => $aggregator,
+    );
+
+    testNodeMetric(
         service_provider    => $service_provider,
         aggregator          => $aggregator,
     );
@@ -120,6 +131,113 @@ if($@) {
     Kanopya::Database::rollbackTransaction;
     fail('Exception occurs');
 
+}
+
+sub testNodeMetric {
+    my %args = @_;
+
+    my $service_provider = $args{service_provider};
+    my $aggregator       = $args{aggregator};
+
+    lives_ok {
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'default':{'const':7}}"
+        );
+
+        # Combinations
+        my $ncomb = Entity::Metric::Combination::NodemetricCombination->new(
+                        service_provider_id            => $service_provider->id,
+                        nodemetric_combination_formula => 'id' . ($indic3->id),
+                    );
+
+        expectedException {
+            Entity::Metric::Nodemetric->find(hash => {
+                nodemetric_node_id => $node_1->id,
+                nodemetric_indicator_id => $indic3->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound', 'Nodemetric not automatly created';
+
+        $aggregator->update();
+
+        Entity::Metric::Nodemetric->find(hash => {
+            nodemetric_node_id => $node_1->id,
+            nodemetric_indicator_id => $indic3->id,
+        });
+
+        # Create node 3
+        $node_3 = $service_provider->registerNode(hostname         => 'node_3',
+                                                  monitoring_state => 'up',
+                                                  number           => 1);
+
+        # When registering a new node, only nodemetrics linked to an indicator already linked to a
+        # clustermetric are created.
+
+        Entity::Metric::Nodemetric->find(hash => {
+            nodemetric_node_id => $node_3->id,
+            nodemetric_indicator_id => $indic2->id,
+        });
+
+        expectedException {
+            Entity::Metric::Nodemetric->find(hash => {
+                nodemetric_node_id => $node_3->id,
+                nodemetric_indicator_id => $indic3->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound', 'Nodemetric linked to an indicator not linked to
+           a clustermetric are not created';
+
+        $aggregator->update();
+
+        Entity::Metric::Nodemetric->find(hash => {
+            nodemetric_node_id => $node_3->id,
+            nodemetric_indicator_id => $indic3->id,
+        });
+
+    } 'Test nodemetric creation with aggregator and node registration';
+
+    lives_ok {
+
+        my $nm = Entity::Metric::Nodemetric->find(hash => {
+                     nodemetric_node_id => $node_3->id,
+                     nodemetric_indicator_id => $indic3->id,
+                 });
+
+        my $last_value = $nm->lastValue();
+
+        if ($last_value ne '7') {
+            die 'Wrong value got <' . $last_value . '> exepect <7>';
+        }
+
+        my $last_values = $indic3->lastValue(nodes => [$node_1, $node_2, $node_3]);
+
+        if (scalar keys %$last_values ne 3) {
+            die 'Expect 3 keys in hashtable';
+        }
+
+        if (! defined $last_values->{$node_1->id} ||
+            ! defined $last_values->{$node_2->id} ||
+            ! defined $last_values->{$node_3->id} ||
+            $last_values->{$node_3->id} ne '7' ||
+            $last_values->{$node_3->id} ne '7' ||
+            $last_values->{$node_3->id} ne '7'
+            ) {
+
+            die 'Wrong collector indicator value';
+        }
+
+        $node_3->remove();
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'default':{'const':null}}"
+        );
+
+        $aggregator->update();
+
+    } 'Check nodemetric values after aggregator update';
 }
 
 sub testClusterMetric {
@@ -300,7 +418,6 @@ sub testNodemetricCombination {
     my $service_provider = $args{service_provider};
 
     lives_ok {
-
         # Combinations
         my $ncomb_ident = Entity::Metric::Combination::NodemetricCombination->new(
                               service_provider_id             => $service_provider->id,
@@ -309,8 +426,7 @@ sub testNodemetricCombination {
 
         my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
                          service_provider_id             => $service_provider->id,
-                         nodemetric_combination_formula  => '(id' . ($indic1->id)
-                                                            . ' + 5) * id' . ($indic2->id),
+                         nodemetric_combination_formula  => '(id' . ($indic1->id) . ' + 5) * id' . ($indic2->id),
                      );
 
         my $mock_conf  = "{'default':{'const':null}}";
@@ -323,13 +439,14 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (defined $ncomb_ident->evaluate(node => $node_1)) {
-            die 'Identity combination defined while no value for indicator'.($ncomb_ident->evaluate(node => $node_1));
+        my $evaluation = $ncomb_ident->evaluate(node => $node_1);
+        if (defined $evaluation) {
+            die 'Identity combination defined while no value for indicator' . $evaluation;
         }
 
-
-        if (defined $ncomb2->evaluate(node => $node_1)) {
-            die 'Combination defined while all indicator values are undef =>'.($ncomb2->evaluate(node => $node_1));
+        $evaluation = $ncomb2->evaluate(node => $node_1);
+        if (defined $evaluation) {
+            die 'Combination defined while all indicator values are undef =>'.$evaluation;
         }
 
         # More complex config:
@@ -347,7 +464,8 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (! ($ncomb_ident->evaluate(node => $node_1) == 42)) {
+        $evaluation = $ncomb_ident->evaluate(node => $node_1);
+        if (! (defined $evaluation && $evaluation == 42)) {
             die 'Identity combination as same value than indicator';
         }
 
@@ -407,11 +525,9 @@ sub testBigAggregation {
 
         # Create nodes
         for my $i (1..$nodes_count) {
-            Node->new(
-                node_hostname => 'node_' . $i,
-                service_provider_id   => $service_provider->id,
-                monitoring_state    => 'up',
-            );
+            $service_provider->registerNode(hostname         => 'node_' . $i,
+                                            monitoring_state => 'up',
+                                            number           => $i);
         }
 
         my $cm = Entity::Metric::Clustermetric->new(
@@ -464,11 +580,9 @@ sub testStatisticFunctions {
 
         # Create nodes
         for my $i (0..9) {
-            Node->new(
-                node_hostname => 'node_' . $i,
-                service_provider_id   => $service_provider->id,
-                monitoring_state    => 'up',
-            );
+            $service_provider->registerNode(hostname         => 'node_' . $i,
+                                            monitoring_state => 'up',
+                                            number           => $i);
         }
 
         my $mock_conf  = "{'default':{'const':null},"
@@ -582,8 +696,14 @@ sub test_rrd_remove {
                       clustermetric_service_provider_id => $service_provider->id
                   });
 
-        my @cm_ids = map {$_->id} @cms;
-        while (@cms) { (pop @cms)->delete(); };
+        my @nodeids = map { $_->id } $service_provider->nodes;
+        my @nms = Entity::Metric::Nodemetric->search (hash => {
+                      nodemetric_node_id => \@nodeids
+                  });
+
+        my @metrics = (@cms, @nms);
+        my @mids = map { $_->id } @metrics;
+        while (@metrics ) { (pop @metrics )->delete(); };
 
         my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
                       service_provider_id => $service_provider->id
@@ -592,8 +712,8 @@ sub test_rrd_remove {
         if (! ((scalar @acs) == 0)) {die 'Fail '.(scalar @acs).' aggregate combinations have not been deleted'}
 
         my $one_rrd_remove = 0;
-        for my $cm_id (@cm_ids) {
-            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+        for my $mid (@mids) {
+            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$mid.'.rrd')) {
                 $one_rrd_remove++;
             }
             close(FILE);

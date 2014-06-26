@@ -161,6 +161,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
+=head2 nodemetric
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Nodemetric>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nodemetric",
+  "Kanopya::Schema::Result::Nodemetric",
+  { "foreign.nodemetric_id" => "self.metric_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 param_preset
 
 Type: belongs_to
@@ -182,8 +197,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-17 12:34:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zLHzF/5/LtG/tgJK4I2yMg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-30 11:56:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5J9Ko8J0br1qblvHCmFdZA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -32,6 +32,8 @@ use warnings;
 
 use General;
 use Entity::CollectorIndicator;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Nodemetric;
 use Entity::Metric::Combination::AggregateCombination;
 
 use DescriptiveStatisticsFunction;
@@ -45,44 +47,36 @@ use constant ATTR_DEF => {
     clustermetric_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 0,
-        is_delegatee    => 1
     },
     clustermetric_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1
     },
     clustermetric_formula_string => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     clustermetric_unit => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     clustermetric_indicator_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 0
     },
     clustermetric_statistics_function_name => {
         pattern         => '^(mean|variance|std|max|min|kurtosis|skewness|dataOut|sum|count)$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 0
     },
     clustermetric_window_time => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 0,
         default         => 1200,
     },
@@ -104,8 +98,8 @@ sub methods {
 sub _labelAttr {
     return 'clustermetric_formula_string';
 }
-=pod
 
+=pod
 =begin classdoc
 
 @constructor
@@ -116,7 +110,6 @@ Set the formula string, the unit and the label if not defined.
 @return a class instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -137,6 +130,15 @@ sub new {
         $self->setAttr(name=>'clustermetric_label', value=>$toString);
     }
     $self->save();
+
+    # Create Nodemetrics for all existing nodes fo the service provider
+    for my $node ($service_provider->nodes) {
+        Entity::Metric::Nodemetric->findOrCreate(
+            nodemetric_node_id      => $node->id,
+            nodemetric_indicator_id => $self->clustermetric_indicator_id
+        );
+    }
+
     return $self;
 }
 

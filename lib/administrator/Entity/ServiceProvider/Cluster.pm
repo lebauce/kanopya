@@ -763,7 +763,7 @@ sub getRequiredComponents {
         };
     }
 
-    return @required;
+    return \@required;
 }
 
 

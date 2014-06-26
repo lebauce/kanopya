@@ -1228,7 +1228,7 @@ sub checkAttr {
     }
     elsif (defined $args{value} && blessed($args{value}) && $args{value}->isa("BaseDB")) {
         throw Kanopya::Exception::Internal::WrongValue(
-                  error => "Unsupported object $args{name} of type " . blessed($args{value})
+                  error => "Unsupported object of type " . blessed($args{value} . " for param <$args{name}>")
               );
     }
 
