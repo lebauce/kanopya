@@ -923,7 +923,7 @@ sub _configure_puppetmaster {
     system('mkdir -m 750 -p /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
     EEntity->new(entity => $kanopya)->reconfigure();
 
-    system("puppetdb-ssl-setup");
+    system("puppetdb ssl-setup -f");
     system('service', 'mysql', 'stop');
     system('service', 'mysql', 'start');
 }
