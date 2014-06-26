@@ -51,6 +51,11 @@ use Exception::Class (
         description => 'Deletion of <[% label %]> is impossible: it is used by a <[% dependant %]>.',
         fields      => [ 'dependant' ],
     },
+    Kanopya::Exception::DB::ForeignKeyConstraint => {
+        isa         => 'Kanopya::Exception::DB',
+        description => 'A foreign key constraint triggered an exception',
+        fields      => [ ],
+    },
     Kanopya::Exception::DB::UnknownSource => {
         isa         => 'Kanopya::Exception::DB',
         description => 'Unknown database source',
