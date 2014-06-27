@@ -59,7 +59,7 @@ use Entity::Metric::Combination::NodemetricCombination;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Nodemetric;
 use Entity::Indicator;
-use Node;
+use Entity::Node;
 use Kanopya::Config;
 use Message;
 use Alert;
@@ -418,7 +418,7 @@ sub  _manageMissingNodemetrics {
         while(my ($oid,$v) = each (%$hash_oid)) {
             if (! defined $v) {
 
-                my $node = Node->find(hash => {'node_hostname' => $name});
+                my $node = Entity::Node->find(hash => {'node_hostname' => $name});
 
                 my $indicator = Entity::Indicator->find(hash => { 'indicator_oid' => $oid });
                 my $col_indicator = Entity::CollectorIndicator->find(hash => {
