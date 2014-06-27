@@ -30,6 +30,7 @@ SCOM::Query - get performance counters values from a remote management server
     
     my $res = $scom->getPerformance(
         counters    => \%counters,
+        monitoring_object => [],
         start_time  => '2/2/2012 11:00:00 AM',
         end_time    => '2/2/2012 12:00:00 AM',
     );
@@ -49,6 +50,8 @@ package SCOM::Query;
 
 use strict;
 use warnings;
+
+use IPC::Cmd;
 
 sub new {
     my $class = shift;
@@ -97,9 +100,13 @@ sub getPerformance {
     # Split only monitoring object list and not counters (TODO)
     OBJECT_SLICE:
     foreach my $monit_objects (@monit_object_slice) {
+        if (@$monit_objects == 0) {
+            die 'Can not split the command more, still too long or an unexpected error occured';
+        }
+
         my $cmd = $self->_buildGetPerformanceCmd(
                     counters            => $args{counters},
-                    monitoring_object   => $monit_objects, # optional
+                    monitoring_object   => $monit_objects,
                     start_time          => $args{start_time},
                     end_time            => $args{end_time},
                     want_attrs          => $wanted_attrs,
@@ -109,10 +116,9 @@ sub getPerformance {
 
         # Execute command
         my $cmd_res = $self->_execCmd(cmd => $cmd);
-        
-        
+
         # remove all \n (end of line and inserted \n due to console output)
-        $cmd_res =~ s/\n//g; 
+        $cmd_res =~ s/(\r|\n)//g;
 
         # If can't execute command (too long) we split it
         if ($cmd_res eq '') {
@@ -126,7 +132,7 @@ sub getPerformance {
         }
 
         # Die if something wrong
-        if ($cmd_res !~ '^PSComputerName' || $cmd_res !~ 'DATASTART') {
+        if ($cmd_res !~ '^PathName' || $cmd_res !~ 'DATASTART') {
             $cmd_res =~ s/DATASTART//g;
             die 'SCOM request fails : ' . $cmd_res;
         }
@@ -161,15 +167,20 @@ sub _execCmd {
         @{ $self->{_scom_shell_init} },                                                 # connect to scom shell
         $args{cmd},                                                                     # SCOM cmd to execute (double quote must be escaped)
     );
-    
+
     my $full_cmd = join(';', @cmd_list) . ";";
-    
-    # If full_cmd use scom snap-in (need scom skd on local)
-    #my $cmd_res = `powershell $full_cmd`;
-    
-    # Else use remote snap-in
-    my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name} $self->{_remote_invocation_options} 2>&1`;
-    
+
+    my $remote_cmd = ['remote_powershell_cmd.py', '-t', $self->{_management_server_name}, '-c', $full_cmd];
+    my ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) = IPC::Cmd::run(command => $remote_cmd, verbose => 0);
+
+    if (!$success) {
+        my $error = join "", @$stderr_buf;
+        if (!$error || $error eq '') { $error = $error_message };
+        die "Something went wrong when trying to call powershell remote script : '$error'";
+    }
+
+    my $cmd_res = join "", @$stdout_buf;
+
     return $cmd_res;
 }
 
