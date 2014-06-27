@@ -872,4 +872,17 @@ sub remove {
     return $self;
 }
 
+=pod
+=begin classdoc
+
+Implementation needed by parent class
+An external cluster does not require any component
+
+=end classdoc
+=cut
+
+sub getRequiredComponents {
+    return ();
+}
+
 1;
