@@ -103,7 +103,7 @@ sub checkConfiguration {
         $self->checkAttribute(attribute => $attr);
     }
 
-    for my $component ($self->getDependentComponents()) {
+    for my $component (@{ $self->getDependentComponents() }) {
         $log->debug("Checking dependency for related component $component");
         $self->checkDependency(component => $component);
     }
