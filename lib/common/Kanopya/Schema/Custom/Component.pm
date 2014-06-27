@@ -53,4 +53,20 @@ Kanopya::Schema::Result::Component->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+
+=head2 kanopya_executor_kanopya_executor
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
+
+=cut
+
+Kanopya::Schema::Result::Component->might_have(
+  "kanopya_executor",
+  "Kanopya::Schema::Result::KanopyaExecutor",
+  { "foreign.kanopya_executor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;
