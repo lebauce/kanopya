@@ -157,6 +157,96 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 amqp
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Amqp>
+
+=cut
+
+__PACKAGE__->might_have(
+  "amqp",
+  "Kanopya::Schema::Result::Amqp",
+  { "foreign.amqp_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 apache2
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Apache2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "apache2",
+  "Kanopya::Schema::Result::Apache2",
+  { "foreign.apache2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Ceph>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph",
+  "Kanopya::Schema::Result::Ceph",
+  { "foreign.ceph_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph_mon
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::CephMon>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph_mon",
+  "Kanopya::Schema::Result::CephMon",
+  { "foreign.ceph_mon_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph_osd
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::CephOsd>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph_osd",
+  "Kanopya::Schema::Result::CephOsd",
+  { "foreign.ceph_osd_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 cinder
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Cinder>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cinder",
+  "Kanopya::Schema::Result::Cinder",
+  { "foreign.cinder_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 collector_indicators
 
 Type: has_many
@@ -267,6 +357,101 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 dhcpd3
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Dhcpd3>
+
+=cut
+
+__PACKAGE__->might_have(
+  "dhcpd3",
+  "Kanopya::Schema::Result::Dhcpd3",
+  { "foreign.dhcpd3_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 executor_component
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "executor_component",
+  "Kanopya::Schema::Result::KanopyaExecutor",
+  { kanopya_executor_id => "executor_component_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
+);
+
+=head2 fileimagemanager0
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Fileimagemanager0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "fileimagemanager0",
+  "Kanopya::Schema::Result::Fileimagemanager0",
+  { "foreign.fileimagemanager0_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 glance
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Glance>
+
+=cut
+
+__PACKAGE__->might_have(
+  "glance",
+  "Kanopya::Schema::Result::Glance",
+  { "foreign.glance_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 haproxy1
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Haproxy1>
+
+=cut
+
+__PACKAGE__->might_have(
+  "haproxy1",
+  "Kanopya::Schema::Result::Haproxy1",
+  { "foreign.haproxy1_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 haproxy1s_listen
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Haproxy1Listen>
+
+=cut
+
+__PACKAGE__->has_many(
+  "haproxy1s_listen",
+  "Kanopya::Schema::Result::Haproxy1Listen",
+  { "foreign.listen_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 hosts
 
 Type: has_many
@@ -282,6 +467,351 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 hpc_manager
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::HpcManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "hpc_manager",
+  "Kanopya::Schema::Result::HpcManager",
+  { "foreign.hpc_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 iscsi
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Iscsi>
+
+=cut
+
+__PACKAGE__->might_have(
+  "iscsi",
+  "Kanopya::Schema::Result::Iscsi",
+  { "foreign.iscsi_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_aggregator
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaAggregator>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_aggregator",
+  "Kanopya::Schema::Result::KanopyaAggregator",
+  { "foreign.kanopya_aggregator_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_anomaly_detector
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaAnomalyDetector>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_anomaly_detector",
+  "Kanopya::Schema::Result::KanopyaAnomalyDetector",
+  { "foreign.kanopya_anomaly_detector_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_deployment_manager_dhcp_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_deployment_manager_dhcp_components",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.dhcp_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_deployment_manager_kanopya_deployment_manager
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_deployment_manager_kanopya_deployment_manager",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.kanopya_deployment_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_deployment_manager_system_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_deployment_manager_system_components",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.system_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_deployment_manager_tftp_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_deployment_manager_tftp_components",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.tftp_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_executor_kanopya_executor
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_executor_kanopya_executor",
+  "Kanopya::Schema::Result::KanopyaExecutor",
+  { "foreign.kanopya_executor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_executor_notifier_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_executor_notifier_components",
+  "Kanopya::Schema::Result::KanopyaExecutor",
+  { "foreign.notifier_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_front
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaFront>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_front",
+  "Kanopya::Schema::Result::KanopyaFront",
+  { "foreign.kanopya_front_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_mail_notifier
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaMailNotifier>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_mail_notifier",
+  "Kanopya::Schema::Result::KanopyaMailNotifier",
+  { "foreign.kanopya_mail_notifier_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_openstack_sync
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaOpenstackSync>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_openstack_sync",
+  "Kanopya::Schema::Result::KanopyaOpenstackSync",
+  { "foreign.kanopya_openstack_sync_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_rules_engine
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaRulesEngine>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_rules_engine",
+  "Kanopya::Schema::Result::KanopyaRulesEngine",
+  { "foreign.kanopya_rules_engine_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_service_manager
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaServiceManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_service_manager",
+  "Kanopya::Schema::Result::KanopyaServiceManager",
+  { "foreign.kanopya_service_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_stack_builder
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaStackBuilder>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_stack_builder",
+  "Kanopya::Schema::Result::KanopyaStackBuilder",
+  { "foreign.kanopya_stack_builder_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopyacollector1
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Kanopyacollector1>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopyacollector1",
+  "Kanopya::Schema::Result::Kanopyacollector1",
+  { "foreign.kanopyacollector1_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopyaworkflow0
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Kanopyaworkflow0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopyaworkflow0",
+  "Kanopya::Schema::Result::Kanopyaworkflow0",
+  { "foreign.kanopyaworkflow_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 keepalived1
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Keepalived1>
+
+=cut
+
+__PACKAGE__->might_have(
+  "keepalived1",
+  "Kanopya::Schema::Result::Keepalived1",
+  { "foreign.keepalived_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 keystone
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Keystone>
+
+=cut
+
+__PACKAGE__->might_have(
+  "keystone",
+  "Kanopya::Schema::Result::Keystone",
+  { "foreign.keystone_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 linux
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Linux>
+
+=cut
+
+__PACKAGE__->might_have(
+  "linux",
+  "Kanopya::Schema::Result::Linux",
+  { "foreign.linux_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 lvm2
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Lvm2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "lvm2",
+  "Kanopya::Schema::Result::Lvm2",
+  { "foreign.lvm2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 memcached1
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Memcached1>
+
+=cut
+
+__PACKAGE__->might_have(
+  "memcached1",
+  "Kanopya::Schema::Result::Memcached1",
+  { "foreign.memcached1_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 mock_monitor
 
 Type: might_have
@@ -294,6 +824,21 @@ __PACKAGE__->might_have(
   "mock_monitor",
   "Kanopya::Schema::Result::MockMonitor",
   { "foreign.mock_monitor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 mysql5
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Mysql5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mysql5",
+  "Kanopya::Schema::Result::Mysql5",
+  { "foreign.mysql5_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -327,6 +872,66 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 neutron
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Neutron>
+
+=cut
+
+__PACKAGE__->might_have(
+  "neutron",
+  "Kanopya::Schema::Result::Neutron",
+  { "foreign.neutron_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 nfsd3
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Nfsd3>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nfsd3",
+  "Kanopya::Schema::Result::Nfsd3",
+  { "foreign.nfsd3_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 openiscsi2
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Openiscsi2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "openiscsi2",
+  "Kanopya::Schema::Result::Openiscsi2",
+  { "foreign.openiscsi2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 openssh5
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Openssh5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "openssh5",
+  "Kanopya::Schema::Result::Openssh5",
+  { "foreign.openssh5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 param_preset
 
 Type: belongs_to
@@ -345,6 +950,81 @@ __PACKAGE__->belongs_to(
     on_delete     => "SET NULL",
     on_update     => "NO ACTION",
   },
+);
+
+=head2 php5
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Php5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "php5",
+  "Kanopya::Schema::Result::Php5",
+  { "foreign.php5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 physicalhoster0
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Physicalhoster0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "physicalhoster0",
+  "Kanopya::Schema::Result::Physicalhoster0",
+  { "foreign.physicalhoster0_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 puppetagent2
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Puppetagent2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "puppetagent2",
+  "Kanopya::Schema::Result::Puppetagent2",
+  { "foreign.puppetagent2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 puppetmaster2
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Puppetmaster2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "puppetmaster2",
+  "Kanopya::Schema::Result::Puppetmaster2",
+  { "foreign.puppetmaster2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 sco
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Sco>
+
+=cut
+
+__PACKAGE__->might_have(
+  "sco",
+  "Kanopya::Schema::Result::Sco",
+  { "foreign.sco_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 scom
@@ -412,6 +1092,96 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 snmpd5
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Snmpd5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "snmpd5",
+  "Kanopya::Schema::Result::Snmpd5",
+  { "foreign.snmpd5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 storage
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Storage>
+
+=cut
+
+__PACKAGE__->might_have(
+  "storage",
+  "Kanopya::Schema::Result::Storage",
+  { "foreign.storage_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 swift_proxy
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::SwiftProxy>
+
+=cut
+
+__PACKAGE__->might_have(
+  "swift_proxy",
+  "Kanopya::Schema::Result::SwiftProxy",
+  { "foreign.swift_proxy_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 swift_storage
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::SwiftStorage>
+
+=cut
+
+__PACKAGE__->might_have(
+  "swift_storage",
+  "Kanopya::Schema::Result::SwiftStorage",
+  { "foreign.swift_storage_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 syslogng3
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Syslogng3>
+
+=cut
+
+__PACKAGE__->might_have(
+  "syslogng3",
+  "Kanopya::Schema::Result::Syslogng3",
+  { "foreign.syslogng3_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 tftpd
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Tftpd>
+
+=cut
+
+__PACKAGE__->might_have(
+  "tftpd",
+  "Kanopya::Schema::Result::Tftpd",
+  { "foreign.tftpd_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 ucs_manager
 
 Type: might_have
@@ -424,6 +1194,21 @@ __PACKAGE__->might_have(
   "ucs_manager",
   "Kanopya::Schema::Result::UcsManager",
   { "foreign.ucs_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 virtualization
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Virtualization>
+
+=cut
+
+__PACKAGE__->might_have(
+  "virtualization",
+  "Kanopya::Schema::Result::Virtualization",
+  { "foreign.virtualization_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -468,8 +1253,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 12:09:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eZSy5MRVAanQzTaI5UppTQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g0Ll8shgCu8U7fYKYI0jVw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

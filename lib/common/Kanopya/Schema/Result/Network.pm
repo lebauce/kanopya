@@ -135,6 +135,36 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 dhcpd3_subnets
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Dhcpd3Subnet>
+
+=cut
+
+__PACKAGE__->has_many(
+  "dhcpd3_subnets",
+  "Kanopya::Schema::Result::Dhcpd3Subnet",
+  { "foreign.network_id" => "self.network_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 linuxes
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Linux>
+
+=cut
+
+__PACKAGE__->has_many(
+  "linuxes",
+  "Kanopya::Schema::Result::Linux",
+  { "foreign.default_gateway_id" => "self.network_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 network
 
 Type: belongs_to
@@ -166,8 +196,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 12:03:40
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kdYNhogFL6e0V1pGowLzdw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1lpX87loHBs4vAjeJ7ULwQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

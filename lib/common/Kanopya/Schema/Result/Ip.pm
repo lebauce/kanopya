@@ -144,6 +144,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 keepalived1_vrrpinstances
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Keepalived1Vrrpinstance>
+
+=cut
+
+__PACKAGE__->has_many(
+  "keepalived1_vrrpinstances",
+  "Kanopya::Schema::Result::Keepalived1Vrrpinstance",
+  { "foreign.virtualip_id" => "self.ip_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 poolip
 
 Type: belongs_to
@@ -165,8 +180,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:irXCk3LUL50Grn0F/zghSg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8BRzTtnqxI8mwbuRrUsv3A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

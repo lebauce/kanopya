@@ -176,6 +176,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
+=head2 workflow_manager
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "workflow_manager",
+  "Kanopya::Schema::Result::KanopyaExecutor",
+  { kanopya_executor_id => "workflow_manager_id" },
+  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
+);
+
 =head2 workflow_noderules
 
 Type: has_many
@@ -192,8 +207,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 12:03:40
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9xFO2BDkipDhz638dr079Q
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K2kn++DBmjiOU79+RW5Pbw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

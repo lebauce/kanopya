@@ -153,6 +153,21 @@ __PACKAGE__->add_unique_constraint("iface_name", ["iface_name", "host_id"]);
 
 =head1 RELATIONS
 
+=head2 dhcpd3_hosts
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Dhcpd3Host>
+
+=cut
+
+__PACKAGE__->has_many(
+  "dhcpd3_hosts",
+  "Kanopya::Schema::Result::Dhcpd3Host",
+  { "foreign.iface_id" => "self.iface_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 host
 
 Type: belongs_to
@@ -224,8 +239,8 @@ Composing rels: L</netconf_ifaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_ifaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:y9JkgywxVHm+5Fif832GiA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Vf5Q/zv7qqo+WeDBV7jjsg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
