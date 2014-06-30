@@ -60,6 +60,9 @@ use IPC::Cmd;
 # We set it a bit under the 8191 char limitation to handle command encapsulation
 my $CMD_STRING_LENGTH_LIMIT = 8100;
 
+# Script name to execute remote powershell
+my $REMOTE_POWERSHELL_CMD = 'remote_powershell_cmd.py';
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -129,7 +132,7 @@ sub getPerformance {
                 push @monit_object_slice, (\@left, \@right);
                 next OBJECT_SLICE;
             } else {
-                die $err;
+                die "Command execution fails : $err";
             }
         }
 
@@ -175,12 +178,17 @@ sub _execCmd {
 
     my $full_cmd = join(';', @cmd_list) . ";";
 
+    # Check command line size is supported
     if (length $full_cmd > $CMD_STRING_LENGTH_LIMIT) {
         die SCOM::Query::Exception::CommandTooLong->new();
     }
 
 
-    my $remote_cmd = ['remote_powershell_cmd.py', '-t', $self->{_management_server_name}, '-c', $full_cmd];
+    # Check tool script is found
+    IPC::Cmd::can_run($REMOTE_POWERSHELL_CMD) or die "Remote powershell script '$REMOTE_POWERSHELL_CMD' not found in PATH ($ENV{PATH})";
+
+    # Execute command
+    my $remote_cmd = [$REMOTE_POWERSHELL_CMD, '-t', $self->{_management_server_name}, '-c', $full_cmd];
     my ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) = IPC::Cmd::run(command => $remote_cmd, verbose => 0);
 
     if (!$success) {
