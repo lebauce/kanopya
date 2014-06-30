@@ -75,7 +75,7 @@ sub check {
 
     # Check all the components are properly configured
     my @components = $self->{context}->{cluster}->components;
-    map { $_->checkConfiguration() } @components;
+    map { $_->checkConfiguration(ignore => \@components) } @components;
 
     # Managing vm scale out after automatic hypervisor scale out (sorry...)
     if (! defined $self->{params}->{needhypervisor} && defined $self->{context}->{vm_cluster}) {

@@ -346,15 +346,43 @@ Method to be overrided to insert in db default configuration for tables linked t
 
 sub insertDefaultExtendedConfiguration {}
 
+
 =pod
 =begin classdoc
 
 Check that the configuration of the component is correct, raise an exception otherwise
 
+@optional ignore a list of component to ignore
+
 =end classdoc
 =cut
 
-sub checkConfiguration {}
+sub checkConfiguration {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'ignore' => [] });
+
+    for my $component (@{ $self->getDependentComponents() }) {
+        $log->debug("Checking dependency for related component $component");
+        if (scalar(grep { $component->id == $_->id } @{ $args{ignore} }) == 0) {
+            $self->checkDependency(component => $component);
+        }
+        else {
+            $log->debug("Ignore the check of the dependent component $component");
+        }
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Check the exitance of the attribute givne in parameter.
+
+@param attribute the attribute name to check existance.
+
+=end classdoc
+=cut
 
 sub checkAttribute {
     my ($self, %args) = @_;
@@ -371,13 +399,11 @@ sub checkAttribute {
                      " configured for component ". $self->label;
         }
 
-        throw Kanopya::Exception::InvalidConfiguration(
-            error => $error,
-            component => $self
-        );
+        throw Kanopya::Exception::InvalidConfiguration(error     => $error,
+                                                       component => $self);
     }
-
 }
+
 
 =pod
 =begin classdoc

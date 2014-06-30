@@ -101,15 +101,15 @@ sub getDependentComponents {
 
 
 sub checkConfiguration {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
     for my $attr ("mysql5", "nova_controller") {
         $self->checkAttribute(attribute => $attr);
     }
 
-    for my $component ($self->mysql5, $self->nova_controller->keystone) {
-        $self->checkDependency(component => $component);
-    }
+    $self->SUPER::checkConfiguration(ignore => $args{ignore});
 }
 
 1;

@@ -99,10 +99,13 @@ sub getDependentComponents {
 
 
 sub checkConfiguration {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
     $self->checkAttribute(attribute => "mysql5");
-    $self->checkDependency(component => $self->mysql5);
+
+    $self->SUPER::checkConfiguration(ignore => $args{ignore});
 }
 
 1;

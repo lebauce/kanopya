@@ -133,10 +133,19 @@ sub getDependentComponents {
 
 
 sub checkConfiguration {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
     $self->checkAttribute(attribute => "iaas");
-    $self->checkDependency(component => $self->iaas);
+
+    my $component = $self->iaas;
+    if (scalar(grep { $component->id == $_->id } @{ $args{ignore} }) == 0) {
+        $self->checkDependency(component => $component);
+    }
+    else {
+        $log->debug("Ignore the check of the dependent component $component");
+    }
 }
 
 1;

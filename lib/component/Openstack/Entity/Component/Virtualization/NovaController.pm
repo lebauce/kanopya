@@ -269,16 +269,18 @@ sub getDependentComponents {
 
 
 sub checkConfiguration {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
     for my $attr ("mysql5", "amqp", "keystone") {
         $self->checkAttribute(attribute => $attr);
     }
 
-    my @glances = $self->glances;
-    for my $component (@{ $self->getDependentComponents() }) {
-        $self->checkDependency(component => $component);
-    }
+    # Do not check configuration on vmms
+    my @vmms = $self->vmms;
+    my @ignore = (@vmms, @{ $args{ignore} });
+    $self->SUPER::checkConfiguration(ignore => \@ignore);
 }
 
 
