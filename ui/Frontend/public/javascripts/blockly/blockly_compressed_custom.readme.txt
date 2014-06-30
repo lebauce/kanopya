@@ -24,3 +24,13 @@ blockly_compressed.js : ligne 913 : a.render();
 ligne 296 :
 Blockly.fireUiEvent(window, 'resize');
 blockly_compressed.js : ligne 914 : ;Blockly.fireUiEvent(window,"resize")
+
+
+Désactivation du son :
+
+dans blockly.js :
+
+Ajout du mot-clé 'return' au début des fonctions suivantes :
+Blockly.loadAudio
+Blockly.preloadAudio
+Blockly.playAudio
