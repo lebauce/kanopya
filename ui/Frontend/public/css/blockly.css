@@ -23,11 +23,13 @@
 
 #metric-blockly {
     margin-top: 30px;
+    position: relative;
 }
 
 #metric-items {
-    float:left;
-    width: 120px;
+    position: absolute;
+    top: 0;
+    left: 0;
     height: 232px;
     padding-left: 20px;
     padding-right: 10px;
@@ -52,13 +54,14 @@
 }
 
 #blockly-container {
-    float:left;
-    width: 600px;
+    position: absolute;
+    top: 0;
     height: 230px;
 }
 
 #metric-blockly-down {
-    clear: left;
+    /*clear: left;*/
+    height: 232px;
 }
 
 #metric-formula {
@@ -67,4 +70,8 @@
     background-color: #dddddd;
     padding: 10px;
 }
-    
+
+#metric-preview {
+    margin-top: 20px;
+    border: 1px solid #cccccc;
+}
