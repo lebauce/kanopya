@@ -26,11 +26,13 @@ SCOM::Query - get performance counters values from a remote management server
         'Processor' => ['% Processor Time'],
     );
     
+    my @computers = [ 'hostname1.domain', 'hostname2.domain'];
+
     my $scom = SCOM::Query->new( server_name => $management_server_name );
     
     my $res = $scom->getPerformance(
         counters    => \%counters,
-        monitoring_object => [],
+        monitoring_object => \@computers,
         start_time  => '2/2/2012 11:00:00 AM',
         end_time    => '2/2/2012 12:00:00 AM',
     );
@@ -40,7 +42,8 @@ SCOM::Query - get performance counters values from a remote management server
 Retrieve in one request all wanted counters (only one remote connection).
 Output hash is fashionable.
 
-Powershell script execution must be allowed (> set-executionPolicy unrestricted)
+Use an external tool script (remote_powershell_command) to execute powershell command on a remote windows management server.
+This script must be accessible (see $PATH) and executable.
 
 =head1 METHODS
 
@@ -53,6 +56,10 @@ use warnings;
 
 use IPC::Cmd;
 
+# Command line string limitation (see http://support.microsoft.com/kb/830473)
+# We set it a bit under the 8191 char limitation to handle command encapsulation
+my $CMD_STRING_LENGTH_LIMIT = 8100;
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -64,13 +71,6 @@ sub new {
     
     $self->{_management_server_name} = $args{server_name};
 
-    # Connection to scom shell using import module
-#    $self->{_scom_modules} = [
-#        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.dll',
-#        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.Functions.ps1',
-#    ];
-#    $self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_management_server_name} . ' -persistConnection: $false -interactive: $false';
-    
     # Connection to scom shell using pssnapin
     $self->{_scom_shell_init} = [
         'Add-PSSnapin Microsoft.EnterpriseManagement.OperationsManager.Client',
@@ -115,21 +115,26 @@ sub getPerformance {
         );
 
         # Execute command
-        my $cmd_res = $self->_execCmd(cmd => $cmd);
+        my $cmd_res = eval {
+            $self->_execCmd(cmd => $cmd);
+        };
+        if ($@) {
+            my $err = $@;
+            if ($err->isa('SCOM::Query::Exception::CommandTooLong')) {
+                # If can't execute command (too long) we split it
+                my @objects = @{$monit_objects};
+                my $last_idx = $#objects;
+                my @left  = @objects[0..int($last_idx/2)];
+                my @right = @objects[(int($last_idx/2)+1)..$last_idx];
+                push @monit_object_slice, (\@left, \@right);
+                next OBJECT_SLICE;
+            } else {
+                die $err;
+            }
+        }
 
         # remove all \n (end of line and inserted \n due to console output)
         $cmd_res =~ s/(\r|\n)//g;
-
-        # If can't execute command (too long) we split it
-        if ($cmd_res eq '') {
-            #$log->debug("command too long, we split it");
-            my @objects = @{$monit_objects};
-            my $last_idx = $#objects;
-            my @left  = @objects[0..int($last_idx/2)];
-            my @right = @objects[(int($last_idx/2)+1)..$last_idx];
-            push @monit_object_slice, (\@left, \@right);
-            next OBJECT_SLICE;
-        }
 
         # Die if something wrong
         if ($cmd_res !~ '^PathName' || $cmd_res !~ 'DATASTART') {
@@ -169,6 +174,11 @@ sub _execCmd {
     );
 
     my $full_cmd = join(';', @cmd_list) . ";";
+
+    if (length $full_cmd > $CMD_STRING_LENGTH_LIMIT) {
+        die SCOM::Query::Exception::CommandTooLong->new();
+    }
+
 
     my $remote_cmd = ['remote_powershell_cmd.py', '-t', $self->{_management_server_name}, '-c', $full_cmd];
     my ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) = IPC::Cmd::run(command => $remote_cmd, verbose => 0);
@@ -247,5 +257,12 @@ sub _formatToHash {
     
     return \%h_res;
 }
+
+# Internal module exceptions
+
+package SCOM::Query::Exception::CommandTooLong;
+
+sub new { my $class = shift; bless \$class => $class }
+
 
 1;
