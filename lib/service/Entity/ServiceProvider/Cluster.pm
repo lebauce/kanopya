@@ -858,12 +858,19 @@ sub restoreState {
     my %args = @_;
 
     my ($previous, $dummy) = split(/:/,  $self->cluster_prev_state);
-    my ($current, $timestamp) = $self->getState();
 
-    # Do no set the previous state to the current to avoid consecutive restoreState interchange
-    # state, just restore the original state on time.
-    $self->cluster_state( $previous . ":" . time);
-    $log->debug('Restoring cluster <'.$self->cluster_name.'> state from <'.$current.'> to <'.$previous.'>');
+    if (defined $previous) {
+        my ($current, $timestamp) = $self->getState();
+
+        # Do no set the previous state to the current to avoid consecutive restoreState interchange
+        # state, just restore the original state on time.
+        $self->cluster_state($previous . ":" . time);
+        $log->debug("Restoring cluster <" . $self->cluster_name . "> state from <$current> to <$previous>");
+    }
+    else {
+        $log->warn("Unable to restore the state of clauster <" . $self->cluster_name .
+                   ">, previous state undefined.");
+    }
 }
 
 sub getNewNodeNumber {
