@@ -253,32 +253,24 @@ sub test_rrd_remove {
         my @cm_ids = map {$_->id} @cms;
         while (@cms) { (pop @cms)->delete(); };
 
-        diag('Check if all aggregrate combinations have been deleted');
         my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
             service_provider_id => $service_provider->id
         });
-        if ( scalar @acs == 0 ) {
-            diag('## checked');
-        }
-        else {
+        if ( scalar @acs ne 0 ) {
             die 'All aggregate combinations have not been deleted';
         }
 
-        diag('Check if all aggregrate rules have been deleted');
         my @ars = Entity::Rule::AggregateRule->search (hash => {
             service_provider_id => $service_provider->id
         });
-        if ( scalar @ars == 0 ) {
-            diag('## checked');
-        }
-        else {
+        if ( scalar @ars ne 0 ) {
             die 'All aggregate rules have not been deleted';
         }
 
-        diag('Check if all rrd have been deleted');
         my $one_rrd_remove = 0;
         for my $cm_id (@cm_ids) {
-            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+            my $db_name = '/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd';
+            if (defined open(FILE,$db_name)) {
                 $one_rrd_remove++;
             }
             close(FILE);
@@ -301,10 +293,7 @@ sub test_rrd_remove {
             }
         }
 
-        if ($one_rrd_remove == 0) {
-            diag('## checked');
-        }
-        else {
+        if ($one_rrd_remove ne 0) {
             die "All rrd have not been removed : $one_rrd_remove rrd are still remaining";
         }
     } 'Test rrd remove';

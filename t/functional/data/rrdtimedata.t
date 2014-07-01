@@ -80,6 +80,7 @@ sub general {
 
         my $data = $td->fetchTimeDataStore(
             name => $name,
+            start => $time,
             end  => $time + 5 * $time_step,
         );
 
@@ -102,6 +103,7 @@ sub general {
         # This second fetch will store the first one
         $data = $td->fetchTimeDataStore(
                     name => $name,
+                    start => $time,
                     end  => $time + 5 * $time_step,
                 );
 
@@ -135,7 +137,8 @@ sub general {
 
         $data = $td->fetchTimeDataStore(
                     name => $name,
-                    end  => $time + 5 * $time_step,
+                    start => $time - 100 * $time_step,
+                    end  => $time,
                 );
 
         $time = $start_time;
@@ -265,58 +268,6 @@ sub fetchOptions {
         if ($fetch_array->{timestamps}->[-1] ne $time_synchro + 9 * $time_step) {
             die 'Wrong end value when end does not match timestamp'
         }
-
-        my $day = 24*60*60;
-
-        $fetch_array = $td->fetchTimeDataStore(
-                   name   => $name,
-                   start  => $time_synchro + $time_step,
-                   output => 'arrays',
-               );
-
-        if ($fetch_array->{timestamps}->[0] ne $time_synchro + $time_step) {
-            die 'Wrong start value when only start is set'
-        }
-
-        if ($fetch_array->{timestamps}->[-1] ne $time_synchro + $time_step + $day) {
-            die 'Wrong end value when only start is set'
-        }
-
-        $fetch_array = $td->fetchTimeDataStore(
-                   name   => $name,
-                   end    => $time_synchro + $time_step,
-                   output => 'arrays',
-               );
-
-        if ($fetch_array->{timestamps}->[0] ne $time_synchro + $time_step - $day) {
-            die 'Wrong start value when only end is set'
-        }
-
-        if ($fetch_array->{timestamps}->[-1] ne $time_synchro + $time_step) {
-            die 'Wrong end value when only end is set'
-        }
-
-        my $cur_time = time();
-
-        $fetch_array = $td->fetchTimeDataStore(
-                   name   => $name,
-                   output => 'arrays',
-               );
-
-        my $cur_time_sync = $cur_time - $cur_time % $time_step;
-
-        if (abs($fetch_array->{timestamps}->[-1] - $cur_time_sync) > 2 * $time_step) {
-            die 'Wrong end value when none is set'
-        }
-
-        if (abs($fetch_array->{timestamps}->[0] - ($cur_time_sync - $day)) > 2 * $time_step) {
-            die 'Wrong start value when none is set'
-        }
-
-
-        $td->deleteTimeDataStore(
-            name => $name,
-        );
 
     } 'Fetch options';
 }
