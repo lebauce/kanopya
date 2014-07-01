@@ -180,9 +180,9 @@ sub isUp {
     # Reconfigure the required nodes
     for my $toreconfiure (values %{ $reconfigure }) {
         # Build the list of tags from components list
-        my @dependentnodes = values $reconfigure->{nodes};
+        my @dependentnodes = values %{ $reconfigure->{nodes} };
         my @tags = map { 'kanopya::' . lc($_->component_type->component_name) }
-                       values $reconfigure->{components};
+                       values %{ $reconfigure->{components} };
 
         # Reconfigure the nodes
         EEntity->new(entity => $toreconfiure->{agent})->applyConfiguration(nodes => \@dependentnodes,
