@@ -31,7 +31,7 @@ use Entity::Metric::Combination::NodemetricCombination;
 use Kanopya::Tools::TimeSerie;
 use Entity::Node;
 
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4');
 

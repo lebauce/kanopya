@@ -80,8 +80,7 @@ sub enqueueBefore {
     lives_ok {
         # Enqueue one operation before all operations;
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my $op =  { priority => 200,
-                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'SynchronizeInfrastructure' }) };
+        my $op =  { priority => 200, type => 'SynchronizeInfrastructure' };
 
         $workflow->enqueueBefore(current_operation => $operations[2], operation => $op);
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
