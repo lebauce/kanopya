@@ -185,7 +185,7 @@ sub _execCmd {
 
 
     # Check tool script is found
-    IPC::Cmd::can_run($REMOTE_POWERSHELL_CMD) or die "Remote powershell script '$REMOTE_POWERSHELL_CMD' not found in PATH ($ENV{PATH})";
+    IPC::Cmd::can_run($REMOTE_POWERSHELL_CMD) or die "Remote powershell script '$REMOTE_POWERSHELL_CMD' not executable or not found in PATH ($ENV{PATH})";
 
     # Execute command
     my $remote_cmd = [$REMOTE_POWERSHELL_CMD, '-t', $self->{_management_server_name}, '-c', $full_cmd];
