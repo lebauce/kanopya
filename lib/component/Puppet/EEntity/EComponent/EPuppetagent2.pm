@@ -26,7 +26,7 @@ use Hash::Merge;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 sub configureNode {
