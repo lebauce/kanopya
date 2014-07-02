@@ -1,8 +1,8 @@
 <div id="logo-about"><img src="../images/tree.png" alt="" /></div>
 <div id="content-about">
-    <h1><span>Kanopya</span></h1>
+    <h1><span>Hedera Cloud Manager</span></h1>
     <h2><%= version %></h2>
-    <p>Kanopya is developed by Hedera Technology,<br />A Cloud Automation ISV</p>
+    <p>HCM is developed by Hedera Technology,<br />A Cloud Automation ISV</p>
     <p>
         <a href="http://hederatech.com/" target="_blank" >hederatech.com</a><br />
         <a href="https://twitter.com/@hederatech" target="_blank">Twitter@hederatech</a>

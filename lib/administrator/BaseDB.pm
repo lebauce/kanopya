@@ -1228,7 +1228,7 @@ sub checkAttr {
     }
     elsif (defined $args{value} && blessed($args{value}) && $args{value}->isa("BaseDB")) {
         throw Kanopya::Exception::Internal::WrongValue(
-                  error => "Unsupported object $args{name} of type " . blessed($args{value})
+                  error => "Unsupported object of type " . blessed($args{value} . " for param <$args{name}>")
               );
     }
 
@@ -2852,6 +2852,7 @@ sub _loadcomponents {
 =pod
 =begin classdoc
 
+Class or instance method.
 Parse SQL error and transform it in Kanopya Exception.
 
 @param error string error from sql database
@@ -2862,23 +2863,37 @@ Parse SQL error and transform it in Kanopya Exception.
 =cut
 
 sub parseException {
-    my ($self, %args) = @_;
-    my $class = (ref $self) || $self;
+    my ($clob, %args) = @_;
+    my $class = (ref $clob) || $clob;
 
     General::checkParams(args => \%args, required => [ 'error' ]);
+    my $error = $args{error};
 
-    if ($args{error} =~ m/Duplicate entry '(.*)' for key '(.*)' \[for Statement/) {
+    if ($error =~ m/Duplicate entry '(.*)' for key '(.*)' \[for Statement/) {
         return Kanopya::Exception::DB::DuplicateEntry->new(class => $class,
                                                            entry => $1,
                                                            key   => $2);
     }
-
-    if ($args{error} =~ m/a foreign key constraint fails \(\`kanopya\`.\`([\w-]*)\`, /) {
-        return Kanopya::Exception::DB::DeleteCascade->new(label      => $self->label,
-                                                          dependant  => $1);
+    
+    if ($error =~ m/a foreign key constraint fails \(\`kanopya\`.\`([\w-]*)\`, /) {
+        my $dependant = $1;
+        
+        if ($error =~ m/Cannot delete/) {
+            my $label;
+            if (ref($clob) eq '') {
+                $label = '[N/A]'
+            } else {
+                $label = $clob->label;
+            }
+            return Kanopya::Exception::DB::DeleteCascade->new(label      => $label,
+                                                              dependant  => $dependant);
+        } else {            
+            return Kanopya::Exception::DB::ForeignKeyConstraint->new(label => $dependant,
+                                                                     error => $error);
+        }
     }
 
-    return Kanopya::Exception::DB->new(error => $args{error});
+    return Kanopya::Exception::DB->new(error => $error);
 }
 
 =pod

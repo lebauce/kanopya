@@ -35,6 +35,7 @@ use warnings;
 use General;
 use Data::Dumper;
 use Kanopya::Config;
+use RRDTool::OO;
 
 use TryCatch;
 my $err;
@@ -48,18 +49,10 @@ my $rrd;
 my $delete;
 my $move;
 
-#Quick solution to handle windows and linux
-if ($^O eq 'MSWin32') {
-    $dir    = 'C:\\tmp\\monitor\\TimeData\\';
-    $rrd    = 'rrdtool.exe';
-    $delete = 'del';
-    $move   = 'move /Y';
-} elsif ($^O eq 'linux') {
-    $rrd    = '/usr/bin/rrdtool';
-    $dir    = '/var/cache/kanopya/monitor/';
-    $delete = 'rm';
-    $move   = 'mv';
-}
+$rrd    = '/usr/bin/rrdtool';
+$dir    = '/var/cache/kanopya/monitor/';
+$delete = 'rm';
+$move   = 'mv';
 
 sub new {
     my $class = shift;
@@ -97,14 +90,7 @@ throws 'RRD creation failed' if the creation is a failure
 =cut
 
 sub createTimeDataStore {
-    #rrd creation example: system ('$rrd create target.rrd --start 1328190055
-    #                                                      --step 300
-    #                                                      DS:mem:GAUGE:600:0:671744
-    #                                                      RRA:AVERAGE:0.5:12:24'
-    #                             );
-
     my ($self, %args) = @_;
-
     General::checkParams(args     => \%args,
                          required => [ 'name', 'time_step', 'storage_duration' ],
                          optional => { 'skip_if_exists' => undef, time => undef });
@@ -114,9 +100,6 @@ sub createTimeDataStore {
     # Do nothing if rrd already exists and skip_if_exists option is set
     return if (-e $dir.$name && $args{'skip_if_exists'});
 
-    my $RRA_chain;
-    my $DS_chain;
-    my $opts = '';
 
     #configure the heartbeat, number of CDP and step according to the configuration
     my $config;
@@ -128,92 +111,29 @@ sub createTimeDataStore {
         throw Kanopya::Exception(error => "$err");
     }
 
-    #definition of the options. If unset, default rrd start time is (now -10s)
-    if (defined $args{'options'}) {
-        my $options = $args{'options'};
+    my $rrdoo = RRDTool::OO->new(file => $dir.$name);
 
-        if (defined $options->{start}) {
-            $opts .= '-b '.$options->{'start'}.' ';
-        } else {
-            my $time = $args{time} || time();
-            my $moduloTime = $time % 60;
-            my $finalTime = $time - $moduloTime - $args{time_step};
-            $opts .= '-b '.$finalTime.' ';
-        }
+    my $time = $args{time} || time();
+    my $finalTime = $time - ($time % 60) - $args{time_step};
 
-        if (defined $options->{step}) {
-            $opts .= '-s '.$options->{'step'}.' ';
-        } else {
-            $opts .= '-s '.$config->{step}.' ';
-        }
-    } else {
-        $opts .= '-s '.$config->{step}.' ';
-        my $time = $args{time} || time();
-        my $moduloTime = $time % 60;
-        my $finalTime = $time - $moduloTime - $args{time_step};
-        $opts .= '-b '.$finalTime.' ';
-    }
-
-    #default parameter for Round Robin Archive
-    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => $config->{CDP});
-
-    if (defined $args{'RRA'}){
-        my $RRA = $args{'RRA'};
-
-        while (my ($param_name, $default_value) = each %RRA_params){
-        if (defined $RRA->{$param_name}){
-            $RRA_params{$param_name} = $RRA->{$param_name};
-            }
-        }
-    }
-
-    #definition of the RRA
-    $RRA_chain = 'RRA:'.$RRA_params{'function'}.':'.$RRA_params{'XFF'}.':'.$RRA_params{'PDPnb'}.':'.$RRA_params{'CDPnb'};
-
-    #default parameter for Data Source
-    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => $config->{heartbeat}, min => '0', max => 'U');
-
-    if (defined $args{'DS'}){
-        my $DS = $args{'DS'};
-
-        while (my ($param_name, $default_value) = each %DS_params){
-        if (defined $DS->{$param_name}){
-            $DS_params{$param_name} = $DS->{$param_name};
-            }
-        }
-        ############################################
-        #COMPUTE TYPE IS NOT HANDLED BY THIS MODULE#
-        ############################################
-        #
-        #The DS syntax is different for the COMPUTE type, that's why we're checking the type here to form the command string
-        #if ($type eq 'GAUGE' or $type eq 'COUNTER' or $type eq 'DERIVE' or $type eq 'ABSOLUTE') {
-        #    $DSchain = 'DS'.$DSname.':'.$type.':'.$heartbeat.':'.$min.':'.$max;
-        #}elsif ($type eq 'COMPUTE'){
-        #    $DSchain = 'DS:'.$DSname.':'.$type.':'.$rpn;
-        #}
-    }
-
-    #definition of the DS
-    $DS_chain = 'DS:'.$DS_params{'DSname'}.':'.$DS_params{'type'}.':'.$DS_params{'heartbeat'}.':'.$DS_params{'min'}.':'.$DS_params{'max'};
-
-    #final command
-    my $cmd = $rrd.' create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
-
-    $log->debug($cmd);
-    $log->info("creating rrd $dir$name");
-
-    #execution of the command
-    my $exec = `$cmd 2>&1`;
-    if (not defined $exec or $exec =~ m/^ERROR.*/){
-        my $err = (defined $exec) ? $exec : 'RRDtool probably not installed.';
-        throw Kanopya::Exception::Internal(
-                  error => 'RRD creation failed: ' . $err
-              );
-    }
+    $rrdoo->create(
+        step => $args{time_step},
+        start => $finalTime,
+        data_source => {
+            name => 'aggregate',
+            type => 'GAUGE',
+            min => '0',
+            max => 'U',
+            heartbeat =>$config->{heartbeat},
+        },
+        archive => {
+            rows => $args{storage_duration} / $args{time_step},
+            cfunc => 'LAST',
+            xff => 0
+        },
+    );
     return;
 }
-
-
 
 
 =pod
@@ -262,85 +182,35 @@ Throws 'RRD fetch failed' if the fetch is a failure
 sub fetchTimeDataStore {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
-                         required => ['name'],
+                         required => ['name', 'start', 'end'],
                          optional => {output => 'hash'});
 
     my $name = $self->_formatName(name => $args{'name'});
     my $CF    = 'LAST';
 
     #if not defined, start is (end - 1 day), and end is (now)
-    my $end;
-    my $start;
-    my $offset = 24*60*60; # one day in sec
+    my $end = $args{end};
+    my $start = $args{start};
 
+    my $rrdoo = RRDTool::OO->new(file => $dir.$name);
 
-    if (defined $args{start} and ! defined $args{end}) {
-        $start = $args{start};
-        $end   = $args{start} + $offset;
+    try {
+        $rrdoo->fetch_start(start => ($start - 1), end => $end, cfunc => $CF);
     }
-    elsif (defined $args{end} and ! defined $args{start}) {
-        $start = $args{end} - $offset;
-        $end   = $args{end};
-    }
-    elsif (defined $args{start} and defined $args{end}) {
-        $start = $args{start};
-        $end   = $args{end};
-    }
-    else {
-        $end   = time();
-        $start = $end - $offset;
-    }
-
-    my $cmd   = $rrd.' fetch '.$dir.$name.' '.$CF;
-
-    $cmd .= ' -s '.($start - 1);
-    $cmd .= ' -e '.$end;
-
-    # $log->debug($cmd);
-
-    #we store the ouput of the command into a string
-    my $exec = `$cmd 2>&1`;
-
-    if ($exec =~ m/^ERROR.*/){
-        throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
-    }
-
-    #clean the string of unwanted ":"
-    $exec =~ s/://g;
-    #replace the ',' by '.'
-    $exec =~ s/,/./g;
-    #we split the string into an array
-    my @exec_values = split(' ', $exec);
-
-    #The first entry is the DS' name. We remove it from the list.
-    shift (@exec_values);
-
-    if (scalar(@exec_values) == 0) {
+    catch ($err) {
         throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
 
-    my @values     = ();
-    my @timestamps = ();
+    my $data = $rrdoo->{fetch_data};
+    my $start_time = $rrdoo->{fetch_time_current};
+    my $step = $rrdoo->{fetch_time_step};
 
-    my $timestamp;
-    my $value;
+    my @timestamps = map {$start_time + $_ * $step} (0..scalar @$data - 1);
+    my @values = map {pop $_} @$data;
 
-    VALUE:
-    for my $i (0..@exec_values / 2 - 1) {
-        $timestamp = $exec_values[2 * $i];
-        $value     = $exec_values[2 * $i + 1];
-
-        # Remove out of range values
-        if ($timestamp < $start || $timestamp > $end) {
-            next VALUE;
-        }
-
-        if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')) {
-            $value = undef;
-        }
-
-        push @timestamps, $timestamp;
-        push @values, $value;
+    while ($timestamps[-1] > $end) {
+        pop @values;
+        pop @timestamps;
     }
 
     if (defined $args{output} && $args{output} eq 'arrays') {
@@ -392,19 +262,10 @@ sub updateTimeDataStore {
                                    time              => $args{time});
     }
 
-    my $cmd = $rrd . ' updatev ' . $dir . $self->_formatName(name => $args{metric_id})
-              . ' -t ' . $args{datasource} . ' ' . $args{time} . ':' . $args{value};
-
-    $log->debug($cmd);
-
-    my $exec =`$cmd 2>&1`;
-
-    if ($exec =~ m/^ERROR.*/) {
-        throw Kanopya::Exception::Internal(error => 'RRD update failed: '.$exec);
-    }
+    my $rrdoo = RRDTool::OO->new(file => $dir . $self->_formatName(name => $args{metric_id}));
+    $rrdoo->update(time => $args{time}, values => [$args{value}]);
     return;
 }
-
 
 =pod
 =begin classdoc
@@ -623,4 +484,14 @@ sub _formatName {
     return $name;
 }
 
+
+sub info {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args, required => [ 'name' ]);
+
+    my $rrd = RRDTool::OO->new(file => $dir.$self->_formatName(name => $args{'name'}));
+    my $info = $rrd->info();
+    return { time_step => $info->{step},
+             storage_duration => $info->{rra}->[0]->{rows} * $info->{step} };
+}
 1;

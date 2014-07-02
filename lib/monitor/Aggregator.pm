@@ -36,8 +36,6 @@ Then Aggregator will:
 2. store values for each indicator for each nodes
 3. compute and store ClusterMetric
 
-Aggregator uses DataCache to (possibly) store data at node level.
-
 @see <package>Entity::Metric::Combination::NodemetricCombination</package>
 @see <package>Entity::Metric::Clustermetric</package>
 @see <package>Manager::CollectorManager</package>
@@ -54,15 +52,17 @@ use warnings;
 use General;
 use Data::Dumper;
 use XML::Simple;
+use Clone qw(clone);
 use Entity::ServiceProvider;
 use Entity::Indicator;
 use Entity::Metric::Combination::NodemetricCombination;
 use Entity::Metric::Clustermetric;
-
+use Entity::Metric::Nodemetric;
+use Entity::Indicator;
+use Node;
 use Kanopya::Config;
 use Message;
 use Alert;
-use DataCache;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -243,8 +243,9 @@ sub update {
     CLUSTER:
     for my $service_provider (@service_providers) {
         eval {
+            my $collector_manager = undef;
             eval {
-                $service_provider->getManager(manager_type => "CollectorManager");
+                $collector_manager = $service_provider->getManager(manager_type => 'CollectorManager');
             };
             if (not $@){
                 next CLUSTER if ( 0 == $service_provider->nodes);
@@ -280,23 +281,21 @@ sub update {
 
                 # Nodes metrics values cache
                 $start = time();
-                DataCache::storeNodeMetricsValues(
-                    indicators       => $wanted_indicators->{indicators},
-                    values           => $monitored_values,
-                    timestamp        => $timestamp,
-                    time_step        => $self->{config}->{time_step},
-                    storage_duration => $self->{config}->{storage_duration}
-                );
+
+                $self->_storeNodeMetricsValues(monitored_values  => $monitored_values,
+                                               collector_manager => $collector_manager,
+                                               timestamp         => $timestamp);
+
+
                 $timeinfo .= "Nodes data storage: ".(time() - $start).", ";
 
                 # Parse retriever return, compute clustermetric values and store in DB
                 if ($checker == 1) {
                     $start = time();
-                    $self->_computeCombinationAndFeedTimeDB(
-                        values           => $monitored_values,
-                        timestamp        => $timestamp,
-                        service_provider => $service_provider
-                    );
+                    $self->_computeCombinationAndFeedTimeDB(values           => $monitored_values,
+                                                            timestamp        => $timestamp,
+                                                            service_provider => $service_provider);
+
                     $timeinfo .= "Cluster metric compute: ".(time() - $start);
                 }
                 $log->info($timeinfo);
@@ -311,6 +310,137 @@ sub update {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Store the node metric monitored data in local cache.
+
+@param monitored_values hash table {node => oid => value} indicating the received monitoring value
+@param timestamp timestamp indicating the update time
+@param collector_manager collector manager instance
+
+=end classdoc
+=cut
+
+sub _storeNodeMetricsValues {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'monitored_values', 'collector_manager', 'timestamp' ]);
+
+    # Clone monitoring value to check nodemetrics
+    my $nodes_oid = clone($args{monitored_values});
+    while(my ($name,$hash_oid) = each (%$nodes_oid)) {
+        for my $oid (keys %$hash_oid) {
+            $hash_oid->{$oid} = undef;
+        }
+    }
+
+    my @node_hostnames = keys %{ $args{monitored_values} };
+    my @nodemetrics = Entity::Metric::Nodemetric->search(
+                          hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
+                      );
+
+    for my $nodemetric (@nodemetrics) {
+        eval {
+            my $hostname = $nodemetric->nodemetric_node->node_hostname;
+            my $indicator_oid = $nodemetric->nodemetric_indicator->indicator->indicator_oid;
+
+            if (! exists $args{monitored_values} ->{$hostname}->{$indicator_oid}) {
+                throw Kanopya::Exception::Internal::Inconsistency(
+                          error => "No monitoring data found for node \"$hostname\" " .
+                                   "and indicator \"$indicator_oid\""
+                      );
+            }
+
+            $nodes_oid->{$hostname}->{$indicator_oid} = 1;
+            $nodemetric->updateData(
+                time             => $args{timestamp},
+                value            => $args{monitored_values} ->{$hostname}->{$indicator_oid},
+                time_step        => $self->{config}->{time_step},
+                storage_duration => $self->{config}->{storage_duration}
+            );
+        };
+        if ($@) {
+            $log->warn($@);
+        }
+    }
+
+    $self->_manageMissingNodemetrics(nodemetric_num => scalar @nodemetrics,
+                                     nodes_oid => $nodes_oid,
+                                     monitored_values => $args{monitored_values},
+                                     timestamp => $args{timestamp},
+                                     collector_manager => $args{collector_manager});
+}
+
+
+
+=pod
+=begin classdoc
+
+Check if all expected Nodemetrics instance exists w.r.t. received monitored values.
+If a nodemetric instance is missing the method will create and update it.
+
+@param nodemetric_num number of found nodemetrics
+@param nodes_oid hash table { node => oid => 1 or undef} indicating of the corresponding
+                 nodemetric has been found
+@param monitored_values hash table {node => oid => value} indicating the received monitoring value
+@param timestamp timestamp indicating the update time
+@param collector_manager collector manager instance
+
+=end classdoc
+=cut
+
+sub  _manageMissingNodemetrics {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'nodemetric_num', 'nodes_oid', 'monitored_values',
+                                       'timestamp', 'collector_manager' ]);
+
+    # Count total number of values received. Must be equal to total number of
+    # nodemetric in DB.
+    # If a nodemetric is missing, aggregator will create it in order to store the value
+
+    my $exp_nm_num = 0;
+    for my $name (keys %{ $args{nodes_oid} }) {
+        $exp_nm_num += scalar keys %{$args{nodes_oid}->{$name}};
+    }
+
+    if ($exp_nm_num eq scalar $args{nodemetric_num}) {
+        return;
+    }
+
+    while(my ($name,$hash_oid) = each (%{ $args{nodes_oid} })) {
+        while(my ($oid,$v) = each (%$hash_oid)) {
+            if (! defined $v) {
+
+                my $node = Node->find(hash => {'node_hostname' => $name});
+
+                my $indicator = Entity::Indicator->find(hash => { 'indicator_oid' => $oid });
+                my $col_indicator = Entity::CollectorIndicator->find(hash => {
+                                        indicator_id => $indicator->id,
+                                        collector_manager_id => $args{collector_manager}->id
+                                    });
+
+                $log->debug('Nodemetric creation for <' . $name . '> < ' . $oid . '>');
+                print('Nodemetric creation for <' . $name . '> < ' . $oid . '>' . "\n");
+                my $nodemetric = Entity::Metric::Nodemetric->new(
+                                     nodemetric_node_id => $node->id,
+                                     nodemetric_indicator_id => $col_indicator->id,
+                                 );
+
+                $nodemetric->updateData(
+                    time             => $args{timestamp},
+                    value            => $args{monitored_values}->{$name}->{$oid},
+                    time_step        => $self->{config}->{time_step},
+                    storage_duration => $self->{config}->{storage_duration}
+                );
+            }
+        }
+    }
+}
 
 sub _checkNodesMetrics {
     my $self = shift;

@@ -437,7 +437,7 @@ sub isDaemonRunning {
     my @all_services   = @{ $class->daemonsToRun() };
 
     my $running = 0;
-    if ($args{name0} eq 'any') {
+    if ($args{name} eq 'any') {
         if (@found_services > 0) {
             $running = 1;
         }

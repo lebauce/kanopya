@@ -10,7 +10,11 @@ class kanopya::mysql::params {
       }
 
       package { 'galera':
-        ensure  => installed,
+        ensure => installed,
+      }
+
+      package { 'socat':
+        ensure => installed,
       }
     }
     /(?i)(redhat|centos)/ : {
@@ -95,7 +99,7 @@ class kanopya::mysql::repos::deb {
   }
 
   @apt::source { 'MariaDB':
-    location    => "http://ftp.osuosl.org/pub/mariadb/mariadb-5.5.35/repo/${os}",
+    location    => "http://ftp.igh.cnrs.fr/pub/mariadb/repo/5.5/${os}",
     release     => $release,
     repos       => 'main',
     key         => 'cbcb082a1bb943db',

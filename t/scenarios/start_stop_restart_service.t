@@ -35,12 +35,12 @@ sub main {
         },
     );
 
-    diag('Start service instance');
+    diag('Start instance');
     lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
-    } 'Start service instance';
+    } 'Start instance';
 
-    diag('Stop service instance');
+    diag('Stop instance');
     lives_ok {
         my ($state, $timestamp) = $cluster->reload->getState();
         if ($state ne 'up') {
@@ -48,14 +48,14 @@ sub main {
         }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
-    } 'Stopping service instance';
+    } 'Stopping instance';
 
-    diag('Restart service instance');
+    diag('Restart instance');
     lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
-    } 'Restart service instance';
+    } 'Restart instance';
 
-    diag('Restop service instance');
+    diag('Restop instance');
     lives_ok {
         my ($state, $timestamp) = $cluster->reload->getState();
         if ($state ne 'up') {
@@ -63,7 +63,7 @@ sub main {
         }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
-    } 'Restop service instance';
+    } 'Restop instance';
 }
 
 1;

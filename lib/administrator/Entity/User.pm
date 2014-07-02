@@ -178,6 +178,29 @@ sub setAttr {
     $self->SUPER::setAttr(%args);
 }
 
+=pod
+=begin classdoc
+
+Overrides <method>BaseDB::update</method>.
+
+Crypt password
+
+=end classdoc
+=cut
+
+sub update {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'override_relations' => 1 });
+
+    if (exists $args{user_password} && $args{user_password} ne $self->user_password) {
+        $log->debug('Hashing password');
+        $args{user_password} = General::cryptPassword(password => $args{user_password});
+    }
+
+    $self->SUPER::update(%args);
+}
+
 sub label {
     my ($self, %args) = @_;
 

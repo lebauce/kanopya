@@ -96,7 +96,6 @@ eval{
     );
 
 
-
     simple_unitary_tests();
     test_aggregate_condition_update();
     test_nodemetric_condition_update();
@@ -131,6 +130,11 @@ sub simple_unitary_tests {
                     nodemetric_combination_formula  => '2*id'.($indic1->id),
                 );
 
+    my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
+                    service_provider_id             => $service_provider->id,
+                    nodemetric_combination_formula  => '2*id'.($indic2->id),
+                );
+
     my $ncond = Entity::NodemetricCondition->new(
                     nodemetric_condition_service_provider_id => $service_provider->id,
                     left_combination_id             => $ncomb->id,
@@ -161,6 +165,14 @@ sub simple_unitary_tests {
 
         if (! ($ncomb->evaluate(node => $node2) == 2*2.345)) {
             die "Wrong NodemetricCombination evaluation on node 2";
+        }
+
+        if (! ($ncomb2->evaluate(node => $node) == 2*1.234)) {
+            die "Wrong NodemetricCombination 2 evaluation on node 1";
+        }
+
+        if (! ($ncomb2->evaluate(node => $node2) == 2*2.345)) {
+            die "Wrong NodemetricCombination 2 evaluation on node 2";
         }
 
         if (! $ncond->evaluate(node => $node) == 0) {

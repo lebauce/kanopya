@@ -34,7 +34,7 @@ use version;
 # The Kanopya version numbers fit the following convention:
 # (Major version).(Minor version).(Iteration number)[.(Hotfix number)]
 
-our $VERSION = version->declare("1.10.6");
+our $VERSION = version->declare("1.10.7");
 
 
 =pod

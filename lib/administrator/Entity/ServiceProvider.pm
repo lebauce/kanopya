@@ -32,6 +32,7 @@ use ClassType::ServiceProviderType;
 use ComponentCategory::ManagerCategory;
 use Entity::Component;
 use Entity::Interface;
+use Entity::Metric::Nodemetric;
 use ServiceProviderManager;
 
 use List::Util qw[min max];
@@ -152,12 +153,20 @@ sub registerNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'hostname', 'number' ],
+                         required => [ 'hostname' ],
                          optional => { 'host'             => undef,
                                        'systemimage'      => undef,
+                                       'number'           => undef,
                                        'state'            => 'out',
                                        'monitoring_state' => 'enabled',
                                        'components'       => [ $self->components ] });
+
+    # Compute the node number from existing nodes if not defined
+    if (! defined $args{number}) {
+        my @nodes = $self->nodes;
+        $args{number} = max(map { $_->node_number } @nodes) + 1;
+        $log->debug("Node number <$args{number}> computed for node $args{hostname}");
+    }
 
     my $node = Node->new(
                    service_provider_id => $self->id,
@@ -170,7 +179,7 @@ sub registerNode {
                );
 
     # Force to install required component if not defined
-    for my $required ($self->getRequiredComponents()) {
+    for my $required (@{ $self->getRequiredComponents() }) {
         if (scalar(grep { $_->id == $required->id } @{ $args{components} }) <= 0) {
             push @{ $args{components} }, $required;
         }
@@ -188,7 +197,7 @@ sub registerNode {
     }
 
     # If the node linked to a host, configure the network connectivity
-    # TODO: Manage network connectivity on node intead of host.
+    # TODO: Manage network connectivity on node instead of host.
     if (defined $node->host) {
         # Set the ifaces netconf according to the cluster interfaces
         # We consider that the available ifaces match the cluster
@@ -204,6 +213,15 @@ sub registerNode {
             $log->info("Configure iface " . $iface->iface_name . " with netconfs " . join(', ', @netconfs));
             $iface->update(netconf_ifaces => \@netconfs, override_relations => 1);
         }
+    }
+
+    # Create the nodemetric for the new node from the existing clustermetrics indicators
+    # Create Nodemetrics for all existing nodes fo the service provider
+    for my $clustermetric ($self->clustermetrics) {
+        Entity::Metric::Nodemetric->findOrCreate(
+            nodemetric_node_id      => $node->id,
+            nodemetric_indicator_id => $clustermetric->clustermetric_indicator_id
+        );
     }
 
     return $node;
@@ -667,7 +685,7 @@ sub getComponent {
 sub getRequiredComponents {
     my ($self, %args) = @_;
 
-    throw Kanopya::Exception::NotImplemented();
+    return [];
 }
 
 sub nodesByWeight {
