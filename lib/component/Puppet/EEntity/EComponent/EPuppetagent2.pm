@@ -127,6 +127,8 @@ sub applyConfiguration {
     my $ret = -1;
     my $timeout = 360;
     my @nodes = map { $_->fqdn } @{ $args{nodes} };
+
+    $log->debug("Lets go to puppet kick for nodes " . join(',', @nodes));
     do {
         if ($ret != -1) {
             sleep 5;
@@ -149,6 +151,9 @@ sub applyConfiguration {
                 @nodes = grep{ $_ ne $1 } @nodes;
             }
         }
+
+        $log->debug("Puppet kick returned " .  (defined($ret->{exitcode}) ? $ret->{exitcode} : "undef") .
+                    ", " . scalar(@nodes) . " nodes remaining, timeout $timeout left.");
     } while ($timeout > 0 && (scalar @nodes));
 }
 
@@ -185,6 +190,9 @@ sub isUp {
                        values %{ $reconfigure->{components} };
 
         # Reconfigure the nodes
+        $log->debug("Node " . $args{node}->label . ", reconfiguring dependent nodes " .
+                    join(',', map { $_->fqdn } @dependentnodes));
+
         EEntity->new(entity => $toreconfiure->{agent})->applyConfiguration(nodes => \@dependentnodes,
                                                                            tags  => \@tags);
     }
