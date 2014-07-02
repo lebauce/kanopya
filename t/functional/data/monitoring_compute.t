@@ -666,9 +666,9 @@ sub testBigAggregation {
 
         # Create nodes
         for my $i (1..$nodes_count) {
-            $service_provider->registerNode(hostname         => 'node_' . $i,
-                                            monitoring_state => 'up',
-                                            number           => $i);
+            my $node = $service_provider->registerNode(hostname         => 'node_' . $i,
+                                                       monitoring_state => 'up',
+                                                       number           => $i);
             $service_provider->enableNode(node_id => $node->id);
         }
 
@@ -722,9 +722,9 @@ sub testStatisticFunctions {
 
         # Create nodes
         for my $i (0..9) {
-            $service_provider->registerNode(hostname         => 'node_' . $i,
-                                            monitoring_state => 'up',
-                                            number           => $i);
+            my $node = $service_provider->registerNode(hostname         => 'node_' . $i,
+                                                       monitoring_state => 'up',
+                                                       number           => $i);
             $service_provider->enableNode(node_id => $node->id);
         }
 
