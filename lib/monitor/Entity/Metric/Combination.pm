@@ -66,6 +66,9 @@ sub methods {
         evaluateTimeSerie => {
             description => 'retrieve historical value of combination',
         },
+        evaluateFormula => {
+            description => 'retrieve historical value of combination',
+        },
         availableDataModels => {
             description => 'return available forecasting data models',
         },

@@ -245,18 +245,35 @@ Compute the combination value between two dates. Use fetch() method of metric.
 =cut
 
 sub evaluateTimeSerie {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['start_time','stop_time']);
 
+    $args{formula} = $self->aggregate_combination_formula;
+
+    return $self->evaluateFormula(%args);
+}
+
+
+sub evaluateFormula {
+    my ($class, %args) = @_;
+
+    General::checkParams(
+        args => \%args,
+        required => ['start_time','stop_time', 'formula'],
+    );
+
     my %allTheCMValues;
-    foreach my $cm_id ($self->dependentMetricIds()){
+    foreach my $cm_id (Formula->getDependentIds(formula => $args{formula})){
         my $metric = Entity::Metric->get('id' => $cm_id);
         $allTheCMValues{$cm_id} = $metric->fetch(%args);
     }
 
-    return $self->_computeFromArrays(%allTheCMValues);
+    my $res = Formula->computeTimeSerie(
+                  values => \%allTheCMValues,
+                  formula => $args{formula},
+              );
+    return wantarray ? %$res : $res;
 }
 
 
@@ -385,10 +402,9 @@ Return the Entity::Metric ids of the formulas with no doublon.
 
 =cut
 
-sub dependentMetricIds() {
+sub dependentMetricIds {
     my $self = shift;
-    my %ids = map { $_ => undef } ($self->aggregate_combination_formula =~ m/id(\d+)/g);
-    return keys %ids;
+    return Formula->getDependentIds(formula => $self->aggregate_combination_formula);
 }
 
 
