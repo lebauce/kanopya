@@ -159,7 +159,6 @@ sub getPuppetDefinitions {
  
     my @components = sort { $a->priority <=> $b->priority } $node->components;
     foreach my $component (@components) {
-        my $config_hash = {};
         my $component_name = lc($component->component_type->component_name);
         my $component_node = $component->find(related => 'component_nodes',
                                               hash    => { node_id => $node->id });
@@ -187,17 +186,17 @@ sub getPuppetDefinitions {
             };
         }
 
-        for my $chunk (values %{$puppet_definitions}) {
+        for my $chunk (values %{ $puppet_definitions }) {
             next if ! $chunk->{classes};
 
-            for my $dependency (@{$chunk->{dependencies} || []},
-                                @{$chunk->{optionals} || []}) {
+            for my $dependency (@{ $chunk->{dependencies} || [] },
+                                @{ $chunk->{optionals} || [] }) {
                 my $name = lc($dependency->component_type->component_name);
                 my @nodes = map { $_->fqdn } $dependency->nodes;
                 my $hash = { nodes => \@nodes, %{$chunk->{params} || {}} };
 
                 # TODO: test the state of the component instead of the node
-                if (($dependency->getMasterNode->getState)[0] eq "in") {
+                if (($dependency->getMasterNode->getState)[0] =~ m/^(in|goingin)$/) {
                     $netconf = $dependency->getNetConf;
                     for my $service (keys %{$netconf}) {
                         $hash->{$service} = {

@@ -129,11 +129,7 @@ sub applyConfiguration {
     my @nodes = map { $_->fqdn } @{ $args{nodes} };
 
     $log->debug("Lets go to puppet kick for nodes " . join(',', @nodes));
-    do {
-        if ($ret != -1) {
-            sleep 5;
-            $timeout -= 5;
-        }
+    while ($timeout > 0 && (scalar @nodes)) {
         $log->info("Configuring node(s) " . join(',', @nodes) . ", tag(s) " . join(',', @{ $args{tags} }));
 
         my $command = "puppet kick --configtimeout=900 --ignoreschedules --foreground ";
@@ -154,7 +150,12 @@ sub applyConfiguration {
 
         $log->debug("Puppet kick returned " .  (defined($ret->{exitcode}) ? $ret->{exitcode} : "undef") .
                     ", " . scalar(@nodes) . " nodes remaining, timeout $timeout left.");
-    } while ($timeout > 0 && (scalar @nodes));
+
+        if ($ret != -1) {
+            sleep 5;
+            $timeout -= 5;
+        }
+    };
 }
 
 sub isUp {
@@ -186,15 +187,20 @@ sub isUp {
     for my $toreconfiure (values %{ $reconfigure }) {
         # Build the list of tags from components list
         my @dependentnodes = values %{ $reconfigure->{nodes} };
-        my @tags = map { 'kanopya::' . lc($_->component_type->component_name) }
-                       values %{ $reconfigure->{components} };
+        if (scalar(@dependentnodes)) {
+            my @tags = map { 'kanopya::' . lc($_->component_type->component_name) }
+                           values %{ $reconfigure->{components} };
 
-        # Reconfigure the nodes
-        $log->debug("Node " . $args{node}->label . ", reconfiguring dependent nodes " .
-                    join(',', map { $_->fqdn } @dependentnodes));
+            # Reconfigure the nodes
+            $log->debug("Node " . $args{node}->label . ", reconfiguring dependent nodes " .
+                        join(',', map { $_->fqdn } @dependentnodes));
 
-        EEntity->new(entity => $toreconfiure->{agent})->applyConfiguration(nodes => \@dependentnodes,
-                                                                           tags  => \@tags);
+            EEntity->new(entity => $toreconfiure->{agent})->applyConfiguration(nodes => \@dependentnodes,
+                                                                               tags  => \@tags);
+        }
+        else {
+            $log->debug("Node " . $args{node}->label . ", no dependent nodes to reconfigure...");
+        }
     }
 
     # Reconfigure the current node if we have reconfigured the dependencies
