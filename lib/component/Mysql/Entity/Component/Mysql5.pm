@@ -95,10 +95,10 @@ sub getExecToTest {
 sub getPuppetDefinition {
     my ($self, %args)   = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     my $cluster_address = 'gcomm://';
-    my @fqdns = map { $_->fqdn } (grep { $_->node_id != $args{host}->node->node_id } @{ $self->getActiveNodes });
+    my @fqdns = map { $_->fqdn } (grep { $_->id != $args{node}->id } @{ $self->getActiveNodes });
     $cluster_address .= join ',', @fqdns;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {

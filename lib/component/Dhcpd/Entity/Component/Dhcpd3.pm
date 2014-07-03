@@ -107,7 +107,7 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     # Search tftp server on the master node of dhcp
     my $ip;
@@ -119,7 +119,7 @@ sub getPuppetDefinition {
         # No tftp server coupled with dhcp
     }
 
-    my @interfaces = map { $_->iface_name } $args{host}->getIfaces();
+    my @interfaces = map { $_->iface_name } $args{node}->host->getIfaces();
     my $hosts = {};
     my $pools = {};
 

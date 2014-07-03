@@ -55,12 +55,14 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
     return merge($self->SUPER::getPuppetDefinition(%args), {
         cephmon => {
             classes => {
                 'kanopya::ceph::mon' => {
                     mon_secret => $self->ceph_mon_secret,
-                    mon_id => $args{host}->node->node_number - 1
+                    mon_id => $args{node}->node_number - 1
                 }
             }
         }

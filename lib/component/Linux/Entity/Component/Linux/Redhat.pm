@@ -30,7 +30,7 @@ sub getAttrDef { return { }; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         redhat => {

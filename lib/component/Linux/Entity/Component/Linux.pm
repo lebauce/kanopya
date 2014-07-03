@@ -166,7 +166,7 @@ sub removeMount {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     my $nfs;
     my $ntpserver = Entity::ServiceProvider::Cluster->getKanopyaCluster->getComponent(category => 'System');
@@ -194,7 +194,7 @@ sub getPuppetDefinition {
 
     my @except;
     eval {
-        my $nfsserver = $args{host}->node->getComponent(name => "Nfsd");
+        my $nfsserver = $args{node}->getComponent(name => "Nfsd");
         @except = map {
             $_->container_access_export
         } $nfsserver->container_accesses;

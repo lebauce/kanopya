@@ -49,8 +49,10 @@ sub _getNetwork {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $admin = $args{host}->getAdminIface;
-    my $public = shift @{$args{host}->getIfaces(role => 'public')};
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    my $admin = $args{node}->host->getAdminIface;
+    my $public = shift @{$args{node}->host->getIfaces(role => 'public')};
 
     my $admin_network = $self->_getNetwork($admin);
     my $public_network =  $public ? $self->_getNetwork($public) : $admin_network;

@@ -149,21 +149,19 @@ sub getPuppetDefinitions {
 
     General::checkParams(args => \%args, required => [ 'node' ]);
 
-    my $node = $args{node};
-    my $host = $node->host;
     my $definition = {
-        host_fqdn  => $node->fqdn,
-        sourcepath => $node->node_hostname,
-        admin_ip   => $node->adminIp,
+        host_fqdn  => $args{node}->fqdn,
+        sourcepath => $args{node}->node_hostname,
+        admin_ip   => $args{node}->adminIp,
     };
  
-    my @components = sort { $a->priority <=> $b->priority } $node->components;
+    my @components = sort { $a->priority <=> $b->priority } $args{node}->components;
     foreach my $component (@components) {
         my $component_name = lc($component->component_type->component_name);
         my $component_node = $component->find(related => 'component_nodes',
-                                              hash    => { node_id => $node->id });
+                                              hash    => { node_id => $args{node}->id });
 
-        my $puppet_definitions = $component->getPuppetDefinition(host => $host);
+        my $puppet_definitions = $component->getPuppetDefinition(node => $args{node});
 
         my $listen = {};
         my $access = {};
@@ -177,11 +175,11 @@ sub getPuppetDefinitions {
 
         for my $service (keys %{$netconf}) {
             $listen->{$service} = {
-                ip => $component->getListenIp(host => $host,
+                ip => $component->getListenIp(host => $args{node}->host,
                                               port => $netconf->{$service}->{port})
             };
             $access->{$service} = {
-                ip => $component->getAccessIp(host => $host,
+                ip => $component->getAccessIp(host => $args{node}->host,
                                               port => $netconf->{$service}->{port})
             };
         }

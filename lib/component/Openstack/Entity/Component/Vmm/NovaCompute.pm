@@ -56,8 +56,7 @@ sub nova_controller {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     # The support of network is very limited
     # We create only one bridge for all the networks with no VLAN
@@ -67,7 +66,7 @@ sub getPuppetDefinition {
     my $bridge_flat;
 
     IFACE:
-    for my $iface ($args{host}->getIfaces()) {
+    for my $iface ($args{node}->host->getIfaces()) {
         next IFACE if $iface->hasRole(role => 'admin');
 
         for my $netconf ($iface->netconfs) {
