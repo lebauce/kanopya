@@ -5,6 +5,7 @@ var blocklyHandler = {
     metricList: [],
     statisticFunctionList: [],
     options: {},
+    formula: '',
 
     getMetricCategoryById: function(id) {
         var resultList = this.metricCategoryList.filter(function(obj) {
@@ -39,7 +40,7 @@ var blocklyHandler = {
 
     defaultWorkspaceXml: function() {
         var defaultXml = '<xml>';
-        defaultXml += '  <block type="hcm_set" deletable="false" x="-80" y="100">';
+        defaultXml += '  <block type="hcm_set" deletable="false" x="20" y="100">';
         defaultXml += '  </block>';
         defaultXml += '</xml>';
         return defaultXml;
@@ -69,19 +70,6 @@ var blocklyHandler = {
             this_.setMetricCategory(categoryId);
         });
         metricCategory.trigger('change');
-
-        // Blockly.onMouseMove_;
-
-        // var onresize = function(e) {
-        //     console.debug($('#metric-editor').width());
-        //     $('#blockly-container').width($('#metric-editor').width() - 40);
-        // }
-        // onresize();
-        // window.addEventListener('resize', onresize);
-        // Blockly.svgResize();
-        // $('#blockly-container').width(200);
-        // $('#blockly-container').height(200);
-
     },
 
     setDefaultWorkspace: function() {
@@ -99,8 +87,14 @@ var blocklyHandler = {
     },
 
     updateOutputFormula: function() {
-        var metricList = blocklyHandler.metricList;
         var formula = blocklyHandler.getFormula();
+
+        if (this.formula === formula) {
+            return;
+        };
+        this.formula = formula;
+
+        var metricList = blocklyHandler.metricList;
 
         var startIndex, endIndex, metricId, resultList;
         while ((startIndex = formula.indexOf('[')) > -1) {

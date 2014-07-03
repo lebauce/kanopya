@@ -25,8 +25,9 @@ function getIndicators(sp_id) {
 function openCreateDialog(serviceProviderId, gridId) {
 
     var dialogContainerId = 'metric-editor';
-    var metricCategoryData, metricData, statisticFunctionData;
+    var metricCatellgoryData, metricData, statisticFunctionData;
     var isResizing = false;
+    var widgetContent = null;
 
     function loadMetricCategoryData() {
         $.getJSON("ajax/metric-category.json", function(data) {
@@ -66,26 +67,43 @@ function openCreateDialog(serviceProviderId, gridId) {
             var template = Handlebars.compile(templateHtml);
             $('body').append(template(metricCategoryData));
             blocklyHandler.init(metricCategoryData, metricData, statisticFunctionData, options);
-            initMetricPreview();
+            setMetricPreview({'serviceMetric': null, 'nodeMetric': null});
             openDialog();
         });
     }
 
-    function initMetricPreview() {
-        var containerId = 'metric-preview';
-        var metricId = 367;
-        integrateWidget(containerId, 'widget_historical_view', function(widget_div) {
+    function setMetricPreview(options) {
+
+        var periodDate = {};
+        var nodes = '';
+
+        if (widgetContent !== null) {
+            periodDate = getPickedDate(widgetContent);
+            nodes = $.map(getSelectedNodes(widgetContent), function(val,i) {return val.id}).join(',');
+        }
+        if (nodes === '') {
+            nodes = 'first';
+        }
+
+        $('#metric-preview').empty();
+        integrateWidget('metric-preview', 'widget_historical_view', function(widget_div) {
+            widgetContent = widget_div;
+            // Select the first node by default
+            widget_div.metadata = {
+                node_ids: nodes
+            };
             customInitHistoricalWidget(
                 widget_div,
                 serviceProviderId,
                 {
-                    clustermetric_combinations: null,
-                    nodemetric_combinations: [{id:metricId, name:'', unit:''}],
-                    nodes: 'from_ajax'
+                    'clustermetric_combinations': options.serviceMetric,
+                    'nodemetric_combinations': options.nodeMetric,
+                    'nodes': (options.nodeMetric !== null) ? 'from_ajax' : null
                 },
                 {
-                    open_config_part: false,
-                    allow_forecast: false
+                    'open_config_part': false,
+                    'allow_forecast': false,
+                    'periodDate': periodDate,
                 }
             );
         });
@@ -127,7 +145,6 @@ function openCreateDialog(serviceProviderId, gridId) {
                 });
             },
             resize: function(event, ui) {
-                console.debug('resize');
                 blocklyContainerResize();
             },
             resizeStop: function(event, ui) {
@@ -151,28 +168,68 @@ function openCreateDialog(serviceProviderId, gridId) {
     function formulaChanged() {
         var formula = blocklyHandler.getFormula();
         var createButton = $('#' + dialogContainerId + '-create-button');
+        var error = 0;
+        var i, j, k, str;
+
         // Check if at least one metric is used in the formula
-        var isValid = (formula.indexOf('[') > -1);
+        if (formula.indexOf('[') === -1) {
+            error = 1;
+        }
+
         // Check if 0 value is used
-        if (isValid) {
-            var i = 0;
-            var j = formula.indexOf('0');
+        if (error === 0) {
+            i = 0;
+            j = formula.indexOf('0');
             var str;
             while (j > -1) {
                 // 0 in first position or the previous character is not a number
                 if (j === 0 || isNaN(parseInt(formula.charAt(j - 1), 10))) {
-                    isValid = false;
+                    error = 2;
                     break;
                 }
                 j = formula.indexOf('0', j + 1);
             }
         }
 
-        if (isValid) {
+        // Check if the formula combines service and node metric
+        if (error === 0) {
+            str = formula;
+            // Remove service metric from the formula
+            for (i = 0; i < statisticFunctionData.length; i++) {
+                j = str.indexOf(statisticFunctionData[i].label);
+                while (j > -1) {
+                    k = str.indexOf(')', j);
+                    str = str.substring(0, j) + str.substring(k + 1);
+                    j = str.indexOf(statisticFunctionData[i].label);
+                }
+            }
+            // Check if a node metric is used in the modified formula
+            if (str !== formula && str.indexOf('[') > -1) {
+                error = 3;
+            }
+        }
+
+        if (error === 0) {
+            $('#metric-formula').removeClass('error');
             createButton
                 .removeAttr('disabled')
                 .removeClass('ui-state-disabled');
+
+            var level = getFormulaLevel(formula);
+            var options = {};
+            switch(level) {
+                case 'node':
+                    options.serviceMetric = null;
+                    options.nodeMetric = [{id: 367, name: '', unit: ''}];
+                    break;
+                case 'service':
+                    options.serviceMetric = [{id: 369, name: '', unit: ''}];
+                    options.nodeMetric = null;
+                    break;
+            }
+            setMetricPreview(options);
         } else {
+            $('#metric-formula').addClass('error');
             createButton
                 .attr('disabled', 'disabled')
                 .addClass('ui-state-disabled');
@@ -186,7 +243,7 @@ function openCreateDialog(serviceProviderId, gridId) {
             formula: blocklyHandler.getFormula()
         }
 
-        var level = getFormulaLevel();
+        var level = getFormulaLevel(fields.formula);
         switch(level) {
             case 'node':
                 createNodeMetric(fields);
@@ -197,8 +254,7 @@ function openCreateDialog(serviceProviderId, gridId) {
         }
     }
 
-    function getFormulaLevel() {
-        var formula = blocklyHandler.getFormula();
+    function getFormulaLevel(formula) {
         var level = 'node';
         for (var i = 0; i < statisticFunctionData.length; i++) {
             if (formula.indexOf(statisticFunctionData[i].label) > -1) {
@@ -239,7 +295,6 @@ function openCreateDialog(serviceProviderId, gridId) {
     function createServiceMetric(fields) {
         var formula = formatServiceIndicator(fields.formula);
         formula = formatNodeIndicator(formula);
-        console.debug('createServiceMetric', formula);
 
         $.ajax({
             url: '/api/aggregatecombination',
@@ -291,7 +346,6 @@ function openCreateDialog(serviceProviderId, gridId) {
                     serviceIndicatorId = data[0].pk;
                 } else {
                     serviceIndicatorId = createServiceIndicator(nodeIndicatorId, statisticFunctionName, serviceProviderId);
-                    console.debug('create indicatorId', serviceIndicatorId);
                 }
             }
         });

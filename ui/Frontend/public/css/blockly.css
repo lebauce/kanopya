@@ -67,8 +67,13 @@
 #metric-formula {
     margin-top: 20px;
     border: 1px solid #cccccc;
+    color: #000000;
     background-color: #dddddd;
     padding: 10px;
+}
+
+#metric-formula.error {
+    color: #b94a48;
 }
 
 #metric-preview {

@@ -38,10 +38,18 @@ function widgetUpdateTitle(widget, conf) {
     widget.setTitle(split_title[0] + sep + conf);
 }
 
-function setGraphDatePicker(widget_elem, widget) {
-    var now = new Date();
-    var start = new Date();
-    start.setDate(now.getDate() - 1);
+function setGraphDatePicker(widget_elem, widget, periodDate) {
+    var start, end;
+    periodDate = periodDate || {};
+
+    if (periodDate.start) {
+        start = periodDate.start;
+        end = periodDate.end;
+    } else {
+        end = new Date();
+        start = new Date();
+        start.setDate(end.getDate() - 1);
+    }
 
     var default_mode = 'mode1';
 
@@ -63,7 +71,7 @@ function setGraphDatePicker(widget_elem, widget) {
 
     var end_input = $('<input>', {type:'text', 'class':'graph_end_time'}).datetimepicker({
         dateFormat: 'mm-dd-yy'
-    }).datetimepicker('setDate', now);
+    }).datetimepicker('setDate', end);
     container.append($('<span>', {css:'white-space:nowrap', 'class' : 'time_mode timeset_mode1', html:' End: '}).append(end_input) );
 
     // Time setting mode 2 (last xxx)

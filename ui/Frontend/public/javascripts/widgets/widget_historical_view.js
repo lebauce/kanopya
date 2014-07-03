@@ -44,14 +44,15 @@ $('.widget').live('widgetLoadContent',function(e, obj){
 function customInitHistoricalWidget(widget, sp_id, data, options) {
     var widget_div = widget.element || widget;
     var metadata   = widget.metadata;
-
-    widgetCommonInit(widget_div);
-    setGraphDatePicker(widget_div, widget.element ? widget : undefined );
-
     var opts = options || {};
     var clustermetric_combinations = data.clustermetric_combinations;
     var nodemetric_combinations    = data.nodemetric_combinations;
     var nodes                      = data.nodes;
+
+    var periodDate = (options.periodDate) ? options.periodDate : {};
+
+    widgetCommonInit(widget_div);
+    setGraphDatePicker(widget_div, widget.element ? widget : undefined, periodDate);
 
     var pending_init = 0;
     function initControlDone() {
@@ -242,10 +243,14 @@ function initNodeMetricControl(widget_div, sp_id, options, callback) {
             });
             // Load widget content if configured (select combinations in drop down list)
             if (opts.metadata && opts.metadata.node_ids) {
-                var selected_ids = opts.metadata.node_ids.split(',');
-                $.each(selected_ids, function(i,id) {
-                    node_list.find('option[node_id=' + id+']').prop('selected', true);
-                });
+                if (opts.metadata.node_ids === 'first') {
+                    node_list.find('option:first').prop('selected', true);
+                } else {
+                    var selected_ids = opts.metadata.node_ids.split(',');
+                    $.each(selected_ids, function(i,id) {
+                        node_list.find('option[node_id=' + id+']').prop('selected', true);
+                    });
+                }
             }
             // Multiselectify
             node_list.multiselect({
@@ -331,6 +336,18 @@ function _getSelectedCombinations(widget_div, list_class) {
            );
 }
 
+function getSelectedNodes(widget_div) {
+    return $.map(
+        widget_div.find('.node_list option:selected'),
+        function(n) {
+            return {
+                'id': $(n).attr('node_id'),
+                'name': $(n).html()
+            }
+        }
+    );
+}
+
 function clickRefreshButton(widget_div) {
     widget_div.find('.refresh_button').click();
 }
@@ -345,10 +362,7 @@ function setRefreshButton(widget, sp_id, opts) {
 
             var selected_service_combis = _getSelectedCombinations(widget_div, 'servicecombination_list');
             var selected_node_combis    = _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
-            var selected_nodes          = $.map(
-                                               widget_div.find('.node_list option:selected'),
-                                               function(n){return {id:$(n).attr('node_id'),name:$(n).html()}}
-                                           );
+            var selected_nodes          = getSelectedNodes(widget_div);
 
             // Limit the number of simultaneous series
             var total_combinations = selected_service_combis.length + (selected_node_combis.length * selected_nodes.length);
