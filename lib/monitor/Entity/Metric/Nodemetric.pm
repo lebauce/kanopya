@@ -110,7 +110,7 @@ sub new {
 
 sub indicatorLabel {
     my $self = shift;
-    return $self->clustermetric_indicator->indicator->indicator_label;
+    return $self->nodemetric_indicator->indicator->indicator_label;
 }
 
 
