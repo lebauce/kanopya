@@ -111,7 +111,7 @@ sub getPuppetDefinition {
                     },
                     galera => {
                         address => $cluster_address,
-                        # name => $self->service_provider->cluster_name
+                        name => $self->getMasterNode->node_hostname
                     }
                 }
             }
