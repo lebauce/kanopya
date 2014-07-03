@@ -672,31 +672,6 @@ sub getPuppetDefinition {
     }
 }
 
-sub instanciatePuppetResource {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'name' ],
-                                         optional => { 'params' => {},
-                                                       'resource' => 'class',
-                                                       'require' => undef });
-
-    $Data::Dumper::Terse = 1;
-    $Data::Dumper::Quotekeys = 0;
-
-    my @dumper = split('\n', Dumper($args{params}));
-    shift @dumper;
-    pop @dumper;
-
-    my $title = ref($args{name}) eq 'ARRAY' ?
-                '[ ' . join(', ', map { "'" . $_ . "'" } @{$args{name}}) . ' ]' :
-                "'" . $args{name} . "'";
-
-    return "$args{resource} { $title:\n" .
-           ($args{require} ? "  require => [ " . join(' ,', @{$args{require}}) . " ],\n" : '') .
-           join("\n", @dumper) . "\n" .
-           "}\n";
-}
-
 
 =pod
 =begin classdoc
