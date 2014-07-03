@@ -314,9 +314,6 @@ sub toString {
     return $component_name . " " . $component_version;
 }
 
-sub supportHotConfiguration {
-    return 0;
-}
 
 sub priority {
     return 50;

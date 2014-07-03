@@ -466,10 +466,6 @@ sub getImageRepository {
     });
 }
 
-sub supportHotConfiguration {
-    return 1;
-}
-
 sub getRemoteSessionURL {
     my $self = shift;
     my %args = @_;

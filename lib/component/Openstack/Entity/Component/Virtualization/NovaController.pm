@@ -193,10 +193,6 @@ sub getBootPolicies {
             Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
-sub supportHotConfiguration {
-    return 0;
-}
-
 
 =pod
 =begin classdoc
