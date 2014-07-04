@@ -165,14 +165,20 @@ sub isUp {
 
     $self->applyConfiguration(nodes => [ $args{node} ]);
 
+    $log->debug("Look for dependent components that require reconfiguration...");
     # Build the nodes to reconfigure by browsing the node components and thier dependencies.
     # Sort nodes to reconfigure by corresponding puppetagent component to optimize the number
     # of calls to applyConfiguration.
     # TODO: Need to reconfigure all active nodes of the current node components ?
     my $reconfigure = {};
     for my $component ($args{node}->components) {
+        $log->debug("Look for dependencies of component " . $component->label);
+
         for my $dependency (@{ $component->getDependentComponents}) {
+            $log->debug("Found dependent component " . $dependency->label);
+
             for my $node (@{ $dependency->getActiveNodes }) {
+                $log->debug("Handle node " . $node->label . " for reconfiguration.");
                 my $agent = $node->getComponent(category => "Configurationagent");
                 my $entry = { agent      => $agent,
                               nodes      => { $node->id => $node },
