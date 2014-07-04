@@ -175,11 +175,11 @@ sub getPuppetDefinitions {
 
         for my $service (keys %{$netconf}) {
             $listen->{$service} = {
-                ip => $component->getListenIp(host => $args{node}->host,
+                ip => $component->getListenIp(node => $args{node},
                                               port => $netconf->{$service}->{port})
             };
             $access->{$service} = {
-                ip => $component->getAccessIp(host => $args{node}->host,
+                ip => $component->getAccessIp(node => $args{node},
                                               port => $netconf->{$service}->{port})
             };
         }

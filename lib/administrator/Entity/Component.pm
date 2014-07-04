@@ -295,10 +295,9 @@ sub getActiveNodes {
     my @component_nodes = $self->component_nodes;
     my @nodes           = ();
     for my $component_node (@component_nodes) {
-        my $n = $component_node->node;
-        if ($n->host->host_state =~ /^up:\d+$/ &&
-            ($n->host->getNodeState())[0] =~ m/^(in|pregoingin|goingin)$/) {
-            push @nodes, $n;
+        my $node = $component_node->node;
+        if (($node->getState())[0] =~ m/^(in|pregoingin|goingin)$/) {
+            push @nodes, $node;
         }
     }
 
@@ -521,7 +520,7 @@ sub getDependentComponents {
 getListenIp gives ip address to use as "bind address" for this component configuration.
 Today, Hard coded behaviors are:
 component is not loadbalanced : 0.0.0.0
-component is loadbalanced : host adminIp   
+component is loadbalanced : node adminIp
 
 @return ip address
 
@@ -530,13 +529,17 @@ component is loadbalanced : host adminIp
 
 sub getListenIp {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['host','port']);
-    if($self->getBalancerAddress(port => $args{port})) {
-        return $args{host}->adminIp;
-    } else {
+
+    General::checkParams(args => \%args, required => [ 'node', 'port' ]);
+
+    if ($self->getBalancerAddress(port => $args{port})) {
+        return $args{node}->adminIp;
+    }
+    else {
         return '0.0.0.0';
     }
 }
+
 
 =pod
 =begin classdoc
