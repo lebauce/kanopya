@@ -82,7 +82,8 @@ function customInitHistoricalWidget(widget, sp_id, data, options) {
                     nodemetric_combinations : nodemetric_combinations == 'from_ajax' ? null : nodemetric_combinations,
                     nodes                   : nodes == 'from_ajax' ? null : nodes,
                     metadata                : metadata
-                },
+                }
+                ,
                 initControlDone
         );
     } else {
@@ -276,17 +277,26 @@ function initNodeMetricControl(widget_div, sp_id, options, callback) {
  * Fill servicemetric combinations list
  * If local data are passed then all corresponding combinations are selected and the select list is hidden (no user control)
  */
-function initServiceControl (widget_div, sp_id, options, callback) {
+function initServiceControl(widget_div, sp_id, options, callback) {
     var opts = options || {};
-
     var clustermetriccombinations_list = widget_div.find('.servicecombination_list').css('width', '250px');
+    var id, formula;
+
     if (opts.clustermetric_combinations) {
         $(opts.clustermetric_combinations).each( function() {
+            if (this.formula) {
+                id = -1;
+                formula = this.formula;
+            } else {
+                id = this.id;
+                formula = null;
+            }
             clustermetriccombinations_list.append($('<option>', {
-                combi_id: this.id,
+                combi_id: id,
                 value   : this.name,
                 text    : this.name,
-                unit    : this.unit
+                unit    : this.unit,
+                formula : formula
             }).prop('selected', true));
         });
         clustermetriccombinations_list.hide();
@@ -330,7 +340,8 @@ function _getSelectedCombinations(widget_div, list_class) {
                    return {
                            id  : $(elem).attr('combi_id'),
                            name: $(elem).val(),
-                           unit: $(elem).attr('unit')
+                           unit: $(elem).attr('unit'),
+                           formula: $(elem).attr('formula')
                           };
                 }
            );
@@ -451,21 +462,51 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
     var pending_requests = 0;
 
     // Service level requests
-    var clustersview_url = '/monitoring/serviceprovider/' + sp_id +'/clustersview';
     pending_requests =  service_combinations.length;
     var service_data = {series:[], labels:[], units:[]};
+
     $.each(service_combinations, function (i, combi) {
-        var params = {id:combi.id,start:start,stop:stop};
-        $.getJSON(clustersview_url, params, function(data) {
-            pending_requests--;
-            if (data.error) {
-                error_count++;
+        if (combi.id == -1) {
+            // Formula
+            if (combi.formula) {
+                start = dateTimeToEpoch(start);
+                stop = dateTimeToEpoch(stop);
+                $.ajax({
+                    url: '/api/aggregatecombination/evaluateFormula',
+                    type: 'POST',
+                    data: {
+                        'formula': combi.formula,
+                        'start_time': start,
+                        'stop_time': stop
+                    },
+                    success: function(data) {
+                        serviceIndicatorId = data.pk;
+                    },
+                    error: function() {
+                        error_count++;
+                    },
+                    complete: function() {
+                        pending_requests--;
+                    }
+                });
             } else {
-                service_data.series.push(data.first_histovalues);
-                service_data.labels.push(combi.name);
-                service_data.units.push(combi.unit);
+                error_count++;
             }
-        });
+        } else {
+            // id
+            var params = {'id': combi.id, 'start': start, 'stop': stop};
+            $.getJSON('/monitoring/serviceprovider/' + sp_id +'/clustersview', params, function(data) {
+                console.debug(data);
+                pending_requests--;
+                if (data.error) {
+                    error_count++;
+                } else {
+                    service_data.series.push(data.first_histovalues);
+                    service_data.labels.push(combi.name);
+                    service_data.units.push(combi.unit);
+                }
+            });
+        }
     });
 
     // Node level request

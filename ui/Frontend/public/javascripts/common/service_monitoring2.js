@@ -215,15 +215,17 @@ function openCreateDialog(serviceProviderId, gridId) {
                 .removeAttr('disabled')
                 .removeClass('ui-state-disabled');
 
-            var level = getFormulaLevel(formula);
             var options = {};
+            var level = getFormulaLevel(formula);
             switch(level) {
                 case 'node':
                     options.serviceMetric = null;
-                    options.nodeMetric = [{id: 367, name: '', unit: ''}];
+                    options.nodeMetric = [{'id': 367, 'name': '', 'unit': ''}];
                     break;
                 case 'service':
-                    options.serviceMetric = [{id: 369, name: '', unit: ''}];
+                    formula = formatServiceIndicator(formula);
+                    // options.serviceMetric = [{'formula': formula, 'name': '', 'unit': ''}];
+                    options.serviceMetric = [{'id': 370, 'name': '', 'unit': ''}];
                     options.nodeMetric = null;
                     break;
             }
@@ -294,7 +296,6 @@ function openCreateDialog(serviceProviderId, gridId) {
 
     function createServiceMetric(fields) {
         var formula = formatServiceIndicator(fields.formula);
-        formula = formatNodeIndicator(formula);
 
         $.ajax({
             url: '/api/aggregatecombination',
@@ -314,8 +315,11 @@ function openCreateDialog(serviceProviderId, gridId) {
         });
     }
 
-    function formatServiceIndicator(formula) {
+    function formatServiceIndicator(formula, isReadOnly) {
+        var isReadOnly = isReadOnly || false;
         var statStartIndex, statEndIndex, metricStartIndex, metricEndIndex, nodeIndicatorId, serviceIndicatorId;
+        // Allow to break the loop
+        outerLoop:
         for (var i = 0; i < statisticFunctionData.length; i++) {
             statStartIndex = formula.indexOf(statisticFunctionData[i].label);
             while (statStartIndex > -1) {
@@ -323,15 +327,22 @@ function openCreateDialog(serviceProviderId, gridId) {
                 metricStartIndex = formula.indexOf('[', statStartIndex);
                 metricEndIndex = formula.indexOf(']', statStartIndex);
                 nodeIndicatorId = formula.substring(metricStartIndex + 1, metricEndIndex);
-                serviceIndicatorId = getServiceIndicatorId(nodeIndicatorId, statisticFunctionData[i].code, serviceProviderId);
+                serviceIndicatorId = getServiceIndicatorId(nodeIndicatorId, statisticFunctionData[i].code, serviceProviderId, isReadOnly);
+                if (serviceIndicatorId === -1) {
+                    formula = '';
+                    break outerLoop;
+                }
                 formula = formula.substring(0, statStartIndex) + 'id' + serviceIndicatorId + formula.substring(statEndIndex + 1);
                 statStartIndex = formula.indexOf(statisticFunctionData[i].label);
             }
         }
+        if (formula) {
+            formula = formatNodeIndicator(formula);
+        }
         return formula;
     }
 
-    function getServiceIndicatorId(nodeIndicatorId, statisticFunctionName, serviceProviderId) {
+    function getServiceIndicatorId(nodeIndicatorId, statisticFunctionName, serviceProviderId, isReadOnly) {
         var serviceIndicatorId;
         $.ajax({
             url: '/api/clustermetric',
@@ -344,6 +355,8 @@ function openCreateDialog(serviceProviderId, gridId) {
             success: function(data) {
                 if (data.length > 0) {
                     serviceIndicatorId = data[0].pk;
+                } else if (isReadOnly) {
+                    serviceIndicatorId = -1;
                 } else {
                     serviceIndicatorId = createServiceIndicator(nodeIndicatorId, statisticFunctionName, serviceProviderId);
                 }
