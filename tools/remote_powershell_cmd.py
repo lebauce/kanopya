@@ -6,10 +6,13 @@
 #
 # Troubleshooting :
 #
-# "winrm.exceptions.WinRMTransportError: Kerberos-based authentication was failed. Code 500"
+# "winrm.exceptions.WinRMTransportError:
+#  Kerberos-based authentication was failed. Code 500"
 # => Winrm/Config/Service/AllowUnencrypted must be true on target machine
 #
-# "kerberos.GSSError: (('Unspecified GSS failure.  Minor code may provide more information', 851968), ("Credentials cache file '/tmp/krb5cc_0' not found", -176$
+# "kerberos.GSSError:
+#  (('Unspecified GSS failure.  Minor code may provide more information', 851968),
+#    ("Credentials cache file '/tmp/krb5cc_0' not found", -1765328189))"
 # => Client must renew the kerberos Ticket (kinit <user>)
 
 import sys
@@ -70,7 +73,8 @@ def run_command(command, target):
         print >> sys.stderr, "kerberos GSSError:", e
         sys.exit(2)
     except:
-        print >> sys.stderr, "Unexpected error during remote ps command execution :", sys.exc_info()[0], sys.exc_info()[1]
+        print >> sys.stderr, ("Unexpected error during remote ps command execution :",
+                              sys.exc_info()[0], sys.exc_info()[1])
         sys.exit(2)
 
 
