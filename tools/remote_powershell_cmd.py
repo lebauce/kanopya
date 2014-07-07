@@ -50,7 +50,7 @@ def run_command(command, target):
     p = Protocol(endpoint='https://' + target + ':5986/wsman',
                  transport='kerberos')
 
-    # We do not want prined info about kerberos ticket
+    # We do not want printed info about kerberos ticket
     stdout_orig = sys.stdout
     f = open('/dev/null', 'w')
     sys.stdout = f
