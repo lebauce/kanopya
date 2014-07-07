@@ -12,18 +12,20 @@
 # "kerberos.GSSError: (('Unspecified GSS failure.  Minor code may provide more information', 851968), ("Credentials cache file '/tmp/krb5cc_0' not found", -176$
 # => Client must renew the kerberos Ticket (kinit <user>)
 
-import sys, getopt
+import sys
+import getopt
 
 from winrm.protocol import Protocol
 import kerberos
 
+
 def main(argv):
-    usage =  __file__ + ' -t <targetHost> -c <powershellCommand>'
+    usage = __file__ + ' -t <targetHost> -c <powershellCommand>'
 
     target = ''
     command = ''
     try:
-        opts, args = getopt.getopt(argv,"t:c:")
+        opts, args = getopt.getopt(argv, "t:c:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -42,10 +44,8 @@ def main(argv):
 
 def run_command(command, target):
 
-    p = Protocol(
-        endpoint='https://' + target + ':5986/wsman',
-        transport='kerberos',
-    )
+    p = Protocol(endpoint='https://' + target + ':5986/wsman',
+                 transport='kerberos')
 
     # We do not want prined info about kerberos ticket
     stdout_orig = sys.stdout
