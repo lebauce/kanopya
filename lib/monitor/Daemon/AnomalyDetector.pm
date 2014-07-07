@@ -24,7 +24,7 @@ Computes current anomaly scores for each anomaly of the Kanopya DB
 =end classdoc
 =cut
 
-package AnomalyDetector;
+package Daemon::AnomalyDetector;
 use base Daemon;
 
 use strict;

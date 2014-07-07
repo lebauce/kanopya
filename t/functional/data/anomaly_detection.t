@@ -31,7 +31,7 @@ use Entity::Host;
 use Entity::Node;
 use Entity::Metric::Clustermetric;
 use Kanopya::Test::TimeSerie;
-use AnomalyDetector;
+use Daemon::AnomalyDetector;
 use TryCatch;
 use Entity::Metric::Anomaly;
 use Entity::AggregateCondition;
@@ -47,7 +47,7 @@ Log::Log4perl->easy_init({
 
 my $testing = 1;
 
-my $an = AnomalyDetector->new();
+my $an = Daemon::AnomalyDetector->new();
 my $cm;
 my $nm;
 my $cluster = ();

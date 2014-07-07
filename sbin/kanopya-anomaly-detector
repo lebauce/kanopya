@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use AnomalyDetector;
+use Daemon::AnomalyDetector;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -38,7 +38,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $anomaly_detector = AnomalyDetector->new();
+my $anomaly_detector = Daemon::AnomalyDetector->new();
 $anomaly_detector->run(name       => "kanopya-anomaly-detector",
                        daemonize  => $opts{b},
                        pidfile    => $opts{p});
