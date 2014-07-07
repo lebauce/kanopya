@@ -182,7 +182,7 @@ sub isUp {
                 my $agent = $node->getComponent(category => "Configurationagent");
                 my $entry = { agent      => $agent,
                               nodes      => { $node->id => $node },
-                              components => { $component->id => $component } };
+                              components => { $dependency->id => $dependency } };
 
                 $reconfigure->{$agent->id} = $merge->merge($reconfigure->{$agent->id}, $entry);
             }
@@ -192,15 +192,15 @@ sub isUp {
     # Reconfigure the required nodes
     for my $toreconfiure (values %{ $reconfigure }) {
         # Build the list of tags from components list
-        my @dependentnodes = values %{ $reconfigure->{nodes} };
+        my @dependentnodes = values %{ $toreconfiure->{nodes} };
+        my @tags = map { 'kanopya::' . lc($_->component_type->component_name) }
+                       values %{ $toreconfiure->{components} };
+
         if (scalar(@dependentnodes)) {
-            my @tags = map { 'kanopya::' . lc($_->component_type->component_name) }
-                           values %{ $reconfigure->{components} };
+            $log->debug("Node " . $args{node}->label . ", reconfiguring dependent components " .
+                        join(',', @tags) . " on nodes " . join(',', map { $_->fqdn } @dependentnodes));
 
             # Reconfigure the nodes
-            $log->debug("Node " . $args{node}->label . ", reconfiguring dependent nodes " .
-                        join(',', map { $_->fqdn } @dependentnodes));
-
             EEntity->new(entity => $toreconfiure->{agent})->applyConfiguration(nodes => \@dependentnodes,
                                                                                tags  => \@tags);
         }
