@@ -86,21 +86,31 @@ sub assignIp {
 
     my $ip;
     if (! defined $args{ip_addr}) {
+        my @netconfs = $self->netconfs;
+        $log->debug("Browse " . scalar(@netconfs) . " netconfs to search poolips");
+
         # Loop over all network configurations, and assign ip to ifaces
         # for each network.
         NETCONFS:
-        for my $netconf ($self->netconfs) {
-            if (scalar $netconf->poolips) {
+        for my $netconf (@netconfs) {
+            my @poolips = $netconf->poolips;
+            $log->debug("Netconf " . $netconf->label . ", try to pop an ip from " .
+                        scalar(@poolips) . " poolip");
+
+            if (scalar(@poolips)) {
                 POOLIPS:
-                for my $poolip ($netconf->poolips) {
+                for my $poolip (@poolips) {
                     # Try to pop an ip from the current pool
                     try {
                         $ip = $poolip->popIp();
                     }
                     catch ($err) {
-                        $log->info("Cannot pop IP from pool <" . $poolip->poolip_name . ">\n$err");
+                        $log->error("Cannot pop IP from pool <" . $poolip->poolip_name . ">\n$err");
                         next POOLIPS;
                     }
+
+                    # Assign the ip to the iface
+                    $ip->iface_id($self->id);
 
                     $log->info("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
 
@@ -112,18 +122,14 @@ sub assignIp {
                           error => "Unable to assign ip to iface <" . $self->iface_name . ">"
                       );
             }
+            else {
+                $log->warn("No poolip found, skipping netconf <" . $netconf->label . ">");
+            }
         }
     }
     else {
-        $ip = Ip->new(ip_addr => $args{ip_addr});
-    }
-
-    # Assign the ip to the iface
-    try {
-        $ip->iface_id($self->id);
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Internal(error => "$err");
+        $log->info("Creating ip from fixed address <$args{ip_addr}>");
+        $ip = Ip->new(ip_addr => $args{ip_addr}, iface_id => $self->id);
     }
 
     return $ip;
