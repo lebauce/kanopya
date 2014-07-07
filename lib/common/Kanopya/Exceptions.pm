@@ -138,6 +138,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Deprecated',
     },
+    Kanopya::Exception::Internal::NoValue => {
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'No value for requested data',
+    },
     Kanopya::Exception::Execution => {
         isa         => 'Kanopya::Exception',
         description => 'Command execution failed',
