@@ -17,7 +17,7 @@ use Data::Dumper;
 $DB::deep = 500;
 
 use Log::Log4perl;
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 
 # Firstly login to the api
 APITestLib::login();

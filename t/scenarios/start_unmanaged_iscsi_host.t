@@ -19,7 +19,7 @@ use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level  => 'INFO',
     file   => basename(__FILE__) . '.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;

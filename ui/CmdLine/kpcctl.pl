@@ -7,7 +7,7 @@ use Kanopya::Database;
 use General;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 
 
 sub handle_new {

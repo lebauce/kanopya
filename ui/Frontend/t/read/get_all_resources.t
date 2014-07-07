@@ -12,7 +12,7 @@ use Test::Exception;
 use Data::Dumper;
 
 use Log::Log4perl;
-Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__.'.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__.'.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 
 
 # Firstly login to the api

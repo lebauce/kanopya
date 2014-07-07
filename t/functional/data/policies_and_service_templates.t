@@ -10,7 +10,7 @@ use Data::Dumper;
 use ClassType;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({ level=>'DEBUG', file => 'policies_and_service_templates.log', layout => '%F %L %p %m%n' });
+Log::Log4perl->easy_init({ level=>'DEBUG', file => 'policies_and_service_templates.log', layout => '%d [ %H - %P ] %p -> %M - %m%n' });
 my $log = get_logger("");
 
 my $testing = 1;
