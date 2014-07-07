@@ -136,8 +136,9 @@ sub fetch {
 
     # Get all node metric related to nodes
     my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
-    my @nodemetrics = Entity::Metric::Nodemetric->search(
-                          hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
+    my @nodemetrics = $self->searchRelated(
+                          filters => ['nodemetrics'],
+                          hash    => {'nodemetric_node.node_hostname' => \@node_hostnames}
                       );
 
     my %id_values;
