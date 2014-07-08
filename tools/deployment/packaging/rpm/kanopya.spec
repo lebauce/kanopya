@@ -203,7 +203,6 @@ cp -R lib/orchestrator $RPM_BUILD_ROOT/opt/kanopya/lib
 # Remove useless scripts that break the dependency checking
 rm -rf $RPM_BUILD_ROOT/opt/kanopya/lib/common/MessageQueuing/RabbitFoot*
 rm -rf $RPM_BUILD_ROOT/opt/kanopya/lib/common/MessageQueuing/Qpid*
-rm $RPM_BUILD_ROOT/opt/kanopya/lib/common/Kanopya/EventLogAppender.pm
 rm $RPM_BUILD_ROOT/opt/kanopya/lib/common/Kanopya/Tools/KioExport.pm
 
 %files

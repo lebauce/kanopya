@@ -44,15 +44,10 @@ my $err;
 use Log::Log4perl "get_logger";
 my $log = get_logger("timedata");
 
-my $dir;
-my $rrd;
-my $delete;
-my $move;
-
-$rrd    = '/usr/bin/rrdtool';
-$dir    = '/var/cache/kanopya/monitor/';
-$delete = 'rm';
-$move   = 'mv';
+my $dir    = '/var/cache/kanopya/monitor/';
+my $rrd    = '/usr/bin/rrdtool';
+my $delete = 'rm';
+my $move   = 'mv';
 
 sub new {
     my $class = shift;

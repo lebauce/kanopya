@@ -36,11 +36,6 @@ if ($^O eq 'linux') {
     use Setup::Linux;
     $setup = Setup::Linux->new(%opts);
 }
-elsif ($^O eq 'MSWin32') {
-    # TODO test admin privilieges
-    use Setup::MSWin32;
-    $setup = Setup::MSWin32->new(%opts);
-}
 else {
     die "$^O is not supported\n";
 }
