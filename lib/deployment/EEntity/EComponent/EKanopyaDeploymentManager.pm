@@ -255,7 +255,9 @@ sub checkNodeUp {
                 );
             }
             catch ($err) {
-                $log->warn("Unable to reboot the host: $err");
+                # The ssh connexion is timeouted when the host is rebooted,
+                # so the call to execute method fail after the reboot command is executed.
+                # Error occured during execution: ssh slave failed: timed out
             }
 
             return $delay;
