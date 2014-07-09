@@ -460,7 +460,7 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
         pending_requests += node_combinations.length;
         var params = {
                 start_time : dateTimeToEpoch(start),
-                end_time   : dateTimeToEpoch(stop),
+                stop_time  : dateTimeToEpoch(stop),
                 node_ids   : $.map(nodes, function(n){return n.id})
         }
         $.each(node_combinations, function (i, combi) {

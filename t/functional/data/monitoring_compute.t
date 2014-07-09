@@ -305,25 +305,27 @@ sub testClusterMetric {
 
 sub testAggregateCombination {
     my %args = @_;
+    my ($cm1, $cm2);
+    my $acomb1;
 
     lives_ok {
         my $service_provider = $args{service_provider};
         my $aggregator          = $args{aggregator};
 
         # Cluster metrics
-        my $cm1 = Entity::Metric::Clustermetric->new(
-                      clustermetric_service_provider_id       => $service_provider->id,
-                      clustermetric_indicator_id              => ($indic1->id),
-                      clustermetric_statistics_function_name  => 'sum',
-                      clustermetric_window_time               => '1200',
-                  );
+        $cm1 = Entity::Metric::Clustermetric->new(
+                   clustermetric_service_provider_id       => $service_provider->id,
+                   clustermetric_indicator_id              => ($indic1->id),
+                   clustermetric_statistics_function_name  => 'sum',
+                   clustermetric_window_time               => '1200',
+               );
 
-        my $cm2 = Entity::Metric::Clustermetric->new(
-                      clustermetric_service_provider_id       => $service_provider->id,
-                      clustermetric_indicator_id              => ($indic2->id),
-                      clustermetric_statistics_function_name  => 'sum',
-                      clustermetric_window_time               => '1200',
-                  );
+        $cm2 = Entity::Metric::Clustermetric->new(
+                   clustermetric_service_provider_id       => $service_provider->id,
+                   clustermetric_indicator_id              => ($indic2->id),
+                   clustermetric_statistics_function_name  => 'sum',
+                   clustermetric_window_time               => '1200',
+               );
 
         # Combination
         my $acomb_ident = Entity::Metric::Combination::AggregateCombination->new(
@@ -336,7 +338,7 @@ sub testAggregateCombination {
                              aggregate_combination_formula   => '10 / id'.($cm1->id),
                          );
 
-        my $acomb1 = Entity::Metric::Combination::AggregateCombination->new(
+        $acomb1 = Entity::Metric::Combination::AggregateCombination->new(
                          service_provider_id             =>  $service_provider->id,
                          aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
                      );
@@ -410,7 +412,40 @@ sub testAggregateCombination {
             die 'Fail in combination with complex formula (parenthesis, all operators, float, neg res)'
         }
         if (! ($acomb3->evaluate() - 100000000000000000000000000*20.246 < 10**-8)) {die 'Combination with big value'};
-    } 'Aggregate combination computing'
+    } 'Aggregate combination computing';
+
+    lives_ok {
+        my $ts = Kanopya::Tools::TimeSerie->new();
+        my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
+        $ts->generatemetric(metric => $cm1, %fonction_conf);
+
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '7');
+        $ts->generatemetric(metric => $cm2, %fonction_conf);
+
+        my $data = $acomb1->evaluateTimeSerie(
+                       start_time => time() - 300*5,
+                       stop_time => time(),
+                   );
+
+        for my $value (values %$data) {
+            if ($value ne 5+7*3) {
+                die "Wrong value expected <26> got <$value>";
+            }
+        }
+
+        $data = Entity::Metric::Combination::AggregateCombination->evaluateFormula(
+                       start_time => time() - 300*5,
+                       stop_time => time(),
+                       formula => 'id' . ($cm1->id) . ' + id' . ($cm2->id),
+                   );
+
+        for my $value (values %$data) {
+            if ($value ne 5+7) {
+                die "Wrong value expected <12> got <$value>";
+            }
+        }
+
+    } 'Evaluate time serie nodemetrics aggregate combination';
 }
 
 sub testNodemetricCombination {
