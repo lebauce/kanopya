@@ -28,6 +28,7 @@ use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
+use Kanopya::Tools::TimeSerie;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
@@ -416,7 +417,7 @@ sub testNodemetricCombination {
     my %args = @_;
 
     my $service_provider = $args{service_provider};
-
+    my $ncomb2;
     lives_ok {
         # Combinations
         my $ncomb_ident = Entity::Metric::Combination::NodemetricCombination->new(
@@ -424,10 +425,10 @@ sub testNodemetricCombination {
                               nodemetric_combination_formula  => 'id' . ($indic1->id),
                           );
 
-        my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
-                         service_provider_id             => $service_provider->id,
-                         nodemetric_combination_formula  => '(id' . ($indic1->id) . ' + 5) * id' . ($indic2->id),
-                     );
+        $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
+                      service_provider_id             => $service_provider->id,
+                      nodemetric_combination_formula  => '(id' . ($indic1->id) . ' + 5) * id' . ($indic2->id),
+                  );
 
         my $mock_conf  = "{'default':{'const':null}}";
 
@@ -509,7 +510,70 @@ sub testNodemetricCombination {
         if ($ncomb2->evaluate(node => $node_1) - (1.2 + 5)*42.42 > 10**-8) {
             die 'Combination correctly computed with float values';
         }
-    } 'Nodemetric combination computing'
+    } 'Nodemetric combination computing';
+
+    lives_ok {
+        my $ts = Kanopya::Tools::TimeSerie->new();
+
+        # Generate first metric data for both nodes
+        my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
+        for my $nodemetric ($indic1->nodemetrics) {
+            $ts->generatemetric(metric => $nodemetric, %fonction_conf);
+        }
+
+        # Generate second metric data only for first node
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '7');
+        my @nodemetrics = $indic2->nodemetrics;
+        $ts->generatemetric(metric => $nodemetrics[0], %fonction_conf);
+        $ts->unlinkMetric(metric => $nodemetrics[1]);
+
+        # Compute
+        my $data = $ncomb2->evaluateTimeSerie(
+                       start_time => time() - 300*5,
+                       end_time => time(),
+                       node_ids => [$node_1->id, $node_2->id]
+                   );
+
+        # Test value correctly computed for node1 and undef for node2 (because of missing data for one metric)
+        for my $value (values %{$data->{$node_1->id}}) {
+             if ($value ne ((5 + 5) * 7)) {
+                 die "nodemetric compute. expected <70> got <$value>";
+             }
+        }
+        for my $value (values %{$data->{$node_2->id}}) {
+             if ($value) {
+                 die "nodemetric compute. expected <undef> got <$value>";
+             }
+        }
+
+        # Generate second metric data for second node
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '8');
+        $ts->generatemetric(metric => $nodemetrics[1], %fonction_conf);
+
+        # Compute
+        $data = $ncomb2->evaluateTimeSerie(
+                    start_time => time() - 300*5,
+                    end_time => time(),
+                    node_ids => [$node_1->id, $node_2->id]
+                );
+
+        # Check combination correctly computed for bot nodes
+        if (! defined $data->{$node_1->id} || ! defined $data->{$node_2->id}) {
+            die 'data must be defined for the 2 nodes';
+        }
+
+        for my $value (values %{$data->{$node_1->id}}) {
+             if ($value ne ((5 + 5) * 7)) {
+                 die "nodemetric compute. expected <70> got <$value>";
+             }
+        }
+        for my $value (values %{$data->{$node_2->id}}) {
+             if ($value ne ((5 + 5) * 8)) {
+                 die "nodemetric compute. expected <80> got <$value>";
+             }
+        }
+
+    } 'Evaluate time serie nodemetrics';
 }
 
 sub testBigAggregation {
