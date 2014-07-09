@@ -33,6 +33,7 @@ use base EEntity;
 use strict;
 use warnings;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -51,7 +52,7 @@ sub checkComponents {
 
     my @components = sort { $a->priority <=> $b->priority } $self->components;
     foreach my $component (map { EEntity->new(entity => $_) } @components) {
-        $log->debug("Browsing component: " . $component->label);
+        $log->debug("Checking availability of component: " . $component->label);
 
         if (! $component->isUp(node => $self)) {
             $log->info("Component <" . $component->label . "> not yet operational " .
@@ -60,6 +61,32 @@ sub checkComponents {
         }
     }
     return 1;
+}
+
+
+=pod
+=begin classdoc
+
+Check if the components installed on this node are properly configured.
+
+=end classdoc
+=cut
+
+sub checkConfiguration {
+    my ($self, %args) = @_;
+
+    my $agent;
+    try {
+        $agent = $self->getComponent(category => "Configurationagent");
+    }
+    catch {
+        throw Kanopya::Exception::Execution::ResourceNotFound(
+                  error => "Unable to find any configuration agent on the node, " .
+                           "required to encure proper deployment configuration."
+              )
+    }
+
+    return EEntity->new(entity => $agent)->isConfigured(node => $self);
 }
 
 

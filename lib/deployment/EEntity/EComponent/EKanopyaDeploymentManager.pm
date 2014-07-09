@@ -211,6 +211,11 @@ sub checkNodeUp {
         return $delay;
     }
 
+    # Check if the component are properly configured
+    if (! $args{node}->checkConfiguration()) {
+        return $delay;
+    }
+
     # Check if all host components are up.
     if (! $args{node}->checkComponents()) {
         return $delay;

@@ -158,7 +158,7 @@ sub applyConfiguration {
     };
 }
 
-sub isUp {
+sub isConfigured {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'node' ]);
