@@ -206,22 +206,11 @@ sub checkNodeUp {
     }
 
     if (! EEntity->new(entity => $args{node}->host)->checkUp()) {
-        $log->info("Host \"" . $args{node}->host->label .
-                   "\" not yet reachable at <$node_ip>");
+        $log->info("Host \"" . $args{node}->host->label . "\" not yet reachable at <$node_ip>");
         return $delay;
     }
 
-    # Check if the component are properly configured
-    if (! $args{node}->checkConfiguration()) {
-        return $delay;
-    }
-
-    # Check if all host components are up.
-    if (! $args{node}->checkComponents()) {
-        return $delay;
-    }
-
-    # If deployed on disk, remove the bost from teh dhcp to avoid the PXE
+    # If deployed on disk, remove the host from the dhcp to avoid the PXE
     # at the next reboot
     if ($args{deploy_on_disk}) {
         # Check if the host has already been deployed
@@ -271,6 +260,16 @@ sub checkNodeUp {
 
             return $delay;
         }
+    }
+
+    # Check if the component are properly configured
+    if (! $args{node}->checkConfiguration()) {
+        return $delay;
+    }
+
+    # Check if all host components are up.
+    if (! $args{node}->checkComponents()) {
+        return $delay;
     }
 
     # Node is up
