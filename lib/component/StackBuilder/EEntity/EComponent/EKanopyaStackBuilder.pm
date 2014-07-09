@@ -316,7 +316,7 @@ sub startStack {
         $err->rethrow();
     }
 
-    $components->{novacompute}->{component}->getMasterNode->getComponent(category => "System")->addMount(
+    $components->{novacompute}->{serviceprovider}->getComponent(category => "System")->addMount(
         mountpoint => "/var/lib/nova/instances",
         filesystem => "nfs",
         options    => "vers=3",
