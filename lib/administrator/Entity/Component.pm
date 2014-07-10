@@ -743,7 +743,7 @@ sub service_provider {
     if (scalar(@args)) {
         return $self->setAttr(name => 'service_provider', value => pop(@args));
     }
-    return $self->getAttr(name => 'service_provider');
+    return $self->SUPER::service_provider;
 };
 
 1;
