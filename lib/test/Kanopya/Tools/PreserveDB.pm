@@ -88,10 +88,12 @@ sub restoreKanopyaDB {
 BEGIN {
     Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
     $filepath = dumpKanopyaDB();
+    system('mount -t tmpfs -o size=512M tmpfs /var/cache/kanopya/monitor');
 }
 
 # This code block is executed at the very end of the test
 END {
+    system('umount /var/cache/kanopya/monitor');
     restoreKanopyaDB(filepath => $filepath);
 }
 
