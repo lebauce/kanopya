@@ -437,7 +437,7 @@ sub setConf {
         }
         catch (Kanopya::Exception::Internal::NotFound $err) {
             # Component <NovaCompute> has no master node yet
-            $log>warn("Unable to configure linux mounts, $err");
+            $log->warn("Unable to configure linux mounts, $err");
         }
     }
 }
