@@ -31,6 +31,7 @@ use base "Manager::HostManager::VirtualMachineManager";
 use strict;
 use warnings;
 
+use Kanopya::Exceptions;
 use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
 
@@ -427,11 +428,17 @@ sub setConf {
     }
 
     for my $vmm ($self->vmms) {
-        my $linux = $vmm->getMasterNode->getComponent(category => "System");
-        my $oldconf = $linux->getConf();
-        my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
-        $linux->setConf(conf => { linuxes_mount => \@mounts });
-        $vmm->service_provider->update();
+        try {
+            my $linux = $vmm->getMasterNode->getComponent(category => "System");
+            my $oldconf = $linux->getConf();
+            my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
+            $linux->setConf(conf => { linuxes_mount => \@mounts });
+            $vmm->service_provider->update();
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            # Component <NovaCompute> has no master node yet
+            $log>warn("Unable to configure linux mounts, $err");
+        }
     }
 }
 
