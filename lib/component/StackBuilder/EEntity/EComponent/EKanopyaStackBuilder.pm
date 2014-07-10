@@ -423,6 +423,9 @@ sub startStack {
                 context => {
                     cluster => $cluster,
                     service_manager => $cluster->service_manager,
+                    host_manager    => $cluster->getManager(manager_type => 'HostManager'),
+                    disk_manager    => $cluster->getManager(manager_type => 'DiskManager'),
+                    export_manager  => $cluster->getManager(manager_type => 'ExportManager'),
                 },
             },
         });
