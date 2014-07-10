@@ -33,6 +33,7 @@ use base 'Entity';
 use strict;
 use warnings;
 use Data::Dumper;
+use TryCatch;
 
 use Alert;
 use DataCache;
@@ -136,14 +137,22 @@ sub fetch {
 
     # Get all node metric related to nodes
     my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
-    my @nodemetrics = Entity::Metric::Nodemetric->search(
-                          hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
+    my @nodemetrics = $self->searchRelated(
+                          filters => ['nodemetrics'],
+                          hash    => {'nodemetric_node.node_hostname' => \@node_hostnames}
                       );
 
     my %id_values;
     for my $nodemetric (@nodemetrics) {
-        $id_values{$nodemetric->nodemetric_node->id} = $nodemetric->fetch(start_time => $args{start_time},
-                                                                          stop_time  => $args{end_time});
+        try {
+            $id_values{$nodemetric->nodemetric_node->id} = $nodemetric->fetch(
+                                                               start_time => $args{start_time},
+                                                               stop_time  => $args{end_time}
+                                                           );
+        }
+        catch (Kanopya::Exception::Internal::NoValue $err) {
+            $id_values{$nodemetric->nodemetric_node->id} = {};
+        }
     }
 
     return \%id_values;
