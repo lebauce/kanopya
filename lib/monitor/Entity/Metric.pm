@@ -12,6 +12,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 =pod
 =begin classdoc
 
@@ -28,10 +29,10 @@ Metric are TimeSeries entities. They can be stored in database (RRD) and/or be e
 
 package Entity::Metric;
 use base Entity;
-use Entity::Metric::Anomaly;
 use ParamPreset;
 use TimeData;
 use TryCatch;
+use Formula;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -94,18 +95,7 @@ sub computeFormula {
 
     my $formula = $args{formula} || $self->param_preset->load->{formula};
 
-    # return undef if one value is missing or undef
-    map {(! defined  $args{values}->{$_}) ? return undef : 1 ;} $formula =~ m/id(\d+)/g;
-
-    # replace values in formula
-    $formula =~ s/id(\d+)/$args{values}->{$1}/g;
-    my $res = undef;
-    my $arrayString = '$res = ' . $formula;
-
-    # Evaluate the logic formula
-    eval $arrayString;
-
-    return $res;
+    return Formula->compute(values => $args{values}, formula => $formula);
 }
 
 
@@ -339,7 +329,6 @@ sub fetch {
                end    => $args{stop_time},
                output => $args{output},
            );
-
 }
 
 

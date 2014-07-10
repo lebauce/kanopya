@@ -230,10 +230,9 @@ sub toString {
 
 
 =pod
-
 =begin classdoc
 
-Compute the combination value between two dates. Use fetch() method of metric.
+Compute the combination value between two dates.
 
 @param start_time the begining date
 @param stop_time the ending date
@@ -241,24 +240,54 @@ Compute the combination value between two dates. Use fetch() method of metric.
 @return the computed value
 
 =end classdoc
-
 =cut
 
 sub evaluateTimeSerie {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['start_time','stop_time']);
 
+    $args{formula} = $self->aggregate_combination_formula;
+
+    return $self->evaluateFormula(%args);
+}
+
+
+=pod
+=begin classdoc
+
+Compute the a given formula value between two dates.
+
+@param start_time the begining date
+@param stop_time the ending date
+@param formula a given formula 'idxxx + idyyy'
+       where xxx and yyy are ids of Metric instances which can be fetched
+
+@return the computed value
+
+=end classdoc
+=cut
+
+sub evaluateFormula {
+    my ($class, %args) = @_;
+
+    General::checkParams(
+        args => \%args,
+        required => ['start_time','stop_time', 'formula'],
+    );
+
     my %allTheCMValues;
-    foreach my $cm_id ($self->dependentMetricIds()){
+    foreach my $cm_id (Formula->getDependentIds(formula => $args{formula})){
         my $metric = Entity::Metric->get('id' => $cm_id);
         $allTheCMValues{$cm_id} = $metric->fetch(%args);
     }
 
-    return $self->_computeFromArrays(%allTheCMValues);
+    my $res = Formula->computeTimeSerie(
+                  values => \%allTheCMValues,
+                  formula => $args{formula},
+              );
+    return wantarray ? %$res : $res;
 }
-
 
 =pod
 
@@ -362,8 +391,8 @@ sub _evaluateLastValue {
         $values->{$id} = Entity::Metric->get(id => $id)->evaluate(%args);
     }
 
-    my $res = $self->SUPER::computeFormula(formula => $self->aggregate_combination_formula,
-                                           values  => $values);
+    my $res = Formula->compute(formula => $self->aggregate_combination_formula,
+                               values  => $values);
 
     if (defined $args{nodes}) {
         my %hash = map {$_->id => $res} @{$args{nodes}};
@@ -385,58 +414,11 @@ Return the Entity::Metric ids of the formulas with no doublon.
 
 =cut
 
-sub dependentMetricIds() {
+sub dependentMetricIds {
     my $self = shift;
-    my %ids = map { $_ => undef } ($self->aggregate_combination_formula =~ m/id(\d+)/g);
-    return keys %ids;
+    return Formula->getDependentIds(formula => $self->aggregate_combination_formula);
 }
 
-
-=pod
-
-=begin classdoc
-
-Compute the combination value using a hash of timestamped values for each metric.
-May be deprecated.
-
-@param a value for each metrc of the formula.
-
-@return the timestamped computed values
-
-=end classdoc
-
-=cut
-
-sub _computeFromArrays {
-    my ($self, %args) = @_;
-
-    my @requiredArgs = $self->dependentMetricIds();
-    General::checkParams args => \%args, required => \@requiredArgs;
-
-    # Merge all the timestamps keys in one arrays
-
-    my @timestamps;
-    foreach my $cm_id (@requiredArgs){
-       @timestamps = (@timestamps, (keys %{$args{$cm_id}}));
-    }
-    @timestamps = $self->uniq(data => \@timestamps);
-
-    my %rep;
-
-    foreach my $timestamp (@timestamps){
-        my %valuesForATimeStamp;
-        foreach my $cm_id (@requiredArgs){
-            $valuesForATimeStamp{$cm_id} = $args{$cm_id}->{$timestamp};
-        }
-        # TODO check if $self->aggregate_combination_formula is cached
-        # and does not request the DB each time...
-
-        $rep{$timestamp} = self->SUPER::computeFormula(formula => $self->aggregate_combination_formula,
-                                                       values  => \%valuesForATimeStamp);
-    }
-
-    return wantarray ? %rep : \%rep;
-}
 
 =pod
 

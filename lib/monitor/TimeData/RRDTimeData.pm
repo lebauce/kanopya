@@ -223,7 +223,6 @@ sub fetchTimeDataStore {
     return \%hvalues;
 }
 
-
 =pod
 =begin classdoc
 
