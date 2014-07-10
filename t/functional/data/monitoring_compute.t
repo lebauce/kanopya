@@ -565,7 +565,7 @@ sub testNodemetricCombination {
         # Compute
         my $data = $ncomb2->evaluateTimeSerie(
                        start_time => time() - 300*5,
-                       end_time => time(),
+                       stop_time => time(),
                        node_ids => [$node_1->id, $node_2->id]
                    );
 
@@ -588,7 +588,7 @@ sub testNodemetricCombination {
         # Compute
         $data = $ncomb2->evaluateTimeSerie(
                     start_time => time() - 300*5,
-                    end_time => time(),
+                    stop_time => time(),
                     node_ids => [$node_1->id, $node_2->id]
                 );
 
@@ -609,6 +609,42 @@ sub testNodemetricCombination {
         }
 
     } 'Evaluate time serie nodemetrics';
+
+    lives_ok {
+        my $ts = Kanopya::Tools::TimeSerie->new();
+
+        my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
+        for my $nodemetric ($indic1->nodemetrics) {
+            $ts->generatemetric(metric => $nodemetric, %fonction_conf);
+        }
+
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '7');
+        for my $nodemetric ($indic2->nodemetrics) {
+            $ts->generatemetric(metric => $nodemetric, %fonction_conf);
+        }
+
+        my $data = $ncomb2->evaluateFormula(
+                       start_time => time() - 300*5,
+                       stop_time => time(),
+                       node_ids => [$node_1->id, $node_2->id],
+                       formula => 'id' . ($indic1->id) . ' + id' . ($indic2->id),
+                   );
+
+        if (! defined $data->{$node_1->id} || ! defined $data->{$node_2->id}) {
+            die 'formula data must be defined for the 2 nodes';
+        }
+
+        for my $value (values %{$data->{$node_1->id}}) {
+            if ($value ne (5 + 7)) {
+                die "formula nodemetric compute. expected <12> got <$value>";
+            }
+        }
+        for my $value (values %{$data->{$node_2->id}}) {
+            if ($value ne (5 + 7)) {
+                die "formula nodemetric compute. expected <12> got <$value>";
+            }
+        }
+    } 'Evaluate time serie nodemetric combination formula';
 }
 
 sub testBigAggregation {
