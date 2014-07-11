@@ -55,7 +55,7 @@ sub getFreeHost {
     $log->info("Looking for a virtual host");
     my $host;
     eval {
-        $host = $self->createVirtualHost(ifaces => scalar(@{ delete $args{inerfaces} }), %args);
+        $host = $self->createVirtualHost(ifaces => scalar(@{ delete $args{interfaces} }), %args);
     };
     if ($@) {
         $errmsg = "Virtual Machine Manager component <" . $self->label .
