@@ -30,6 +30,7 @@ use Entity::Host::Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
 use Entity::Workflow;
+use Kanopya::Exceptions;
 
 use TryCatch;
 use String::Random 'random_regex';
@@ -207,8 +208,8 @@ sub migrateHost {
         $err->rethrow();
     }
     catch ($err) {
-        throw Kanopya::Exception:Internal(error => "Unable to associate vm <$args{host}> " .
-                                                   "to hypervisor <$args{hypervisor_dst}>, $err");
+        throw Kanopya::Exception::Internal(error => "Unable to associate vm <$args{host}> " .
+                                                    "to hypervisor <$args{hypervisor_dst}>, $err");
     }
 }
 
