@@ -33,7 +33,7 @@ use warnings;
 
 use Entity::CollectorIndicator;
 use Data::Dumper;
-use Node;
+use Entity::Node;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -341,7 +341,7 @@ sub evaluateFormula {
                          required => ['start_time','stop_time','formula', 'node_ids']);
 
     my @ci_ids = Formula->getDependentIds(formula => $args{formula});
-    my @nodes = Node->search(hash => {node_id => $args{node_ids}});
+    my @nodes = Entity::Node->search(hash => {node_id => $args{node_ids}});
     my $values = {};
     foreach my $ci_id (@ci_ids) {
         my $ci = Entity::CollectorIndicator->get('id' => $ci_id);
