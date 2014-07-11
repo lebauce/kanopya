@@ -28,7 +28,7 @@ use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
 use Entity::Node;
 
 use Kanopya::Test::TestUtils 'expectedException';
@@ -418,7 +418,7 @@ sub testAggregateCombination {
     } 'Aggregate combination computing';
 
     lives_ok {
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
         my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
         $ts->generatemetric(metric => $cm1, %fonction_conf);
 
@@ -554,7 +554,7 @@ sub testNodemetricCombination {
     } 'Nodemetric combination computing';
 
     lives_ok {
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
 
         # Generate first metric data for both nodes
         my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
@@ -617,7 +617,7 @@ sub testNodemetricCombination {
     } 'Evaluate time serie nodemetrics';
 
     lives_ok {
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
 
         my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
         for my $nodemetric ($indic1->nodemetrics) {
