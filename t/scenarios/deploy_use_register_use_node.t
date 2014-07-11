@@ -116,8 +116,8 @@ sub main {
 
     lives_ok {
         $node = Kanopya::Test::Register->registerNode(existing => 1,
-                                                       ip_addr  => $ip_addr,
-                                                       %{ $register_params });
+                                                      ip_addr  => $ip_addr,
+                                                      %{ $register_params });
     } 'Register the existing node or the existing running host';
 
     diag('Check for node up');

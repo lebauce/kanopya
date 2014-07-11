@@ -75,18 +75,15 @@ Check if the components installed on this node are properly configured.
 sub checkConfiguration {
     my ($self, %args) = @_;
 
-    my $agent;
     try {
-        $agent = $self->getComponent(category => "Configurationagent");
+        my $agent = $self->getComponent(category => "Configurationagent");
+        return EEntity->new(entity => $agent)->isConfigured(node => $self);
     }
     catch {
-        throw Kanopya::Exception::Execution::ResourceNotFound(
-                  error => "Unable to find any configuration agent on the node, " .
-                           "required to encure proper deployment configuration."
-              )
+        $log->warn("Unable to find any configuration agent on the node, " .
+                   "skipping deployment configuration !")
     }
-
-    return EEntity->new(entity => $agent)->isConfigured(node => $self);
+    return 1;
 }
 
 
