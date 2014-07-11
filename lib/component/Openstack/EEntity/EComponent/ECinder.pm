@@ -20,7 +20,7 @@ TODO
 =end classdoc
 =cut
 
-package EEntity::EComponent::EOpenstack::ECinder;
+package EEntity::EComponent::ECinder;
 use base "EEntity::EComponent";
 use base "EManager::EDiskManager";
 

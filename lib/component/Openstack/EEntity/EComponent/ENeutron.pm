@@ -12,36 +12,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-
-package Entity::Component::Openstack::SwiftStorage;
-use base "Entity::Component";
+package EEntity::EComponent::ENeutron;
+use base "EEntity::EComponent";
 
 use strict;
 use warnings;
 
-use Hash::Merge qw(merge);
-use Log::Log4perl "get_logger";
-my $log = get_logger("");
-
-use constant ATTR_DEF => {};
-
-sub getAttrDef { return ATTR_DEF; }
-
-sub getPuppetDefinition {
-    my ($self, %args) = @_;
-
-    return merge($self->SUPER::getPuppetDefinition(%args), {
-        swiftstorage => {
-            classes => {
-                "kanopya::openstack::swift::storage" => {
-                    swift_zone => $self->id,
-                    secret => "swift"
-                }
-            },
-            dependencies => [ $self->keystone ]
-        }
-    } );
-}
+use EEntity;
 
 1;
+

@@ -489,7 +489,7 @@ sub startHost {
         my $isCinder     = 0;
         my $volume       = undef;
         my $apiRoute     = $api->compute->servers;
-        if ($disk_manager->isa('Entity::Component::Openstack::Cinder')) {
+        if ($disk_manager->isa('Entity::Component::Cinder')) {
             $isCinder    = 1;
             my $volumeId = $disk_manager->getVolumeId(container => $args{host}->node->systemimage->getContainer);
             $volume      = [

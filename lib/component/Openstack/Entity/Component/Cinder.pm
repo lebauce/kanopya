@@ -23,7 +23,7 @@ TODO
 =end classdoc
 =cut
 
-package  Entity::Component::Openstack::Cinder;
+package  Entity::Component::Cinder;
 use base Entity::Component;
 use base Manager::DiskManager;
 

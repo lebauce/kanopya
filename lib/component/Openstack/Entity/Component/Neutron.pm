@@ -15,22 +15,27 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package  Entity::Component::Openstack::Keystone;
+package  Entity::Component::Neutron;
 use base "Entity::Component";
 
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
-use Log::Log4perl "get_logger";
 use Hash::Merge qw(merge);
-
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
     mysql5_id => {
         label        => 'Database server',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    nova_controller_id => {
+        label        => 'Openstack controller',
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d*$',
@@ -43,12 +48,8 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
     return {
-        keystone_service => {
-            port => 5000,
-            protocols => ['tcp']
-        },
-        keystone_admin => {
-            port => 35357,
+        neutron => {
+            port => 9696,
             protocols => ['tcp']
         }
     };
@@ -56,25 +57,20 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+
     my $definition = $self->SUPER::getPuppetDefinition(%args);
+    my $name = "neutron-" . $self->id;
 
-    my $sql = $self->mysql5;
-    my $name = "keystone-" . $self->id;
-
-    if (ref($sql) ne 'Entity::Component::Mysql5') {
-        throw Kanopya::Exception::Internal(
-            error => "Only mysql is currently supported as DB backend"
-        );
-    }
-
-    return merge($definition, {
-        keystone => {
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        neutron => {
             classes => {
-                'kanopya::openstack::keystone' => {
-                    admin_password => 'keystone',
+                'kanopya::openstack::neutron::server' => {
+                    bridge_flat => 'br-flat',
                     email => $self->getMasterNode->owner->user_email,
                     database_user => $name,
                     database_name => $name,
+                    rabbit_user => $name,
+                    rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
                 }
             },
             dependencies => $self->getDependentComponents()
@@ -86,7 +82,7 @@ sub getPuppetDefinition {
 =pod
 =begin classdoc
 
-Keystone depend on its mysql.
+Glance depend on the keystone and amqp of the nova controller and its mysql.
 
 =end classdoc
 =cut
@@ -94,7 +90,9 @@ Keystone depend on its mysql.
 sub getDependentComponents {
     my ($self, %args) = @_;
 
-    return [ $self->mysql5 ];
+    return [ $self->nova_controller->keystone,
+             $self->nova_controller->amqp,
+             $self->mysql5 ];
 }
 
 
@@ -103,7 +101,9 @@ sub checkConfiguration {
 
     General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
-    $self->checkAttribute(attribute => "mysql5");
+    for my $attr ("mysql5", "nova_controller") {
+        $self->checkAttribute(attribute => $attr);
+    }
 
     $self->SUPER::checkConfiguration(ignore => $args{ignore});
 }

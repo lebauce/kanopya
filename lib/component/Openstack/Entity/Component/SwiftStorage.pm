@@ -14,7 +14,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::Component::Openstack::SwiftProxy;
+package Entity::Component::SwiftStorage;
 use base "Entity::Component";
 
 use strict;
@@ -28,24 +28,15 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getNetConf {
-    return {
-        swiftproxy => {
-            port => 8080,
-            protocols => ['tcp']
-        }
-    };
-}
-
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
-        swiftproxy => {
+        swiftstorage => {
             classes => {
-                "kanopya::openstack::swift::proxy" => {
-                    secret => "swift",
-                    password => "swift"
+                "kanopya::openstack::swift::storage" => {
+                    swift_zone => $self->id,
+                    secret => "swift"
                 }
             },
             dependencies => [ $self->keystone ]
