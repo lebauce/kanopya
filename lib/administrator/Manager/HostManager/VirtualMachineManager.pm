@@ -29,12 +29,15 @@ use base "Manager::HostManager";
 use Entity::Host::Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
-use String::Random 'random_regex';
 use Entity::Workflow;
+
+use TryCatch;
+use String::Random 'random_regex';
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
+
 
 sub methods {
     return {
@@ -195,10 +198,18 @@ sub migrateHost {
 
     General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
 
-    $log->info('Migrating host <' . $args{host}->id . '> to hypervisor ' . $args{hypervisor_dst}->id);
+    try {
+        $log->info('Migrating host <' . $args{host}->id . '> to hypervisor ' . $args{hypervisor_dst}->id);
 
-    $args{host}->hypervisor_id($args{hypervisor_dst}->id);
-
+        $args{host}->hypervisor_id($args{hypervisor_dst}->id);
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception:Internal(error => "Unable to associate vm <$args{host}> " .
+                                                   "to hypervisor <$args{hypervisor_dst}>, $err");
+    }
 }
 
 
