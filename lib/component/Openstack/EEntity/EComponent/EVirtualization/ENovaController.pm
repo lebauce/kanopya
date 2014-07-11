@@ -436,18 +436,18 @@ sub startHost {
 
     my $api = $self->api;
     my $image_id;
-    my $diskless = $args{cluster}->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
+    my $diskless = $cluster->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
 
     if (not $diskless) {
         # Register system image
         $image_id = $self->registerSystemImage(host    => $args{host},
-                                               cluster => $args{cluster});
+                                               cluster => $cluster);
     }
     else {
         $image_id = $self->registerPXEImage();
     }
 
-    my $flavor = $api->compute->flavors(id => $args{cluster}->id)
+    my $flavor = $api->compute->flavors(id => $cluster->id)
                      ->get->{flavor};
 
     if ($flavor->{id}) {
@@ -460,7 +460,7 @@ sub startHost {
                 'name'                        => 'flavor_' . $args{host}->node->node_hostname,
                 'ram'                         => $args{host}->host_ram / 1024 / 1024,
                 'vcpus'                       => $args{host}->host_core,
-                'id'                          => $args{cluster}->id,
+                'id'                          => $cluster->id,
                 'swap'                        => 0,
                 'os-flavor-access:is_public'  => JSON::true,
                 'rxtx_factor'                 => 1,
@@ -485,7 +485,7 @@ sub startHost {
             };
         }
 
-        my $disk_manager = $args{cluster}->getManager(manager_type => 'DiskManager');
+        my $disk_manager = $cluster->getManager(manager_type => 'DiskManager');
         my $isCinder     = 0;
         my $volume       = undef;
         my $apiRoute     = $api->compute->servers;
