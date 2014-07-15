@@ -445,8 +445,18 @@ function dateTimeToEpoch(dateTime) {
     return parseInt(Date.parse(dateTime.replace(/-/g, '/')) / 1000);
 }
 
+function epochToString(epochTime) {
+    var curDate = new Date(epochTime * 1000);
+    return ('0' + (curDate.getMonth() + 1)).slice(-2) + '-' + 
+        ('0' + curDate.getDate()).slice(-2) + '-' + 
+        curDate.getFullYear() + ' ' +
+        ('0' + curDate.getHours()).slice(-2) + ':' +
+        ('0' + curDate.getMinutes()).slice(-2);
+}
+
 // Request data for each combinations and display them
-function showCombinationGraph(curobj,service_combinations,node_combinations,nodes,start,stop, sp_id, options) {
+function showCombinationGraph(curobj, service_combinations, node_combinations, nodes, start, stop, sp_id, options) {
+
     var widget    = $(curobj).closest('.widget');
     var widget_id = $(curobj).closest('.widget').attr("id");
     var graph_container = widget.find('.clusterCombinationView');
@@ -469,18 +479,22 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
         if (combi.id == -1) {
             // Formula
             if (combi.formula) {
-                start = dateTimeToEpoch(start);
-                stop = dateTimeToEpoch(stop);
                 $.ajax({
                     url: '/api/aggregatecombination/evaluateFormula',
                     type: 'POST',
                     data: {
                         'formula': combi.formula,
-                        'start_time': start,
-                        'stop_time': stop
+                        'start_time': dateTimeToEpoch(start),
+                        'stop_time': dateTimeToEpoch(stop)
                     },
                     success: function(data) {
-                        serviceIndicatorId = data.pk;
+                        var series = [];
+                        $.each(data, function(key, value) {
+                            series.push([epochToString(key), value]);
+                        });
+                        service_data.series.push(series);
+                        service_data.labels.push(combi.name);
+                        service_data.units.push(combi.unit);
                     },
                     error: function() {
                         error_count++;
@@ -496,7 +510,6 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
             // id
             var params = {'id': combi.id, 'start': start, 'stop': stop};
             $.getJSON('/monitoring/serviceprovider/' + sp_id +'/clustersview', params, function(data) {
-                console.debug(data);
                 pending_requests--;
                 if (data.error) {
                     error_count++;
