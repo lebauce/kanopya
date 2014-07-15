@@ -31,6 +31,7 @@ use warnings;
 
 use Entity::Node;
 
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -53,22 +54,21 @@ sub getFreeHost {
     }
 
     $log->info("Looking for a virtual host");
-    my $host;
-    eval {
-        $host = $self->createVirtualHost(ifaces => scalar(@{ delete $args{interfaces} }), %args);
-    };
-    if ($@) {
-        $errmsg = "Virtual Machine Manager component <" . $self->label .
-                  "> No capabilities to host this vm core <$args{core}> and ram <$args{ram}>:\n" . $@;
-        # We can't create virtual host for some reasons (e.g can't meet constraints)
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    try {
+        my @interfaces = @{ delete $args{interfaces} };
+        return $self->createVirtualHost(ifaces => scalar(@interfaces), %args);
     }
-
-    return $host;
+    catch ($err) {
+        # We can't create virtual host for some reasons (e.g can't meet constraints)
+        throw Kanopya::Exception::Internal(
+                  error => "Virtual machine manager <" . $self->label . "> has not capabilities " .
+                           "to host this vm with core <$args{core}> and ram <$args{ram}>:\n" . $err
+              );
+    }
 }
 
-=cut
 
+=cut
 =begin classdoc
 
 Check the state of the vm
@@ -76,7 +76,6 @@ Check the state of the vm
 @return boolean
 
 =end classdoc
-
 =cut
 
 sub checkUp {
@@ -347,14 +346,13 @@ sub checkHypervisorVMPlacementIntegrity {
     # Check vm of hv in db which are not in the hv_infra
     for my $vm (@db_hv_vms) {
         if ((! defined $hv_infra->{$vm->id}) && (! defined $args{diff_infra_db}->{wrong_hv}->{$vm->id})) {
-            eval {
+            try {
                 $args{diff_infra_db} = $self->checkVMPlacementIntegrity(host          => Entity->get(id => $vm->id),
                                                                         diff_infra_db => $args{diff_infra_db});
-            };
-            if ($@) {
+            }
+            catch ($err) {
                 $args{diff_infra_db}->{base_not_hv_infra}->{$vm->id} = undef;
             }
-
         }
     }
     return $args{diff_infra_db};
@@ -391,14 +389,13 @@ sub checkVMPlacementIntegrity {
                          });
 
     my $detail;
-    eval {
+    try {
         $detail = $self->getVMDetails(host => $args{host});
-    };
-    if ($@) {
+    }
+    catch ($err) {
         # Case unknown vm
-        my $error = $@;
         $args{diff_infra_db}->{base_not_hv_infra}->{$args{host}->id} = undef;
-        throw Kanopya::Exception(error => $error);
+        throw Kanopya::Exception(error => $err);
     }
 
     my $hypervisor_hostname = $detail->{hypervisor};
