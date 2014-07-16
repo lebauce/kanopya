@@ -170,16 +170,25 @@ function getCache(url, callback) {
 function initNodeMetricControl(widget_div, sp_id, options, callback) {
     var opts = options || {};
     var pending = 0;
+    var id, formula;
 
     // Nodemetric combinations list management
     var nodemetriccombination_list = widget_div.find('.nodemetriccombination_list').css('width', '250px');
     if (opts.nodemetric_combinations) {
-        $(opts.nodemetric_combinations).each( function () {
+        $(opts.nodemetric_combinations).each(function () {
+            if (this.formula) {
+                id = -1;
+                formula = this.formula;
+            } else {
+                id = this.id;
+                formula = null;
+            }
             nodemetriccombination_list.append($('<option>', {
-                combi_id: this.id,
+                combi_id: id,
                 value   : this.name,
                 text    : this.name,
-                unit    : this.unit
+                unit    : this.unit,
+                formula : formula
             }).prop('selected', true));
         });
         nodemetriccombination_list.hide();
@@ -475,7 +484,7 @@ function showCombinationGraph(curobj, service_combinations, node_combinations, n
     pending_requests =  service_combinations.length;
     var service_data = {series:[], labels:[], units:[]};
 
-    $.each(service_combinations, function (i, combi) {
+    $.each(service_combinations, function(i, combi) {
         if (combi.id == -1) {
             // Formula
             if (combi.formula) {
@@ -509,7 +518,7 @@ function showCombinationGraph(curobj, service_combinations, node_combinations, n
         } else {
             // id
             var params = {'id': combi.id, 'start': start, 'stop': stop};
-            $.getJSON('/monitoring/serviceprovider/' + sp_id +'/clustersview', params, function(data) {
+            $.getJSON('/monitoring/serviceprovider/' + sp_id + '/clustersview', params, function(data) {
                 pending_requests--;
                 if (data.error) {
                     error_count++;
@@ -526,32 +535,70 @@ function showCombinationGraph(curobj, service_combinations, node_combinations, n
     var node_data = {series:[], labels:[], units:[]};
     if (nodes.length > 0) {
         pending_requests += node_combinations.length;
-        var params = {
-                start_time : dateTimeToEpoch(start),
-                stop_time  : dateTimeToEpoch(stop),
-                node_ids   : $.map(nodes, function(n){return n.id})
-        }
-        $.each(node_combinations, function (i, combi) {
-            ajax('POST',
-                 '/api/combination/'+combi.id+'/evaluateTimeSerie',
-                 params,
-                 function(data) {
-                     pending_requests--;
-                     $.each(nodes, function(i,n) {
-                         if (data[n.id] !== undefined) {
-                             node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
-                             var label = n.name != '' && combi.name != '' ? '['+n.name+'] ' + combi.name
-                                                                          : n.name + combi.name;
-                             node_data.labels.push(label);
-                             node_data.units.push(combi.unit);
-                         }
-                     });
-                 },
-                 function() {
-                     pending_requests--;
-                     error_count++;
-                 }
-            );
+
+        $.each(node_combinations, function(i, combi) {
+            if (combi.id == -1) {
+                // Formula
+                if (combi.formula) {
+                    $.ajax({
+                        url: '/api/nodemetriccombination/evaluateFormula',
+                        type: 'POST',
+                        contentType: "application/json; charset=utf-8",
+                        datatype : "json",
+                        data : JSON.stringify({
+                            'formula': combi.formula,
+                            'start_time': dateTimeToEpoch(start),
+                            'stop_time': dateTimeToEpoch(stop),
+                            'node_ids': $.map(nodes, function(node) {return node.id})
+                        }),
+                        success: function(data) {
+                            $.each(nodes, function(index, node) {
+                             if (data[node.id] !== undefined) {
+                                 node_data.series.push(_formatTimeSerieFromHash(data[node.id]));
+                                 var label = (node.name != '' && combi.name != '') ? '[' + node.name + '] ' + combi.name : node.name + combi.name;
+                                 node_data.labels.push(label);
+                                 node_data.units.push(combi.unit);
+                             }
+                            });
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            error_count++;
+                        },
+                        complete: function() {
+                            pending_requests--;
+                        }
+                    });
+                } else {
+                    error_count++;
+                }
+            } else {
+                // id
+                var params = {
+                        start_time : dateTimeToEpoch(start),
+                        stop_time  : dateTimeToEpoch(stop),
+                        node_ids   : $.map(nodes, function(n) {return n.id})
+                };
+
+                ajax('POST',
+                     '/api/combination/' + combi.id + '/evaluateTimeSerie',
+                     params,
+                     function(data) {
+                         pending_requests--;
+                         $.each(nodes, function(i,n) {
+                             if (data[n.id] !== undefined) {
+                                 node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
+                                 var label = (n.name != '' && combi.name != '') ? '['+n.name+'] ' + combi.name : n.name + combi.name;
+                                 node_data.labels.push(label);
+                                 node_data.units.push(combi.unit);
+                             }
+                         });
+                     },
+                     function() {
+                         pending_requests--;
+                         error_count++;
+                     }
+                );
+            }
         });
     }
 
