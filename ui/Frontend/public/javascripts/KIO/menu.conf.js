@@ -31,7 +31,8 @@ var mainmenu_def = {
             }, {
                 label : 'Monitoring',
                 id : 'service_monitoring',
-                onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external'); },
+                // onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external'); },
+                onLoad : function(cid, eid) { require('common/service_monitoring2.js'); loadServicesMonitoring2(cid, eid, 'external'); },
                 icon : 'monitoring'
             }, { label : 'Rules',
                  id : 'service_rules',
@@ -46,11 +47,6 @@ var mainmenu_def = {
                  onLoad : function(cid, eid) { require('common/service_analysis.js'); loadServiceAnalysis(cid, eid); },
                  icon : 'analysis',
                  info : {img:'images/info/scatter-plots-shape.png'}
-            }, {
-                label : 'Monitoring',
-                id : 'service_monitoring2',
-                onLoad : function(cid, eid) { require('common/service_monitoring2.js'); loadServicesMonitoring2(cid, eid, 'external'); },
-                icon : 'monitoring'
             } ]
         }
     },
