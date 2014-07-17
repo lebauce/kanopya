@@ -6,3 +6,5 @@ build.properties
 META-INF
 *~
 Data.sql
+scripts/install/setup.input
+scripts/install/setup.log
