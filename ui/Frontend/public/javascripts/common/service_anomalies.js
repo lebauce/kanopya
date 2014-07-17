@@ -101,41 +101,44 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
 
 function openCreateDialog(serviceProviderId, gridId) {
 
-    var dialogContainerId = 'metric-editor';
-    var metricCatellgoryData, metricData, statisticFunctionData;
-    var isResizing = false;
-    var widgetContent = null;
+    var dialogContainerId = 'anomaly-editor';
+    var metricData;
 
     function loadMetricData() {
         metricData = [];
-        var indicators = getIndicators(serviceProviderId);
-        for(indicator in indicators) {
-            metricData.push({
-                label: indicator,
-                id: indicators[indicator].pk,
-                categoryId: -1
-            });
-        }
-        renderDialogTemplate();
+        $.getJSON(
+            '/api/clustermetric',
+            {'clustermetric_service_provider_id': serviceProviderId},
+            function(data) {
+                $.each(data, function(index, obj) {
+                    metricData.push({
+                        label: obj.label,
+                        id: obj.pk
+                    });
+                });
+                renderDialogTemplate();
+            }
+        );
     }
 
     function renderDialogTemplate() {
-        var templateFile = '/templates/metric-editor.tmpl.html';
+        var templateFile = '/templates/anomaly-editor.tmpl.html';
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
+            $('body').append(template({metric: metricData}));
             openDialog();
         });
     }
 
     function openDialog() {
         $('#' + dialogContainerId).dialog({
-            resizable: true,
+            resizable: false,
             modal: true,
             dialogClass: "no-close",
             closeOnEscape: false,
-            width: 1000,
-            minwidth: 600,
-            height: 600,
+            width: 400,
+            minwidth: 400,
+            height: 230,
             buttons : [
                 {
                     id: dialogContainerId + '-cancel-button',
@@ -147,10 +150,8 @@ function openCreateDialog(serviceProviderId, gridId) {
                 {
                     id: dialogContainerId + '-create-button',
                     text: 'Create',
-                    disabled: true,
-                    class: 'ui-state-disabled',
                     click: function() {
-                        createMetric();
+                        validateMetric();
                     }
                 }
             ],
@@ -163,34 +164,38 @@ function openCreateDialog(serviceProviderId, gridId) {
                 });
             }
         });
+
+        $('#metric').change(function() {
+            $('#message').removeClass();
+            $('#message').text('');
+        });
     }
 
-    function formChanged() {
-        var createButton = $('#' + dialogContainerId + '-create-button');
-        var error = 0;
-
-        if (error === 0) {
-            createButton
-                .removeAttr('disabled')
-                .removeClass('ui-state-disabled');
-        } else {
-            createButton
-                .attr('disabled', 'disabled')
-                .addClass('ui-state-disabled');
-        }
+    // Check if the new anomaly already exists
+    function validateMetric() {
+        $.getJSON(
+            '/api/anomaly',
+            {'related_metric_id': $('#metric').val()},
+            function(data) {
+                if (data.length > 0) {
+                    $('#message').addClass('error');
+                    $('#message').text('This service metric is already used.');
+                } else {
+                    createMetric();
+                }
+            }
+        );
     }
 
     function createMetric() {
         var fields = {
-            name: $('#metric-name').val(),
+            metric: $('#metric').val(),
         }
-
         $.ajax({
-            url: '/api/nodemetriccombination',
+            url: '/api/anomaly',
             type: 'POST',
             data: {
-                'nodemetric_combination_label': fields.name,
-                'service_provider_id': serviceProviderId
+                'related_metric_id': fields.metric
             },
             success: function() {
                 $('#' + gridId).trigger('reloadGrid');
