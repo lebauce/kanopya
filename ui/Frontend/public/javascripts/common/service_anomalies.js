@@ -56,7 +56,7 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
 
         create_grid({
             caption: '',
-            url: '/api/anomaly',
+            url: '/api/anomaly?related_metric.clustermetric.clustermetric_service_provider_id=' + elem_id,
             content_container_id: gridContainer.attr('id'),
             grid_id: gridId,
             colNames: ['id', 'Name', 'metricId'],
@@ -77,8 +77,8 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
             deactivate_details: mode_policy,
             action_delete: {
                 callback: function (id) {
-                    var url = '/api/anomaly';
-                    confirmDeleteWithDependencies(url, id, [gridId]);
+                    var url = '/api/anomaly/';
+                    confirmDelete(url, id, [gridId]);
                 }
             },
             multiselect: !mode_policy,

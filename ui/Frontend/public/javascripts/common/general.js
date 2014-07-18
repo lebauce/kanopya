@@ -295,79 +295,98 @@ String.prototype.ucfirst    = function() { return ucfirst(this); };
  */
 function confirmDeleteWithDependencies(url, id, grid_ids) {
     $.post(
-            url + id + '/getDependencies',
-            function(dependencies) {
-                function makejsTree(data) {
-                    var treedata = [];
-                    $.each(data, function(k,v) {
-                        var treenode = {
-                                data    : k
-                        }
-                        if (Object.size(v) > 0) {
-                            treenode.state = 'open';
-                            treenode.children = makejsTree( v );
-                        }
-                        treedata.push( treenode );
-                    });
-                    return treedata;
-                };
+        url + id + '/getDependencies',
+        function(dependencies) {
+            function makejsTree(data) {
+                var treedata = [];
+                $.each(data, function(k,v) {
+                    var treenode = {
+                            data    : k
+                    }
+                    if (Object.size(v) > 0) {
+                        treenode.state = 'open';
+                        treenode.children = makejsTree( v );
+                    }
+                    treedata.push( treenode );
+                });
+                return treedata;
+            };
 
-                var confirm_button_label;
-                var cancel_button_label;
-                var browser = $('<div>');
-                if (Object.size(dependencies) > 0) {
-                    var tree_cont = $('<div>', {style : 'height:300px'});
-                    var msg = $('<span>', {html : 'This object has some dependencies. Are you sure you want to delete it and all its dependencies?'});
-                    browser.append(msg).append($('<hr>')).append($('<h3>', {html : 'Dependencies :'}));
-                    browser.append(tree_cont);
-                    require('jquery/jquery.jstree.js');
-                    tree_cont.jstree({
-                        "plugins"   : ["themes","json_data","ui"],
-                        "themes"    : {
-                            url : "css/jstree_themes/default/style.css",
-                            icons : false
-                        },
-                        "json_data" : {
-                            "data"                  : makejsTree(dependencies),
-                            "progressive_render"    : true
-                        }
-                    });
-                    confirm_button_label = 'Delete all';
-                    cancel_button_label  = 'Cancel';
-                } else {
-                    browser.append($('<span>', { html : 'Are you sure?'}));
-                    confirm_button_label = 'Yes';
-                    cancel_button_label  = 'No';
-                }
+            var confirm_button_label, cancel_button_label;
+            var browser = $('<div>');
 
-                var buttons = {};
-                buttons[confirm_button_label] = function () {
-                    $.ajax({
-                        type    : 'DELETE',
-                        url     : url + id,
-                        success : function() {
-                            $.each(grid_ids, function(idx, grid_id) {
-                                $('#' + grid_id).trigger('reloadGrid')
-                            });
-                        }
-                    });
-                    $(this).dialog("close");
-                }
-                buttons[cancel_button_label] = function () {
-                    $(this).dialog("close");
-                }
-
-                browser.dialog({
-                    title   : 'Confirm delete',
-                    modal   : true,
-                    width   : '400px',
-                    buttons : buttons,
-                    close: function (event, ui) {
-                        $(this).remove();
+            if (Object.size(dependencies) > 0) {
+                var tree_cont = $('<div>', {style : 'height:300px'});
+                var msg = $('<span>', {html : 'This object has some dependencies. Are you sure you want to delete it and all its dependencies?'});
+                browser.append(msg).append($('<hr>')).append($('<h3>', {html : 'Dependencies :'}));
+                browser.append(tree_cont);
+                require('jquery/jquery.jstree.js');
+                tree_cont.jstree({
+                    "plugins"   : ["themes","json_data","ui"],
+                    "themes"    : {
+                        url : "css/jstree_themes/default/style.css",
+                        icons : false
+                    },
+                    "json_data" : {
+                        "data"                  : makejsTree(dependencies),
+                        "progressive_render"    : true
                     }
                 });
+                confirm_button_label = 'Delete all';
+                cancel_button_label  = 'Cancel';
+            } else {
+                browser.append($('<span>', {html : 'Are you sure?'}));
+                confirm_button_label = 'Yes';
+                cancel_button_label  = 'No';
             }
+
+            openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, cancel_button_label);
+        }
     );
+}
+
+function confirmDelete(url, id, grid_ids) {
+
+    var confirm_button_label, cancel_button_label;
+    var browser = $('<div>');
+
+    browser.append($('<span>', {html : 'Are you sure?'}));
+    confirm_button_label = 'Yes';
+    cancel_button_label  = 'No';
+
+    openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, cancel_button_label);
+}
+
+function openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, cancel_button_label) {
+
+    var buttons = {};
+
+    buttons[confirm_button_label] = function () {
+        $.ajax({
+            type    : 'DELETE',
+            url     : url + id,
+            success : function() {
+                $.each(grid_ids, function(idx, grid_id) {
+                    $('#' + grid_id).trigger('reloadGrid')
+                });
+            }
+        });
+        $(this).dialog("close");
+    };
+
+    buttons[cancel_button_label] = function () {
+        $(this).dialog("close");
+    };
+
+    browser.dialog({
+        title: 'Confirm delete',
+        modal: true,
+        width: '400px',
+        buttons: buttons,
+        close: function (event, ui) {
+            $(this).remove();
+        }
+    });
 }
 
 function handleCreate (grid) {
