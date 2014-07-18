@@ -5,6 +5,7 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
 
     var container = $("#" + container_id);
     var external = ext || '';
+    var metricObject = {};
 
     var content = $('<div>', {id : 'list-content'});
     var buttonsContainer = $('<div>', {id: 'list-buttons-container', class: 'action_buttons'});
@@ -18,7 +19,7 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
         button.button({icons: {primary: 'ui-icon-plusthick'}});
 
         $(button).click(function() {
-            openCreateDialog(elem_id, gridId);
+            openAnomalyCreateDialog(elem_id, gridId, metricObject);
         });
 
         buttonsContainer.append(button);
@@ -38,6 +39,8 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
     }
 
     function anomalyDetailsHistorical(cid, clusterMetric_id, row_data) {
+        console.debug('regis', cid, clusterMetric_id, row_data);
+        return;
         integrateWidget(cid, 'widget_historical_view', function(widget_div) {
             customInitHistoricalWidget(
                 widget_div,
@@ -99,13 +102,21 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
     displayList();
 };
 
-function openCreateDialog(serviceProviderId, gridId) {
+function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
 
     var dialogContainerId = 'anomaly-editor';
     var metricData;
 
+    if (typeof metricObject.data === 'undefined') {
+        loadMetricData();
+    } else {
+        metricData = metricObject.data;
+        renderDialogTemplate();
+    }
+
     function loadMetricData() {
         metricData = [];
+        $('*').addClass('cursor-wait');
         $.getJSON(
             '/api/clustermetric',
             {'clustermetric_service_provider_id': serviceProviderId},
@@ -116,6 +127,7 @@ function openCreateDialog(serviceProviderId, gridId) {
                         id: obj.pk
                     });
                 });
+                metricObject.data = metricData;
                 renderDialogTemplate();
             }
         );
@@ -131,6 +143,7 @@ function openCreateDialog(serviceProviderId, gridId) {
     }
 
     function openDialog() {
+        $('*').removeClass('cursor-wait');
         $('#' + dialogContainerId).dialog({
             resizable: false,
             modal: true,
@@ -210,6 +223,4 @@ function openCreateDialog(serviceProviderId, gridId) {
         $('#' + dialogContainerId).dialog('close');
         $('#' + dialogContainerId).remove();
     }
-
-    loadMetricData();
 };
