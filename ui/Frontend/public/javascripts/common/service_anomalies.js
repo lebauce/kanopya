@@ -38,19 +38,22 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
         return $('#' + gridId).jqGrid('getCell', rowId, columnName);
     }
 
-    function anomalyDetailsHistorical(cid, clusterMetric_id, row_data) {
-        console.debug('regis', cid, clusterMetric_id, row_data);
-        return;
+    function anomalyDetailsHistorical(cid, anomaly_id, row_data) {
+        var clusterMetric_id = row_data.related_metric_id;
+        var formula = 'id' + clusterMetric_id;
         integrateWidget(cid, 'widget_historical_view', function(widget_div) {
             customInitHistoricalWidget(
                 widget_div,
                 elem_id,
                 {
-                    clustermetric_combinations : [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
-                    nodemetric_combinations    : 'from_ajax',
+                    clustermetric_combinations: [{'formula': formula, 'name': '', 'unit': ''}],
+                    nodemetric_combinations    : null,
                     nodes                      : 'from_ajax'
                 },
-                {allow_forecast : true}
+                {
+                    'open_config_part': false,
+                    'allow_forecast': false
+                }
             );
       });
     }
