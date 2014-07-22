@@ -37,6 +37,14 @@ use Formula;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
+sub methods {
+    return {
+        evaluateTimeSerie => {
+            description => 'retrieve historical value of a metric',
+        }
+    };
+}
+
 sub new {
     my ($class, %args) = @_;
     my $params;
@@ -169,7 +177,8 @@ sub evaluateTimeSerie {
                 $hashref->{$key} += 0.0;
             }
         }
-        return %$hashref;
+        # return %$hashref;
+        return wantarray ? %$hashref : $hashref;
     }
 
     # TODO deal with not stored metrics

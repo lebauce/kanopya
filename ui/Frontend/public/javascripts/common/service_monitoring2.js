@@ -221,11 +221,11 @@ function openCreateDialog(serviceProviderId, gridId) {
                 case 'node':
                     options.serviceMetric = null;
                     formula = formatNodeIndicator(formula);
-                    options.nodeMetric = [{'formula': formula, 'name': '', 'unit': ''}];
+                    options.nodeMetric = [{'type': 'formula', 'formula': formula, 'name': '', 'unit': ''}];
                     break;
                 case 'service':
                     formula = formatServiceIndicator(formula);
-                    options.serviceMetric = [{'formula': formula, 'name': '', 'unit': ''}];
+                    options.serviceMetric = [{'type': 'formula', 'formula': formula, 'name': '', 'unit': ''}];
                     options.nodeMetric = null;
                     break;
             }

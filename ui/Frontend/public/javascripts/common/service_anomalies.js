@@ -39,14 +39,29 @@ function loadServicesAnomalies(container_id, elem_id, ext, mode_policy) {
     }
 
     function anomalyDetailsHistorical(cid, anomaly_id, row_data) {
-        var clusterMetric_id = row_data.related_metric_id;
-        var formula = 'id' + clusterMetric_id;
+        var metric = {
+            'id': row_data.related_metric_id
+        };
+        var formula = 'id' + metric.id;
+
+        // Get service metric label
+        $.ajax({
+            url: '/api/clustermetric/' + metric.id,
+            async: false,
+            success: function(data) {
+                metric.label = data.label;
+            }
+        });
+
         integrateWidget(cid, 'widget_historical_view', function(widget_div) {
             customInitHistoricalWidget(
                 widget_div,
                 elem_id,
                 {
-                    clustermetric_combinations: [{'formula': formula, 'name': '', 'unit': ''}],
+                    clustermetric_combinations: [
+                        {'type': 'formula', 'formula': formula, 'name': metric.label, 'unit': ''},
+                        {'type': 'anomaly', 'id': anomaly_id, 'name': row_data.label, 'unit': ''}
+                    ],
                     nodemetric_combinations    : null,
                     nodes                      : 'from_ajax'
                 },
