@@ -384,15 +384,22 @@ sub terminateOperation {
 
     # Handle failed operations
     if ($args{status} eq 'cancelled') {
-        # If the operation is harmless, swith the state to 'failed'
-        # to avoir the cancel of the workflow
-        if ($operation->harmless) {
-            $args{status} = "failed";
+        # If interupt on error mode activated (usefull for debug)
+        # set the workflow as interrupted
+        if ($self->{config}->{onerror} eq 'interrupt') {
+            $args{status} = "interrupted";
         }
-        # If some rollback defined, undo them
-        if (defined $operation->{erollback}) {
-            $log->debug("Undo rollbacks");
-            $operation->{erollback}->undo();
+        else {
+            # If the operation is harmless, swith the state to 'failed'
+            # to avoid the cancel of the workflow
+            if ($operation->harmless) {
+                $args{status} = "failed";
+            }
+            # If some rollback defined, undo them
+            if (defined $operation->{erollback}) {
+                $log->debug("Undo rollbacks");
+                $operation->{erollback}->undo();
+            }
         }
     }
 
