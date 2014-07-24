@@ -170,3 +170,7 @@ ul.submenu div.scrollarrowright {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
 }
+
+#message.error {
+    color: #b94a48;
+}

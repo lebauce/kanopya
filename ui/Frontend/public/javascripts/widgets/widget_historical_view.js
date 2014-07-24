@@ -44,14 +44,15 @@ $('.widget').live('widgetLoadContent',function(e, obj){
 function customInitHistoricalWidget(widget, sp_id, data, options) {
     var widget_div = widget.element || widget;
     var metadata   = widget.metadata;
-
-    widgetCommonInit(widget_div);
-    setGraphDatePicker(widget_div, widget.element ? widget : undefined );
-
     var opts = options || {};
     var clustermetric_combinations = data.clustermetric_combinations;
     var nodemetric_combinations    = data.nodemetric_combinations;
     var nodes                      = data.nodes;
+
+    var periodDate = (options.periodDate) ? options.periodDate : {};
+
+    widgetCommonInit(widget_div);
+    setGraphDatePicker(widget_div, widget.element ? widget : undefined, periodDate);
 
     var pending_init = 0;
     function initControlDone() {
@@ -81,7 +82,8 @@ function customInitHistoricalWidget(widget, sp_id, data, options) {
                     nodemetric_combinations : nodemetric_combinations == 'from_ajax' ? null : nodemetric_combinations,
                     nodes                   : nodes == 'from_ajax' ? null : nodes,
                     metadata                : metadata
-                },
+                }
+                ,
                 initControlDone
         );
     } else {
@@ -168,16 +170,25 @@ function getCache(url, callback) {
 function initNodeMetricControl(widget_div, sp_id, options, callback) {
     var opts = options || {};
     var pending = 0;
+    var id, formula;
 
     // Nodemetric combinations list management
     var nodemetriccombination_list = widget_div.find('.nodemetriccombination_list').css('width', '250px');
     if (opts.nodemetric_combinations) {
-        $(opts.nodemetric_combinations).each( function () {
+        $(opts.nodemetric_combinations).each(function () {
+            if (this.formula) {
+                id = -1;
+                formula = this.formula;
+            } else {
+                id = this.id;
+                formula = null;
+            }
             nodemetriccombination_list.append($('<option>', {
-                combi_id: this.id,
+                combi_id: id,
                 value   : this.name,
                 text    : this.name,
-                unit    : this.unit
+                unit    : this.unit,
+                formula : formula
             }).prop('selected', true));
         });
         nodemetriccombination_list.hide();
@@ -242,10 +253,14 @@ function initNodeMetricControl(widget_div, sp_id, options, callback) {
             });
             // Load widget content if configured (select combinations in drop down list)
             if (opts.metadata && opts.metadata.node_ids) {
-                var selected_ids = opts.metadata.node_ids.split(',');
-                $.each(selected_ids, function(i,id) {
-                    node_list.find('option[node_id=' + id+']').prop('selected', true);
-                });
+                if (opts.metadata.node_ids === 'first') {
+                    node_list.find('option:first').prop('selected', true);
+                } else {
+                    var selected_ids = opts.metadata.node_ids.split(',');
+                    $.each(selected_ids, function(i,id) {
+                        node_list.find('option[node_id=' + id+']').prop('selected', true);
+                    });
+                }
             }
             // Multiselectify
             node_list.multiselect({
@@ -271,17 +286,19 @@ function initNodeMetricControl(widget_div, sp_id, options, callback) {
  * Fill servicemetric combinations list
  * If local data are passed then all corresponding combinations are selected and the select list is hidden (no user control)
  */
-function initServiceControl (widget_div, sp_id, options, callback) {
+function initServiceControl(widget_div, sp_id, options, callback) {
     var opts = options || {};
-
     var clustermetriccombinations_list = widget_div.find('.servicecombination_list').css('width', '250px');
+
     if (opts.clustermetric_combinations) {
         $(opts.clustermetric_combinations).each( function() {
             clustermetriccombinations_list.append($('<option>', {
                 combi_id: this.id,
                 value   : this.name,
                 text    : this.name,
-                unit    : this.unit
+                unit    : this.unit,
+                type    : this.type,
+                formula : this.formula
             }).prop('selected', true));
         });
         clustermetriccombinations_list.hide();
@@ -320,15 +337,29 @@ function initServiceControl (widget_div, sp_id, options, callback) {
 
 function _getSelectedCombinations(widget_div, list_class) {
     return $.map(
-               widget_div.find('.'+list_class+' option:selected'),
+               widget_div.find('.' + list_class + ' option:selected'),
                function(elem) {
                    return {
                            id  : $(elem).attr('combi_id'),
                            name: $(elem).val(),
-                           unit: $(elem).attr('unit')
+                           unit: $(elem).attr('unit'),
+                           type: $(elem).attr('type'),
+                           formula: $(elem).attr('formula')
                           };
                 }
            );
+}
+
+function getSelectedNodes(widget_div) {
+    return $.map(
+        widget_div.find('.node_list option:selected'),
+        function(n) {
+            return {
+                'id': $(n).attr('node_id'),
+                'name': $(n).html()
+            }
+        }
+    );
 }
 
 function clickRefreshButton(widget_div) {
@@ -345,10 +376,7 @@ function setRefreshButton(widget, sp_id, opts) {
 
             var selected_service_combis = _getSelectedCombinations(widget_div, 'servicecombination_list');
             var selected_node_combis    = _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
-            var selected_nodes          = $.map(
-                                               widget_div.find('.node_list option:selected'),
-                                               function(n){return {id:$(n).attr('node_id'),name:$(n).html()}}
-                                           );
+            var selected_nodes          = getSelectedNodes(widget_div);
 
             // Limit the number of simultaneous series
             var total_combinations = selected_service_combis.length + (selected_node_combis.length * selected_nodes.length);
@@ -420,8 +448,18 @@ function dateTimeToEpoch(dateTime) {
     return parseInt(Date.parse(dateTime.replace(/-/g, '/')) / 1000);
 }
 
+function epochToString(epochTime) {
+    var curDate = new Date(epochTime * 1000);
+    return ('0' + (curDate.getMonth() + 1)).slice(-2) + '-' + 
+        ('0' + curDate.getDate()).slice(-2) + '-' + 
+        curDate.getFullYear() + ' ' +
+        ('0' + curDate.getHours()).slice(-2) + ':' +
+        ('0' + curDate.getMinutes()).slice(-2);
+}
+
 // Request data for each combinations and display them
-function showCombinationGraph(curobj,service_combinations,node_combinations,nodes,start,stop, sp_id, options) {
+function showCombinationGraph(curobj, service_combinations, node_combinations, nodes, start, stop, sp_id, options) {
+
     var widget    = $(curobj).closest('.widget');
     var widget_id = $(curobj).closest('.widget').attr("id");
     var graph_container = widget.find('.clusterCombinationView');
@@ -437,53 +475,151 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
     var pending_requests = 0;
 
     // Service level requests
-    var clustersview_url = '/monitoring/serviceprovider/' + sp_id +'/clustersview';
     pending_requests =  service_combinations.length;
     var service_data = {series:[], labels:[], units:[]};
-    $.each(service_combinations, function (i, combi) {
-        var params = {id:combi.id,start:start,stop:stop};
-        $.getJSON(clustersview_url, params, function(data) {
-            pending_requests--;
-            if (data.error) {
-                error_count++;
-            } else {
-                service_data.series.push(data.first_histovalues);
-                service_data.labels.push(combi.name);
-                service_data.units.push(combi.unit);
-            }
-        });
+
+    $.each(service_combinations, function(i, combi) {
+        switch (combi.type) {
+            case 'formula':
+                if (combi.formula) {
+                    $.ajax({
+                        url: '/api/aggregatecombination/evaluateFormula',
+                        type: 'POST',
+                        data: {
+                            'formula': combi.formula,
+                            'start_time': dateTimeToEpoch(start),
+                            'stop_time': dateTimeToEpoch(stop)
+                        },
+                        success: function(data) {
+                            var series = [];
+                            $.each(data, function(key, value) {
+                                series.push([epochToString(key), value]);
+                            });
+                            service_data.series.push(series);
+                            service_data.labels.push(combi.name);
+                            service_data.units.push(combi.unit);
+                        },
+                        error: function() {
+                            error_count++;
+                        },
+                        complete: function() {
+                            pending_requests--;
+                        }
+                    });
+                } else {
+                    error_count++;
+                    pending_requests--;
+                }
+                break;
+            case 'anomaly':
+                $.ajax({
+                    url: '/api/metric/' + combi.id + '/evaluateTimeSerie',
+                    type: 'POST',
+                    data: {
+                        'start_time': dateTimeToEpoch(start),
+                        'stop_time': dateTimeToEpoch(stop)
+                    },
+                    success: function(data) {
+                        var series = [];
+                        $.each(data, function(key, value) {
+                            series.push([epochToString(key), value]);
+                        });
+                        service_data.series.push(series);
+                        service_data.labels.push(combi.name);
+                        service_data.units.push(combi.unit);
+                    },
+                    error: function() {
+                        error_count++;
+                    },
+                    complete: function() {
+                        pending_requests--;
+                    }
+                });
+                break;
+            default:
+                var params = {'id': combi.id, 'start': start, 'stop': stop};
+                $.getJSON('/monitoring/serviceprovider/' + sp_id + '/clustersview', params, function(data) {
+                    pending_requests--;
+                    if (data.error) {
+                        error_count++;
+                    } else {
+                        service_data.series.push(data.first_histovalues);
+                        service_data.labels.push(combi.name);
+                        service_data.units.push(combi.unit);
+                    }
+                });
+                break;
+        }
     });
 
     // Node level request
     var node_data = {series:[], labels:[], units:[]};
     if (nodes.length > 0) {
         pending_requests += node_combinations.length;
-        var params = {
-                start_time : dateTimeToEpoch(start),
-                stop_time  : dateTimeToEpoch(stop),
-                node_ids   : $.map(nodes, function(n){return n.id})
-        }
-        $.each(node_combinations, function (i, combi) {
-            ajax('POST',
-                 '/api/combination/'+combi.id+'/evaluateTimeSerie',
-                 params,
-                 function(data) {
-                     pending_requests--;
-                     $.each(nodes, function(i,n) {
-                         if (data[n.id] !== undefined) {
-                             node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
-                             var label = n.name != '' && combi.name != '' ? '['+n.name+'] ' + combi.name
-                                                                          : n.name + combi.name;
-                             node_data.labels.push(label);
-                             node_data.units.push(combi.unit);
-                         }
-                     });
-                 },
-                 function() {
-                     pending_requests--;
-                     error_count++;
-                 }
-            );
+
+        $.each(node_combinations, function(i, combi) {
+            if (combi.id == -1) {
+                // Formula
+                if (combi.formula) {
+                    $.ajax({
+                        url: '/api/nodemetriccombination/evaluateFormula',
+                        type: 'POST',
+                        contentType: "application/json; charset=utf-8",
+                        datatype : "json",
+                        data : JSON.stringify({
+                            'formula': combi.formula,
+                            'start_time': dateTimeToEpoch(start),
+                            'stop_time': dateTimeToEpoch(stop),
+                            'node_ids': $.map(nodes, function(node) {return node.id})
+                        }),
+                        success: function(data) {
+                            $.each(nodes, function(index, node) {
+                             if (data[node.id] !== undefined) {
+                                 node_data.series.push(_formatTimeSerieFromHash(data[node.id]));
+                                 var label = (node.name != '' && combi.name != '') ? '[' + node.name + '] ' + combi.name : node.name + combi.name;
+                                 node_data.labels.push(label);
+                                 node_data.units.push(combi.unit);
+                             }
+                            });
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            error_count++;
+                        },
+                        complete: function() {
+                            pending_requests--;
+                        }
+                    });
+                } else {
+                    error_count++;
+                }
+            } else {
+                // id
+                var params = {
+                        start_time : dateTimeToEpoch(start),
+                        stop_time  : dateTimeToEpoch(stop),
+                        node_ids   : $.map(nodes, function(n) {return n.id})
+                };
+
+                ajax('POST',
+                     '/api/combination/' + combi.id + '/evaluateTimeSerie',
+                     params,
+                     function(data) {
+                         pending_requests--;
+                         $.each(nodes, function(i,n) {
+                             if (data[n.id] !== undefined) {
+                                 node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
+                                 var label = (n.name != '' && combi.name != '') ? '['+n.name+'] ' + combi.name : n.name + combi.name;
+                                 node_data.labels.push(label);
+                                 node_data.units.push(combi.unit);
+                             }
+                         });
+                     },
+                     function() {
+                         pending_requests--;
+                         error_count++;
+                     }
+                );
+            }
         });
     }
 

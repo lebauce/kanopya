@@ -109,7 +109,7 @@ var mainmenu_def = {
         ],
         'Time periods' : [
             { label : 'Time periods', id : 'timeperiods', onLoad : function(cid, eid) { require('common/limits.js'); timePeriods.load(cid, eid); } }
-        ],
+        ]
     }
 };
 

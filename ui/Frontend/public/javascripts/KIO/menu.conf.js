@@ -31,8 +31,14 @@ var mainmenu_def = {
             }, {
                 label : 'Monitoring',
                 id : 'service_monitoring',
-                onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external'); },
+                // onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external'); },
+                onLoad : function(cid, eid) { require('common/service_monitoring2.js'); loadServicesMonitoring2(cid, eid, 'external'); },
                 icon : 'monitoring'
+            }, {
+                label : 'Anomalies',
+                id : 'service_anomalies',
+                onLoad : function(cid, eid) { require('common/service_anomalies.js'); loadServicesAnomalies(cid, eid, 'external'); },
+                icon : 'alert'
             }, { label : 'Rules',
                  id : 'service_rules',
                  onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid, 'external'); },

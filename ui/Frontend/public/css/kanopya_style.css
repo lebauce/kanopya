@@ -191,8 +191,8 @@ ul#Services >li{cursor:pointer;}
 .dashboard .ui-widget-content .widgetcontent{margin:10px;}
 #view-container{background-image:url(../images/LOGO_ARBRE_KANOPYA.png)!important;background-repeat:no-repeat!important;background-position:center 27px !important;}
 
-.action_buttons{padding:0 10px;}
-.ui-accordion .action_buttons{margin-bottom:10px;}
+.action_buttons{padding:0 10px; margin-bottom:10px;}
+/*.ui-accordion .action_buttons{margin-bottom:10px;}*/
 .action_buttons .ui-button,.action_buttons button{margin:0;margin-right:10px;}
 .action_buttons .button-with-sprite .ui-button-text{padding:0 10px 0 0px !important;}
 .action_buttons .button-without-sprite .ui-button-text{padding:0 10px 0 10px !important;}

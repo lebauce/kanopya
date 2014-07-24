@@ -63,9 +63,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        evaluateTimeSerie => {
-            description => 'retrieve historical value of combination',
-        },
         evaluateFormula => {
             description => 'retrieve historical value of combination',
         },
