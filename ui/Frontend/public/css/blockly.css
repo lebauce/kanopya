@@ -1,0 +1,82 @@
+.blocklyWidgetDiv {
+    z-index: 99999 !important;
+}
+
+#metric-identity {
+    font-size: 1rem;
+}
+
+#metric-identity label {
+    display: inline-block;
+    width: 100px;
+    text-align: right;
+}
+
+#metric-identity input {
+    width: 400px;
+}
+
+.dialog-container .line {
+    height: 1px;
+    background-color: #cccccc;
+}
+
+#metric-blockly {
+    margin-top: 30px;
+    position: relative;
+}
+
+#metric-items {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 232px;
+    padding-left: 20px;
+    padding-right: 10px;
+    background-color: #e4e4e4;
+}
+
+#metric-items p {
+    margin-top : 20px;
+    margin-bottom : 38px;
+    text-align: right;
+    font-size: normal;
+}
+
+#metric-items p.first {
+    margin-top : 5px;
+    margin-bottom : 0;
+}
+
+#metric-category {
+    display: block;
+    margin-top: 2px;
+}
+
+#blockly-container {
+    position: absolute;
+    top: 0;
+    height: 230px;
+}
+
+#metric-blockly-down {
+    /*clear: left;*/
+    height: 232px;
+}
+
+#metric-formula {
+    margin-top: 20px;
+    border: 1px solid #cccccc;
+    color: #000000;
+    background-color: #dddddd;
+    padding: 10px;
+}
+
+#metric-formula.error {
+    color: #b94a48;
+}
+
+#metric-preview {
+    margin-top: 20px;
+    border: 1px solid #cccccc;
+}

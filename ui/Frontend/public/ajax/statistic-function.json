@@ -1,0 +1,47 @@
+[
+    {
+        "id": "MEAN",
+        "label": "mean",
+        "code": "mean"
+    },
+    {
+        "id": "VARIANCE",
+        "label": "variance",
+        "code": "variance"
+    },
+    {
+        "id": "STD",
+        "label": "std",
+        "code": "std"
+    },
+    {
+        "id": "MAX",
+        "label": "max",
+        "code": "max"
+    },
+    {
+        "id": "MIN",
+        "label": "min",
+        "code": "min"
+    },
+    {
+        "id": "KURTOSIS",
+        "label": "kurtosis",
+        "code": "kurtosis"
+    },
+    {
+        "id": "SKEWNESS",
+        "label": "skewness",
+        "code": "skewness"
+    },
+    {
+        "id": "DATAOUT",
+        "label": "dataOut",
+        "code": "dataOut"
+    },
+    {
+        "id": "SUM",
+        "label": "sum",
+        "code": "sum"
+    }
+]

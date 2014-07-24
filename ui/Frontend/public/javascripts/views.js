@@ -82,7 +82,6 @@ function create_all_content() {
 // function show_detail manage grid element details
 // param 'details' is optionnal and allow to specify/override details_def for this grid
 function show_detail(grid_id, grid_class, elem_id, row_data, details) {
-
     var details_info = details || details_def[grid_class];
     // Not defined details menu
     if (details_info === undefined) {
@@ -103,11 +102,17 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
         return;
     }
 
-    // Else, modal details
+    // Enables the dynamic loading of tabs
+    var tabs = details_info.tabs;
+    if (typeof details_info.tabs === 'function') {
+        tabs = details_info.tabs.call(null, elem_id);
+    };
+
+    // modal details
     var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
 
-    build_submenu(view_detail_container, id, details_info.tabs, elem_id);
+    build_submenu(view_detail_container, id, tabs, elem_id);
     view_detail_container.find('#' + id).show();
 
     // Set dialog title using column defined in conf
@@ -174,7 +179,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     }
 
     // Load first tab content
-    reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, {keep_last : true, elem_data : row_data});
+    reload_content('content_' + tabs[0]['id'] + '_' + elem_id, elem_id, {keep_last : true, elem_data : row_data});
 }
 
 function _gridActionModalCommonParams() {
@@ -205,8 +210,15 @@ function _gridActionModalCommonParams() {
 
 // Callback when click on remove icon for a row
 function removeGridEntry (grid_id, rowid, url, method, extraParams) {
-    var delete_url      = url.split('?')[0] + '/' + rowid;
-    var call_type       = 'DELETE';
+
+    // Enables the dynamic loading of url
+    var delete_url = url;
+    if (typeof url === 'function') {
+        delete_url = url.call(null, rowid);
+    };
+
+    delete_url = delete_url.split('?')[0] + '/' + rowid;
+    var call_type = 'DELETE';
     if (method) {
         delete_url += '/' + method;
         call_type = 'POST';
@@ -226,7 +238,7 @@ function removeGridEntry (grid_id, rowid, url, method, extraParams) {
                     if (json.operation_id != undefined) {
                         handleCreateOperation(json, $("#"+grid_id), rowid);
                     } else {
-                        $("#"+grid_id).trigger('gridChange')
+                        $("#"+grid_id).trigger('gridChange');
                     }
                 },
             })
@@ -568,6 +580,9 @@ function create_grid(options) {
 
             var thegrid = jQuery('#' + options.grid_id)[0];
             $.getJSON(options.url, data, function (data) {
+                if (options.loadComplete) {
+                    options.loadComplete.call(null, data);
+                };
                 thegrid.addJSONData(data);
             });
         } : 'local',

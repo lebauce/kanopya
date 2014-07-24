@@ -1,0 +1,13 @@
+<div id="anomaly-editor" class="dialog-container" title="Create new anomaly detector">
+    <div id="anomaly-identity">
+        <p>
+            <label for="metric">Service metric :</label>
+            <select id="metric">
+                {{#metric}}
+                    <option value="{{id}}">{{label}}</option>
+                {{/metric}}
+            </select>
+        </p>
+    </div>
+    <div id="message"></div>
+</div>

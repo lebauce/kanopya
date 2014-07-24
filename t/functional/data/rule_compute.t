@@ -23,6 +23,7 @@ my $log = get_logger("");
     use Entity::Rule::AggregateRule;
     use Entity::Metric::Combination::AggregateCombination;
     use Entity::Metric::Combination::NodemetricCombination;
+    use Entity::Metric::Nodemetric;
     use Entity::NodemetricCondition;
     use Entity::Rule::NodemetricRule;
     use VerifiedNoderule;

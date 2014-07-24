@@ -30,6 +30,7 @@ use Entity::Metric::Clustermetric;
 use Kanopya::Tools::TimeSerie;
 use AnomalyDetector;
 use TryCatch;
+use Entity::Metric::Anomaly;
 
 Log::Log4perl->easy_init({
     level  => 'INFO',

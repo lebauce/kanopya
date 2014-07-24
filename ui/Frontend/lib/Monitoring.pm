@@ -101,8 +101,12 @@ get '/serviceprovider/:spid/nodesview/bargraph' => sub {
     }
 
     my $nodelist = [ @{$compute_result->{'nodes'}}, @{$compute_result->{'undef'}} ];
+    my $values = $compute_result->{'values'};
 
-    return to_json {values => $compute_result->{'values'}, nodelist => $nodelist, unit => $compute_result->{'unit'}};
+    # Add an undef value in the list for each node without value
+    push @$values, (undef) x (scalar @{$compute_result->{'undef'}});
+
+    return to_json {values => $values, nodelist => $nodelist, unit => $compute_result->{'unit'}};
 };
 
 =pod

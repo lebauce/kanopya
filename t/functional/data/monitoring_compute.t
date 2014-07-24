@@ -28,6 +28,7 @@ use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
+use Kanopya::Tools::TimeSerie;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
@@ -304,25 +305,27 @@ sub testClusterMetric {
 
 sub testAggregateCombination {
     my %args = @_;
+    my ($cm1, $cm2);
+    my $acomb1;
 
     lives_ok {
         my $service_provider = $args{service_provider};
         my $aggregator          = $args{aggregator};
 
         # Cluster metrics
-        my $cm1 = Entity::Metric::Clustermetric->new(
-                      clustermetric_service_provider_id       => $service_provider->id,
-                      clustermetric_indicator_id              => ($indic1->id),
-                      clustermetric_statistics_function_name  => 'sum',
-                      clustermetric_window_time               => '1200',
-                  );
+        $cm1 = Entity::Metric::Clustermetric->new(
+                   clustermetric_service_provider_id       => $service_provider->id,
+                   clustermetric_indicator_id              => ($indic1->id),
+                   clustermetric_statistics_function_name  => 'sum',
+                   clustermetric_window_time               => '1200',
+               );
 
-        my $cm2 = Entity::Metric::Clustermetric->new(
-                      clustermetric_service_provider_id       => $service_provider->id,
-                      clustermetric_indicator_id              => ($indic2->id),
-                      clustermetric_statistics_function_name  => 'sum',
-                      clustermetric_window_time               => '1200',
-                  );
+        $cm2 = Entity::Metric::Clustermetric->new(
+                   clustermetric_service_provider_id       => $service_provider->id,
+                   clustermetric_indicator_id              => ($indic2->id),
+                   clustermetric_statistics_function_name  => 'sum',
+                   clustermetric_window_time               => '1200',
+               );
 
         # Combination
         my $acomb_ident = Entity::Metric::Combination::AggregateCombination->new(
@@ -335,7 +338,7 @@ sub testAggregateCombination {
                              aggregate_combination_formula   => '10 / id'.($cm1->id),
                          );
 
-        my $acomb1 = Entity::Metric::Combination::AggregateCombination->new(
+        $acomb1 = Entity::Metric::Combination::AggregateCombination->new(
                          service_provider_id             =>  $service_provider->id,
                          aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
                      );
@@ -409,14 +412,47 @@ sub testAggregateCombination {
             die 'Fail in combination with complex formula (parenthesis, all operators, float, neg res)'
         }
         if (! ($acomb3->evaluate() - 100000000000000000000000000*20.246 < 10**-8)) {die 'Combination with big value'};
-    } 'Aggregate combination computing'
+    } 'Aggregate combination computing';
+
+    lives_ok {
+        my $ts = Kanopya::Tools::TimeSerie->new();
+        my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
+        $ts->generatemetric(metric => $cm1, %fonction_conf);
+
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '7');
+        $ts->generatemetric(metric => $cm2, %fonction_conf);
+
+        my $data = $acomb1->evaluateTimeSerie(
+                       start_time => time() - 300*5,
+                       stop_time => time(),
+                   );
+
+        for my $value (values %$data) {
+            if ($value ne 5+7*3) {
+                die "Wrong value expected <26> got <$value>";
+            }
+        }
+
+        $data = Entity::Metric::Combination::AggregateCombination->evaluateFormula(
+                       start_time => time() - 300*5,
+                       stop_time => time(),
+                       formula => 'id' . ($cm1->id) . ' + id' . ($cm2->id),
+                   );
+
+        for my $value (values %$data) {
+            if ($value ne 5+7) {
+                die "Wrong value expected <12> got <$value>";
+            }
+        }
+
+    } 'Evaluate time serie nodemetrics aggregate combination';
 }
 
 sub testNodemetricCombination {
     my %args = @_;
 
     my $service_provider = $args{service_provider};
-
+    my $ncomb2;
     lives_ok {
         # Combinations
         my $ncomb_ident = Entity::Metric::Combination::NodemetricCombination->new(
@@ -424,10 +460,10 @@ sub testNodemetricCombination {
                               nodemetric_combination_formula  => 'id' . ($indic1->id),
                           );
 
-        my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
-                         service_provider_id             => $service_provider->id,
-                         nodemetric_combination_formula  => '(id' . ($indic1->id) . ' + 5) * id' . ($indic2->id),
-                     );
+        $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
+                      service_provider_id             => $service_provider->id,
+                      nodemetric_combination_formula  => '(id' . ($indic1->id) . ' + 5) * id' . ($indic2->id),
+                  );
 
         my $mock_conf  = "{'default':{'const':null}}";
 
@@ -509,7 +545,106 @@ sub testNodemetricCombination {
         if ($ncomb2->evaluate(node => $node_1) - (1.2 + 5)*42.42 > 10**-8) {
             die 'Combination correctly computed with float values';
         }
-    } 'Nodemetric combination computing'
+    } 'Nodemetric combination computing';
+
+    lives_ok {
+        my $ts = Kanopya::Tools::TimeSerie->new();
+
+        # Generate first metric data for both nodes
+        my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
+        for my $nodemetric ($indic1->nodemetrics) {
+            $ts->generatemetric(metric => $nodemetric, %fonction_conf);
+        }
+
+        # Generate second metric data only for first node
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '7');
+        my @nodemetrics = $indic2->nodemetrics;
+        $ts->generatemetric(metric => $nodemetrics[0], %fonction_conf);
+        $ts->unlinkMetric(metric => $nodemetrics[1]);
+
+        # Compute
+        my $data = $ncomb2->evaluateTimeSerie(
+                       start_time => time() - 300*5,
+                       stop_time => time(),
+                       node_ids => [$node_1->id, $node_2->id]
+                   );
+
+        # Test value correctly computed for node1 and undef for node2 (because of missing data for one metric)
+        for my $value (values %{$data->{$node_1->id}}) {
+             if ($value ne ((5 + 5) * 7)) {
+                 die "nodemetric compute. expected <70> got <$value>";
+             }
+        }
+        for my $value (values %{$data->{$node_2->id}}) {
+             if ($value) {
+                 die "nodemetric compute. expected <undef> got <$value>";
+             }
+        }
+
+        # Generate second metric data for second node
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '8');
+        $ts->generatemetric(metric => $nodemetrics[1], %fonction_conf);
+
+        # Compute
+        $data = $ncomb2->evaluateTimeSerie(
+                    start_time => time() - 300*5,
+                    stop_time => time(),
+                    node_ids => [$node_1->id, $node_2->id]
+                );
+
+        # Check combination correctly computed for bot nodes
+        if (! defined $data->{$node_1->id} || ! defined $data->{$node_2->id}) {
+            die 'data must be defined for the 2 nodes';
+        }
+
+        for my $value (values %{$data->{$node_1->id}}) {
+             if ($value ne ((5 + 5) * 7)) {
+                 die "nodemetric compute. expected <70> got <$value>";
+             }
+        }
+        for my $value (values %{$data->{$node_2->id}}) {
+             if ($value ne ((5 + 5) * 8)) {
+                 die "nodemetric compute. expected <80> got <$value>";
+             }
+        }
+
+    } 'Evaluate time serie nodemetrics';
+
+    lives_ok {
+        my $ts = Kanopya::Tools::TimeSerie->new();
+
+        my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
+        for my $nodemetric ($indic1->nodemetrics) {
+            $ts->generatemetric(metric => $nodemetric, %fonction_conf);
+        }
+
+        %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '7');
+        for my $nodemetric ($indic2->nodemetrics) {
+            $ts->generatemetric(metric => $nodemetric, %fonction_conf);
+        }
+
+        my $data = $ncomb2->evaluateFormula(
+                       start_time => time() - 300*5,
+                       stop_time => time(),
+                       node_ids => [$node_1->id, $node_2->id],
+                       formula => 'id' . ($indic1->id) . ' + id' . ($indic2->id),
+                   );
+
+        if (! defined $data->{$node_1->id} || ! defined $data->{$node_2->id}) {
+            die 'formula data must be defined for the 2 nodes';
+        }
+
+        for my $value (values %{$data->{$node_1->id}}) {
+            if ($value ne (5 + 7)) {
+                die "formula nodemetric compute. expected <12> got <$value>";
+            }
+        }
+        for my $value (values %{$data->{$node_2->id}}) {
+            if ($value ne (5 + 7)) {
+                die "formula nodemetric compute. expected <12> got <$value>";
+            }
+        }
+    } 'Evaluate time serie nodemetric combination formula';
 }
 
 sub testBigAggregation {

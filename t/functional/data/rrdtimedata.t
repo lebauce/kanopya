@@ -214,7 +214,7 @@ sub fetchOptions {
                 start => $time + 1,
                 end   => $time - 1,
             );
-        } 'Kanopya::Exception::Internal', 'start before end';
+        } 'Kanopya::Exception::Internal::NoValue', 'start before end';
 
         my $fetch_hash = $td->fetchTimeDataStore(
                              name  => $name,

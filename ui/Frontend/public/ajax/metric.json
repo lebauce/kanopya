@@ -1,0 +1,27 @@
+[
+    {
+        "id": "TOT_MEM",
+        "label": "Total memory",
+        "categoryId": 1
+    },
+    {
+        "id": "AV_MEM",
+        "label": "Available memory",
+        "categoryId": 1
+    },
+    {
+        "id": "BUF_MEM",
+        "label": "Buffered memory",
+        "categoryId": 1
+    },
+    {
+        "id": "TOT_CPU",
+        "label": "Total CPU",
+        "categoryId": 2
+    },
+    {
+        "id": "AV_CPU",
+        "label": "Available CPU",
+        "categoryId": 2
+    }
+]

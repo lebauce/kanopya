@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="<% request.uri_base %>/css/kanopya_style.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/kanopya-sprites.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
+<link rel="stylesheet" href="<% request.uri_base %>/css/blockly.css" />
 
 <script src="/javascripts/jquery/jquery-1.7.2.js"></script>
 <script src="/javascripts/jquery/jquery-ui-1.8.19.custom.js"></script>
@@ -41,7 +42,6 @@
 
 <script src="/javascripts/jquery/jquery-ui-timepicker-addon.js"></script>
 
-
 <script src='/javascripts/require.js'></script>
 
 <script src="/javascripts/common/scrollabletabs.js"></script>
@@ -50,6 +50,15 @@
 <script src="/javascripts/views.js"></script>
 <script src="/javascripts/common/permissions.js"></script>
 <script src="/javascripts/kanopyaformwizard.js"></script>
+
+<script src="/javascripts/vendor/handlebars-v1.3.0.js"></script>
+
+<script src="/javascripts/blockly/blockly_compressed_custom.js"></script>
+<script src="/javascripts/vendor/blockly/javascript_compressed.js"></script>
+<script src="/javascripts/vendor/blockly/en.js"></script>
+<script src="/javascripts/blockly/blockly_handler.js"></script>
+<script src="/javascripts/blockly/math_blocks.js"></script>
+<script src="/javascripts/blockly/hcm_blocks.js"></script>
 
 </head>
 <body>

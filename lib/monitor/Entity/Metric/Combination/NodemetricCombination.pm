@@ -33,6 +33,7 @@ use warnings;
 
 use Entity::CollectorIndicator;
 use Data::Dumper;
+use Node;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -282,8 +283,8 @@ sub evaluate {
 
     }
 
-    my $value = $self->SUPER::computeFormula(formula => $self->nodemetric_combination_formula,
-                                             values => \%values);
+    my $value = Formula->compute(formula => $self->nodemetric_combination_formula,
+                                 values => \%values);
 
     if (defined $args{memoization}) {
         $args{memoization}->{$self->id}->{$args{node}->id} = $value;
@@ -294,101 +295,68 @@ sub evaluate {
 
 
 =pod
-
 =begin classdoc
 
-Compute the combination value between two dates for each nodes. Use fetch() method of CollectorIndicator.
+Compute the combination value between two dates for given nodes.
 
 @param start_time the begining date
 @param stop_time the ending date
-@optional nodes Array ref of nodes to compute. Default is all enabled nodes.
-@optional node_ids Array ref of nodes id to compute. Used if 'nodes' is undef. Default is all enabled nodes.
+@param node_ids Array ref of nodes id to compute.
 
 @return the computed value
 
 =end classdoc
-
 =cut
 
 sub evaluateTimeSerie {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['start_time','end_time'],
-                         optional => {nodes => undef, node_ids => undef});
+                         required => ['start_time','stop_time', 'node_ids']);
 
-    # If @nodes not provided, get from ids if provided else get all non-disabled nodes of the service provider
-    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
-              : $self->service_provider->searchRelated(
-                    filters => ['nodes'],
-                    hash    => (defined $args{node_ids}) ? {node_id => $args{node_ids}}
-                             : {-not => {monitoring_state => 'disabled'}}
-                );
-    $args{nodes} = \@nodes;
-
-    my @ci_ids = $self->getDependentCollectorIndicatorIds();
-    my %allTheCIValues;
-    foreach my $ci_id (@ci_ids){
-        my $ci = Entity::CollectorIndicator->get('id' => $ci_id);
-        $allTheCIValues{$ci_id} = $ci->fetch(%args);
-    }
-
-    return $self->_computeFromArrays(%allTheCIValues);
+    $args{formula} = $self->nodemetric_combination_formula;
+    return $self->evaluateFormula(%args);
 }
 
 
 =pod
-
 =begin classdoc
 
-Compute the combination value using a hash of timestamped values for each CollectorIndicator and nodes.
+Compute a given formula value between two dates for given nodes.
 
+@param start_time the begining date
+@param stop_time the ending date
+@param node_ids Array ref of nodes id to compute.
+@param formula a given formula 'idxxx + idyyy' where xxx and yyy are ids of CollectorIndicators
 
-@param dynamic A value for each collectorIndicator of the formula, for each nodes.
-               (ci_id => {node_id => {timestamp=>value}})
-
-@return A reference to computed values. {node_id => {timestamp=>value}}
+@return the computed value
 
 =end classdoc
-
 =cut
 
-sub _computeFromArrays {
-    my ($self, %args) = @_;
-    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
+sub evaluateFormula {
+    my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => \@requiredArgs);
+    General::checkParams(args     => \%args,
+                         required => ['start_time','stop_time','formula', 'node_ids']);
 
-    # Merge all the timestamps keys in one arrays. Do the Same for node ids.
-    my @timestamps;
-    my @node_ids;
-    foreach my $ci_id (@requiredArgs){
-        while (my ($node_id, $data) = each %{$args{$ci_id}}){
-            @timestamps = (@timestamps, (keys %$data));
-            push @node_ids, $node_id;
-        }
-    }
-    @timestamps = $self->uniq(data => \@timestamps);
-    @node_ids   = $self->uniq(data => \@node_ids);
+    my @ci_ids = Formula->getDependentIds(formula => $args{formula});
+    my @nodes = Node->search(hash => {node_id => $args{node_ids}});
+    my $values = {};
+    foreach my $ci_id (@ci_ids) {
+        my $ci = Entity::CollectorIndicator->get('id' => $ci_id);
+        my $data = $ci->fetch(start_time => $args{start_time},
+                              end_time => $args{stop_time},
+                              nodes => \@nodes);
 
-    my %rep;
-    foreach my $timestamp (@timestamps){
-        foreach my $node_id (@node_ids) {
-            my %valuesForATimeStamp;
-            foreach my $ci_id (@requiredArgs){
-                $valuesForATimeStamp{$ci_id} = $args{$ci_id}->{$node_id} ? $args{$ci_id}->{$node_id}{$timestamp}
-                                                                         : undef;
-            }
-            $rep{$node_id}{$timestamp} = $self->SUPER::computeFormula(
-                                            formula => $self->nodemetric_combination_formula,
-                                            values => \%valuesForATimeStamp
-                                         );
+        for my $node_id (@{$args{node_ids}}) {
+            $values->{$node_id}->{$ci_id} = $data->{$node_id};
         }
     }
 
-    return \%rep;
+    return Formula->computeTimeSeries(values => $values, formula => $args{formula});
 }
+
 
 =pod
 
