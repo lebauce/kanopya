@@ -499,7 +499,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
-
+        sleep(10);
         $evaluation = $ncomb_ident->evaluate(node => $node_1);
         if (! (defined $evaluation && $evaluation == 42)) {
             die 'Identity combination as same value than indicator';
@@ -513,6 +513,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
+        sleep(10);
 
         if (defined $ncomb2->evaluate(node => $node_2)) {
             die 'Combination defined while one indicator value is undef'
@@ -528,6 +529,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
+        sleep(10);
 
         if (! ($ncomb2->evaluate(node => $node_1) == (42 + 5)*12)) {
             die 'Combination correctly computed';
@@ -541,6 +543,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
+        sleep(10);
 
         if ($ncomb2->evaluate(node => $node_1) - (1.2 + 5)*42.42 > 10**-8) {
             die 'Combination correctly computed with float values';

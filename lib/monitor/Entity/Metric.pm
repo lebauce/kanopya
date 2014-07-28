@@ -47,7 +47,9 @@ sub methods {
 
 sub new {
     my ($class, %args) = @_;
-    my $params;
+    
+    my $params = $args{params} || {};
+    delete $args{params};
 
     if (defined $args{store}) {
         if ($args{store} eq 'rrd') {
@@ -101,7 +103,7 @@ sub computeFormula {
         throw Kanopya::Exception::Internal(error => 'Metric has no formula')
     }
 
-    my $formula = $args{formula} || $self->param_preset->load->{formula};
+    my $formula = $args{formula} || $self->getParams()->{formula};
 
     return Formula->compute(values => $args{values}, formula => $formula);
 }
@@ -261,7 +263,12 @@ sub updateData {
     $param->{storage_duration} = $param->{storage_duration} || $args{storage_duration};
     $pp->update(params => $param);
 
-    return $self->_timedata->updateTimeDataStore(metric_id => $self->id, %args);
+    # Try to improve performance avoiding AUTOLOAD
+    # TODO Optimize autoload in baseDB
+    my $id = $self->{_dbix}->{_column_data}->{$self->{_dbix}->{_result_source}->{name}.'_id'}
+             || $self->id;
+
+    return $self->_timedata->updateTimeDataStore(metric_id => $id, %args);
 }
 
 
@@ -279,9 +286,8 @@ Reset metric database
 sub resetData {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         optional => { time_step => $self->{config}->{time_step},
-                                       storage_duration  => $self->{config}->{storage_duration}});
+    General::checkParams(args => \%args, optional => {time_step => undef,
+                                                      storage_duration => undef});
 
     if (! $self->_hasStore) {
         throw Kanopya::Exception::Internal(
@@ -323,8 +329,9 @@ sub fetch {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
                          optional => {stop_time  => time(),
-                                      start_time => time() - 60*60},
-                                      output     => 'hash');
+                                      start_time => undef,
+                                      output     => 'hash',
+                                      samples    => undef});
 
     if (! $self->_hasStore) {
         throw Kanopya::Exception::Internal(
@@ -332,8 +339,25 @@ sub fetch {
               );
     }
 
+
+    if (! defined $args{start_time}) {
+        if (! defined $args{samples}) {
+            $args{start_time} = $args{stop_time} - 60 * 60 * 24 # one day
+        }
+        else {
+            $args{start_time} = $args{stop_time} -
+                                $args{samples} * $self->_timedata->info(name => $self->id)->{time_step};
+        }
+    }
+
+    # Try to improve performance avoiding AUTOLOAD
+    # TODO Optimize autoload in baseDB
+
+    my $id = $self->{_dbix}->{_column_data}->{$self->{_dbix}->{_result_source}->{name}.'_id'}
+             || $self->id;
+
     return $self->_timedata->fetchTimeDataStore(
-               name   => $self->id,
+               name   => $id,
                start  => $args{start_time},
                end    => $args{stop_time},
                output => $args{output},
@@ -438,10 +462,24 @@ sub resizeData {
 
 sub _hasStore {
     my ($self) = @_;
-    my $pp = $self->param_preset;
-    return (defined $pp) && (defined $pp->load->{store});
+    if (! defined $self->{_hasStore}) {
+        if (defined $self->getParams()) {
+            $self->{_hasStore} = (defined $self->{params}->{store}) ? 1 : 0 ;
+        }
+    }
+    return ($self->{_hasStore} == 1);
 }
 
+
+sub getParams {
+    my ($self) = @_;
+
+    if (! exists $self->{params}) {
+        $self->{params} = $self->param_preset->load || {};
+    }
+
+    return $self->{params};
+}
 
 =pod
 
@@ -455,8 +493,8 @@ sub _hasStore {
 
 sub _hasFormula {
     my ($self) = @_;
-    my $pp = $self->param_preset;
-    return (defined $pp) && (defined $pp->load->{formula});
+    my $pp = $self->getParams();
+    return (defined $pp) && (defined $pp->{formula});
 }
 
 
@@ -483,7 +521,7 @@ sub _timedata {
               );
     }
 
-    $self->{_timedata} = TimeData->new(store => $self->param_preset->load->{store});
+    $self->{_timedata} = TimeData->new(store => $self->getParams()->{store});
     return  $self->{_timedata};
 }
 
