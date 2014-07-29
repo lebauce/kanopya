@@ -29,6 +29,7 @@ use base Daemon;
 
 use strict;
 use warnings;
+use Entity::Metric::Anomaly;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -94,15 +95,24 @@ sub update {
     my %metrics;
     for my $anomaly (@{$args{anomalies}}) {
 
-        if (! exists $metrics{$anomaly->metric_id}) {
-            $metrics{$anomaly->related_metric_id} = $anomaly->related_metric->fetch(
-                                                        start_time => $args{time} - $self->{config}->{time_step} * 50,
-                                                        stop_time  => $args{time},
-                                                        output     => 'arrays'
-                                                    );
-        }
+        my $num_periods = $anomaly->getParams()->{num_periods} || 2;
+        my $period = $anomaly->getParams()->{period} || 1 * 24 * 60 * 60;
 
-        my $value = $anomaly->computeAnomaly(values => $metrics{$anomaly->related_metric_id});
+        my $start_time = $args{time} - ($num_periods + 1) * $period;
+
+        my $values = $anomaly->related_metric->fetch(
+                         start_time => $start_time,
+                         stop_time  => $args{time},
+                         output     => 'arrays'
+                     );
+
+        # Try to improve performance avoiding AUTOLOAD
+        # TODO Optimize autoload in baseDB
+        my $id = $anomaly->{_dbix}->{_column_data}->{anomaly_id} || $anomaly->id;
+        my $related_metric_id = $anomaly->{_dbix}->{_column_data}->{related_metric_id}
+                                || $anomaly->related_metric_id;
+
+        my $value = $anomaly->computeAnomaly(values => $values);
 
         $anomaly->updateData(
             time             => $value->{timestamp},

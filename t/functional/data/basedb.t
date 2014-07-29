@@ -312,6 +312,7 @@ sub test_process_attributes {
         $class->checkAttributes(attrs => $attrs);
     } 'Kanopya::Exception::Internal::WrongValue', 'Process wrong value in attributes for Entity::Host';
 
+    $attrs->{host_ram} = 1024;
     $attrs->{test} = 'test';
     throws_ok {
         $class->checkAttributes(attrs => $attrs);
