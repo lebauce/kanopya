@@ -5,6 +5,7 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
 
     var container = $("#" + container_id);
     var external = ext || '';
+    var staticObject = {};
 
     var content = $('<div>', {id : 'list-content'});
     var buttonsContainer = $('<div>', {id: 'list-buttons-container', class: 'action_buttons'});
@@ -18,7 +19,7 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
         button.button({icons: {primary: 'ui-icon-plusthick'}});
 
         $(button).click(function() {
-            openRulesDialog(elem_id, gridId);
+            openRulesDialog(elem_id, gridId, staticObject, 'add');
         });
 
         buttonsContainer.append(button);
@@ -119,58 +120,114 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
     addButtons();
     createHtmlStructure();
     displayList();
-};
+}
 
-function openRulesDialog(serviceProviderId, gridId, metricObject) {
+function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
 
-    var dialogContainerId = 'anomaly-editor';
+    var dialogContainerId = 'rule-editor';
+    var dialogTitle;
+    var conditionHtml = {};
+    var actionHtml = {};
+    var statisticFunctionData;
     var metricData;
 
-    if (typeof metricObject.data === 'undefined') {
+    loadStatisticFunctionData();
+
+    function loadStatisticFunctionData() {
+        $('*').addClass('cursor-wait');
+        if (typeof staticObject.statisticFunctionData === 'undefined') {
+            $.ajax({
+                dataType: 'json',
+                url: 'ajax/statistic-function.json',
+                async: false,
+                success: function(data) {
+                    staticObject.statisticFunctionData = data;
+                }
+            });
+        }
+        statisticFunctionData = staticObject.statisticFunctionData;
         loadMetricData();
-    } else {
-        metricData = metricObject.data;
+    }
+
+    // if (typeof staticObject.data === 'undefined') {
+    //     loadMetricData();
+    // } else {
+    //     metricData = staticObject.data;
+    //     renderDialogTemplate();
+    // }
+
+    function loadMetricData() {
+        if (typeof staticObject.metricData === 'undefined') {
+            var data = [];
+            var indicators = getIndicators(serviceProviderId);
+            for(indicator in indicators) {
+                data.push({
+                    label: indicator,
+                    id: indicators[indicator].pk,
+                    categoryId: -1
+                });
+            }
+            staticObject.metricData = data;
+        }
+        metricData = staticObject.metricData;
         renderDialogTemplate();
     }
 
-    function loadMetricData() {
-        metricData = [];
-        $('*').addClass('cursor-wait');
-        $.getJSON(
-            '/api/clustermetric',
-            {'clustermetric_service_provider_id': serviceProviderId},
-            function(data) {
-                $.each(data, function(index, obj) {
-                    metricData.push({
-                        label: obj.label,
-                        id: obj.pk
+    function getIndicators(serviceProviderId) {
+        var indicators = {};
+        $.ajax({
+            url     : '/api/serviceprovider/' + serviceProviderId + '/service_provider_managers?expand=manager.collector_indicators.indicator&custom.category=CollectorManager',
+            async   :false,
+            success : function(data) {
+                if (data.length > 0) {
+                    $(data[0].manager.collector_indicators).each(function(i, collector_indicator) {
+                        var indicator = collector_indicator.indicator;
+                        indicators[indicator.indicator_label] = collector_indicator;
                     });
-                });
-                metricObject.data = metricData;
-                renderDialogTemplate();
+                }
             }
-        );
+        });
+        return indicators;
     }
 
     function renderDialogTemplate() {
-        var templateFile = '/templates/anomaly-editor.tmpl.html';
+        var templateFile = '/templates/rule-editor.tmpl.html';
+        var dialogTitle = getDialogTitle();
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
-            $('body').append(template({metric: metricData}));
+            $('body').append(template({
+                'title': dialogTitle,
+                'statistic-function': statisticFunctionData,
+                'metric': metricData
+            }));
             openDialog();
         });
     }
 
+    function getDialogTitle() {
+        var title;
+        switch (action) {
+            case 'add':
+                title = 'Create a new rule';
+                break;
+            case 'edit':
+                title = 'Edit';
+                break;
+        }
+        return title;
+    }
+
     function openDialog() {
+        initConditionBuilder();
+        initActionBuilder();
         $('*').removeClass('cursor-wait');
         $('#' + dialogContainerId).dialog({
             resizable: false,
             modal: true,
             dialogClass: "no-close",
             closeOnEscape: false,
-            width: 400,
-            minwidth: 400,
-            height: 230,
+            width: 1000,
+            height: 600,
             buttons : [
                 {
                     id: dialogContainerId + '-cancel-button',
@@ -180,10 +237,11 @@ function openRulesDialog(serviceProviderId, gridId, metricObject) {
                     }
                 },
                 {
-                    id: dialogContainerId + '-create-button',
-                    text: 'Create',
+                    id: dialogContainerId + '-save-button',
+                    text: 'Save',
                     click: function() {
-                        validateMetric();
+                        closeDialog();
+                        // validateRule();
                     }
                 }
             ],
@@ -197,14 +255,40 @@ function openRulesDialog(serviceProviderId, gridId, metricObject) {
             }
         });
 
-        $('#metric').change(function() {
-            $('#message').removeClass();
-            $('#message').text('');
+        addConditionGroup('#rule-conditions-builder', 0);
+
+        $('#rule-actions-builder').find('.action-add').click(function() {
+            addActionLine();
         });
+
+        // $('#metric').change(function() {
+        //     $('#message').removeClass();
+        //     $('#message').text('');
+        // });
     }
 
-    // Check if the new anomaly already exists
-    function validateMetric() {
+    function initConditionBuilder() {
+        var element = $('#rule-conditions-builder').clone();
+        conditionHtml.line = element.find(".condition").html();
+        // Clean element classes
+        element.find(".condition-group")
+            .attr('class', 'condition-group');
+        element.find(".condition")
+            .empty()
+            .attr('class', 'condition');
+        conditionHtml.group = element.html();
+    }
+
+    function initActionBuilder() {
+        var element = $('#rule-actions-builder').find('.action');
+        actionHtml.line = element.html();
+        // Clean element classes
+        element
+            .empty()
+            .attr('class', 'action');
+    }
+
+    function validateRule() {
         $.getJSON(
             '/api/anomaly',
             {'related_metric_id': $('#metric').val()},
@@ -213,13 +297,13 @@ function openRulesDialog(serviceProviderId, gridId, metricObject) {
                     $('#message').addClass('error');
                     $('#message').text('This service metric is already used.');
                 } else {
-                    createMetric();
+                    createRule();
                 }
             }
         );
     }
 
-    function createMetric() {
+    function createRule() {
         var fields = {
             metric: $('#metric').val(),
         }
@@ -241,5 +325,121 @@ function openRulesDialog(serviceProviderId, gridId, metricObject) {
     function closeDialog() {
         $('#' + dialogContainerId).dialog('close');
         $('#' + dialogContainerId).remove();
+    }
+
+    function addConditionGroup(rootElement, level) {
+
+        var tableElement, element;
+
+        if (typeof rootElement === 'string') {
+            rootElement = $(rootElement);
+        }
+
+        if (level > 0) {
+            rootElement.append(conditionHtml.group);
+        }
+        tableElement = rootElement.find('table');
+
+        element = tableElement.find('.condition');
+        if (level === 0) {
+            tableElement.find('.condition-remove-group').remove();
+        } else {
+            element.addClass('level-' + level + ' backcolor-' + (level % 4));
+
+            tableElement.find('.condition-remove-group').click(function () {
+                // var element = $(this).parents('.condition-group').first();
+                var element = $(this).closest('.condition-group');
+                var parentElement = element.parent();
+                element.remove();
+                manageCondition(parentElement);
+
+            });
+        }
+        addConditionLine(element, (level > 0));
+
+        tableElement.find('.condition-add').click(function() {
+            var element = tableElement.find('.condition').first();
+            addConditionLine(element, true);
+        });
+
+        tableElement.find('.condition-add-group').click(function() {
+            var element = tableElement.find('.condition').first();
+            addConditionGroup(element, level + 1);
+        });
+    }
+
+    function addConditionLine(rootElement, toAppend) {
+
+        if (toAppend) {
+            rootElement.append(conditionHtml.line);
+        };
+
+        var element = rootElement.children('.condition-line').last();
+        element.children('.operand2').addClass('hidden');
+
+        element.children('.function2').change(function() {
+            var element = $(this).parent();
+            if ($(this).val() !== 'value') {
+                element.children('.condition-value').addClass('hidden');
+                element.children('.operand2').removeClass('hidden');
+            } else {
+                element.children('.operand2').addClass('hidden');
+                element.children('.condition-value').removeClass('hidden');
+            }
+        });
+
+        element.children('.condition-remove').click(function() {
+            var element = $(this).parents('.condition-line').first();
+            var parentElement = element.parent();
+            element.remove();
+            manageCondition(parentElement);
+        });
+
+        manageCondition(rootElement);
+    }
+
+    function manageCondition(element) {
+        var conditionElements = element.children();
+        var selector = '.condition-remove';
+        if ($(conditionElements[0]).hasClass('condition-group')) {
+            selector = '.condition-remove-group';
+        };
+        var removeElement = element.find(selector).first();
+        if (conditionElements.length === 1) {
+            removeElement.addClass('hidden');
+        } else {
+            removeElement.removeClass('hidden');
+        }
+    }
+
+    function addActionLine() {
+        var element = $('#rule-actions-builder').find('.action');
+        element.append(actionHtml.line);
+        element.addClass('backcolor-0');
+
+        element = element.children('.action-line').last();
+
+        element.children('.action-name').change(function() {
+            var element = $(this).parent();
+            switch ($(this).val()) {
+                case 'workflow':
+                    element.children('.action-value').addClass('hidden');
+                    element.children('.action-select').removeClass('hidden');
+                    break;
+                case 'email':
+                    element.children('.action-select').addClass('hidden');
+                    element.children('.action-value').removeClass('hidden');
+                    break;
+            }
+        });
+
+        element.children('.action-remove').click(function() {
+            $(this).closest('.action-line').remove();
+
+            var element = $('#rule-actions-builder').find('.action');
+            if (element.find('.action-line').length === 0) {
+                element.removeClass('backcolor-0');
+            }
+        });
     }
 };

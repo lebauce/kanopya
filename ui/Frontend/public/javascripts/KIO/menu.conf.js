@@ -43,7 +43,7 @@ var mainmenu_def = {
                  id : 'service_rules',
                  onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid, 'external'); },
                  icon : 'rules'
-            }, { label : 'Rules',
+            }, { label : 'New Rules',
                  id : 'service_rules2',
                  onLoad : function(cid, eid) { require('common/service_rules2.js'); loadServicesRules2(cid, eid, 'external'); },
                  icon : 'rules'
