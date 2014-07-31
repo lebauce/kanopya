@@ -240,7 +240,8 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
                     id: dialogContainerId + '-save-button',
                     text: 'Save',
                     click: function() {
-                        closeDialog();
+                        generateFormula();
+                        // closeDialog();
                         // validateRule();
                     }
                 }
@@ -389,7 +390,8 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
         });
 
         element.children('.condition-remove').click(function() {
-            var element = $(this).parents('.condition-line').first();
+            // var element = $(this).parents('.condition-line').first();
+            var element = $(this).closest('.condition-line');
             var parentElement = element.parent();
             element.remove();
             manageCondition(parentElement);
@@ -441,5 +443,48 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
                 element.removeClass('backcolor-0');
             }
         });
+    }
+
+    function generateFormula() {
+        var rootElement = $('#rule-conditions-builder').find('.condition-group.root').first();
+        var formula = getFormula(rootElement);
+        console.debug('formula', formula);
+    }
+
+    function getFormula(groupElement) {
+        var element, str, value;
+        var formula = '(';
+        var operator = groupElement.find('.logic').first().val();
+        var conditionElement = groupElement.find('.condition').first();
+        var lineElements = conditionElement.children();
+        $.each(lineElements, function(index, obj) {
+            if (index > 0) {
+                formula += ' ' + operator + ' ';
+            }
+            element = $(obj);
+            if (element.hasClass('condition-group')) {
+                formula += getFormula(element);
+            } else {
+                str = '[' + element.children('.operand1').first().val() + ']';
+                value = element.children('.function1').first().val();
+                if (value) {
+                    str = value + '(' + str + ')';
+                }
+                formula += str + ' ' + element.children('.operator').first().val();
+                value = element.children('.function2').first().val();
+                if (value === 'value') {
+                    str = element.children('.condition-value').first().val();
+                } else {
+                    str = '[' + element.children('.operand2').first().val() + ']';
+                    value = element.children('.function2').first().val();
+                    if (value) {
+                        str = value + '(' + str + ')';
+                    }
+                }
+                formula += ' ' + str;
+            }
+        });
+        formula += ')';
+        return formula;
     }
 };
