@@ -52,7 +52,9 @@ sub new {
 =pod
 =begin classdoc
 
-query vsphere API to retrieve vms or hypervisors datas
+Query vSphere API to retrieve VMs or hypervisors data.
+If you ask the wrong type of value (e.g. you ask a hypervisor about VM data or vice versa),
+this will throw an exception.
 
 @param var_map
 
@@ -65,54 +67,91 @@ sub retrieveData {
 
     General::checkParams(args => \%args, required => ['var_map']);
 
-    my @oid_list = values (%{ $args{var_map} });
-    my $vsphere;
-    my $results;
-    my $time;
-
+    my $expected_prefix; # must be regexp-safe
+    my $view;
+    my %name_value;
+    
+    # First level of the OID must be either "vsphere_vm" or "vsphere_hv". OIDs must be unique!
+    # TODO: add database uniqueness constraint
+    
     if ($self->{host}->isa("Entity::Host::VirtualMachine::Vsphere5Vm")) {
-        $vsphere = $self->{host}->host_manager;
-        $results = $self->_retrieveVmData(oid_list => \@oid_list, vsphere => $vsphere);
-        $time    = time();
+        $expected_prefix = 'vsphere_vm';
     }
     elsif ($self->{host}->isa("Entity::Host::Hypervisor::Vsphere5Hypervisor")) {
-        $vsphere = $self->{host}->node->getComponent(name    => 'Vsphere',
-                                                     version => 5);
-        $results  = $self->_retrieveHypervisorData(oid_list => \@oid_list, vsphere => $vsphere);
-        $time    = time();
+        $expected_prefix = 'vsphere_hv';
     }
     else {
         $errmsg = ref ($self->{host}) .' is not a valid host type for this data provider';
         throw Kanopya::Exception::Internal(error => $errmsg);
+    }   
+    
+    {
+        my @wrong_oids = ();
+        foreach my $oid (values %{ $args{var_map} }) {
+            if ($oid !~ /^$expected_prefix\./) {
+                push @wrong_oids, $oid; 
+            }
+        }
+        if (@wrong_oids > 0) {
+            $errmsg = ref ($self->{host}) 
+                . ' was asked for the following OIDs for which it is not a data provider: '
+                . join(', ', @wrong_oids);
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+    }       
+
+    {
+        my $vsphere;
+
+        if ($expected_prefix eq 'vsphere_vm') {
+            # $vsphere = $self->{host}->getHostManager();
+            $vsphere = $self->{host}->host_manager;
+            $view    = $self->_getVmView(vsphere => $vsphere);
+        } else {
+            # my $service_provider = $self->{host}->getCluster();
+            $vsphere = $self->{host}->node->getComponent(
+                           name    => 'Vsphere',
+                           version => 5
+            );
+            $view    = $self->_getHypervisorView(vsphere => $vsphere);
+        }
     }
 
-    my %values = (); 
     while ( my ($name, $oid) = each %{ $args{var_map} } ) {
-        $values{$name} = $results->{$oid};
-    }
+        if ($oid =~ /^$expected_prefix\.(.*)$/) {
+            my $real_oid = $1;
+            my $value = $view;
+            for my $selector (split(/\./, $real_oid)) {
+                $value = $value->$selector;
+            }
+            $name_value{$name} = $value;
+        } else {
+            $errmsg = "Internal logic error: at this point, we should not have any OID"
+                . " that does not start with '$expected_prefix': found '$oid'";
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+    }        
 
-    return ($time, \%values);
+    return (time(), \%name_value);
 }
 
 =pod
 =begin classdoc
 
-Get data from a vsphere VM
+Get the "VirtualMachine" data object from a vSphere VM.
+See http://pubs.vmware.com/vsphere-55/topic/com.vmware.wssdk.apiref.doc/vim.VirtualMachine.html
 
 @param vsphere Entity::Component::Virtualization::Vsphere5 instance
 
-@param oid_list array of String of oid to retrieve
-
-@return hash ref {oid => value}
+@return The "VirtualMachine" object
 
 =end classdoc
 =cut
 
-sub _retrieveVmData {
+sub _getVmView {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['oid_list', 'vsphere']);
-
+    General::checkParams(args => \%args, required => ['vsphere']);
 
     #get vm's host
     my $hypervisor = Entity::Host::Hypervisor::Vsphere5Hypervisor->find(hash => { 
@@ -147,35 +186,24 @@ sub _retrieveVmData {
                       begin_entity => $hv_view,
                    );
 
-    #finally retrieve the data
-    my %values;
-    foreach my $oid ( @{ $args{oid_list} }) {
-        my $value = $vm_view;
-        for my $selector (split(/\./,$oid)) {
-            $value = $value->$selector;
-        }
-        $values{$oid} = $value;
-    }
-
-    return \%values;
+    return $vm_view;
 }
 
 
 =pod
 =begin classdoc
 
-Get data from a vsphere hypervisor
+Get the "HostSystem" data object for a vSphere hypervisor.
+See http://pubs.vmware.com/vsphere-55/topic/com.vmware.wssdk.apiref.doc/vim.HostSystem.html
 
 @param vsphere Entity::Component::Virtualization::Vsphere5 instance
 
-@param oid_list array of String of oid to retrieve
-
-@return hash ref {oid => value}
+@return The "HostSystem" object
 
 =end classdoc
 =cut
 
-sub _retrieveHypervisorData {
+sub _getHypervisorView {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['oid_list','vsphere']);
@@ -199,18 +227,8 @@ sub _retrieveHypervisorData {
                       },
                       begin_entity => $dc_view,
                   );
-
-    #finally retrieve the data
-    my %values;
-    foreach my $oid ( @{ $args{oid_list} }) {
-        my $value = $hv_view;
-        for my $selector (split(/\./,$oid)) {
-            $value = $value->$selector;
-        }
-        $values{$oid} = $value;
-    }
-
-    return \%values;
+    
+    return $hv_view;
 }
 
 1;
