@@ -465,18 +465,18 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             if (element.hasClass('condition-group')) {
                 formula += getFormula(element);
             } else {
-                str = '[' + element.children('.operand1').first().val() + ']';
-                value = element.children('.function1').first().val();
+                str = '[' + element.children('.operand1').val() + ']';
+                value = element.children('.function1').val();
                 if (value) {
                     str = value + '(' + str + ')';
                 }
-                formula += str + ' ' + element.children('.operator').first().val();
-                value = element.children('.function2').first().val();
+                formula += str + ' ' + element.children('.operator').val();
+                value = element.children('.function2').val();
                 if (value === 'value') {
-                    str = element.children('.condition-value').first().val();
+                    str = element.children('.condition-value').val();
                 } else {
-                    str = '[' + element.children('.operand2').first().val() + ']';
-                    value = element.children('.function2').first().val();
+                    str = '[' + element.children('.operand2').val() + ']';
+                    value = element.children('.function2').val();
                     if (value) {
                         str = value + '(' + str + ')';
                     }

@@ -43,12 +43,6 @@
                                         {{/metric}}
                                     </select>
                                     <select class="operator">
-                                        <!-- <option value="=">equals to</option> -->
-                                        <!-- <option value="!=">not equal to</option> -->
-                                        <!-- <option value="<">less than</option> -->
-                                        <!-- <option value="<=">less than or equal to</option> -->
-                                        <!-- <option value=">">greater than</option> -->
-                                        <!-- <option value=">=">greater than or equal to</option> -->
                                         <option value="=">=</option>
                                         <option value="!=">not =</option>
                                         <option value=">">></option>
@@ -58,18 +52,18 @@
                                     </select>
                                     <select class="function2">
                                         <option value="value" selected="selected">value</option>
-                                        <option value=""></option>
+                                        <!-- <option value="metric">metric</option> -->
                                         <option disabled="disabled">────────</option>
                                         {{#statistic-function}}
                                             <option value="{{id}}">{{label}}</option>
                                         {{/statistic-function}}
                                     </select>
+                                    <input class="condition-value" type="text"/>
                                     <select class="operand2 hidden">
                                         {{#metric}}
                                             <option value="{{id}}">{{label}}</option>
                                         {{/metric}}
                                     </select>
-                                    <input class="condition-value" type="text"/>
                                     <button class="condition-remove"></button>
                                 </div>
                             </div>
