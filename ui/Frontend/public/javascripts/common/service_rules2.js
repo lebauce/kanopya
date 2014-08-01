@@ -129,48 +129,46 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
     var conditionHtml = {};
     var actionHtml = {};
     var statisticFunctionData;
+    var indicatorData;
     var metricData;
+    var function1PreviousValue;
+    var function2PreviousValue;
 
     loadStatisticFunctionData();
 
     function loadStatisticFunctionData() {
         $('*').addClass('cursor-wait');
-        if (typeof staticObject.statisticFunctionData === 'undefined') {
-            $.ajax({
-                dataType: 'json',
-                url: 'ajax/statistic-function.json',
-                async: false,
-                success: function(data) {
-                    staticObject.statisticFunctionData = data;
-                }
-            });
-        }
-        statisticFunctionData = staticObject.statisticFunctionData;
-        loadMetricData();
+        // Delay to display the wait cursor
+        setTimeout(function() {
+            if (typeof staticObject.statisticFunctionData === 'undefined') {
+                $.ajax({
+                    dataType: 'json',
+                    url: 'ajax/statistic-function.json',
+                    async: false,
+                    success: function(data) {
+                        staticObject.statisticFunctionData = data;
+                    }
+                });
+            }
+            statisticFunctionData = staticObject.statisticFunctionData;
+            loadIndicatorData();
+        }, 10);
     }
 
-    // if (typeof staticObject.data === 'undefined') {
-    //     loadMetricData();
-    // } else {
-    //     metricData = staticObject.data;
-    //     renderDialogTemplate();
-    // }
-
-    function loadMetricData() {
-        if (typeof staticObject.metricData === 'undefined') {
+    function loadIndicatorData() {
+        if (typeof staticObject.indicatorData === 'undefined') {
             var data = [];
             var indicators = getIndicators(serviceProviderId);
             for(indicator in indicators) {
                 data.push({
-                    label: indicator,
                     id: indicators[indicator].pk,
-                    categoryId: -1
+                    label: indicator
                 });
             }
-            staticObject.metricData = data;
+            staticObject.indicatorData = data;
         }
-        metricData = staticObject.metricData;
-        renderDialogTemplate();
+        indicatorData = staticObject.indicatorData;
+        loadMetricData();
     }
 
     function getIndicators(serviceProviderId) {
@@ -190,6 +188,29 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
         return indicators;
     }
 
+    function loadMetricData() {
+        if (typeof staticObject.metricData === 'undefined') {
+            var metric = [];
+            $.ajax({
+                dataType: 'json',
+                url: '/api/combination?combination_formula_string=LIKE,%[a-zA-Z]%&service_provider_id=' + serviceProviderId,
+                async: false,
+                success: function(data) {
+                    $.each(data, function(index, obj) {
+                        metric.push({
+                            id: obj.pk,
+                            label: obj.label,
+                            level: (obj.hasOwnProperty('aggregate_combination_id')) ? 'service' : 'node'
+                        });
+                    });
+                    staticObject.metricData = metric;
+                }
+            });
+        }
+        metricData = staticObject.metricData;
+        renderDialogTemplate();
+    }
+
     function renderDialogTemplate() {
         var templateFile = '/templates/rule-editor.tmpl.html';
         var dialogTitle = getDialogTitle();
@@ -198,7 +219,7 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             $('body').append(template({
                 'title': dialogTitle,
                 'statistic-function': statisticFunctionData,
-                'metric': metricData
+                'indicator': indicatorData
             }));
             openDialog();
         });
@@ -261,11 +282,6 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
         $('#rule-actions-builder').find('.action-add').click(function() {
             addActionLine();
         });
-
-        // $('#metric').change(function() {
-        //     $('#message').removeClass();
-        //     $('#message').text('');
-        // });
     }
 
     function initConditionBuilder() {
@@ -348,7 +364,6 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             element.addClass('level-' + level + ' backcolor-' + (level % 4));
 
             tableElement.find('.condition-remove-group').click(function () {
-                // var element = $(this).parents('.condition-group').first();
                 var element = $(this).closest('.condition-group');
                 var parentElement = element.parent();
                 element.remove();
@@ -378,19 +393,64 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
         var element = rootElement.children('.condition-line').last();
         element.children('.operand2').addClass('hidden');
 
-        element.children('.function2').change(function() {
-            var element = $(this).parent();
-            if ($(this).val() !== 'value') {
-                element.children('.condition-value').addClass('hidden');
-                element.children('.operand2').removeClass('hidden');
-            } else {
-                element.children('.operand2').addClass('hidden');
-                element.children('.condition-value').removeClass('hidden');
-            }
+        element.children('.function1')
+            .focus(function() {
+                function1PreviousValue = $(this).val();
+            })
+            .change(function() {
+                if ($(this).val() === 'metric' || function1PreviousValue === 'metric') {
+                    var element = $(this).siblings('.operand1');
+                    element.children().remove();
+                    var data = ($(this).val() === 'metric') ? metricData : indicatorData;
+                    if ($(this).val() === 'metric') {
+                        $.each(data, function(index, obj) {
+                            element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + '</option>');
+                        });
+                    } else {
+                        $.each(data, function(index, obj) {
+                            element.append('<option value="' + obj.id + '">' + obj.label + '</option>');
+                        });
+                    }
+                }
+                function1PreviousValue = $(this).val();
+            });
+
+        element.children('.function2')
+            .focus(function() {
+                if ($(this).val() !== 'value' || function2PreviousValue === 'undefined') {
+                    function2PreviousValue = $(this).val();
+                }
+            })
+            .change(function() {
+                var element = $(this).parent();
+                if ($(this).val() === 'value') {
+                    element.children('.operand2').addClass('hidden');
+                    element.children('.condition-value').removeClass('hidden');
+                } else {
+                    element.children('.condition-value').addClass('hidden');
+                    element.children('.operand2').removeClass('hidden');
+
+                    if ($(this).val() === 'metric' || function2PreviousValue === 'metric') {
+                        element = $(this).siblings('.operand2');
+                        element.children().remove();
+                        var data = ($(this).val() === 'metric') ? metricData : indicatorData;
+                        if ($(this).val() === 'metric') {
+                            $.each(data, function(index, obj) {
+                                element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + '</option>');
+                            });
+                        } else {
+                            $.each(data, function(index, obj) {
+                                element.append('<option value="' + obj.id + '">' + obj.label + '</option>');
+                            });
+                        }
+                    }
+                }
+                if ($(this).val() !== 'value') {
+                    function2PreviousValue = $(this).val();
+                }
         });
 
         element.children('.condition-remove').click(function() {
-            // var element = $(this).parents('.condition-line').first();
             var element = $(this).closest('.condition-line');
             var parentElement = element.parent();
             element.remove();
@@ -467,8 +527,13 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             } else {
                 str = '[' + element.children('.operand1').val() + ']';
                 value = element.children('.function1').val();
-                if (value) {
-                    str = value + '(' + str + ')';
+                if (value === 'metric') {
+                    str = '|m' + str;
+                } else {
+                    str = '|i' + str;
+                    if (value !== 'indicator') {
+                        str = value + '(' + str + ')';
+                    }
                 }
                 formula += str + ' ' + element.children('.operator').val();
                 value = element.children('.function2').val();
@@ -476,9 +541,13 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
                     str = element.children('.condition-value').val();
                 } else {
                     str = '[' + element.children('.operand2').val() + ']';
-                    value = element.children('.function2').val();
-                    if (value) {
-                        str = value + '(' + str + ')';
+                    if (value === 'metric') {
+                        str = '|m' + str;
+                    } else {
+                        str = '|i' + str;
+                        if (value !== 'indicator') {
+                            str = value + '(' + str + ')';
+                        }
                     }
                 }
                 formula += ' ' + str;

@@ -32,15 +32,17 @@
                             <div class="condition level-0 backcolor-0">
                                 <div class="condition-line">
                                     <select class="function1">
-                                        <option value=""></option>
+                                        <option value="indicator" selected="selected">indicator</option>
+                                        <option value="metric">metric</option>
+                                        <option disabled="disabled">──────</option>
                                         {{#statistic-function}}
                                             <option value="{{code}}">{{label}}</option>
                                         {{/statistic-function}}
                                     </select>
                                     <select class="operand1">
-                                        {{#metric}}
+                                        {{#indicator}}
                                             <option value="{{id}}">{{label}}</option>
-                                        {{/metric}}
+                                        {{/indicator}}
                                     </select>
                                     <select class="operator">
                                         <option value="=">=</option>
@@ -52,17 +54,18 @@
                                     </select>
                                     <select class="function2">
                                         <option value="value" selected="selected">value</option>
-                                        <!-- <option value="metric">metric</option> -->
-                                        <option disabled="disabled">────────</option>
+                                        <option value="indicator">indicator</option>
+                                        <option value="metric">metric</option>
+                                        <option disabled="disabled">──────</option>
                                         {{#statistic-function}}
                                             <option value="{{id}}">{{label}}</option>
                                         {{/statistic-function}}
                                     </select>
                                     <input class="condition-value" type="text"/>
                                     <select class="operand2 hidden">
-                                        {{#metric}}
+                                        {{#indicator}}
                                             <option value="{{id}}">{{label}}</option>
-                                        {{/metric}}
+                                        {{/indicator}}
                                     </select>
                                     <button class="condition-remove"></button>
                                 </div>
