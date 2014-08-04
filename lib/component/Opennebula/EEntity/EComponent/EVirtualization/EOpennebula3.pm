@@ -117,10 +117,10 @@ sub configureNode {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     # if the host is the opennebula master, we register datastores
-    if ($self->getMasterNode->adminIp() eq $args{host}->adminIp()) {
+    if ($self->getMasterNode->adminIp() eq $args{node}->adminIp()) {
         my $conf = $self->getConf();
         my $comp = $self->_entity;
         my $linux = $self->getMasterNode->getComponent(category => "System");
@@ -469,7 +469,7 @@ sub startHost {
 
     # generate image template for the vm and register it
     my $cluster = $args{host}->node->service_provider;
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $image = $args{host}->node->systemimage;
     my $image_name = $image->systemimage_name;
 
@@ -828,7 +828,7 @@ sub generateXenVmTemplate {
     my $kernel = Entity->get(id => $cluster->getAttr(name => "kernel_id"));
     my $kernel_version = $kernel->kernel_version;
 
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $image = $args{host}->node->systemimage;
     my $image_name = $image->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
@@ -938,7 +938,7 @@ sub generateKvmVmTemplate {
                      units => 'M'
                  );
 
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $image_name = $args{host}->node->systemimage->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
 

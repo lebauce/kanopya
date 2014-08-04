@@ -66,6 +66,84 @@ sub getConf {
 sub setConf {
 }
 
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    my $definition = $self->getManagerParamsDef();
+    $definition->{tags}->{options} = {};
+    $definition->{no_tags}->{options} = {};
+
+    my @tags = Entity::Tag->search();
+    for my $tag (@tags) {
+        $definition->{tags}->{options}->{$tag->id} = $tag->tag;
+        $definition->{no_tags}->{options}->{$tag->id} = $tag->tag;
+    }
+
+    return {
+        cpu     => $definition->{cpu},
+        ram     => $definition->{ram},
+        tags    => $definition->{tags},
+        no_tags => $definition->{no_tags},
+
+    };
+}
+
+sub checkHostManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ "cpu", "ram" ]);
+}
+
+
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        cpu => {
+            label        => 'Required CPU number',
+            type         => 'integer',
+            unit         => 'core(s)',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        ram => {
+            label        => 'Required RAM amount',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        tags => {
+            label        => 'Mandatory Tags',
+            type         => 'enum',
+            relation     => 'multi',
+            is_mandatory => 0,
+        },
+        no_tags => {
+            label        => 'Forbidden Tags',
+            type         => 'enum',
+            relation     => 'multi',
+            is_mandatory => 0,
+        },
+        deploy_on_disk => {
+            label        => 'Deploy on hard disk',
+            type         => 'boolean',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        }
+    };
+}
+
 sub getRemoteSessionURL {
     return "";
 }

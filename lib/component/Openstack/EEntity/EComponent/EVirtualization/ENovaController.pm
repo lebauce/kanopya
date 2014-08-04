@@ -82,7 +82,7 @@ sub api {
 sub postStartNode {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     try {
         my $api = $self->api;
@@ -424,7 +424,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'boot_policy' ]);
 
     if (! defined $args{hypervisor}) {
         throw Kanopya::Exception::Internal(error => "No hypervisor available");
@@ -436,7 +436,7 @@ sub startHost {
 
     my $api = $self->api;
     my $image_id;
-    my $diskless = $cluster->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
+    my $diskless = $args{boot_policy} ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
 
     if (not $diskless) {
         # Register system image
@@ -560,7 +560,7 @@ sub registerSystemImage {
     General::checkParams(args => \%args, required => [ 'host', 'cluster' ]);
 
     my $image = $args{host}->node->systemimage;
-    my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'DiskManager');
+    my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'StorageManager');
     my $image_name = $image->systemimage_name;
     my $image_type = $disk_params->{image_type};
 

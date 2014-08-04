@@ -120,7 +120,7 @@ Create and start a vphere vm
 sub startHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['hypervisor', 'host']);
+    General::checkParams(args => \%args, required => [ 'hypervisor', 'host', 'boot_policy' ]);
 
     $log->info('Calling startHost on EVSphere '. ref($self));
 
@@ -138,8 +138,8 @@ sub startHost {
     }
 
     my $cluster     = $host->node->service_provider;
-    my $diskless    = $cluster->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $diskless    = $args{boot_policy} ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $datacenter  = Vsphere5Datacenter->get(
                           id => $hypervisor->vsphere5_datacenter_id
                       );
@@ -588,7 +588,7 @@ sub dissociateDisk {
             # Work around to rename systemimage disk file because vmware rename disk file to descriptor file
             my $systemimage_name = $host->node->systemimage->systemimage_name;
             my $cluster     = $host->node->service_provider;
-            my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+            my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
             my $container_access = Entity::ContainerAccess->get(id => $disk_params->{container_access_id});
             my $image_type = $disk_params->{image_type};
 

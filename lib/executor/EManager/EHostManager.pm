@@ -42,35 +42,6 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("");
-my $errmsg;
-
-
-sub createHost {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "host_core", "host_serial_number", "host_ram" ]);
-
-    if (defined $args{erollback}) { delete $args{erollback}; }
-
-    my $host = $self->_entity->addHost(%args);
-
-    #TODO: insert erollback ?
-    return $host;
-}
-
-
-sub removeHost {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ "host" ]);
-
-    my $host = $self->_entity->delHost(host => $args{host}->_entity);
-
-    #TODO: insert erollback ?
-}
 
 
 =pod

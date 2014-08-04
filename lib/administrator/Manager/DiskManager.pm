@@ -75,15 +75,7 @@ sub checkDiskManagerParams {}
 sub getManagerParamsDef {
     my ($self, %args) = @_;
 
-    return {
-        systemimage_size => {
-            label        => 'System image size',
-            type         => 'integer',
-            unit         => 'byte',
-            pattern      => '^\d*$',
-            is_mandatory => 0,
-        },
-    };
+    return {};
 }
 
 
@@ -96,21 +88,21 @@ sub getManagerParamsDef {
 =cut
 
 sub getDiskManagerParams {
-    my $self = shift;
-    my %args  = @_;
+    my ($self, %args) = @_;
 
     return {};
 }
 
 
 sub getFreeSpace {
+    my ($self, %args) = @_;
+
     throw Kanopya::Exception::NotImplemented();
 }
 
 
 sub createDisk {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ "name" ]);
@@ -129,8 +121,7 @@ sub createDisk {
 
 
 sub removeDisk {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "container" ]);
 
@@ -148,23 +139,28 @@ sub removeDisk {
 
 
 sub getExportManagers {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     return [];
 }
 
 sub diskType {
+    my ($self, %args) = @_;
+
     return '';
 }
 
 
 sub getExportManagerFromBootPolicy {
+    my ($self, %args) = @_;
+
     throw Kanopya::Exception::NotImplemented();
 }
 
 
 sub getBootPolicyFromExportManager {
+    my ($self, %args) = @_;
+
     throw Kanopya::Exception::NotImplemented();
 }
 

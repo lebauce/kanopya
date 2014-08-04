@@ -60,7 +60,7 @@ sub methods {
 
 
 sub createVirtualHost {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ram', 'core' ], optional => { 'ifaces' => 0 });
 
