@@ -84,11 +84,12 @@ sub execute {
     $self->{context}->{deployment_manager}->prepareNode(
         node           => $self->{context}->{node},
         systemimage    => $self->{context}->{systemimage},
-        boot_policy    => $self->{params}->{boot_policy},
-        deploy_on_disk => $self->{params}->{deploy_on_disk},
-        kernel_id      => $self->{params}->{kernel_id},
         hypervisor     => $self->{context}->{hypervisor},
-        erollback      => $self->{erollback}
+        # boot_policy    => $self->{params}->{boot_policy},
+        # deploy_on_disk => $self->{params}->{deploy_on_disk},
+        # kernel_id      => $self->{params}->{kernel_id},
+        erollback      => $self->{erollback},
+        %{ $self->{params} }
     );
 }
 
@@ -106,6 +107,7 @@ sub cancel {
 
     $self->{context}->{deployment_manager}->cancelPrepareNode(
         node => $self->{context}->{node},
+        %{ $self->{params} }
     );
 }
 

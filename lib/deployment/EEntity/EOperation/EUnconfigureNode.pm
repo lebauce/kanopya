@@ -70,7 +70,10 @@ Remove the node from dhcp.
 sub execute {
     my $self = shift;
 
-    $self->{context}->{deployment_manager}->unconfigureNode(node => $self->{context}->{node});
+    $self->{context}->{deployment_manager}->unconfigureNode(
+        node => $self->{context}->{node},
+        %{ $self->{params} }
+    );
 }
 
 

@@ -82,7 +82,8 @@ sub execute {
     $self->{context}->{deployment_manager}->deployNode(
         node           => $self->{context}->{node},
         hypervisor     => $self->{context}->{hypervisor},
-        erollback      => $self->{erollback}
+        erollback      => $self->{erollback},
+        %{ $self->{params} }
     );
 }
 
@@ -99,8 +100,9 @@ sub postrequisites {
 
     return $self->{context}->{deployment_manager}->checkNodeUp(
         node           => $self->{context}->{node},
-        deploy_on_disk => $self->{params}->{deploy_on_disk},
-        erollback      => $self->{erollback}
+        # deploy_on_disk => $self->{params}->{deploy_on_disk},
+        erollback      => $self->{erollback},
+        %{ $self->{params} }
     );
 }
 

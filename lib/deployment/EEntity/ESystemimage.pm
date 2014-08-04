@@ -43,84 +43,46 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
-my $errmsg;
 
 
 =pod
 =begin classdoc
 
-Export the system image with the export manager given in paramaters.
+Delegate the mount of the system image to the storage manager.
 
-@param export_manager the export manager to use for exporting the system image container
-@param manager_params the parameters to give to the export manager for disk export
-
-@optional erollback the erollback object
+@return the mount point where is mounted the file system.
 
 =end classdoc
 =cut
 
-sub activate {
-    my $self = shift;
+sub mount {
+    my ($self, %args) = @_;
 
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "container_accesses" ],
-                         optional => { "erollback" => undef });
-
-    # TODO: Check if the container of each container accesses is the same.
-
-    # Link the systemimage with its accesses
-    $self->update(systemimage_container_accesses => $args{container_accesses});
-
-    # Set system image active
-    $self->active(1);
-
-    $log->info("System image <" . $self->systemimage_name . "> is now active");
+    my $storage_manager = EEntity->new(entity => $self->storage_manager);
+    return $storage_manager->mountSystemImage(systemimage => $self, %args);
 }
 
 
 =pod
 =begin classdoc
 
-Remove all export of the system image container.
-
-@optional erollback the erollback object
+Delegate the unmount of the system image to the storage manager.
 
 =end classdoc
 =cut
 
-sub deactivate {
-    my $self = shift;
-    my %args = @_;
+sub umount {
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, optional => { "erollback" => undef });
-
-    # Get instances of container accesses from systemimages root container
-    $log->info("Remove all container accesses");
-    try {
-        for my $container_access (map { EEntity->new(data => $_) } $self->container_accesses) {
-            my $export_manager = EEntity->new(data => $container_access->export_manager);
-
-            $export_manager->removeExport(container_access => $container_access,
-                                          erollback        => $args{erollback});
-        }
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $err);
-    }
-
-    # Set system image active in db
-    $self->active(0);
-
-    $log->info("System image <" . $self->systemimage_name . "> is now unactive");
+    my $storage_manager = EEntity->new(entity => $self->storage_manager);
+    return $storage_manager->umountSystemImage(systemimage => $self, %args);
 }
 
 
 =pod
 =begin classdoc
 
-Remove the system image, also deactivate it if active.
+Delegate the deletion of the system image to the storage manager.
 
 @optional erollback the erollback object
 
@@ -133,38 +95,8 @@ sub remove {
 
     General::checkParams(args => \%args, optional => { "erollback" => undef });
 
-    # Get the container before removing the container_access
-    my $container;
-    try {
-       $container = EEntity->new(data => $self->getContainer);
-    }
-    catch (Kanopya::Exception::Internal::NotFound $err) {
-        # No export found for this system image
-        # TODO: is a container for this system image still exists ?
-    }
-    catch ($err) {
-        $err->rethrow();
-    }
-
-    if ($self->active) {
-        $self->deactivate(erollback => $args{erollback});
-    }
-
-    if (defined $container) {
-        try {
-            # Remove system image container.
-            $log->info("Systemimage container deletion");
-
-            # Get the disk manager of the current container
-            my $disk_manager = EEntity->new(data => $container->getDiskManager);
-            $disk_manager->removeDisk(container => $container);
-        }
-        catch ($err) {
-            $log->warn("Unable to remove container while removing system image:\n$err");
-        }
-    }
-
-    $self->delete();
+    my $storage_manager = EEntity->new(entity => $self->storage_manager);
+    return $storage_manager->removeSystemImage(systemimage => $self, %args);
 }
 
 1;

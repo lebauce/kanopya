@@ -60,15 +60,25 @@ sub getAttrDef{ return ATTR_DEF; }
 
 sub methods {
     return {
+        attach   => {
+            description => 'attach the system image to a node', 
+        },
         activate => {
             description => 'activate this system image', 
-            perm_holder => 'entity',
         },
         deactivate => {
             description => 'deactivate this system image', 
-            perm_holder => 'entity',
         },
     };
+}
+
+
+sub attach {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "node" ]);
+
+    return $self->storage_manager->attachSystemImage(systemimage => $self, %args);
 }
 
 sub installedComponentLinkCreation {

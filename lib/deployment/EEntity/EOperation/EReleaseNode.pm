@@ -70,7 +70,10 @@ Stop the host, set the node a as 'goingout'.
 sub execute {
     my $self = shift;
 
-    $self->{context}->{deployment_manager}->releaseNode(node => $self->{context}->{node});
+    $self->{context}->{deployment_manager}->releaseNode(
+        node => $self->{context}->{node},
+        %{ $self->{params} }
+    );
 }
 
 
@@ -85,7 +88,10 @@ Wait for the host shutdown properly.
 sub postrequisites {
     my ($self, %args) = @_;
 
-    $self->{context}->{deployment_manager}->checkNodeDown(node => $self->{context}->{node});
+    $self->{context}->{deployment_manager}->checkNodeDown(
+        node => $self->{context}->{node},
+        %{ $self->{params} }
+    );
 }
 
 

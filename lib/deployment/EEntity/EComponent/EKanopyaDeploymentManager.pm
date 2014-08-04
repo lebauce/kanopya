@@ -29,7 +29,8 @@ Execution entity for component KanopyaDeploymentManager.
 =cut
 
 package EEntity::EComponent::EKanopyaDeploymentManager;
-use base EEntity::EComponent;
+use parent EEntity::EComponent;
+use parent EManager;
 
 use strict;
 use warnings;
@@ -57,48 +58,29 @@ sub prepareNode {
 
     General::checkParams(args     => \%args,
                          required => [ 'node', 'systemimage', 'boot_policy' ],
-                         optional => { 'kernel_id'        => undef,
+                         optional => { 'boot_manager_id'  => $self->id,
+                                       'kernel_id'        => undef,
                                        'deploy_on_disk'   => 0,
-                                       'ensure_dhcp_conf' => 1,
                                        'hypervisor'       => undef,
                                        'erollback'        => undef });
 
-    # Here we compute an iscsi initiator name for the node
-    my $date = today();
-    my $year = $date->year;
-    my $month = length($date->month) == 1 ? '0' . $date->month : $date->month;
-    $args{node}->host->host_initiatorname("iqn.$year-$month." . $args{node}->node_hostname . ":" . time());
-
-    # For each container accesses of the system image, add the node as export client
-    my $options = "rw";
-    for my $export (map { EEntity->new(data => $_) } $args{systemimage}->container_accesses) {
-        EEntity->new(data => $export->export_manager)->addExportClient(
-            export  => $export,
-            host    => $args{node}->host,
-            options => $options
-        );
-    }
+    # Attach the system image to the node
+    # Ask to the storage manager to do this, forward all the managers params
+    $args{systemimage}->attach(%args);
 
     $log->info("Assign ips to the node network interfaces");
 
     $self->_assignNetworkInterfaces(node => $args{node});
 
-    # Set the systemimage for the node
-    $args{node}->systemimage_id($args{systemimage}->id);
-
-    # Use the first systemimage container access found, as all should access to the same container.
-    my @accesses = $args{systemimage}->container_accesses;
-    my $container_access = EEntity->new(entity => pop @accesses);
-
-    # Mount the containers on the executor.
+    # Mount the systemimage on the executor.
     my $mountpoint;
     try {
-        $log->info("Mounting the container access <" . $container_access->label . ">");
-        $mountpoint = $container_access->mount(econtext  => $self->getEContext,
-                                               erollback => $args{erollback});
+        $log->info("Mounting the system image <" . $args{systemimage}->label . ">");
+        $mountpoint = $args{systemimage}->mount(econtext  => $self->getEContext,
+                                                erollback => $args{erollback});
     }
     catch ($err) {
-        $log->warn("Unable to mount the container access, continue in configuration less mode.");
+        $log->warn("Unable to mount the system image, continue in configuration less mode.");
     }
 
     # If the system image is configurable, configure the components
@@ -113,31 +95,22 @@ sub prepareNode {
                                           deploy_on_disk => $args{deploy_on_disk},
                                           erollback      => $args{erollback});
             }
+
+            # Umount system image container
+            $log->info("Unmounting the system image <" . $args{systemimage}->label . ">");
+            $args{systemimage}->umount(econtext => $self->getEContext, erollback => $args{erollback});
         }
         catch ($err) {
-            $container_access->umount(econtext => $self->getEContext, erollback => $args{erollback});
+            $args{systemimage}->umount(econtext => $self->getEContext, erollback => $args{erollback});
             $err->rethrow();
         }
-
-        # Umount system image container
-        $log->info("Unmounting the container access <" . $container_access->label . ">");
-        $container_access->umount(econtext => $self->getEContext, erollback => $args{erollback});
     }
 
-    $log->info("Operate Boot Configuration");
-    $self->_generateBootConf(node             => $args{node},
-                             container_access => $container_access,
-                             boot_policy      => $args{boot_policy},
-                             deploy_on_disk   => $args{deploy_on_disk},
-                             options          => "defaults",
-                             kernel_id        => $args{kernel_id},
-                             erollback        => $args{erollback});
+    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
+    $log->info("Operate boot configuration via boot manager " . $boot_manager->label);
 
-    # Update boot server /etc/hosts
-    my @bootservers = map{ EEntity->new(entity => $_->host) } @{ $self->system_component->getActiveNodes() };
-    for my $bootserver (@bootservers) {
-        EEntity->new(entity => $self->system_component)->generateConfiguration(host => $bootserver);
-    }
+    # Ask to the boot manager to configure the boot, forward all the managers params
+    $boot_manager->configureBoot(%args);
 }
 
 
@@ -154,19 +127,21 @@ sub deployNode {
 
     General::checkParams(args => \%args,
                          required => [ 'node' ],
-                         optional => { 'hypervisor' => undef, 'erollback' => undef });
+                         optional => { 'boot_manager_id' => $self->id,
+                                       'hypervisor'      => undef,
+                                       'erollback'       => undef });
 
-    # Apply dhcp and tftp configuration on the deployment server
-    my @apply = map { EEntity->new(entity => $_) } ($self->system_component, $self->dhcp_component);
-    for my $component (@apply) {
-        $component->applyConfiguration(tags => [ "kanopya::deployment::deploynode" ])
-    }
+    # Ask to the boot manager to operation the configuration required for boot
+    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
+
+    $log->info("Applying boot configuration via boot manager " . $boot_manager->label);
+
+    # Ask to the boot manager to aplly the boot configuration, forward all the managers params
+    $boot_manager->applyBootConfiguration(%args);
 
     # Finally we start the node
-    EEntity->new(entity => $args{node}->host)->start(
-        hypervisor => $args{hypervisor}, # Required for vm add only
-        erollback  => $args{erollback},
-    );
+    # Implicitly ask to the host manager to start the host, forward all the managers params
+    EEntity->new(entity => $args{node}->host)->start(%args);
 
     $args{node}->setState(state => "goingin");
 }
@@ -198,7 +173,7 @@ sub checkNodeUp {
         EEntity->new(entity => $args{node}->host)->timeOuted();
     }
 
-    my $node_ip = $args{node}->host->adminIp;
+    my $node_ip = $args{node}->adminIp;
     if (not $node_ip) {
         throw Kanopya::Exception::Internal(
                   error => "Host \"" . $args{node}->host->label .  "\" has no admin ip."
@@ -214,8 +189,7 @@ sub checkNodeUp {
     # at the next reboot
     if ($args{deploy_on_disk}) {
         # Check if the host has already been deployed
-        my $hd = $args{node}->host->find(related  => 'harddisks' ,
-                                         order_by => 'harddisk_device');
+        my $hd = $args{node}->host->find(related  => 'harddisks', order_by => 'harddisk_device');
 
         if (! (defined $hd->deployed_on_id && $hd->deployed_on_id == $args{node}->id)) {
             # Try connecting to the host, delay if it fails
@@ -295,18 +269,13 @@ Remove the host from the dhcp.
 sub unconfigureNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'node' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'node' ],
+                         optional => { 'boot_manager_id' => $self->id });
 
-    # Remove Host from the dhcp
-    try {
-        EEntity->new(entity => $self->dhcp_component)->removeHost(host => $args{node}->host);
-    }
-    catch (Kanopya::Exception::Internal::NotFound $err) {
-        $log->warn("Node " . $args{node}->node_hostname . " not found in dhcpd hosts")
-    }
-    catch ($err) {
-        $err->rethrow();
-    }
+    # Ask to the boot manager to remove the node from the boot system
+    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
+    $boot_manager->configureBoot(node => $args{node}, remove => 1);
 }
 
 
@@ -321,12 +290,13 @@ Apply the dhcp configuration and halt.
 sub releaseNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'node' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'node' ],
+                         optional => { 'boot_manager_id' => $self->id });
 
-    # Apply the dhcpd configuration as the database transction
-    # has been commited since the configuration changes at unconfigureNode.
-    $log->info("Apply dhcp configuration");
-    EEntity->new(entity => $self->dhcp_component)->applyConfiguration();
+    # Ask to the boot manager to remove the node from the boot system
+    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
+    $boot_manager->applyBootConfiguration(node => $args{node}, remove => 1);
 
     # Finaly halt the node
     $log->info("Poweroff host " . $args{node}->host->label);
@@ -482,6 +452,94 @@ sub _assignNetworkInterfaces {
 =pod
 =begin classdoc
 
+Set the boot configuration on the boot server in function of the boot_policy.
+
+=end classdoc
+=cut
+
+sub configureBoot {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     =>\%args,
+                         required => [ 'node' ],
+                         optional => { 'kernel_id' => undef, 'erollback' => undef, 'remove' => 0 });
+
+    if ($args{remove}) {
+        # Remove Host from the dhcp
+        try {
+            EEntity->new(entity => $self->dhcp_component)->removeHost(host => $args{node}->host);
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $log->warn("Node " . $args{node}->node_hostname . " not found in dhcpd hosts")
+        }
+        catch ($err) {
+            $err->rethrow();
+        }
+        return;
+    }
+
+    General::checkParams(args     =>\%args,
+                         required => [ 'systemimage', 'boot_policy', 'deploy_on_disk' ]);
+
+    # Check for unsuported system image type
+    if (ref($args{systemimage}) ne "EEntity::ESystemimage") {
+        throw Kanopya::Exception::Internal::Inconsistency(
+                  error => "Unsuported image type " . ref($args{systemimage}) .
+                           " for boot manager " . $self->label
+              )
+    }
+
+    my @accesses = $args{systemimage}->container_accesses;
+    $self->_generateBootConf(node             => $args{node},
+                             container_access => EEntity->new(entity => pop(@accesses)),
+                             boot_policy      => $args{boot_policy},
+                             deploy_on_disk   => $args{deploy_on_disk},
+                             kernel_id        => $args{kernel_id},
+                             erollback        => $args{erollback});
+
+    # Update boot server /etc/hosts
+    my @bootservers = map{ EEntity->new(entity => $_->host) } @{ $self->system_component->getActiveNodes() };
+    for my $bootserver (@bootservers) {
+        EEntity->new(entity => $self->system_component)->generateConfiguration(host => $bootserver);
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Workaround for the native HCM boot manager that requires the configuration
+of the boot made in 2 steps.
+
+Apply the boot configuration set at configureBoot.
+
+=end classdoc
+=cut
+
+sub applyBootConfiguration {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         optional => { 'erollback' => undef, 'remove' => 0 });
+
+    if ($args{remove}) {
+        # Apply the dhcpd configuration as the database transction
+        # has been commited since the configuration changes at unconfigureNode.
+        $log->info("Apply dhcp configuration");
+        EEntity->new(entity => $self->dhcp_component)->applyConfiguration();
+    }
+
+    # Apply dhcp and tftp configuration on the deployment server
+    my @apply = map { EEntity->new(entity => $_) } ($self->system_component, $self->dhcp_component);
+    for my $component (@apply) {
+        $component->applyConfiguration(tags => [ "kanopya::deployment::deploynode" ])
+    }
+}
+
+
+=pod
+=begin classdoc
+
 Generate the boot configuration.
 
 =end classdoc
@@ -491,10 +549,8 @@ sub _generateBootConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'options', 'container_access',
-                                       'boot_policy', 'deploy_on_disk' ],
-                         optional => { 'kernel_id' => undef,
-                                       'erollback' => undef });
+                         required => [ 'node', 'container_access', 'boot_policy', 'deploy_on_disk' ],
+                         optional => { 'kernel_id' => undef, 'erollback' => undef });
 
     my $kernel_version = undef;
 
@@ -577,7 +633,7 @@ sub _generateBootConf {
                 ip            => $args{container_access}->container_access_ip,
                 port          => $args{container_access}->container_access_port,
                 lun           => "lun-" . $lun_number,
-                mount_opts    => $args{options},
+                mount_opts    => "defaults",
                 mounts_iscsi  => [],
                 additional_devices => "",
             };
@@ -606,11 +662,9 @@ Generate the PXE configuration.
 sub _generatePXEConf {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     =>\%args,
-        required => [ 'node', 'container_access', 'boot_policy' ],
-        optional => { 'kernel_id' => undef, 'kernel_version' => undef, 'erollback' => undef }
-    );
+    General::checkParams(args     =>\%args,
+                         required => [ 'node', 'container_access', 'boot_policy' ],
+                         optional => { 'kernel_id' => undef, 'kernel_version' => undef });
 
     my $kernel_id = $args{kernel_id} ? $args{kernel_id}: $args{node}->host->kernel_id;
     my $kernel_version = $args{kernel_version} or Entity::Kernel->get(id => $kernel_id)->kernel_version;

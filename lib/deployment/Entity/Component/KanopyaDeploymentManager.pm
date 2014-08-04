@@ -32,8 +32,9 @@ It deploy diskless or on local disk nodes, install and configure the requested c
 =cut
 
 package Entity::Component::KanopyaDeploymentManager;
-use base Entity::Component;
-use base Manager::DeploymentManager;
+use parent Entity::Component;
+use parent Manager::DeploymentManager;
+use parent Manager::BootManager;
 
 use strict;
 use warnings;
@@ -136,6 +137,8 @@ Use the executor to run the operation AddCluster.
 @optional workflow in which to embed the deployment operation
 @optional deploy_on_disk activate the on disk deployment
 
+@see <package>Manager::DeploymentManager</package>
+
 =end classdoc
 =cut
 
@@ -150,16 +153,17 @@ sub deployNode {
     $args{context}->{deployment_manager} = $self;
     return $self->executor_component->run(
                name     => 'DeployNode',
-               workflow => $args{workflow},
+               workflow => delete $args{workflow},
                params => {
                    context => {
                        deployment_manager => $self,
-                       node               => $args{node},
-                       systemimage        => $args{systemimage},
+                       node               => delete $args{node},
+                       systemimage        => delete $args{systemimage},
                    },
-                   boot_policy    => $args{boot_policy},
-                   deploy_on_disk => $args{deploy_on_disk},
-                   kernel_id      => $args{kernel_id},
+                   %args,
+                   # boot_policy    => $args{boot_policy},
+                   # deploy_on_disk => $args{deploy_on_disk},
+                   # kernel_id      => $args{kernel_id},
                }
            );
 }
@@ -174,6 +178,8 @@ Use the executor to run the operation ReleaseNode.
 
 @optional workflow in which to embed the deployment operation
 
+@see <package>Manager::DeploymentManager</package>
+
 =end classdoc
 =cut
 
@@ -187,14 +193,58 @@ sub releaseNode {
     $args{context}->{deployment_manager} = $self;
     return $self->executor_component->run(
                name     => 'ReleaseNode',
-               workflow => $args{workflow},
+               workflow => delete $args{workflow},
                params   => {
                    context => {
                        deployment_manager => $self,
-                       node               => $args{node},
+                       node               => delete $args{node},
                    },
-               }
+               },
+               %args,
            );
+}
+
+
+=pod
+=begin classdoc
+
+Do the required configuration/actions to provides the boot mechanism for the node.
+
+@see <package>Manager::BootManager</package>
+
+=end classdoc
+=cut
+
+sub configureBoot {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "node", "systemimage", "boot_policy" ]);
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+=begin classdoc
+
+Workaround for the native HCM boot manager that requires the configuration
+of the boot made in 2 steps.
+
+Apply the boot configuration set at configureBoot
+
+@see <package>Manager::BootManager</package>
+
+=end classdoc
+=cut
+
+sub applyBootConfiguration {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "node", "systemimage", "boot_policy" ]);
+
+    throw Kanopya::Exception::NotImplemented();
 }
 
 1;
