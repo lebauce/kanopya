@@ -29,8 +29,14 @@ use Entity::Billinglimit;
 use Retriever;
 
 use List::Util qw[min max];
-use Set::IntervalTree;
 use Text::CSV;
+
+eval {
+    require Set::IntervalTree;
+};
+if ($@) {
+    warn("Can locate RRDTool::OO, billing management will be unavailable...");
+}
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;

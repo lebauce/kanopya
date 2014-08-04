@@ -35,14 +35,18 @@ use warnings;
 use General;
 use Data::Dumper;
 use Kanopya::Config;
-use RRDTool::OO;
 
 use TryCatch;
-my $err;
-
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("timedata");
+
+eval {
+    require RRDTool::OO;
+};
+if ($@) {
+    warn("Can locate RRDTool::OO, monitoring data storage will be unavailable...");
+}
+
 
 my $dir    = '/var/cache/kanopya/monitor/';
 my $rrd    = '/usr/bin/rrdtool';
