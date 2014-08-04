@@ -205,7 +205,7 @@ sub fetchTimeDataStore {
     my $step = $rrdoo->{fetch_time_step};
 
     my @timestamps = map {$start_time + $_ * $step} (0..scalar @$data - 1);
-    my @values = map {pop $_} @$data;
+    my @values = map {pop @{$_}} @$data;
 
     while ($timestamps[-1] > $end) {
         pop @values;
