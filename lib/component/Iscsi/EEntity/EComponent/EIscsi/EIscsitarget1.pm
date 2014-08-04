@@ -352,11 +352,11 @@ sub generate {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     IscsiPortal->findOrCreate(
         iscsi_id          => $self->id,
-        iscsi_portal_ip   => $args{host}->adminIp,
+        iscsi_portal_ip   => $args{node}->adminIp,
         iscsi_portal_port => 3260
     );
 }

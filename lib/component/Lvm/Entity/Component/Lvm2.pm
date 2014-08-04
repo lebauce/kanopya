@@ -107,7 +107,7 @@ sub checkDiskManagerParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "vg_id", "systemimage_size" ]);
+    General::checkParams(args => \%args, required => [ "vg_id" ]);
 }
 
 

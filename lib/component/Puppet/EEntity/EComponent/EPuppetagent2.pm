@@ -93,9 +93,9 @@ sub configureNode {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    $self->applyConfiguration(nodes => [ $args{host}->node ]);
+    $self->applyConfiguration(nodes => [ $args{node} ]);
 }
 
 sub postStopNode {

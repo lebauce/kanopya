@@ -132,13 +132,13 @@ sub remove {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     my @components = $self->getComponents(category => "all", order_by => "priority");
 
     $log->info('Processing cluster components configuration for this node');
     foreach my $component (@components) {
-        EEntity->new(entity => $component)->postStartNode(host      => $args{host},
+        EEntity->new(entity => $component)->postStartNode(node      => $args{node},
                                                           erollback => $args{erollback});
     }
 }
@@ -146,12 +146,12 @@ sub postStartNode {
 sub readyNodeAddition {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     # Ask to all cluster component if they are ready for node addition.
     my @components = $self->getComponents(category => "all");
     foreach my $component (map { EEntity->new(entity => $_) } @components) {
-        if (! $component->readyNodeAddition(host_id => $args{host}->id)) {
+        if (! $component->readyNodeAddition(node => $args{node})) {
             $log->info("Component " . $component->label . " not ready for node addition");
             return 0;
         }

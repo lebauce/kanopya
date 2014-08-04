@@ -71,7 +71,7 @@ sub configureNode {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     for my $ehost (map { EEntity->new(entity => $_->host) } @{ $self->getActiveNodes() }) {
         $self->generateConfiguration(host => $ehost);

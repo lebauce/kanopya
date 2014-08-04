@@ -360,7 +360,8 @@ Opennebula depends on its virtual machines managers.
 sub getDependentComponents {
     my ($self, %args) = @_;
 
-    return $self->vmms;
+    my @vmms = $self->vmms;
+    return \@vmms;
 }
 
 sub getTemplateDataOned {

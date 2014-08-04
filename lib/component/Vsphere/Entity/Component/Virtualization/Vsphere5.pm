@@ -939,7 +939,6 @@ sub registerVm {
                 cluster_basehostname   => 'vsphere-registered-vm' . $vm_view->summary->vm->value,
                 cluster_nameserver1    => '127.0.0.1',
                 cluster_nameserver2    => '127.0.0.1',
-                cluster_boot_policy    => '',
                 owner_id               => $admin_user->id,
             );
 

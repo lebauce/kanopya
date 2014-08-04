@@ -58,17 +58,11 @@ sub createDisk {
     my ($self,%args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "name", "size", "cluster" ]);
-
-    my $diskmanagerparams   = $args{cluster}->getManagerParameters(manager_type => 'DiskManager');
-    my $exportmanagerparams = $args{cluster}->getManagerParameters(manager_type => 'ExportManager');
-
-    $args{disk_type}           = $diskmanagerparams->{export_type} || 'iSCSI';
-    $args{repository}          = $exportmanagerparams->{repository};
+                         required => [ "name", "size" ],
+                         optional => { "export_type" => "iSCSI" });
 
     if (defined $args{disk_type} && $args{disk_type} eq 'NFS') {
-        General::checkParams(args     => \%args,
-                             required => [ 'repository' ]
+        General::checkParams(args => \%args, required => [ 'repository' ]
         );
     }
 
@@ -203,7 +197,7 @@ sub getLunId {
 sub postStartNode {
     my ($self , %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;

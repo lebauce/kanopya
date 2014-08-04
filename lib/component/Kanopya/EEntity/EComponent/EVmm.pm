@@ -28,9 +28,9 @@ my $errmsg;
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    $self->iaas->registerHypervisor(host => $args{host});
+    $self->iaas->registerHypervisor(host => $args{node}->host);
 }
 
 sub stopNode {
