@@ -358,15 +358,22 @@ sub checkConfiguration {
 
     General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
-    for my $component (@{ $self->getDependentComponents() }) {
-        $log->debug("Checking dependency for related component $component");
-        if (scalar(grep { $component->id == $_->id } @{ $args{ignore} }) == 0) {
-            $self->checkDependency(component => $component);
-        }
-        else {
-            $log->debug("Ignore the check of the dependent component $component");
+    try {
+        $log->debug("Checking dependency for related components of " . $self->label);
+        for my $component (@{ $self->getDependentComponents() }) {
+            $log->debug("Checking dependency for related component $component");
+            if (scalar(grep { $component->id == $_->id } @{ $args{ignore} }) == 0) {
+                $self->checkDependency(component => $component);
+            }
+            else {
+                $log->debug("Ignore the check of the dependent component $component");
+            }
         }
     }
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => "$err");
+    }
+
 }
 
 
@@ -721,6 +728,23 @@ sub paramPresets {
             return {};
         }
     }
+}
+
+
+=pod
+=begin classdoc
+
+Implemented in concrete components classes, this method should qurry
+the correponding midelware to register available ressources, options,
+exsting infrastructure managed by the component.
+
+=end classdoc
+=cut
+
+sub synchronize {
+    my ($self, @args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
 }
 
 
