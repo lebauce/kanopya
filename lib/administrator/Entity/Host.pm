@@ -481,13 +481,33 @@ sub removeHarddisk {
 sub activate{
     my $self = shift;
 
-    return $self->host_manager->activateHost(host => $self);
+    # check if host is not active
+    if ($self->active) {
+        throw Kanopya::Exception::Internal(error => "Host <" . $self->label. "> is already active");
+    }
+
+    $self->active(1);
+
+    $log->info("Host <" . $self->label . "> is now active");
 }
 
 sub deactivate{
     my $self = shift;
 
-    return $self->host_manager->deactivateHost(host => $self);
+    # Check if host is not active
+    if (not $self->active) {
+        throw Kanopya::Exception::Internal(error => "Host <" . $self->label . "> is not active");
+    }
+
+    # Check if host is used as a node
+    if ($self->node) {
+        throw Kanopya::Exception::Internal(error => "Host <" . $self->label . "> is a node");
+    }
+
+    # set host active in db
+    $self->active(0);
+
+    $log->info("Host <" . $self->label . "> deactivated");
 }
 
 =pod
