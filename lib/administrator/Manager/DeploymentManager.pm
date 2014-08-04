@@ -37,7 +37,16 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-sub methods { return {}; }
+sub methods {
+    return {
+        deployNode => {
+            description => 'deploy a node from given system image.',
+        },
+        releaseNode => {
+            description => 'remove the node from the deployment manager',
+        },
+    };
+}
 
 
 =pod
