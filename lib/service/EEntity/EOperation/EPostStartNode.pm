@@ -61,7 +61,7 @@ my $errmsg;
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
+    General::checkParams(args => $self->{context}, required => [ "cluster", "node" ]);
 }
 
 
@@ -76,7 +76,7 @@ Configure the component as the new node is up.
 sub execute {
     my ($self, %args) = @_;
 
-    $self->{context}->{cluster}->postStartNode(host      => $self->{context}->{host},
+    $self->{context}->{cluster}->postStartNode(node      => $self->{context}->{node},
                                                erollback => $self->{erollback});
 
     eval {
@@ -94,16 +94,16 @@ sub execute {
         }
     }
 
-    $self->{context}->{host}->postStart();
+    EEntity->new(entity => $self->{context}->{node}->host)->postStart();
 
     # Update the user quota on ram and cpu
     $self->{context}->{cluster}->owner->consumeQuota(
         resource => 'ram',
-        amount   => $self->{context}->{host}->host_ram,
+        amount   => $self->{context}->{node}->host->host_ram,
     );
     $self->{context}->{cluster}->owner->consumeQuota(
         resource => 'cpu',
-        amount   => $self->{context}->{host}->host_core,
+        amount   => $self->{context}->{node}->host->host_core,
     );
 }
 
@@ -152,7 +152,7 @@ sub finish {
         delete $self->{context}->{host_manager_sp};
     }
 
-    $self->{context}->{host}->removeState(consumer => $self->workflow);
+    $self->{context}->{node}->host->removeState(consumer => $self->workflow);
 
     # Add state to hypervisor if defined
     if (defined $self->{context}->{hypervisor}) {

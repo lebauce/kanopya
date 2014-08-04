@@ -78,12 +78,6 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 0
     },
-    cluster_boot_policy => {
-        label        => 'Boot policy',
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_editable  => 0
-    },
     cluster_si_persistent => {
         pattern      => '^(0|1)$',
         is_mandatory => 1,
@@ -240,7 +234,7 @@ Example of CCP:
                 ram => 1024,
             },
         },
-        disk_manager => { ... },
+        storage_manager => { ... },
     },
     policies => {
         hosting => 45,
@@ -344,7 +338,7 @@ sub buildInstantiationParams {
     my $confpattern = $class->buildConfigurationPattern(%args);
 
     General::checkParams(args => $confpattern, required => [ 'managers' ]);
-    General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
+    General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'storage_manager' ]);
 
     my $composite_params;
     for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
@@ -416,8 +410,10 @@ sub checkConfigurationPattern {
             if (defined $manager_def->{manager_id}) {
                 my $manager = Entity->get(id => $manager_def->{manager_id});
 
-                $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
-                                             manager_params => $manager_def->{manager_params});
+                $manager_def->{manager_params} = $manager->checkManagerParams(
+                                                     manager_type   => $manager_def->{manager_type},
+                                                     manager_params => $manager_def->{manager_params}
+                                                 );
             }
         }
 
@@ -513,7 +509,7 @@ sub configureManagers {
         $args{managers}->{deployment_manager} = { manager_id   => $deployment_manager->id,
                                                   manager_type => "DeploymentManager" };
 
-        for my $manager (values %{$args{managers}}) {
+        for my $manager (values %{ $args{managers} }) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
             eval {
@@ -547,40 +543,6 @@ sub configureManagers {
                                             override     => 1);
             }
         }
-    }
-
-    my $disk_manager   = $self->getManager(manager_type => 'DiskManager');
-    my $export_manager = eval { $self->getManager(manager_type => 'ExportManager') };
-
-    # If the export manager exists, deduce the boot policy
-    if(not ($export_manager and $self->cluster_boot_policy)) {
-        if ($export_manager) {
-            my $bootpolicy = $disk_manager->getBootPolicyFromExportManager(export_manager => $export_manager);
-            $self->setAttr(name => 'cluster_boot_policy', value => $bootpolicy, save => 1);
-        }
-        # Else use the boot policy to deduce the export manager to use
-        else {
-            $export_manager = $disk_manager->getExportManagerFromBootPolicy(
-                                  boot_policy => $self->cluster_boot_policy
-                              );
-
-            $self->addManager(manager_id => $export_manager->id, manager_type => "ExportManager");
-        }
-    }
-
-    # Get export manager parameter related to si shared value.
-    my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => 0
-                         );
-
-    # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
-    #       but there will be export manager params consitency problem if policies are updated.
-    if ($readonly_param) {
-        $self->addManagerParameter(
-            manager_type => 'ExportManager',
-            name         => $readonly_param->{name},
-            value        => $readonly_param->{value}
-        );
     }
 }
 

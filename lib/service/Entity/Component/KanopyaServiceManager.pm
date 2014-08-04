@@ -219,8 +219,7 @@ sub addNode {
                                service_manager => $self,
                                cluster         => $args{service},
                                host_manager    => $args{service}->getManager(manager_type => 'HostManager'),
-                               disk_manager    => $args{service}->getManager(manager_type => 'DiskManager'),
-                               export_manager  => $args{service}->getManager(manager_type => 'ExportManager'),
+                               storage_manager => $args{service}->getManager(manager_type => 'StorageManager'),
                            },
                            %$components_params
                        }

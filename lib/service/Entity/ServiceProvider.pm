@@ -496,8 +496,8 @@ sub getManagerParameters {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = $self->findRelated(filters => [ 'service_provider_managers' ],
-                                             custom  => { category => $args{manager_type} });
+    my $cluster_manager = $self->find(related => "service_provider_managers",
+                                      custom  => { category => $args{manager_type} });
 
     return $cluster_manager->getParams();
 }

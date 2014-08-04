@@ -52,10 +52,9 @@ my $errmsg;
 =pod
 =begin classdoc
 
-@param cluster        the cluster to add node
-@param host_manager   the host manager to get a new free host
-@param disk_manager   the disk manager to create the disk
-@param export_manager the export manager to export the disk
+@param cluster         the cluster to add node
+@param host_manager    the host manager to get a new free host
+@param storage_manager the storage manager to create the system image
 
 =end classdoc
 =cut
@@ -65,7 +64,7 @@ sub check {
 
     General::checkParams(args     => $self->{context},
                          required => [ "service_manager", "cluster", "host_manager",
-                                       "disk_manager", "export_manager" ],
+                                       "storage_manager" ],
                          optional => { "forced_host" => undef });
 
     # TODO: Move this virtual machine specific code to the host manager
@@ -98,8 +97,7 @@ sub prepare {
 
     # Ask to the manager if we can use them
     $self->{context}->{host_manager}->increaseConsumers();
-    $self->{context}->{disk_manager}->increaseConsumers();
-    $self->{context}->{export_manager}->increaseConsumers();
+    $self->{context}->{storage_manager}->increaseConsumers();
 
     # $self->{params}->{needhypervisor} comes from the case of automatic hypervisor scaleout when
     # infrastructure needs more space
@@ -296,8 +294,8 @@ sub execute {
         my @notavailable;
         for my $component_type_id (@{ $self->{params}->{component_types} }) {
             eval {
-                $self->{context}->{cluster}->findRelated(
-                    filters => [ 'components' ],
+                $self->{context}->{cluster}->find(
+                    related => 'components',
                     hash    => { 'component_type.component_type_id' => $component_type_id }
                 );
             };
@@ -332,12 +330,10 @@ sub execute {
     }
 
     # Check service billing limits
-    my $host_metrics = {
+    $self->{context}->{cluster}->checkBillingLimits(metrics => {
         ram => $self->{context}->{host}->host_ram,
-        cpu => $self->{context}->{host}->host_core,
-    };
-
-    $self->{context}->{cluster}->checkBillingLimits(metrics => $host_metrics);
+        cpu => $self->{context}->{host}->host_core
+    });
 
     # Check the user quota on ram and cpu
     $self->{context}->{cluster}->owner->canConsumeQuota(resource => 'ram',
@@ -345,111 +341,69 @@ sub execute {
     $self->{context}->{cluster}->owner->canConsumeQuota(resource => 'cpu',
                                                         amount   => $self->{context}->{host}->host_core);
 
-    my $createdisk_params   = $self->{context}->{cluster}->getManagerParameters(manager_type => 'DiskManager');
-    my $createexport_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'ExportManager');
-
     # Check for existing systemimage for this node.
-    my $existing_image;
     my $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
                            $self->{params}->{node_number};
-    eval {
-        $existing_image = Entity::Systemimage->find(hash => { systemimage_name => $systemimage_name });
-    };
 
     # If systemimage context defined, force to use it.
     # If systemimage already exist for this node, use it.
-    if (not $self->{context}->{systemimage}) {
-        if ($existing_image) {
+    # Else create a new system image from the masterimage
+    if (! defined $self->{context}->{systemimage}) {
+        try {
+            $self->{context}->{systemimage} = EEntity->new(entity => Entity::Systemimage->find(hash => {
+                                                  systemimage_name => $systemimage_name
+                                              }));
             $log->info("Using existing systemimage instance <$systemimage_name>");
-            $self->{context}->{systemimage} = EEntity->new(data => $existing_image);
         }
-        # Else if it is the first node, or the cluster si policy is dedicated, create a new one.
-        else {
+        catch {
             $log->info("A new systemimage instance <$systemimage_name> must be created");
 
-            my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number}  .' in cluster ' .
-                                   $self->{context}->{cluster}->cluster_name . '.';
+            my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number} .
+                                   ' in cluster ' . $self->{context}->{cluster}->cluster_name . '.';
 
-            $self->{params}->{create_systemimage} = 1;
-            $self->{context}->{systemimage} = EEntity->new(data => Entity::Systemimage->new(
-                                                  systemimage_name    => $systemimage_name,
-                                                  systemimage_desc    => $systemimage_desc,
-                                              ));
+            # Retrieve the storage manager parameters from the cluster
+            my $storage_params = $self->{context}->{cluster}->getManagerParameters(
+                                     manager_type => 'StorageManager'
+                                 );
+
+            $self->{context}->{systemimage}
+                = $self->{context}->{storage_manager}->createSystemImage(
+                      systemimage_name => $systemimage_name,
+                      systemimage_desc => $systemimage_desc,
+                      masterimage      => $self->{context}->{cluster}->masterimage,
+                      erollback        => $self->{erollback},
+                      %{ $storage_params }
+                  );
         }
     }
 
-    # Create system image for node if required.
-    if ($self->{params}->{create_systemimage} and $self->{context}->{cluster}->masterimage) {
-        # Creation of the device based on distribution device
-        my $container = $self->{context}->{disk_manager}->createDisk(
-                            name       => $self->{context}->{systemimage}->systemimage_name,
-                            size       => delete $createdisk_params->{systemimage_size},
-                            # TODO: get this value from masterimage attrs.
-                            filesystem => 'ext3',
-                            erollback  => $self->{erollback},
-                            cluster    => $self->{context}->{cluster},
-                            %{ $createdisk_params }
-                        );
+    # Define a hostname
+    my $hostname = $self->{context}->{cluster}->getNodeHostname(
+                       node_number => $self->{params}->{node_number}
+                   );
 
-        $log->debug('Container creation for new systemimage');
+    # Register the node in the cluster
+    my $params = { host        => $self->{context}->{host},
+                   systemimage => $self->{context}->{systemimage},
+                   number      => $self->{params}->{node_number},
+                   hostname    => $hostname };
 
-        # Create a temporary local container to access to the masterimage file.
-        my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
-                                   container_name       => $self->{context}->{cluster}->masterimage->masterimage_name,
-                                   container_size       => $self->{context}->{cluster}->masterimage->masterimage_size,
-                                   # TODO: get this value from masterimage attrs.
-                                   container_filesystem => 'ext3',
-                                   container_device     => $self->{context}->{cluster}->masterimage->masterimage_file,
-                               ));
-
-        # Copy the masterimage container contents to the new container
-        $master_container->copy(dest      => $container,
-                                econtext  => $self->getEContext,
-                                erollback => $self->{erollback});
-
-        # Remove the temporary container
-        $master_container->remove();
-
-        foreach my $comp ($self->{context}->{cluster}->masterimage->component_types) {
-            $self->{context}->{systemimage}->installedComponentLinkCreation(component_type_id => $comp->id);
-        }
-        $log->info('System image <' . $self->{context}->{systemimage}->systemimage_name . '> creation complete');
-
-        # Add the created container to the export manager params
-        $createexport_params->{container} = $container;
+    # Install specified components on the node
+    if ($self->{params}->{component_types}) {
+        $params->{components}
+            = $self->{context}->{cluster}->search(
+                  related => 'components',
+                  hash    => {
+                      'component_type.component_type_id' => $self->{params}->{component_types}
+                  }
+              );
     }
+    $self->{context}->{node} = $self->{context}->{cluster}->registerNode(%$params);
 
-    # Export system image for node if required.
-    if (not $self->{context}->{systemimage}->active) {
-        # Creation of the export to access to the system image container
-        my @accesses;
-        my $portals = defined $createexport_params->{iscsi_portals} ?
-                          delete $createexport_params->{iscsi_portals} : [ 0 ];
-        for my $portal_id (@{ $portals }) {
-            try {
-                push @accesses, $self->{context}->{export_manager}->createExport(
-                                    export_name  => $self->{context}->{systemimage}->systemimage_name,
-                                    iscsi_portal => $portal_id,
-                                    erollback    => $self->{erollback},
-                                    %{ $createexport_params }
-                                );
-            }
-            catch ($err) {
-                if (scalar(@accesses)) {
-                    $log->error("Exporting systemimage with portal <$portal_id> failed, but at least one export for " .
-                                "systemimage " . $self->{context}->{systemimage}->label . " succeeded, continuing...");
-                }
-                else {
-                    $err->rethrow();
-                }
-            }
+    # Create the node working directory where generated files will be stored.
+    my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $hostname;
+    $self->getEContext->execute(command => "mkdir -p $dir");
 
-        }
-
-        # Activate the system by linking it to the container accesses
-        $self->{context}->{systemimage}->activate(container_accesses => \@accesses,
-                                                  erollback          => $self->{erollback});
-    }
 }
 
 
@@ -475,8 +429,7 @@ sub finish {
 
     # Release managers
     $self->{context}->{host_manager}->decreaseConsumers();
-    $self->{context}->{disk_manager}->decreaseConsumers();
-    $self->{context}->{export_manager}->decreaseConsumers();
+    $self->{context}->{storage_manager}->decreaseConsumers();
 }
 
 
@@ -494,8 +447,7 @@ sub cancel {
     # If the managers has not been released at finish, decrease at cancel
     if ($self->state ne 'succeeded') {
         $self->{context}->{host_manager}->decreaseConsumers();
-        $self->{context}->{disk_manager}->decreaseConsumers();
-        $self->{context}->{export_manager}->decreaseConsumers();
+        $self->{context}->{storage_manager}->decreaseConsumers();
     }
 
     if (defined $self->{params}->{needhypervisor}) {
@@ -530,6 +482,13 @@ sub cancel {
         $self->{context}->{vm_cluster}->removeState(consumer => $self->workflow);
     }
 
+    if (defined $self->{context}->{host}->node) {
+        my $dir = $self->_executor->getConf->{clusters_directory};
+        $dir .= '/' . $self->{context}->{host}->node->node_hostname;
+        $self->getEContext->execute(command => "rm -r $dir");
+
+        $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
+    }
 
     if (defined $self->{context}->{host}) {
         eval {

@@ -71,7 +71,7 @@ sub check {
 
     # Check required params within managers
     General::checkParams(args     => $self->{params}->{managers},
-                         required => [ "host_manager", "disk_manager" ]);
+                         required => [ "host_manager", "storage_manager" ]);
 }
 
 
@@ -89,14 +89,6 @@ sub execute {
     if (defined $self->{params}->{cluster_params}->{kernel_id} and
         not $self->{params}->{cluster_params}->{kernel_id}) {
         delete $self->{params}->{cluster_params}->{kernel_id};
-    }
-
-    # Check the boot policy or the export manager
-    if (not ($self->{params}->{cluster_params}->{cluster_boot_policy} or
-             $self->{params}->{managers}->{export_manager}->{manager_id})) {
-        throw Kanopya::Exception::Internal::WrongValue(
-                  error => "One must specify either boot_policy or export_manager_id."
-              );
     }
 
     # Instantiate the cluster
