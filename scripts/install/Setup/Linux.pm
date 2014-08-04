@@ -304,7 +304,8 @@ Test volume group validity
 
 sub _validate_vg {
     my ($self, $value) = @_;
-    my @vgs = _get_vgs();
+
+    my @vgs = (_get_vgs(), "none");
     for(@vgs) {
         if($value eq $_) {
             return { value => $value };

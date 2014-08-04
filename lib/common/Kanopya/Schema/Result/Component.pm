@@ -1167,6 +1167,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 systemimages
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Systemimage>
+
+=cut
+
+__PACKAGE__->has_many(
+  "systemimages",
+  "Kanopya::Schema::Result::Systemimage",
+  { "foreign.storage_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 tftpd
 
 Type: might_have
@@ -1253,8 +1268,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g0Ll8shgCu8U7fYKYI0jVw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-07-30 17:09:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4hnBKRukxyXKEGoATrh8SQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

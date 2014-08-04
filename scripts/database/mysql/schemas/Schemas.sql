@@ -136,7 +136,6 @@ CREATE TABLE `cluster` (
   `cluster_min_node` int(2) unsigned NOT NULL,
   `cluster_max_node` int(2) unsigned NOT NULL,
   `cluster_priority` int(1) unsigned NOT NULL,
-  `cluster_boot_policy` char(32) NOT NULL,
   `cluster_si_persistent` int(1) unsigned NOT NULL DEFAULT 0,
   `cluster_domainname` char(64) NOT NULL,
   `cluster_nameserver1` char(15) NOT NULL,
@@ -727,25 +726,16 @@ on alert (alert_message(255), trigger_entity_id, alert_active);
 
 CREATE TABLE `systemimage` (
   `systemimage_id` int(8) unsigned NOT NULL,
+  `storage_manager_id` int(8) unsigned DEFAULT NULL,
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`systemimage_name`)
+  UNIQUE KEY (`systemimage_name`),
+  FOREIGN KEY (`storage_manager_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `systemimage_container_access`
--- Entity::SystemimageContainerAccess link class
-
-CREATE TABLE `systemimage_container_access` (
-  `systemimage_id` int(8) unsigned NOT NULL,
-  `container_access_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`systemimage_id`, `container_access_id`),
-  FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- network tables
 

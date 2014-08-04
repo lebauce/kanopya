@@ -20,6 +20,10 @@
             "policy_name"       : "Kanopya LVM disk exported via ISCSI",
             "policy_desc"       : "Kanopya image store for PXE boot via ISCSI",
             "policy_type"       : "storage",
+            "storage_manager_id"   : {
+                "class_type" : "Entity::Component::HCMStorageManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "disk_manager_id"   : {
                 "class_type" : "Entity::Component::Lvm2",
                 "service_provider.cluster.cluster_name" : "Kanopya"

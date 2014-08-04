@@ -93,6 +93,7 @@ my @classes = (
     'Entity::Component::KanopyaStackBuilder',
     'Entity::Component::KanopyaDeploymentManager',
     'Entity::Component::KanopyaServiceManager',
+    'Entity::Component::HCMStorageManager',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -658,10 +659,7 @@ sub registerOperations {
     my %args = @_;
 
     my $operations = [
-        [ 'AddHost', 'Activating host "[% host ? host : "n/a" %]"' ],
-        [ 'RemoveHost', 'Removing host [% host ? host : "n/a" %]' ],
-        [ 'ActivateHost', 'Activating host "[% host ? host : "n/a" %]"' ],
-        [ 'DeactivateHost', 'Desactivating host "[% host ? host : "n/a" %]"' ],
+        [ 'DummyOperation', 'Doing dummy job..."' ],
         [ 'AddCluster', 'Instanciating new service "[% cluster_params.cluster_name %]"' ],
         [ 'RemoveCluster', 'Removing service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'ActivateCluster', 'Activating service "[% cluster ? cluster : "n/a" %]"' ],
@@ -725,6 +723,7 @@ sub registerManagerCategories {
 
     my $managers = [
         'HostManager',
+        'StorageManager',
         'DiskManager',
         'ExportManager',
         'DeploymentManager',
@@ -1169,6 +1168,13 @@ sub registerComponents {
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
+            component_name         => 'HCMStorageManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'StorageManager' ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
             component_name         => 'KanopyaServiceManager',
             component_version      => 0,
             deployable             => 0,
@@ -1552,7 +1558,6 @@ sub registerKanopyaMaster {
                             cluster_min_node      => 1,
                             cluster_max_node      => 10,
                             cluster_priority      => 500,
-                            cluster_boot_policy   => Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
                             cluster_si_persistent => 0,
                             cluster_domainname    => $args{admin_domainname},
                             cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '8.8.8.8',
@@ -1598,6 +1603,12 @@ sub registerKanopyaMaster {
                 dhcp_component   => 'Dhcpd',
                 tftp_component   => 'Tftpd',
                 system_component => $distro,
+            }
+        },
+        'HCMStorageManager' => {
+            manager => 'StorageManager',
+            require => {
+                executor_component => 'KanopyaExecutor',
             }
         },
         'KanopyaAnomalyDetector' => {},
@@ -2129,7 +2140,6 @@ sub populate_workflow_def {
 
     # MaintenanceHypervisor workflow def
     my $flush_hypervisor_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
-    my $deactivate_host_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id;
     my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'HypervisorMaintenance',
         params => {
@@ -2143,7 +2153,7 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $flush_hypervisor_op_id, $deactivate_host_op_id ],
+        steps => [ $flush_hypervisor_op_id ],
         description => "Putting hypervisor \"[% flushed_hypervisor %]\" in maintenance."
     );
 
