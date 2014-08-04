@@ -428,12 +428,12 @@ sub activate {
     my $self = shift;
 
     if (defined $self->ATTR_DEF->{active}) {
-        $self->setAttr(name => 'active', value => 1, save => 1);
-
-    } else {
-        $errmsg = "Entity->activate Entity ". ref($self) . " unable to activate !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        $self->active(1);
+    }
+    else {
+        throw Kanopya::Exception::Internal(
+                  error => "Unable to activate $self <" . $self->label . ">"
+              );
     }
 }
 
