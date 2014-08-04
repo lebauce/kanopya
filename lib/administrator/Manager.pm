@@ -82,23 +82,36 @@ sub checkManagerParams {
 
     $args{manager_params} = $args{manager_params} ? $args{manager_params} : {};
 
+    my $updated;
     if ($args{manager_type} eq 'HostManager') {
-        return $self->checkHostManagerParams(%{ $args{manager_params} });
+        $updated = $self->checkHostManagerParams(%{ $args{manager_params} });
     }
     elsif ($args{manager_type} eq 'DiskManager') {
-        return $self->checkDiskManagerParams(%{ $args{manager_params} });
+        $updated = $self->checkDiskManagerParams(%{ $args{manager_params} });
     }
     elsif ($args{manager_type} eq 'ExportManager') {
-        return $self->checkExportManagerParams(%{ $args{manager_params} });
+        $updated = $self->checkExportManagerParams(%{ $args{manager_params} });
+    }
+    elsif ($args{manager_type} eq 'StorageManager') {
+        $updated = $self->checkStorageManagerParams(%{ $args{manager_params} });
     }
     elsif ($args{manager_type} eq 'CollectorManager') {
-        return $self->checkCollectorManagerParams(%{ $args{manager_params} });
+        $updated = $self->checkCollectorManagerParams(%{ $args{manager_params} });
     }
     elsif ($args{manager_type} eq 'WorkflowManager') {
-        return $self->checkWorkflowManagerParams(%{ $args{manager_params} });
+        $updated = $self->checkWorkflowManagerParams(%{ $args{manager_params} });
     }
     elsif ($args{manager_type} eq 'NotificationManager') {
-        return $self->checkNotificationManagerParams(%{ $args{manager_params} });
+        $updated = $self->checkNotificationManagerParams(%{ $args{manager_params} });
+    }
+
+    if (ref($updated) eq "HASH") {
+        # The params has been updated/completed by the manager
+        return $updated;
+    }
+    else {
+        # Else return the original ones
+        return $args{manager_params};
     }
 }
 
