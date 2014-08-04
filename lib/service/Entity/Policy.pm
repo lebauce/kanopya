@@ -54,13 +54,11 @@ use warnings;
 use ParamPreset;
 
 use Clone qw(clone);
+use POSIX qw[strftime];
 use Hash::Merge;
-
 use TryCatch;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
-
-use POSIX qw[strftime];
 
 my $log = get_logger("");
 
@@ -495,6 +493,7 @@ sub getPatternFromParams {
             }
         }
     }
+
     return $pattern;
 }
 

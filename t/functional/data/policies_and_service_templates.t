@@ -27,6 +27,7 @@ use Entity::Policy::HostingPolicy;
 use Entity::Component::Physicalhoster0;
 use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
+use Entity::Component::HCMStorageManager;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -78,25 +79,27 @@ sub test_policies_merge {
 
     # Create a policy with presets containing arrays
     my $policy = Entity::Policy::StoragePolicy->new(
-                     policy_name       => "storage_policy_test",
-                     policy_type       => "storage",
-                     disk_manager_id   => Entity::Component::Lvm2->find()->id,
-                     vg_id             => 1,
-                     export_manager_id => Entity::Component::Iscsi::Iscsitarget1->find()->id,
-                     iscsi_portals     => [ 1 ]
+                     policy_name        => "storage_policy_test",
+                     policy_type        => "storage",
+                     storage_manager_id => Entity::Component::HCMStorageManager->find()->id,
+                     disk_manager_id    => Entity::Component::Lvm2->find()->id,
+                     vg_id              => 1,
+                     export_manager_id  => Entity::Component::Iscsi::Iscsitarget1->find()->id,
+                     iscsi_portals      => [ 1 ]
                  );
 
     my $params = Entity::ServiceProvider::Cluster->buildConfigurationPattern(
-                     policies          => ($policy),
-                     policy_type       => "storage",
-                     disk_manager_id   => Entity::Component::Lvm2->find()->id,
-                     vg_id             => 2,
-                     export_manager_id => Entity::Component::Iscsi::Iscsitarget1->find()->id,
-                     iscsi_portals     => [ 1 ]
+                     policies           => ($policy),
+                     policy_type        => "storage",
+                     storage_manager_id => Entity::Component::HCMStorageManager->find()->id,
+                     disk_manager_id    => Entity::Component::Lvm2->find()->id,
+                     vg_id              => 2,
+                     export_manager_id  => Entity::Component::Iscsi::Iscsitarget1->find()->id,
+                     iscsi_portals      => [ 1 ]
                  );
 
-    my @portals = @{ $params->{managers}->{export_manager}->{manager_params}->{iscsi_portals} };
-    my $vg_id = $params->{managers}->{disk_manager}->{manager_params}->{vg_id};
+    my @portals = @{ $params->{managers}->{storage_manager}->{manager_params}->{iscsi_portals} };
+    my $vg_id = $params->{managers}->{storage_manager}->{manager_params}->{vg_id};
     lives_ok {
         if (scalar(@portals) != 1 || (pop @portals) != 1) {
             die "Iscsiportals from the merged configuration pattern: " . Dumper(\@portals) .
@@ -126,6 +129,7 @@ sub test_service_template_json {
     my $service_template = Entity::ServiceTemplate->find();
     my @policies = $service_template->getPolicies();
     $attributes = Entity::ServiceTemplate->toJSON(params => { service_template_id => $service_template->id })->{attributes};
+
     lives_ok {
         for my $attr (grep { $_ =~ m/.*policy_id/ } keys $attributes) {
             if ("$attributes->{$attr}->{is_editable}" == "1") {

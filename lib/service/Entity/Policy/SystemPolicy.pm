@@ -38,7 +38,7 @@ use strict;
 use warnings;
 
 use Manager::HostManager;
-use Manager::DiskManager;
+use Manager::StorageManager;
 
 use Entity::Masterimage;
 use ClassType::ServiceProviderType;
@@ -175,7 +175,7 @@ sub getPolicyDef {
         = Manager::HostManager->getManagerParamsDef->{deploy_on_disk};
 
     $args{attributes}->{attributes}->{systemimage_size}
-        = Manager::DiskManager->getManagerParamsDef->{systemimage_size};
+        = Manager::StorageManager->getManagerParamsDef->{systemimage_size};
 
     $args{attributes}->{attributes}->{systemimage_size}->{is_mandatory}
         = defined $args{params}->{masterimage_id} ? 1 : 0;
@@ -219,8 +219,12 @@ sub getPatternFromParams {
         $pattern->{components} = \%components;
     }
     if (defined $args{params}->{systemimage_size}) {
-        $pattern->{managers}->{disk_manager}->{manager_params}->{systemimage_size}
+        $pattern->{managers}->{storage_manager}->{manager_params}->{systemimage_size}
             = delete $args{params}->{systemimage_size};
+    }
+    if (defined $args{params}->{boot_policy}) {
+        $pattern->{managers}->{storage_manager}->{manager_params}->{boot_policy}
+            = delete $args{params}->{boot_policy};
     }
     if (defined $args{params}->{deploy_on_disk}) {
         $pattern->{managers}->{host_manager}->{manager_params}->{deploy_on_disk}

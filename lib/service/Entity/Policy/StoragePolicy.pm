@@ -51,7 +51,7 @@ use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
 use constant POLICY_ATTR_DEF => {
-    disk_manager_id => {
+    storage_manager_id => {
         label        => "Storage type",
         type         => 'relation',
         relation     => 'single',
@@ -59,21 +59,11 @@ use constant POLICY_ATTR_DEF => {
         reload       => 1,
         is_mandatory => 1,
     },
-    export_manager_id => {
-        label        => "Access protocol",
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-        reload       => 1,
-        is_mandatory => 1,
-    }
 };
 
 use constant POLICY_SELECTOR_ATTR_DEF => {};
 
-use constant POLICY_SELECTOR_MAP => {
-    disk_manager_id     => [ 'export_manager_id' ]
-};
+use constant POLICY_SELECTOR_MAP => {};
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
@@ -103,33 +93,33 @@ sub getPolicyDef {
                          optional => { 'params' => {}, 'trigger' => undef });
 
     # Add the dynamic attributes to displayed
-    push @{ $args{attributes}->{displayed} }, 'disk_manager_id';
+    push @{ $args{attributes}->{displayed} }, 'storage_manager_id';
 
-    # Build the list of disk managers
+    # Build the list of storage managers
     my $manager_options = {};
-    for my $component (Entity::Component->search(custom => { category => 'DiskManager' })) {
+    for my $component (Entity::Component->search(custom => { category => 'StorageManager' })) {
         $manager_options->{$component->id} = $component->toJSON;
-        $manager_options->{$component->id}->{label} = $component->disk_type;
+        $manager_options->{$component->id}->{label} = $component->label;
     }
     my @diskmanageroptions = values %{$manager_options};
-    $args{attributes}->{attributes}->{disk_manager_id}->{options} = \@diskmanageroptions;
+    $args{attributes}->{attributes}->{storage_manager_id}->{options} = \@diskmanageroptions;
 
-    # If disk_manager_id defined but do not corresponding to a available value,
+    # If storage_manager_id defined but do not corresponding to a available value,
     # it is an old value, so delete it.
-    if (not $manager_options->{$args{params}->{disk_manager_id}}) {
-        delete $args{params}->{disk_manager_id};
+    if (not $manager_options->{$args{params}->{storage_manager_id}}) {
+        delete $args{params}->{storage_manager_id};
     }
     # If no disk_manager_id defined and and attr is mandatory, use the first one as value
-    if (! $args{params}->{disk_manager_id} && $args{set_mandatory}) {
-        $self->setFirstSelected(name       => 'disk_manager_id',
+    if (! $args{params}->{storage_manager_id} && $args{set_mandatory}) {
+        $self->setFirstSelected(name       => 'storage_manager_id',
                                 attributes => $args{attributes}->{attributes},
                                 params     => $args{params});
     }
 
-    if ($args{params}->{disk_manager_id}) {
-        # Get the disk manager params from the selected disk manager
-        my $diskmanager = Entity->get(id => $args{params}->{disk_manager_id});
-        my $managerparams = $diskmanager->getDiskManagerParams();
+    if ($args{params}->{storage_manager_id}) {
+        # Get the storage manager params from the selected storage manager
+        my $storagemanager = Entity->get(id => $args{params}->{storage_manager_id});
+        my $managerparams = $storagemanager->getStorageManagerParams();
         for my $attrname (keys %{$managerparams}) {
             $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
             # If no value defined in params, use the first one
@@ -140,55 +130,12 @@ sub getPolicyDef {
             }
             push @{ $args{attributes}->{displayed} }, $attrname;
         }
-
-        # Once the disk manager parameters added, handle the export manager and its params
-        push @{ $args{attributes}->{displayed} }, 'export_manager_id';
-
-        # Build the list of export manager usable for the disk manager
-        my $manager_options = {};
-        for my $component (@{ $diskmanager->getExportManagers }) {
-            $manager_options->{$component->id} = $component->toJSON;
-            $manager_options->{$component->id}->{label} = $component->export_type;
-        }
-        my @expmanageroptions = values %{$manager_options};
-        $args{attributes}->{attributes}->{export_manager_id}->{options} = \@expmanageroptions;
-
-        # TODO: factorize the code that handle the export manager as it is
-        #       the as the disk manager one.
-
-        # If export_manager_id defined but do not corresponding to a available value,
-        # it is an old value, so delete it.
-        if (not $manager_options->{$args{params}->{export_manager_id}}) {
-            delete $args{params}->{export_manager_id};
-        }
-        # If no export_manager_id defined and and attr is mandatory, use the first one as value
-        if (! $args{params}->{export_manager_id} and $args{set_mandatory}) {
-            $self->setFirstSelected(name       => 'export_manager_id',
-                                    attributes => $args{attributes}->{attributes},
-                                    params     => $args{params});
-        }
-
-        if ($args{params}->{export_manager_id}) {
-            # Get the export manager params from the selected export manager
-            my $exportmanager = Entity->get(id => $args{params}->{export_manager_id});
-            $managerparams = $exportmanager->getExportManagerParams(params => $args{params});
-            for my $attrname (keys %{$managerparams}) {
-                $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
-                # If no value defined in params, use the first one
-                if (! $args{params}->{$attrname} && $args{set_mandatory}) {
-                    $self->setFirstSelected(name       => $attrname,
-                                            attributes => $args{attributes}->{attributes},
-                                            params     => $args{params});
-                }
-                push @{ $args{attributes}->{displayed} }, $attrname;
-            }
-        }
     }
     # Remove possibly defined value of attributes that depends on disk_manager_id.
     # (It is probably a first implementation of the full generic version of
     # manager management in policies...)
     else {
-        for my $dependency (@{ $self->getPolicySelectorMap->{disk_manager_id} }) {
+        for my $dependency (@{ $self->getPolicySelectorMap->{storage_manager_id} }) {
             delete $args{params}->{$dependency};
         }
     }

@@ -105,6 +105,11 @@ sub createCluster {
     diag('Get physical hoster');
     my $physical_hoster = $kanopya_cluster->getHostManager();
 
+    diag('Retrieving HCM storage manager');
+    my $storage_manager = EEntity->new(
+                              entity => $kanopya_cluster->getComponent(name => "HCMStorageManager"),
+                          );
+
     diag('Retrieving LVM disk manager');
     my $disk_manager = EEntity->new(
                            entity => $kanopya_cluster->getComponent(name    => "Lvm",
@@ -173,25 +178,21 @@ sub createCluster {
         host_manager => {
             manager_id     => $physical_hoster->id,
             manager_type   => "HostManager",
-                manager_params => {
-                    cpu => 1,
-                    ram => 2*1024*1024,
-                },
-            },
-        disk_manager => {
-            manager_id     => $disk_manager->id,
-            manager_type   => "DiskManager",
             manager_params => {
-                vg_id => 1,
-                systemimage_size => 4 * 1024 * 1024 * 1024,
+                cpu => 1,
+                ram => 2*1024*1024,
             },
         },
-        export_manager => {
-            manager_id     => $export_manager->id,
-            manager_type   => "ExportManager",
+        storage_manager => {
+            manager_id     => $storage_manager->id,
+            manager_type   => "StorageManager",
             manager_params => {
-                iscsi_portals => \@iscsi_portal_ids,
-            }
+                disk_manager_id   => $disk_manager->id,
+                export_manager_id => $export_manager->id,
+                vg_id             => 1,
+                systemimage_size  => 4 * 1024 * 1024 * 1024,
+                iscsi_portals     => \@iscsi_portal_ids,
+            },
         },
     };
 
