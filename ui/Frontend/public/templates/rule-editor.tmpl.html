@@ -30,7 +30,7 @@
                     <tr>
                         <td>
                             <div class="condition level-0 backcolor-0">
-                                <div class="condition-line">
+                                <div class="condition-line" data-tree="1">
                                     <select class="function1">
                                         <option value="indicator" selected="selected">indicator</option>
                                         <option value="metric">metric</option>
@@ -39,12 +39,12 @@
                                             <option value="{{code}}">{{label}}</option>
                                         {{/statistic-function}}
                                     </select>
-                                    <select class="operand1">
+                                    <select class="operand1 condition-content">
                                         {{#indicator}}
                                             <option value="{{id}}">{{label}}</option>
                                         {{/indicator}}
                                     </select>
-                                    <select class="operator">
+                                    <select class="operator condition-content">
                                         <option value="=">=</option>
                                         <option value="!=">not =</option>
                                         <option value=">">></option>
@@ -61,8 +61,8 @@
                                             <option value="{{id}}">{{label}}</option>
                                         {{/statistic-function}}
                                     </select>
-                                    <input class="condition-value" type="text"/>
-                                    <select class="operand2 hidden">
+                                    <input class="condition-value condition-content" type="text"/>
+                                    <select class="operand2 condition-content hidden">
                                         {{#indicator}}
                                             <option value="{{id}}">{{label}}</option>
                                         {{/indicator}}

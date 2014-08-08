@@ -122,9 +122,13 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
     displayList();
 }
 
-function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
+function openRulesDialog(serviceProviderId, gridId, staticObject, action, formula) {
 
-    var dialogContainerId = 'rule-editor';
+    const dialogContainerId = 'rule-editor';
+    var conditionError = [];
+    conditionError[0] = 'Error 0';
+    conditionError[1] = 'Error 1';
+
     var dialogTitle;
     var conditionHtml = {};
     var actionHtml = {};
@@ -133,6 +137,8 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
     var metricData;
     var function1PreviousValue;
     var function2PreviousValue;
+
+    formula = formula || null;
 
     loadStatisticFunctionData();
 
@@ -239,9 +245,13 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
     }
 
     function openDialog() {
+
+        var element;
+
         initConditionBuilder();
         initActionBuilder();
         $('*').removeClass('cursor-wait');
+
         $('#' + dialogContainerId).dialog({
             resizable: false,
             modal: true,
@@ -261,9 +271,7 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
                     id: dialogContainerId + '-save-button',
                     text: 'Save',
                     click: function() {
-                        generateFormula();
-                        // closeDialog();
-                        // validateRule();
+                        saveRule();
                     }
                 }
             ],
@@ -277,7 +285,81 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             }
         });
 
-        addConditionGroup('#rule-conditions-builder', 0);
+var formula = {
+    'type': 'group',
+    'logic': 'OR',
+    'data': [
+        {
+            'type': 'line',
+            'data': {
+                'function1': 'indicator',
+                'operand1': 330,
+                'operator': '>',
+                'function2': 'value',
+                'operand2': 2
+            }
+        },
+        {
+            'type': 'group',
+            'logic': 'OR',
+            'data': [
+                {
+                    'type': 'line',
+                    'data': {
+                        'function1': 'metric',
+                        'operand1': 382,
+                        'operator': '>',
+                        'function2': 'value',
+                        'operand2': 4
+                    }
+                }
+            ]
+        },
+        {
+            'type': 'line',
+            'data': {
+                'function1': 'metric',
+                'operand1': 432,
+                'operator': '>',
+                'function2': 'value',
+                'operand2': 6
+            }
+        },
+        {
+            'type': 'group',
+            'logic': 'AND',
+            'data': [
+                {
+                    'type': 'line',
+                    'data': {
+                        'function1': 'min',
+                        'operand1': 350,
+                        'operator': '>',
+                        'function2': 'metric',
+                        'operand2': 432
+                    }
+                },
+                {
+                    'type': 'line',
+                    'data': {
+                        'function1': 'max',
+                        'operand1': 355,
+                        'operator': '>',
+                        'function2': 'indicator',
+                        'operand2': 350
+                    }
+                }
+            ]
+        }
+    ]
+};
+
+        element = $('#rule-conditions-builder');
+        addConditionGroup(element, 0);
+        if (formula !== null) {
+            element = element.children('.condition-group');
+            buildConditionGroup(element, 0, formula)
+        }
 
         $('#rule-actions-builder').find('.action-add').click(function() {
             addActionLine();
@@ -305,19 +387,30 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             .attr('class', 'action');
     }
 
-    function validateRule() {
-        $.getJSON(
-            '/api/anomaly',
-            {'related_metric_id': $('#metric').val()},
-            function(data) {
-                if (data.length > 0) {
-                    $('#message').addClass('error');
-                    $('#message').text('This service metric is already used.');
-                } else {
-                    createRule();
-                }
-            }
-        );
+    function saveRule() {
+
+        var formula = generateFormula();
+        console.debug('formula', formula);
+
+        if (checkRule(formula)) {
+            formula.string = formatFormula(formula.string);
+        }
+
+
+
+
+        // $.getJSON(
+        //     '/api/anomaly',
+        //     {'related_metric_id': $('#metric').val()},
+        //     function(data) {
+        //         if (data.length > 0) {
+        //             $('#message').addClass('error');
+        //             $('#message').text('This service metric is already used.');
+        //         } else {
+        //             createRule();
+        //         }
+        //     }
+        // );
     }
 
     function createRule() {
@@ -346,24 +439,21 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
 
     function addConditionGroup(rootElement, level) {
 
-        var tableElement, element;
-
-        if (typeof rootElement === 'string') {
-            rootElement = $(rootElement);
-        }
+        var groupElement, element;
 
         if (level > 0) {
             rootElement.append(conditionHtml.group);
         }
-        tableElement = rootElement.find('table');
 
-        element = tableElement.find('.condition');
+        groupElement = rootElement.children('.condition-group').last();
+        element = groupElement.find('.condition');
+
         if (level === 0) {
-            tableElement.find('.condition-remove-group').remove();
+            groupElement.find('.condition-remove-group').remove();
         } else {
             element.addClass('level-' + level + ' backcolor-' + (level % 4));
 
-            tableElement.find('.condition-remove-group').click(function () {
+            groupElement.find('.condition-remove-group').click(function () {
                 var element = $(this).closest('.condition-group');
                 var parentElement = element.parent();
                 element.remove();
@@ -372,14 +462,15 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             });
         }
         addConditionLine(element, (level > 0));
+        manageCondition(rootElement);
 
-        tableElement.find('.condition-add').click(function() {
-            var element = tableElement.find('.condition').first();
+        groupElement.find('.condition-add').click(function() {
+            var element = groupElement.find('.condition').first();
             addConditionLine(element, true);
         });
 
-        tableElement.find('.condition-add-group').click(function() {
-            var element = tableElement.find('.condition').first();
+        groupElement.find('.condition-add-group').click(function() {
+            var element = groupElement.find('.condition').first();
             addConditionGroup(element, level + 1);
         });
     }
@@ -413,6 +504,12 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
                     }
                 }
                 function1PreviousValue = $(this).val();
+
+                if ($(this).val() === 'indicator' || $(this).val() === 'metric') {
+                    $(this).removeClass('condition-content');
+                } else {
+                    $(this).addClass('condition-content');
+                }
             });
 
         element.children('.function2')
@@ -448,6 +545,12 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
                 if ($(this).val() !== 'value') {
                     function2PreviousValue = $(this).val();
                 }
+
+                if ($(this).val() === 'value' || $(this).val() === 'indicator' || $(this).val() === 'metric') {
+                    $(this).removeClass('condition-content');
+                } else {
+                    $(this).addClass('condition-content');
+                }
         });
 
         element.children('.condition-remove').click(function() {
@@ -472,6 +575,45 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
         } else {
             removeElement.removeClass('hidden');
         }
+    }
+
+    function buildConditionGroup(rootElement, level, groupObject) {
+
+        var element;
+
+        rootElement.find('.logic').first().val(groupObject.logic);
+        $.each(groupObject.data, function(index, obj) {
+            switch (obj.type) {
+                case 'line':
+                    if (index > 0) {
+                        rootElement.find('.condition-add').first().trigger('click');
+                    }
+                    element = rootElement.find('.condition').first().children('.condition-line').last();
+                    element.children('.function1')
+                        .val(obj.data.function1)
+                        .trigger('change');
+                    element.children('.operand1').val(obj.data.operand1);
+                    element.children('.operator').val(obj.data.operator);
+                    element.children('.function2')
+                        .val(obj.data.function2)
+                        .trigger('change');
+                    if (element.children('.function2').val() === 'value') {
+                        element.children('.condition-value').val(obj.data.operand2);
+                    } else {
+                        element.children('.operand2').val(obj.data.operand2);
+                    }
+                    break;
+
+                case 'group':
+                    if (index === 0) {
+                        rootElement.find('.condition-line').first().remove();
+                    }
+                    rootElement.find('.condition-add-group').first().trigger('click');
+                    element = rootElement.find('.condition').first().children('.condition-group').last();
+                    buildConditionGroup(element, level + 1, obj);
+                    break;
+            }
+        });
     }
 
     function addActionLine() {
@@ -506,29 +648,38 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
     }
 
     function generateFormula() {
-        var rootElement = $('#rule-conditions-builder').find('.condition-group.root').first();
-        var formula = getFormula(rootElement);
-        console.debug('formula', formula);
+        var element = $('#rule-conditions-builder').find('.condition-group.root');
+        return {
+            string: getStringFormula(element),
+            json: getJsonFormula(element)
+        }
     }
 
-    function getFormula(groupElement) {
+    function getStringFormula(rootElement) {
+
         var element, str, value;
+
         var formula = '(';
-        var operator = groupElement.find('.logic').first().val();
-        var conditionElement = groupElement.find('.condition').first();
+        var operator = rootElement.find('.logic').first().val();
+        var conditionElement = rootElement.find('.condition').first();
         var lineElements = conditionElement.children();
+
         $.each(lineElements, function(index, obj) {
             if (index > 0) {
                 formula += ' ' + operator + ' ';
             }
             element = $(obj);
             if (element.hasClass('condition-group')) {
-                formula += getFormula(element);
+                formula += getStringFormula(element);
             } else {
                 str = '[' + element.children('.operand1').val() + ']';
                 value = element.children('.function1').val();
                 if (value === 'metric') {
-                    str = '|m' + str;
+                    if (element.children('.operand1').find(':selected').data('level') === 'service') {
+                        str = '|ms' + str;
+                    } else {
+                        str = '|mn' + str;
+                    }
                 } else {
                     str = '|i' + str;
                     if (value !== 'indicator') {
@@ -542,7 +693,11 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
                 } else {
                     str = '[' + element.children('.operand2').val() + ']';
                     if (value === 'metric') {
-                        str = '|m' + str;
+                        if (element.children('.operand2').find(':selected').data('level') === 'service') {
+                            str = '|ms' + str;
+                        } else {
+                            str = '|mn' + str;
+                        }
                     } else {
                         str = '|i' + str;
                         if (value !== 'indicator') {
@@ -554,6 +709,53 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action) {
             }
         });
         formula += ')';
+
+        return formula;
+    }
+
+    function getJsonFormula(rootElement) {
+
+        var element, lineObject;
+
+        var formula = {
+            'type': 'group',
+            'logic': rootElement.find('.logic').first().val(),
+            'data': []
+        };
+
+        var conditionElement = rootElement.find('.condition').first();
+        var lineElements = conditionElement.children();
+
+        $.each(lineElements, function(index, obj) {
+            element = $(obj);
+            if (element.hasClass('condition-group')) {
+                formula.data.push(getJsonFormula(element));
+            } else {
+                lineObject = {
+                    'type': 'line',
+                    'data': {}
+                }
+                lineObject.data.function1 = element.children('.function1').val();
+                lineObject.data.operand1 = element.children('.operand1').val();
+                lineObject.data.operator = element.children('.operator').val();
+                lineObject.data.function2 = element.children('.function2').val();
+                if (lineObject.data.function2 === 'value') {
+                    lineObject.data.operand2 = element.children('.condition-value').val();
+                } else {
+                    lineObject.data.operand2 = element.children('.operand2').val();
+                }
+                formula.data.push(lineObject);
+            }
+        });
+
+        return formula;
+    }
+
+    function checkRule(formula) {
+        return true;
+    }
+
+    function formatFormula(formula) {
         return formula;
     }
 };

@@ -171,10 +171,6 @@ ul.submenu div.scrollarrowright {
     border-bottom-left-radius: 0;
 }
 
-#message.error {
-    color: #b94a48;
-}
-
 /*
  * Dialog editor (generic)
  */
@@ -199,6 +195,14 @@ ul.submenu div.scrollarrowright {
 
 .dialog-container button:hover {
     cursor : pointer;
+}
+
+.dialog-container .error {
+    color: #b94a48;
+}
+
+.dialog-container .background-error {
+    background-color: #F9F2F4 !important;
 }
 
 /*
@@ -248,6 +252,11 @@ ul.submenu div.scrollarrowright {
 
 #rule-conditions-builder .hidden {
     display: none !important;
+}
+
+#rule-conditions-builder .condition-content {
+    border: 1px solid rgba(81, 203, 238, 1);
+    background-color: #ffffff;
 }
 
 #rule-conditions-builder .condition-group {
