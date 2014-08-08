@@ -201,7 +201,16 @@ ul.submenu div.scrollarrowright {
     color: #b94a48;
 }
 
+.dialog-container .border-error {
+    border: 1px solid #b94a48 !important;
+}
+
 .dialog-container .background-error {
+    background-color: #F9F2F4 !important;
+}
+
+.dialog-container .field-error {
+    border: 1px solid #b94a48 !important;
     background-color: #F9F2F4 !important;
 }
 
@@ -252,6 +261,10 @@ ul.submenu div.scrollarrowright {
 
 #rule-conditions-builder .hidden {
     display: none !important;
+}
+
+#rule-conditions-builder .error {
+    margin-left: 5px;
 }
 
 #rule-conditions-builder .condition-content {

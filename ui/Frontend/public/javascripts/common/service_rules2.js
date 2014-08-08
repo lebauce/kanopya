@@ -461,8 +461,6 @@ var formula = {
 
             });
         }
-        addConditionLine(element, (level > 0));
-        manageCondition(rootElement);
 
         groupElement.find('.condition-add').click(function() {
             var element = groupElement.find('.condition').first();
@@ -473,6 +471,13 @@ var formula = {
             var element = groupElement.find('.condition').first();
             addConditionGroup(element, level + 1);
         });
+
+        groupElement.find('td').first().children().focus(function() {
+            $('#rule-conditions-builder').find('.error').remove();
+        });
+
+        addConditionLine(element, (level > 0));
+        manageCondition(rootElement);
     }
 
     function addConditionLine(rootElement, toAppend) {
@@ -482,7 +487,12 @@ var formula = {
         };
 
         var element = rootElement.children('.condition-line').last();
+        element.attr('id', getNewLineId());
         element.children('.operand2').addClass('hidden');
+
+        element.children().focus(function() {
+            $('#rule-conditions-builder').find('.error').remove();
+        });
 
         element.children('.function1')
             .focus(function() {
@@ -553,6 +563,10 @@ var formula = {
                 }
         });
 
+        element.children('.condition-value').focus(function() {
+                $(this).removeClass('field-error');
+        });
+
         element.children('.condition-remove').click(function() {
             var element = $(this).closest('.condition-line');
             var parentElement = element.parent();
@@ -561,6 +575,19 @@ var formula = {
         });
 
         manageCondition(rootElement);
+    }
+
+    function getNewLineId() {
+        var maxId = 0, curId;
+        $('#rule-conditions-builder').find('.condition-line').each(function() {
+            if ($(this).attr('id')) {
+                curId = parseInt($(this).attr('id').substring('condition-line'.length), 10);
+                if (curId > maxId) {
+                    maxId = curId;
+                }
+            }
+        });
+        return 'condition-line' + (maxId + 1);
     }
 
     function manageCondition(element) {
@@ -733,6 +760,7 @@ var formula = {
             } else {
                 lineObject = {
                     'type': 'line',
+                    'id': element.attr('id'),
                     'data': {}
                 }
                 lineObject.data.function1 = element.children('.function1').val();
@@ -752,7 +780,55 @@ var formula = {
     }
 
     function checkRule(formula) {
-        return true;
+
+        var message, str;
+        var i, j, k;
+        var ret = true;
+        var count = 0;
+
+        // Check the empty values
+        $('#rule-conditions-builder').find('.condition-line').each(function() {
+            if ($(this).children('.function2').val() === 'value' && $(this).children('.condition-value').val() === '') {
+                ret = false;
+                count += 1;
+                $(this).children('.condition-value').addClass('field-error');
+            }
+        });
+        if (count > 0 && $('#error1').length === 0) {
+            message = 'The red field(s) must be filled in.'
+            $('#rule-conditions-builder').append('<p id="error1" class="error">' + message + '</p>');
+        }
+
+        // Check if the formula combines service and node metric
+        str = formula.string;
+        console.debug(str);
+        // Remove service indicator from the formula
+        for (i = 0; i < statisticFunctionData.length; i++) {
+            j = str.indexOf(statisticFunctionData[i].code);
+            while (j > -1) {
+                k = str.indexOf(')', j);
+                str = str.substring(0, j) + str.substring(k + 1);
+                j = str.indexOf(statisticFunctionData[i].code);
+            }
+        }
+        // Remove service metric from the formula
+        j = str.indexOf('|ms');
+        while (j > -1) {
+            k = str.indexOf(']', j);
+            str = str.substring(0, j) + str.substring(k + 1);
+            j = str.indexOf('|ms');
+        }
+        console.debug(str);
+        // Check if a node metric is used in the modified formula
+        if (str !== formula && (str.indexOf('|i') > -1 || str.indexOf('|mn') > -1)) {
+            ret = false;
+            if ($('#error2').length === 0) {
+                message = 'The condition(s) must be composed by either node or service combinations.'
+                $('#rule-conditions-builder').append('<p id="error2" class="error">' + message + '</p>');
+            }
+        }
+
+        return ret;
     }
 
     function formatFormula(formula) {
