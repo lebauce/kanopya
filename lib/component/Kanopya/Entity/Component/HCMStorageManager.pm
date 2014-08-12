@@ -163,17 +163,34 @@ sub getStorageManagerParams {
     delete $paramdef->{systemimage_size};
     delete $paramdef->{boot_policy};
 
+    # Fill the attribute definition with availables values for managers
+    my $manager_options = {};
+    for my $disk_manager (Entity::Component->search(custom => { category => 'DiskManager' })) {
+        $manager_options->{$disk_manager->id} = $disk_manager->toJSON;
+    }
+    my @diskmanageroptions = values %{ $manager_options };
+    $paramdef->{disk_manager_id}->{options} = \@diskmanageroptions;
+
     # Fill the param definition with the disk and export manager ones
     if (defined $args{params}->{disk_manager_id}) {
         my $disk_manager = Entity::Component->get(id => $args{params}->{disk_manager_id});
         $paramdef = $merge->merge($paramdef,
                                   $disk_manager->getDiskManagerParams(params => $args{params}));
+
+        $manager_options = {};
+        for my $export_manager (@{ $disk_manager->getExportManagers }) {
+            $manager_options->{$export_manager->id} = $export_manager->toJSON;
+        }
+        my @exportmanageroptions = values %{ $manager_options };
+        $paramdef->{export_manager_id}->{options} = \@exportmanageroptions;
     }
+
     if (defined $args{params}->{export_manager_id}) {
         my $export_manager = Entity::Component->get(id => $args{params}->{export_manager_id});
         $paramdef = $merge->merge($paramdef,
                                   $export_manager->getExportManagerParams(params => $args{params}));
     }
+
     return $paramdef;
 }
 

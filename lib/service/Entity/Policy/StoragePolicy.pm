@@ -119,8 +119,9 @@ sub getPolicyDef {
     if ($args{params}->{storage_manager_id}) {
         # Get the storage manager params from the selected storage manager
         my $storagemanager = Entity->get(id => $args{params}->{storage_manager_id});
-        my $managerparams = $storagemanager->getStorageManagerParams();
-        for my $attrname (keys %{$managerparams}) {
+        my $managerparams = $storagemanager->getStorageManagerParams(params => $args{params});
+
+        for my $attrname (keys %{ $managerparams }) {
             $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
             # If no value defined in params, use the first one
             if (! $args{params}->{$attrname} && $args{set_mandatory}) {
@@ -128,6 +129,14 @@ sub getPolicyDef {
                                         attributes => $args{attributes}->{attributes},
                                         params     => $args{params});
             }
+
+            # If the attribute is a manager, set it as reload trigger as
+            # it probably hav specific params too
+            if ($attrname =~ m/.*_manager_id/) {
+                $args{attributes}->{attributes}->{$attrname}->{reload} = 1;
+            }
+
+            # Add the attribute to the displayed list
             push @{ $args{attributes}->{displayed} }, $attrname;
         }
     }
@@ -139,7 +148,6 @@ sub getPolicyDef {
             delete $args{params}->{$dependency};
         }
     }
-
     return $args{attributes};
 }
 
