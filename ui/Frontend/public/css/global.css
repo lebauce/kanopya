@@ -199,6 +199,7 @@ ul.submenu div.scrollarrowright {
 
 .dialog-container .error {
     color: #b94a48;
+    margin: 0;
 }
 
 .dialog-container .border-error {

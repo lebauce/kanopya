@@ -125,9 +125,6 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
 function openRulesDialog(serviceProviderId, gridId, staticObject, action, formula) {
 
     const dialogContainerId = 'rule-editor';
-    var conditionError = [];
-    conditionError[0] = 'Error 0';
-    conditionError[1] = 'Error 1';
 
     var dialogTitle;
     var conditionHtml = {};
@@ -392,25 +389,28 @@ var formula = {
         var formula = generateFormula();
         console.debug('formula', formula);
 
-        if (checkRule(formula)) {
-            formula.string = formatFormula(formula.string);
+        if (checkRule(formula.string) === true) {
+            var level = getFormulaLevel(formula.string);
+            switch(level) {
+                case 'node':
+                    saveNodeRule();
+                    break;
+                case 'service':
+                    saveServiceRule();
+                    break;
+            }
         }
+    }
 
+    function saveNodeRule() {
 
+        console.debug('saveNodeRule');
+            // formula.string = formatFormula(formula.string);
+    }
 
+    function saveServiceRule() {
 
-        // $.getJSON(
-        //     '/api/anomaly',
-        //     {'related_metric_id': $('#metric').val()},
-        //     function(data) {
-        //         if (data.length > 0) {
-        //             $('#message').addClass('error');
-        //             $('#message').text('This service metric is already used.');
-        //         } else {
-        //             createRule();
-        //         }
-        //     }
-        // );
+        console.debug('saveServiceRule');
     }
 
     function createRule() {
@@ -473,7 +473,8 @@ var formula = {
         });
 
         groupElement.find('td').first().children().focus(function() {
-            $('#rule-conditions-builder').find('.error').remove();
+            $('#rule-conditions-builder').children('.error').remove();
+            $('#rule-conditions-builder').find('select.field-error').removeClass('field-error');
         });
 
         addConditionLine(element, (level > 0));
@@ -491,7 +492,8 @@ var formula = {
         element.children('.operand2').addClass('hidden');
 
         element.children().focus(function() {
-            $('#rule-conditions-builder').find('.error').remove();
+            $('#rule-conditions-builder').children('.error').remove();
+            $('#rule-conditions-builder').find('select.field-error').removeClass('field-error');
         });
 
         element.children('.function1')
@@ -779,28 +781,26 @@ var formula = {
         return formula;
     }
 
-    function checkRule(formula) {
+    function checkRule(stringFormula) {
 
         var message, str;
         var i, j, k;
         var ret = true;
-        var count = 0;
 
         // Check the empty values
         $('#rule-conditions-builder').find('.condition-line').each(function() {
             if ($(this).children('.function2').val() === 'value' && $(this).children('.condition-value').val() === '') {
                 ret = false;
-                count += 1;
                 $(this).children('.condition-value').addClass('field-error');
             }
         });
-        if (count > 0 && $('#error1').length === 0) {
-            message = 'The red field(s) must be filled in.'
+        if (ret === false && $('#error1').length === 0) {
+            message = 'The blank field(s) must be filled in.'
             $('#rule-conditions-builder').append('<p id="error1" class="error">' + message + '</p>');
         }
 
         // Check if the formula combines service and node metric
-        str = formula.string;
+        str = stringFormula;
         console.debug(str);
         // Remove service indicator from the formula
         for (i = 0; i < statisticFunctionData.length; i++) {
@@ -820,8 +820,15 @@ var formula = {
         }
         console.debug(str);
         // Check if a node metric is used in the modified formula
-        if (str !== formula && (str.indexOf('|i') > -1 || str.indexOf('|mn') > -1)) {
+        if (str !== stringFormula && (str.indexOf('|i') > -1 || str.indexOf('|mn') > -1)) {
             ret = false;
+            $('#rule-conditions-builder').find('.condition-line').each(function() {
+                for (i = 1; i <= 2; i++) {
+                    if ($(this).children('.function' + i).val() === 'indicator' || ($(this).children('.function' + i).val() === 'metric' && $(this).children('.operand' + i).find(':selected').data('level') === 'node')) {
+                        $(this).children('.operand' + i).addClass('field-error');
+                    }
+                }
+            });
             if ($('#error2').length === 0) {
                 message = 'The condition(s) must be composed by either node or service combinations.'
                 $('#rule-conditions-builder').append('<p id="error2" class="error">' + message + '</p>');
@@ -831,7 +838,25 @@ var formula = {
         return ret;
     }
 
-    function formatFormula(formula) {
-        return formula;
+    function getFormulaLevel(stringFormula) {
+
+        var level = 'node';
+
+        if (stringFormula.indexOf('|ms') > -1) {
+            level = 'service';
+        } else {
+            for (var i = 0; i < statisticFunctionData.length; i++) {
+                if (stringFormula.indexOf(statisticFunctionData[i].code) > -1) {
+                    level = 'service';
+                    break;
+                }
+            }
+        }
+
+        return level;
+    }
+
+    function formatFormula(stringFormula) {
+        return stringFormula;
     }
 };
