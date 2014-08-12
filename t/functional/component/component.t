@@ -20,6 +20,8 @@ Log::Log4perl->easy_init({
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
+my $testing = 1;
+
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 my $envargs = \%ENV;
@@ -34,11 +36,11 @@ if (exists $envargs->{NODE_HOSTNAME} && (! defined $envargs->{NODE_HOSTNAME} || 
 
 General::checkParams(args     => $envargs,
                      required => [ 'COMPONENTS' ],
-                     optional => { 'NODE_IP' => Entity::Node->find(hash => { 'node_hostname' => 'kanopyamaster' })->adminIp,
+                     optional => { 'NODE_IP'       => undef,
                                    'NODE_HOSTNAME' => 'kanopyamaster' });
 
 my @types = split(',', $envargs->{COMPONENTS});
-my $ip = $envargs->{NODE_IP};
+my $ip = $envargs->{NODE_IP} || Entity::Node->find(hash => { 'node_hostname' => 'kanopyamaster' })->adminIp;
 my $hostname = $envargs->{NODE_HOSTNAME};
 
 
@@ -93,7 +95,15 @@ for my $componenttype (@types) {
 
     General::requireClass($testsuiteclass);
 
+    if ($testing == 1) {
+        Kanopya::Database::beginTransaction;
+    }
+
     $testsuiteclass->runTestSuite(component => $component);
+
+    if ($testing == 1) {
+        Kanopya::Database::rollbackTransaction;
+    }
 }
 
 
