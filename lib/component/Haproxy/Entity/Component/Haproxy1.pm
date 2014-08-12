@@ -48,7 +48,7 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $listens = {};
-    for my $listen ( $self->haproxy1s_listen) {
+    for my $listen ( $self->haproxy1_listens) {
         $listens->{$listen->listen_name} = {
             ipaddress => $listen->listen_ip,
             ports     => $listen->listen_port,
