@@ -84,8 +84,27 @@ sub createVirtualHost {
         );
     }
 
-    $log->debug("Return host with <" . $vm->id . ">");
     return $vm;
+}
+
+
+=pod
+=begin classdoc
+
+Redict calls to createHost to createVirtualHost, should be never call,
+usefull for test purpose.
+
+@return the created virtual machine
+
+=end classdoc
+=cut
+
+sub createHost {
+    my ($self, %args) = @_;
+
+    return $self->createVirtualHost(ram  => delete $args{host_ram},
+                                    core => delete $args{host_core},
+                                    %args);
 }
 
 

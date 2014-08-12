@@ -44,6 +44,26 @@ sub methods {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Do not proppgate the call the host manager if call on Hypervisor, should be never call,
+usefull for test purpose.
+
+@return the created hypervisor
+
+=end classdoc
+=cut
+
+sub create {
+    my $self = shift;
+    my %args = @_;
+
+    return $self->new(%args);
+}
+
+
 sub getVms {
     my $self = shift;
     my %args = @_;

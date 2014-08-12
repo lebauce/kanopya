@@ -202,21 +202,26 @@ my %common_fixed_value = (
 sub fillMissingFixedAttr {
     # host_manager_ids
     my $resp = dancer_response(GET => "/api/physicalhoster0", {});
-    my $json = Dancer::from_json($resp->{content});
-    $attribute_fixed_value{host}{host_manager_id} = $json->[0]->{pk};
-    $attribute_fixed_value{hypervisor}{host_manager_id} = $json->[0]->{pk};
-    $attribute_fixed_value{virtualmachine}{host_manager_id} = $json->[0]->{pk};
-    $attribute_fixed_value{opennebula3hypervisor}{host_manager_id} = $json->[0]->{pk};
-    $attribute_fixed_value{openstackhypervisor}{host_manager_id} = $json->[0]->{pk};
-    $attribute_fixed_value{openstackvm}{host_manager_id} = $json->[0]->{pk};
-    $attribute_fixed_value{opennebula3vm}{host_manager_id} = $json->[0]->{pk};
+    my $ph0 = Dancer::from_json($resp->{content});
+    $resp = dancer_response(GET => "/api/opennebula3", {});
+    my $on3 = Dancer::from_json($resp->{content});
+    $resp = dancer_response(GET => "/api/novacontroller", {});
+    my $nova = Dancer::from_json($resp->{content});
+
+    $attribute_fixed_value{host}{host_manager_id} = $ph0->[0]->{pk};
+    $attribute_fixed_value{hypervisor}{host_manager_id} = $ph0->[0]->{pk};
+    $attribute_fixed_value{virtualmachine}{host_manager_id} = $on3->[0]->{pk};
+    $attribute_fixed_value{opennebula3hypervisor}{host_manager_id} = $ph0->[0]->{pk};
+    $attribute_fixed_value{openstackhypervisor}{host_manager_id} = $ph0->[0]->{pk};
+    $attribute_fixed_value{openstackvm}{host_manager_id} = $nova->[0]->{pk};
+    $attribute_fixed_value{opennebula3vm}{host_manager_id} = $on3->[0]->{pk};
 
     # serviceprovidermanager
-    $attribute_fixed_value{serviceprovidermanager}{manager_id} = $json->[0]->{pk};
-    my $component_type_id = $json->[0]->{component_type_id};
+    $attribute_fixed_value{serviceprovidermanager}{manager_id} = $ph0->[0]->{pk};
+    my $component_type_id = $ph0->[0]->{component_type_id};
     $resp = dancer_response GET => '/api/componenttypecategory',
                                    { params => { component_type_id => $component_type_id } };
-    $json = Dancer::from_json($resp->{content});
+    my $json = Dancer::from_json($resp->{content});
 
     $attribute_fixed_value{serviceprovidermanager}{manager_category_id} = $json->[0]->{component_category_id};
 

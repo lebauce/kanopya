@@ -119,10 +119,11 @@ sub removeHost {
     General::checkParams(args  => \%args, required => [ "host" ]);
 
     # check if host is not active
-    if ($self->{context}->{host}->active) {
-        $errmsg = "Host <" . $self->{context}->{host}->id . "> is still active";
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    # if ($args{host}->active) {
+    #     throw Kanopya::Exception::Internal(
+    #               error => "Host <" . $args{host}->label . "> is still active"
+    #           );
+    # }
 
     # Delete the host from db
     $args{host}->delete();

@@ -458,6 +458,17 @@ sub addVM {
     return $opennebulavm;
 }
 
+sub createVirtualHost {
+    my ($self, %args) = @_;
+
+    my $vm = $self->SUPER::createVirtualHost(%args);
+    return Entity::Host::VirtualMachine::Opennebula3Vm->promote(
+               promoted       => $vm,
+               opennebula3_id => $self->id,
+               onevm_id       => $args{id},
+           );
+}
+
 sub getImageRepository {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['container_access_id']);
@@ -473,7 +484,9 @@ sub getRemoteSessionURL {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    return "vnc://" . $args{host}->hypervisor->adminIp . ":" . $args{host}->vnc_port;
+    if (defined $args{host}->hypervisor) {
+        return "vnc://" . $args{host}->hypervisor->adminIp . ":" . $args{host}->vnc_port;
+    }
 }
 
 1;
