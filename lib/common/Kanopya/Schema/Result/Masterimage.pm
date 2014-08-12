@@ -140,6 +140,11 @@ __PACKAGE__->set_primary_key("masterimage_id");
 
 =head1 RELATIONS
 
+=cut 
+
+__PACKAGE__->add_unique_constraint("imasterimage_name", ["masterimage_name"]);
+__PACKAGE__->add_unique_constraint("imasterimage_file", ["masterimage_file"]);
+
 =head2 clusters
 
 Type: has_many
