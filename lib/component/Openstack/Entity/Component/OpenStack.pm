@@ -37,8 +37,20 @@ use parent Manager::BootManager;
 
 use strict;
 use warnings;
+use Hash::Merge;
 
 use Kanopya::Exceptions;
+use ParamPreset;
+
+use Entity::Host::Hypervisor::OpenstackHypervisor;
+use Entity::Host::VirtualMachine::OpenstackVm;
+use Entity::Masterimage;
+use Entity::Node;
+
+use OpenStack::API;
+use OpenStack::Infrastructure;
+
+use ClassType::ServiceProviderType::ClusterType;
 
 use TryCatch;
 use Log::Log4perl "get_logger";
@@ -159,8 +171,10 @@ sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
+    my $flavor = $self->getManagerParamsDef->{flavor};
+    $flavor->{enum} = $self->param_preset->load->{flavor_names},
     return {
-        flavor => $self->getManagerParamsDef->{flavor},
+        flavor => $flavor,
     }
 }
 
@@ -346,9 +360,18 @@ Promote host into OpenstackVm and set its hypervisor id
 
 sub promoteVm {
     my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host', 'vm_uuid', 'hypervisor_id' ]);
 
-    throw Kanopya::Exception::NotImplemented();
+     $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
+                      promoted           => $args{host},
+                      nova_controller_id => $self->id,
+                      openstack_vm_uuid  => $args{vm_uuid},
+                  );
+
+    $args{host}->hypervisor_id($args{hypervisor_id});
+    return $args{host};
 }
+
 
 
 =pod
@@ -479,8 +502,192 @@ and all options available in the existing OpenStack.
 
 sub synchronize {
     my ($self, @args) = @_;
-
-    throw Kanopya::Exception::NotImplemented();
+    my $os_infra = OpenStack::Infrastructure->load(api => $self->_api);
+    return $self->_load(infra => $os_infra);
 }
 
+
+=pod
+=begin classdoc
+
+Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
+
+@return OpenstackHypervisor instance of OpenstackHypervisor
+
+=end classdoc
+=cut
+
+sub _addHypervisor {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return Entity::Host::Hypervisor::OpenstackHypervisor->promote(
+               promoted                  => $args{host},
+               nova_controller_id        => $self->id,
+           );
+}
+
+sub configure {
+    my ($self, %args) = @_;
+
+    my $pp = $self->param_preset;
+
+    if (! defined $pp) {
+        $pp = ParamPreset->new();
+        $self->param_preset_id($pp->id);
+    }
+
+    my @allowed_params = ('api_username', 'api_password', 'keystone_url', 'tenant_name');
+    my $params= {};
+    for my $param (@allowed_params) {
+        if (defined $args{$param}) {
+            $params->{$param} = $args{$param};
+        }
+    }
+    $pp->update(params => $params);
+    return;
+}
+
+sub _api {
+    my ($self, %args) = @_;
+    my $params = $self->param_preset->load;
+
+    General::checkParams(
+        args => \%args,
+        optional => {
+            api_username => $params->{api_username} || 'admin',
+            api_password => $params->{api_password} || 'keystone',
+            keystone_url => $params->{keystone_url} || 'localhost',
+            tenant_name => $params->{tenant_name} || 'openstack',
+        }
+    );
+
+    my $credentials = {
+        auth => {
+            passwordCredentials => {
+                username => $args{api_username},
+                password => $args{api_password},
+            },
+            tenantName => $args{tenant_name},
+        }
+    };
+
+    my $config = {
+        verify_ssl => 0,
+        identity => {
+            url => 'http://' . $args{keystone_url} . ':5000/v2.0'
+        },
+    };
+
+    return OpenStack::API->new(
+               credentials => $credentials,
+               config      => $config
+           );
+}
+
+my $vm_states = {
+    active => 'in',
+    build => 'in',
+    deleted => 'out',
+    error => 'broken',
+    paused => 'out',
+    rescued => 'broken',
+    resized => 'in',
+    soft_deleted => 'out',
+    stopped => 'out',
+    suspended => 'out',
+};
+
+sub _load {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'infra' ]);
+
+    # Store Flavor Params for Policies
+    my @flavor_names = map {$_->{name}} @{$args{infra}->{flavors}};
+
+    my $pp = $self->param_preset;
+    $pp->update(params => {flavor_names => \@flavor_names});
+
+    # Manage images
+    my $cluster_type = ClassType::ServiceProviderType::ClusterType->find(
+                           service_provider_name => 'Cluster',
+                       );
+
+    for my $image_info (@{$args{infra}->{images}}) {
+        Entity::Masterimage->new(
+            masterimage_name => $image_info->{name},
+            masterimage_file => $image_info->{file},
+            masterimage_size => $image_info->{size},
+            masterimage_cluster_type_id => $cluster_type->id,
+        );
+    }
+
+    # Manage hypervisors
+    my $count = 0;
+    for my $hypervisor_info (@{$args{infra}->{hypervisors}}) {
+        my $hypervisor = Entity::Host->new(
+            active => 1,
+            host_ram => $hypervisor_info->{memory_mb} * (1024 ** 2), # MB to B
+            host_core => $hypervisor_info->{vcpus},
+            host_state => 'up:' . time(),
+            host_desc => 'Registered OpenStack Hypervisor - '
+                         . $hypervisor_info->{hypervisor_hostname},
+            host_serial_number => 'Registered OpenStack Hypervisor - '
+                                  . $hypervisor_info->{hypervisor_hostname},
+        );
+
+        $self->_addHypervisor(host => $hypervisor);
+
+        for my $vm_info (@{$hypervisor_info->{servers}}) {
+            $count++;
+
+            my $network_info = $vm_info->{addresses};
+
+            my $vm = $self->createVirtualHost(
+                           ram => $vm_info->{flavor}->{ram} * (1024 ** 2), # MB to B
+                           core => $vm_info->{flavor}->{vcpus},
+                           ifaces => scalar (keys %$network_info),
+                        );
+
+            $vm = $self->promoteVm(
+                      host => $vm,
+                      vm_uuid => $vm_info->{id},
+                      hypervisor_id => $hypervisor->id,
+                  );
+
+            my $vm_state = $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time();
+
+            my $node = Entity::Node->new(
+                           node_hostname       => $vm_info->{name},
+                           host_id             => $vm->id,
+                           node_state          => $vm_state,
+                           node_number         => $count,
+                           systemimage_id      => undef, # Manage
+                          );
+
+            my @ifaces = $vm->ifaces;
+
+            while(my ($name, $ip_infos) = each(%$network_info)) {
+
+                # TODO Manage floating ips
+                # while(($b = (pop @a)) && ($b ne 5)) {}
+
+                my $ip_info;
+                # '=' is ok, we assign first and the test
+                while(($ip_info = (pop @$ip_infos)) && ($ip_info->{'OS-EXT-IPS:type'} ne 'fixed')) {}
+
+                if (defined $ip_info) {
+                    my $iface = (pop @ifaces);
+                    $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
+                    Ip->new(
+                        ip_addr  => $ip_info->{addr},
+                        iface_id => $iface->id,
+                    );
+                }
+            }
+        }
+    }
+}
 1;

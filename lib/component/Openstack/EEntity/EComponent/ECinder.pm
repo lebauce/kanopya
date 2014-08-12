@@ -69,7 +69,7 @@ sub createDisk {
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;
 
-    my $req = $api->cinder->volumes->post(
+    my $req = $api->volume->volumes->post(
                   content => {
                       "volume" => {
                           "name"         => $args{name},
@@ -90,7 +90,7 @@ sub createDisk {
     while (($req->{volume}->{status} eq "creating") && ($timeout > 0)) {
         sleep 5;
         $timeout -= 5;
-        $req = $api->cinder->volumes(id => $req->{volume}->{id})->get();
+        $req = $api->volume->volumes(id => $req->{volume}->{id})->get();
     }
 
     if ($req->{volume}->{status} ne 'available') {
@@ -203,7 +203,7 @@ sub postStartNode {
     my $api = $e_controller->api;
 
     for my $type (keys %{$supported_volume_types}) {
-        my $req = $api->cinder->types->post(
+        my $req = $api->volume->types->post(
                       content => {
                           "volume_type" => {
                               "name" => $type,
@@ -212,7 +212,7 @@ sub postStartNode {
                   );
 
         my $id = $req->{volume_type}->{id};
-        $req = $api->cinder->types(id => $id)->extra_specs->post(
+        $req = $api->volume->types(id => $id)->extra_specs->post(
             content => {
                 "extra_specs" => {
                     "volume_backend_name" => $supported_volume_types->{$type}

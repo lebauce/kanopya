@@ -40,6 +40,12 @@ sub new {
     return $self;
 }
 
+my $api_version = {
+    network => 'v2.0',
+    image => 'v2.0',
+    metering => 'v2',
+};
+
 sub login {
     my ($self, %args) = @_;
 
@@ -52,14 +58,19 @@ sub login {
     if( ! exists $response->{access}->{serviceCatalog} ||
         ! keys $response->{access}->{serviceCatalog} ) {
         throw Kanopya::Exception::Execution::API(
-                  error         => 'Openstack API call returns no service catalog'
-	      )
+                  error => 'Openstack API call returns no service catalog'
+	          )
     }
 
     for my $service (@{$response->{access}->{serviceCatalog}}) {
-        my $name = $service->{name};
+        my $name = $service->{type};
+
         $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL} .
-                                              ($name eq "neutron" ? "/v2.0" : "");
+                                          ((defined $api_version->{$name}) ? '/' . $api_version->{$name}
+                                                                           : '');
+
+        $self->{config}->{$name}->{adminURL} = $service->{endpoints}->[0]->{adminURL};
+
         $log->debug('Openstack::API login. Service name ' . $name . ' URL returned : '. $self->{config}->{$name}->{url});
     }
 

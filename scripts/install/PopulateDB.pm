@@ -128,6 +128,7 @@ my @classes = (
     'Entity::Component::Neutron',
     'Entity::Component::Keystone',
     'Entity::Component::Glance',
+    'Entity::Component::OpenStack',
     'Entity::Component::SwiftProxy',
     'Entity::Component::SwiftStorage',
     'Entity::Repository::OpenstackRepository',
@@ -1100,6 +1101,13 @@ sub registerComponents {
         },
         {
             component_name         => 'Glance',
+            component_version      => 6,
+            deployable             => 1,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'OpenStack',
             component_version      => 6,
             deployable             => 1,
             component_categories   => [ ],
