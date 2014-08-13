@@ -24,9 +24,9 @@ OpenStack component, used as host manager by Kanopya
 =cut
 
 package  Entity::Component::Virtualization::NovaController;
-
-use base "Entity::Component::Virtualization";
-use base "Manager::HostManager::VirtualMachineManager";
+use parent Entity::Component::Virtualization;
+use parent Manager::HostManager::VirtualMachineManager;
+use parent Manager::NetworkManager;
 
 use strict;
 use warnings;
@@ -519,6 +519,15 @@ sub createVirtualHost {
                nova_controller_id => $self->id,
                openstack_vm_uuid  => $args{vm_uuid},
            );
+}
+
+sub applyVLAN {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'iface', 'vlan' ]
+    );
 }
 
 1;

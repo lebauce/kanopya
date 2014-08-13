@@ -95,6 +95,9 @@ sub checkManagerParams {
     elsif ($args{manager_type} eq 'StorageManager') {
         $updated = $self->checkStorageManagerParams(%{ $args{manager_params} });
     }
+    elsif ($args{manager_type} eq 'NetworkManager') {
+        $updated = $self->checkNetworkManagerParams(%{ $args{manager_params} });
+    }
     elsif ($args{manager_type} eq 'CollectorManager') {
         $updated = $self->checkCollectorManagerParams(%{ $args{manager_params} });
     }

@@ -22,8 +22,9 @@ TODO
 =cut
 
 package Entity::Component::UcsManager;
-use base "Entity::Component";
-use base "Manager::HostManager";
+use parent Entity::Component::Virtualization;
+use parent Manager::HostManager;
+use parent Manager::NetworkManager;
 
 use Manager::HostManager;
 use Entity::Processormodel;
@@ -320,6 +321,36 @@ sub getRemoteSessionURL {
     my $blade = $self->{api}->get(dn => $args{host}->getAttr(name => 'host_serial_number'));
 
     return $blade->KVM();
+}
+
+
+=pod
+=begin classdoc
+
+Apply a VLAN on an interface of a host
+
+=end classdoc
+=cut
+
+sub applyVLAN {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'iface', 'vlan' ]);
+
+    my $api = $self->init();
+    my $blade = $api->get(dn => $args{iface}->host->host_serial_number);
+    my $sp = $api->get(dn => $blade->{assignedToDn});
+
+    my @ethernets = $sp->children("vnicEther");
+    for my $ethernet (@ethernets) {
+        if ($ethernet->{name} eq 'v' . $args{iface}->iface_name) {
+            $log->info("Applying vlan " . $args{vlan}->vlan_name .
+                       " on " . $ethernet->{name} . " interface of " . $args{iface}->host->host_serial_number);
+            $ethernet->applyVLAN(name   => $args{vlan}->vlan_name,
+                                 delete => (defined ($args{delete}) and $args{delete}) ? 1 : 0);
+        }
+    }
 }
 
 

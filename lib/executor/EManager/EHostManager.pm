@@ -182,22 +182,6 @@ sub getFreeHost {
     return DecisionMaker::HostSelector->getHost(host_manager => $self, %args);
 }
 
-=pod
-=begin classdoc
-
-Apply a VLAN on an interface of a host
-
-@param vlan
-@param iface
-
-=end classdoc
-=cut
-
-sub applyVLAN {
-    $log->debug("VLAN are not supported by this host manager, doing nothing");
-}
-
-
 sub getHypervisorVMs {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ "host" ]);

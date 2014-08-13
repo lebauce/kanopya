@@ -23,7 +23,6 @@ EEntity for the OpenStack host manager
 =cut
 
 package EEntity::EComponent::EVirtualization::ENovaController;
-
 use base "EEntity::EComponent";
 use base "EManager::EHostManager::EVirtualMachineManager";
 
@@ -843,14 +842,6 @@ sub vmLoggedErrorMessage {
     return $lastmessage[-1];
 }
 
-sub applyVLAN {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'iface', 'vlan' ]
-    );
-}
 
 =pod
 

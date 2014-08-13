@@ -240,10 +240,6 @@ sub migrateHost {
     my $src_hypervisor = $args{host}->hypervisor;
     $log->debug("The VM <" . $args{host}->id . "> is on the <" . $src_hypervisor->id . "> host");
 
-    # $log->debug("Apply VLAN on the destination hypervisor");
-    # $self->propagateVLAN(host       => $args{host},
-    #                      hypervisor => $args{hypervisor_dst});
-
     $self->onevm_livemigrate(
         vm_nameorid   => $args{host}->node->node_hostname,
         host_nameorid => $args{hypervisor_dst}->node->node_hostname,
@@ -587,38 +583,6 @@ sub postStart {
     }
 }
 
-sub applyVLAN {
-    my ($self, %args) = @_;
-    General::checkParams(
-        args     => \%args,
-        required => [ 'iface', 'vlan' ]
-    );
-
-    # In the case of OpenNebula, we need to apply the VLAN on the
-    # bridge interface of the hypervisor the VM is running on.
-}
-
-# Apply the VLAN's on the hypervisor interface dedicated to virtual machines
-
-sub propagateVLAN {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'hypervisor', 'host' ]);
-
-    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
-    for my $iface (@{$args{host}->getIfaces}) {
-        for my $network ($iface->getInterface->getNetworks) {
-            if ($network->isa("Entity::Network::Vlan")) {
-                $log->info("Applying vlan " . $network->getAttr(name => "network_name") .
-                           " on the bridge interface " . $iface->getAttr(name => "iface_name"));
-                my $ehost_manager = EEntity->new(data => $args{hypervisor}->getHostManager);
-                $ehost_manager->applyVLAN(iface => $bridge,
-                                          vlan  => $network,
-                                          delete => (defined ($args{delete}) && $args{delete}) ? 1 : 0);
-            }
-        }
-    }
-}
 
 =pod
 

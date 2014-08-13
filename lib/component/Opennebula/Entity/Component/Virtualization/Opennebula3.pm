@@ -24,8 +24,9 @@ TODO
 =cut
 
 package Entity::Component::Virtualization::Opennebula3;
-use base "Entity::Component::Virtualization";
-use base "Manager::HostManager::VirtualMachineManager";
+use parent Entity::Component::Virtualization;
+use parent Manager::HostManager::VirtualMachineManager;
+use parent Manager::NetworkManager;
 
 use strict;
 use warnings;
@@ -487,6 +488,17 @@ sub getRemoteSessionURL {
     if (defined $args{host}->hypervisor) {
         return "vnc://" . $args{host}->hypervisor->adminIp . ":" . $args{host}->vnc_port;
     }
+}
+
+sub applyVLAN {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => [ 'iface', 'vlan' ]
+    );
+
+    # In the case of OpenNebula, we need to apply the VLAN on the
+    # bridge interface of the hypervisor the VM is running on.
 }
 
 1;
