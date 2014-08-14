@@ -109,36 +109,11 @@ sub getManagerParamsDef {
     return {
         # TODO: call super on all Manager supers
         %{ $self->SUPER::getManagerParamsDef },
-        cluster_domainname => {
-            label        => 'Domain name',
-            type         => 'string',
-            pattern      => '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
-            is_mandatory => 1
-        },
-        cluster_nameserver1 => {
-            label        => 'Name server 1',
-            type         => 'string',
-            pattern      => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
-            is_mandatory => 1
-        },
-        cluster_nameserver2 => {
-            label        => 'Name server 2',
-            type         => 'string',
-            pattern      => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
-            is_mandatory => 1
-        },
-        default_gateway_id => {
-            label        => 'Default gateway network',
-            type         => 'relation',
-            relation     => 'single',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        },
         interfaces => {
             label        => 'Interfaces',
             type         => 'relation',
             relation     => 'single_multi',
-            is_editable  => 1,
+            # is_editable  => 1,
             is_mandatory => 1,
             attributes   => {
                 attributes => {
@@ -191,34 +166,13 @@ sub getNetworkManagerParams {
 
     my $paramdef = $self->getManagerParamsDef();
 
-    # Add the dynamic attributes to displayed
-    # push @{ $args{attributes}->{displayed} }, 'cluster_domainname';
-    # push @{ $args{attributes}->{displayed} }, 'cluster_nameserver1';
-    # push @{ $args{attributes}->{displayed} }, 'cluster_nameserver2';
-    # push @{ $args{attributes}->{displayed} }, 'default_gateway_id';
-    # push @{ $args{attributes}->{displayed} },
-    #     { interfaces => [ 'interface_name', 'netconfs', 'bonds_number' ] };
-
-    # Add the network interfaces to the relations definition
-    # $args{attributes}->{relations}->{interfaces} = {
-    #     attrs    => { accessor => 'multi' },
-    #     cond     => { 'foreign.policy_id' => 'self.policy_id' },
-    #     resource => 'interface'
-    # };
-
-    # Build the default gateway network list
-    my @networks;
-    for my $network (Entity::Network->search(hash => {})) {
-        push @networks, $network->toJSON();
-    }
     my @netconfs;
     for my $netconf (Entity::Netconf->search(hash => {})) {
         push @netconfs, $netconf->toJSON();
     }
 
-    $paramdef->{default_gateway_id}->{options} = \@networks;
-    # $paramdef->{interfaces}->{attributes}->{attributes}->{netconfs}->{options}
-    #     = \@netconfs;
+    $paramdef->{interfaces}->{attributes}->{attributes}->{netconfs}->{options}
+        = \@netconfs;
 
     return $paramdef;
 }
@@ -238,8 +192,7 @@ sub checkNetworkManagerParams {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "cluster_domainname", "cluster_nameserver1",
-                                       "default_gateway_id", "interfaces" ]);
+                         required => [ "interfaces" ]);
 }
 
 

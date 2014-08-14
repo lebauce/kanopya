@@ -53,7 +53,11 @@
                 { "interface_name" : "eth0",
                   "netconfs" : [ { "class_type" : "Entity::Netconf", "netconf_name" : "Kanopya admin" } ]
                 }
-            ]
+            ],
+            "network_manager_id" : {
+                "class_type" : "Entity::Component::HCMNetworkManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            }
         },
         "Generic network configuration" : {
           "policy_name" : "Generic network configuration",

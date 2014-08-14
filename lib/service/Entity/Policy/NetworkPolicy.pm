@@ -76,42 +76,14 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 1
     },
-    interfaces => {
-        label        => 'Interfaces',
+    network_manager_id => {
+        label        => "Network manager",
         type         => 'relation',
-        relation     => 'single_multi',
-        is_editable  => 1,
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
         is_mandatory => 1,
-        attributes   => {
-            attributes => {
-                policy_id => {
-                    type     => 'relation',
-                    relation => 'single',
-                },
-                netconfs => {
-                    label       => 'Network configurations',
-                    type        => 'relation',
-                    relation    => 'multi',
-                    link_to     => 'netconf',
-                    pattern     => '^\d*$',
-                    is_editable => 1,
-                },
-                bonds_number => {
-                    label       => 'Bonding slave count',
-                    type        => 'integer',
-                    pattern     => '^\d*$',
-                    is_editable => 1,
-                },
-                interface_name => {
-                    label        => 'Name',
-                    type         => 'string',
-                    pattern      => '^.*$',
-                    is_editable  => 1,
-                    is_mandatory => 1,
-                },
-            },
-        },
-    }
+    },
 };
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
@@ -144,29 +116,82 @@ sub getPolicyDef {
     push @{ $args{attributes}->{displayed} }, 'cluster_nameserver1';
     push @{ $args{attributes}->{displayed} }, 'cluster_nameserver2';
     push @{ $args{attributes}->{displayed} }, 'default_gateway_id';
-    push @{ $args{attributes}->{displayed} },
-        { interfaces => [ 'interface_name', 'netconfs', 'bonds_number' ] };
-
-    # Add the network interfaces to the relations definition
-    $args{attributes}->{relations}->{interfaces} = {
-        attrs    => { accessor => 'multi' },
-        cond     => { 'foreign.policy_id' => 'self.policy_id' },
-        resource => 'interface'
-    };
+    push @{ $args{attributes}->{displayed} }, 'network_manager_id';
 
     # Build the default gateway network list
     my @networks;
     for my $network (Entity::Network->search(hash => {})) {
         push @networks, $network->toJSON();
     }
-    my @netconfs;
-    for my $netconf (Entity::Netconf->search(hash => {})) {
-        push @netconfs, $netconf->toJSON();
+    $args{attributes}->{attributes}->{default_gateway_id}->{options} = \@networks;
+
+    # Build the list of network managers
+    my $manager_options = {};
+    for my $component (Entity::Component->search(custom => { category => 'NetworkManager' })) {
+        $manager_options->{$component->id} = $component->toJSON;
+        $manager_options->{$component->id}->{label} = $component->label;
+    }
+    my @manageroptions = values %{$manager_options};
+    $args{attributes}->{attributes}->{network_manager_id}->{options} = \@manageroptions;
+
+    # If network_manager_id defined but do not corresponding to a available value,
+    # it is an old value, so delete it.
+    if (not $manager_options->{$args{params}->{network_manager_id}}) {
+        delete $args{params}->{network_manager_id};
+    }
+    # If no disk_manager_id defined and and attr is mandatory, use the first one as value
+    if (! $args{params}->{network_manager_id} && $args{set_mandatory}) {
+        $self->setFirstSelected(name       => 'network_manager_id',
+                                attributes => $args{attributes}->{attributes},
+                                params     => $args{params});
     }
 
-    $args{attributes}->{attributes}->{default_gateway_id}->{options} = \@networks;
-    $args{attributes}->{attributes}->{interfaces}->{attributes}->{attributes}->{netconfs}->{options}
-        = \@netconfs;
+    if ($args{params}->{network_manager_id}) {
+        # Get the network manager params from the selected network manager
+        my $networkmanager = Entity->get(id => $args{params}->{network_manager_id});
+        my $managerparams = $networkmanager->getNetworkManagerParams(params => $args{params});
+
+        for my $attrname (keys %{ $managerparams }) {
+            $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
+            # If no value defined in params, use the first one
+            if (! $args{params}->{$attrname} && $args{set_mandatory}) {
+                $self->setFirstSelected(name       => $attrname,
+                                        attributes => $args{attributes}->{attributes},
+                                        params     => $args{params});
+            }
+
+            # If the attribute is a manager, set it as reload trigger as
+            # it probably hav specific params too
+            if ($attrname =~ m/.*_manager_id/) {
+                $args{attributes}->{attributes}->{$attrname}->{reload} = 1;
+            }
+
+            # HCMNetworkManager specific, should not be in the generic policy code
+            if ($attrname eq "interfaces") {
+                push @{ $args{attributes}->{displayed} },
+                    { interfaces => [ 'interface_name', 'netconfs', 'bonds_number' ] };
+
+                # Add the network interfaces to the relations definition
+                $args{attributes}->{relations}->{interfaces} = {
+                    attrs    => { accessor => 'multi' },
+                    cond     => { 'foreign.policy_id' => 'self.policy_id' },
+                    resource => 'interface'
+                };
+            }
+            else {
+                # Add the attribute to the displayed list
+                push @{ $args{attributes}->{displayed} }, $attrname;
+            }
+        }
+    }
+    # Remove possibly defined value of attributes that depends on disk_manager_id.
+    # (It is probably a first implementation of the full generic version of
+    # manager management in policies...)
+    else {
+        for my $dependency (@{ $self->getPolicySelectorMap->{network_manager_id} }) {
+            delete $args{params}->{$dependency};
+        }
+    }
 
     return $args{attributes};
 }
@@ -193,6 +218,7 @@ sub getPatternFromParams {
 
     my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
 
+    # HCMNetworkManager specific, should not be in the generic policy code
     if (ref($args{params}->{interfaces}) eq 'ARRAY') {
         my $index = 0;
         my $interfaces = {};

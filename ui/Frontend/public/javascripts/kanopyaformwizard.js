@@ -107,7 +107,9 @@ var KanopyaFormWizard = (function() {
                 response = attributes[relation_name].attributes;
 
             } else if (relationdef === undefined) {
-                throw new Error("KanopyaFormWizard: Could not find relation <" + relation_name + "> in the relation definition");
+                delete this.relations[relation_name];
+                continue;
+                // throw new Error("KanopyaFormWizard: Could not find relation <" + relation_name + "> in the relation definition");
 
             } else {
                 var resource = relationdef.resource;
