@@ -414,6 +414,21 @@ sub getAttr {
         throw Kanopya::Exception::Internal::UnknownAttribute(error => "$class, unknown attribute <$args{name}>");
     }
 
+    # The attribute is a virtual, call the corresponding method
+    if (defined $definition->{is_virtual} && $definition->{is_virtual}) {
+        try {
+            return $self->_virtualAttribute(name => $args{name});
+        }
+        catch (Kanopya::Exception $err) {
+            $err->rethrow();
+        }
+        catch ($err) {
+            throw Kanopya::Exception::Internal::UnknownAttribute(
+                      error => "Unable to get value for virtual attribute <$args{name}>, $err"
+                  );
+        }
+    }
+
     # Get the dbix row corresponding to the hierarchy level of the attribute
     my $dbix = $self->_dbixParent(classname => BaseDB->_className(class => $definition->{from_module}));
 
@@ -442,20 +457,6 @@ sub getAttr {
         catch ($err) {
             throw Kanopya::Exception::Internal::UnknownAttribute(
                       error => "Unable to get value(s) for $definition->{relation} relation <$relation>, $err"
-                  );
-        }
-    }
-    # The attribute is a virtual, call the corresponding method
-    elsif (defined $definition->{is_virtual} && $definition->{is_virtual}) {
-        try {
-            return $self->_virtualAttribute(name => $args{name});
-        }
-        catch (Kanopya::Exception $err) {
-            $err->rethrow();
-        }
-        catch ($err) {
-            throw Kanopya::Exception::Internal::UnknownAttribute(
-                      error => "Unable to get value for virtual attribute <$args{name}>, $err"
                   );
         }
     }
@@ -1471,6 +1472,7 @@ sub _attributesDefinition {
 
         next BASECLASS if ! $modulename->can('_resultSource');
 
+        $attributedefs->{$modulename} = clone($modulename->getAttrDef());
         try {
             # Get the corresponding result source if exists (ignore_holes => 0)
             $schema = $modulename->_resultSource(ignore_holes => 0);
@@ -1484,7 +1486,6 @@ sub _attributesDefinition {
         }
 
         # Get the attribute definition for the current level of the hierarchy
-        $attributedefs->{$modulename} = clone($modulename->getAttrDef());
 
         # For each regular attributes, add a generic definition if not exists in attrdef
         for my $column (grep { ! defined ($attributedefs->{$modulename}->{$_}) } $schema->columns) {
