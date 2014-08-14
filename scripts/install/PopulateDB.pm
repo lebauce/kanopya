@@ -94,6 +94,7 @@ my @classes = (
     'Entity::Component::KanopyaDeploymentManager',
     'Entity::Component::KanopyaServiceManager',
     'Entity::Component::HCMStorageManager',
+    'Entity::Component::HCMNetworkManager',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -728,6 +729,8 @@ sub registerManagerCategories {
         'DiskManager',
         'ExportManager',
         'DeploymentManager',
+        'BootManager',
+        'NetworkManager',
         'CollectorManager',
         'NotificationManager',
         'WorkflowManager',
@@ -918,7 +921,7 @@ sub registerComponents {
             component_name         => 'Opennebula',
             component_version      => 3,
             deployable             => 1,
-            component_categories   => [ 'HostManager' ],
+            component_categories   => [ 'HostManager', 'NetworkManager' ],
             service_provider_types => [ 'Cluster', 'Centos6', 'Sles6' ],
         },
         {
@@ -1075,7 +1078,7 @@ sub registerComponents {
             component_name         => 'UcsManager',
             component_version      => 1,
             deployable             => 1,
-            component_categories   => [ 'HostManager' ],
+            component_categories   => [ 'HostManager', 'NetworkManager' ],
             service_provider_types => [ 'UnifiedComputingSystem' ],
         },
         {
@@ -1110,7 +1113,7 @@ sub registerComponents {
             component_name         => 'OpenStack',
             component_version      => 6,
             deployable             => 1,
-            component_categories   => [ ],
+            component_categories   => [ 'HostManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
@@ -1131,7 +1134,7 @@ sub registerComponents {
             component_name         => 'NovaController',
             component_version      => 6,
             deployable             => 1,
-            component_categories   => [ 'HostManager' ],
+            component_categories   => [ 'HostManager', 'NetworkManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
@@ -1172,7 +1175,7 @@ sub registerComponents {
             component_name         => 'KanopyaDeploymentManager',
             component_version      => 0,
             deployable             => 0,
-            component_categories   => [ 'DeploymentManager' ],
+            component_categories   => [ 'DeploymentManager', 'BootManager' ],
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
@@ -1180,6 +1183,13 @@ sub registerComponents {
             component_version      => 0,
             deployable             => 0,
             component_categories   => [ 'StorageManager' ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
+            component_name         => 'HCMNetworkManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'NetworkManager' ],
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
@@ -1618,6 +1628,9 @@ sub registerKanopyaMaster {
             require => {
                 executor_component => 'KanopyaExecutor',
             }
+        },
+        'HCMNetworkManager' => {
+            manager => 'NetworkManager',
         },
         'KanopyaAnomalyDetector' => {},
         'KanopyaRulesEngine' => {},
