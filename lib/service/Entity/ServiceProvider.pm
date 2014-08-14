@@ -43,7 +43,10 @@ use TryCatch;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
-my $errmsg;
+
+
+my $merge = Hash::Merge->new();
+
 
 use constant ATTR_DEF => {
     service_provider_type_id => {
