@@ -34,6 +34,7 @@ use parent Entity::Component;
 use parent Manager::HostManager::VirtualMachineManager;
 use parent Manager::StorageManager;
 use parent Manager::BootManager;
+use parent Manager::NetworkManager;
 
 use strict;
 use warnings;
@@ -148,6 +149,13 @@ sub getManagerParamsDef {
             # TODO:  Get the enum options from the available synchronized backend
             options      => [ 'NFS', 'iSCSI', 'RADOS' ]
         },
+        networks => {
+            label        => 'Networks',
+            type         => 'enum',
+            is_mandatory => 1,
+            # TODO:  Get the enum options from the available synchronized backend
+            options      => []
+        },
         repository   => {
             is_mandatory => 1,
             label        => 'Repository',
@@ -227,6 +235,40 @@ sub checkStorageManagerParams {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'cinder_backend' ]);
+}
+
+
+=pod
+=begin classdoc
+
+@return the network manager parameters as an attribute definition. 
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub getNetworkManagerParams {
+    my ($self, %args) = @_;
+
+    return { networks => $self->getManagerParamsDef->{networks} };
+}
+
+
+=pod
+=begin classdoc
+
+Check params required for managing network connectivity.
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub checkNetworkManagerParams {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'network' ]);
 }
 
 
@@ -455,6 +497,8 @@ sub storageType {
 
 Do the required configuration/actions to provides the boot mechanism for the node.
 
+@see <package>Manager::BootManager</package>
+
 =end classdoc
 =cut
 
@@ -477,6 +521,8 @@ of the boot made in 2 steps.
 
 Apply the boot configuration set at configureBoot
 
+@see <package>Manager::BootManager</package>
+
 =end classdoc
 =cut
 
@@ -488,6 +534,26 @@ sub applyBootConfiguration {
                          optional => { "remove" => 0 });
 
     throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+=begin classdoc
+
+Do the required configuration/actions to provides the proper network connectivity
+to the node from the network manager params.
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub configureNetworkInterfaces {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "networks" ]);
+
+    # TODO: Apply some configuration on neutron if required
 }
 
 
