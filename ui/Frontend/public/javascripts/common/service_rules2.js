@@ -19,7 +19,7 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
         button.button({icons: {primary: 'ui-icon-plusthick'}});
 
         $(button).click(function() {
-            openRulesDialog(elem_id, gridId, staticObject, 'add');
+            openRulesDialog(elem_id, gridId, staticObject);
         });
 
         buttonsContainer.append(button);
@@ -32,45 +32,6 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
             .append(buttonsContainer)
             .append(gridContainer)
             .appendTo(container);
-    }
-
-    function getValueFromList(rowId, columnName) {
-        return $('#' + gridId).jqGrid('getCell', rowId, columnName);
-    }
-
-    function anomalyDetailsHistorical(cid, anomaly_id, row_data) {
-        var metric = {
-            'id': row_data.related_metric_id
-        };
-        var formula = 'id' + metric.id;
-
-        // Get service metric label
-        $.ajax({
-            url: '/api/clustermetric/' + metric.id,
-            async: false,
-            success: function(data) {
-                metric.label = data.label;
-            }
-        });
-
-        integrateWidget(cid, 'widget_historical_view', function(widget_div) {
-            customInitHistoricalWidget(
-                widget_div,
-                elem_id,
-                {
-                    clustermetric_combinations: [
-                        {'type': 'formula', 'formula': formula, 'name': metric.label, 'unit': ''},
-                        {'type': 'anomaly', 'id': anomaly_id, 'name': row_data.label, 'unit': ''}
-                    ],
-                    nodemetric_combinations    : null,
-                    nodes                      : 'from_ajax'
-                },
-                {
-                    'open_config_part': false,
-                    'allow_forecast': false
-                }
-            );
-      });
     }
 
     function displayList() {
@@ -90,12 +51,9 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
             sortname: 'label',
             rowNum: 100,
             details: {
-                tabs: [
-                    {label: 'Historical graph', id: 'servicehistoricalgraph', onLoad: anomalyDetailsHistorical}
-                ],
-                title: {from_column: 'label'},
-                height: 600,
-                buttons: ['button-ok']
+                onSelectRow: function(id) {
+                    openRulesDialog(elem_id, gridId, staticObject, id);
+                }
             },
             deactivate_details: mode_policy,
             action_delete: {
@@ -122,7 +80,7 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
     displayList();
 }
 
-function openRulesDialog(serviceProviderId, gridId, staticObject, action, formula) {
+function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
 
     const dialogContainerId = 'rule-editor';
 
@@ -132,10 +90,11 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action, formul
     var statisticFunctionData;
     var indicatorData;
     var metricData;
+    var rule = {};
     var function1PreviousValue;
     var function2PreviousValue;
 
-    formula = formula || null;
+    ruleId = ruleId || 0;
 
     loadStatisticFunctionData();
 
@@ -215,12 +174,16 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action, formul
     }
 
     function renderDialogTemplate() {
+
+        if (ruleId !== 0) {
+            rule = getRule(ruleId);
+        }
+
         var templateFile = '/templates/rule-editor.tmpl.html';
-        var dialogTitle = getDialogTitle();
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
             $('body').append(template({
-                'title': dialogTitle,
+                'title': getDialogTitle(),
                 'statistic-function': statisticFunctionData,
                 'indicator': indicatorData
             }));
@@ -229,21 +192,32 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action, formul
     }
 
     function getDialogTitle() {
-        var title;
-        switch (action) {
-            case 'add':
-                title = 'Create a new rule';
-                break;
-            case 'edit':
-                title = 'Edit';
-                break;
-        }
-        return title;
+
+        return (ruleId === 0) ? 'New rule' : rule.rule_name;
+    }
+
+    function getRule(ruleId) {
+
+        var ruleObject = {};
+
+        $.ajax({
+            dataType: 'json',
+            url: '/api/rule',
+            data: {
+                'rule_id': ruleId
+            },
+            async: false,
+            success: function(data) {
+                if (data.length > 0) {
+                    ruleObject = data[0];
+                }
+            }
+        });
+
+        return ruleObject;
     }
 
     function openDialog() {
-
-        var element;
 
         initConditionBuilder();
         initActionBuilder();
@@ -282,85 +256,83 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, action, formul
             }
         });
 
-var formula = {
-    'type': 'group',
-    'logic': 'OR',
-    'data': [
-        {
-            'type': 'line',
-            'data': {
-                'function1': 'indicator',
-                'operand1': 330,
-                'operator': '>',
-                'function2': 'value',
-                'operand2': 2
-            }
-        },
-        {
-            'type': 'group',
-            'logic': 'OR',
-            'data': [
-                {
-                    'type': 'line',
-                    'data': {
-                        'function1': 'metric',
-                        'operand1': 382,
-                        'operator': '>',
-                        'function2': 'value',
-                        'operand2': 4
-                    }
-                }
-            ]
-        },
-        {
-            'type': 'line',
-            'data': {
-                'function1': 'metric',
-                'operand1': 432,
-                'operator': '>',
-                'function2': 'value',
-                'operand2': 6
-            }
-        },
-        {
-            'type': 'group',
-            'logic': 'AND',
-            'data': [
-                {
-                    'type': 'line',
-                    'data': {
-                        'function1': 'min',
-                        'operand1': 350,
-                        'operator': '>',
-                        'function2': 'metric',
-                        'operand2': 432
-                    }
-                },
-                {
-                    'type': 'line',
-                    'data': {
-                        'function1': 'max',
-                        'operand1': 355,
-                        'operator': '>',
-                        'function2': 'indicator',
-                        'operand2': 350
-                    }
-                }
-            ]
-        }
-    ]
-};
-
-        element = $('#rule-conditions-builder');
-        addConditionGroup(element, 0);
-        if (formula !== null) {
-            element = element.children('.condition-group');
-            buildConditionGroup(element, 0, formula)
-        }
+// var formula = {
+//     'type': 'group',
+//     'logic': 'OR',
+//     'data': [
+//         {
+//             'type': 'line',
+//             'data': {
+//                 'function1': 'indicator',
+//                 'operand1': 330,
+//                 'operator': '>',
+//                 'function2': 'value',
+//                 'operand2': 2
+//             }
+//         },
+//         {
+//             'type': 'group',
+//             'logic': 'OR',
+//             'data': [
+//                 {
+//                     'type': 'line',
+//                     'data': {
+//                         'function1': 'metric',
+//                         'operand1': 382,
+//                         'operator': '>',
+//                         'function2': 'value',
+//                         'operand2': 4
+//                     }
+//                 }
+//             ]
+//         },
+//         {
+//             'type': 'line',
+//             'data': {
+//                 'function1': 'metric',
+//                 'operand1': 432,
+//                 'operator': '>',
+//                 'function2': 'value',
+//                 'operand2': 6
+//             }
+//         },
+//         {
+//             'type': 'group',
+//             'logic': 'AND',
+//             'data': [
+//                 {
+//                     'type': 'line',
+//                     'data': {
+//                         'function1': 'min',
+//                         'operand1': 350,
+//                         'operator': '>',
+//                         'function2': 'metric',
+//                         'operand2': 432
+//                     }
+//                 },
+//                 {
+//                     'type': 'line',
+//                     'data': {
+//                         'function1': 'max',
+//                         'operand1': 355,
+//                         'operator': '>',
+//                         'function2': 'indicator',
+//                         'operand2': 350
+//                     }
+//                 }
+//             ]
+//         }
+//     ]
+// };
 
         $('#rule-actions-builder').find('.action-add').click(function() {
             addActionLine();
         });
+
+        addConditionGroup($('#rule-conditions-builder'), 0);
+        if (ruleId !== 0) {
+            initRule();
+        }
     }
 
     function initConditionBuilder() {
@@ -384,52 +356,93 @@ var formula = {
             .attr('class', 'action');
     }
 
+    function initRule() {
+
+        $('#rule-name').val(rule.rule_name);
+        $('#rule-description').val(rule.description);
+
+        if (rule.comment) {
+            try {
+                var jsonFormula = JSON.parse(rule.comment);
+                var element = $('#rule-conditions-builder').children('.condition-group');
+                buildConditionGroup(element, 0, jsonFormula);
+            }
+            catch (e) {
+                var message = 'Unable to build this rule (JSON parsing error).'
+                $('#rule-conditions-builder').append('<p class="error">' + message + '</p>');
+            }
+        } else {
+            var message = 'Unable to build this rule (missing JSON format).'
+            $('#rule-conditions-builder').append('<p class="error">' + message + '</p>');
+        }
+    }
+
     function saveRule() {
 
-        var formula = generateFormula();
-        console.debug('formula', formula);
+        $('*').addClass('cursor-wait');
+        // Delay to display the wait cursor
+        setTimeout(function() {
+            var formula = generateFormula();
 
-        if (checkRule(formula.string) === true) {
-            var level = getFormulaLevel(formula.string);
-            switch(level) {
-                case 'node':
-                    saveNodeRule();
-                    break;
-                case 'service':
-                    saveServiceRule();
-                    break;
+            if (checkRule(formula.string) === true) {
+                var level = getFormulaLevel(formula.string);
+                var rule = {
+                    'id': ruleId,
+                    'name': $('#rule-name').val(),
+                    'description': $('#rule-description').val(),
+                    'json': formula.json
+                };
+                rule.formula = getRuleFormula(formula.json, level);
+
+                var ret = writeRule(rule, level);
+                if (ret === true) {
+                    $('#' + gridId).trigger('reloadGrid');
+                    closeDialog();
+                } else {
+                    var message = 'Unable to save the rule.'
+                    $('#rule-conditions-builder').append('<p class="error">' + message + '</p>');
+                }
             }
+            $('*').removeClass('cursor-wait');
+        }, 10);
+    }
+
+    function writeRule(rule, level) {
+
+        var ret = false;
+        var url = '/api/';
+        switch (level) {
+            case 'node':
+                url += 'nodemetricrule';
+                break;
+            case 'service':
+                url += 'aggregaterule';
+                break;
         }
-    }
-
-    function saveNodeRule() {
-
-        console.debug('saveNodeRule');
-            // formula.string = formatFormula(formula.string);
-    }
-
-    function saveServiceRule() {
-
-        console.debug('saveServiceRule');
-    }
-
-    function createRule() {
-        var fields = {
-            metric: $('#metric').val(),
+        if (rule.id > 0) {
+            url += '/' + rule.id;
         }
+
         $.ajax({
-            url: '/api/anomaly',
+            url: url,
             type: 'POST',
+            dataType: 'json',
             data: {
-                'related_metric_id': fields.metric
+                'rule_name': rule.name,
+                'description': rule.description,
+                'formula': rule.formula,
+                'comment': JSON.stringify(rule.json),
+                'state': 'enabled',
+                'service_provider_id': serviceProviderId
             },
-            success: function() {
-                $('#' + gridId).trigger('reloadGrid');
-            },
-            complete: function() {
-                closeDialog();
+            async: false,
+            success: function(data) {
+                console.debug('success pk', data.pk);
+                ret = true;
             }
         });
+
+        return ret;
     }
 
     function closeDialog() {
@@ -507,11 +520,11 @@ var formula = {
                     var data = ($(this).val() === 'metric') ? metricData : indicatorData;
                     if ($(this).val() === 'metric') {
                         $.each(data, function(index, obj) {
-                            element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + '</option>');
+                            element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + ' - ' + obj.id + '</option>');
                         });
                     } else {
                         $.each(data, function(index, obj) {
-                            element.append('<option value="' + obj.id + '">' + obj.label + '</option>');
+                            element.append('<option value="' + obj.id + '">' + obj.label + ' - ' + obj.id + '</option>');
                         });
                     }
                 }
@@ -545,7 +558,7 @@ var formula = {
                         var data = ($(this).val() === 'metric') ? metricData : indicatorData;
                         if ($(this).val() === 'metric') {
                             $.each(data, function(index, obj) {
-                                element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + '</option>');
+                                element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + ' - ' + obj.id + '</option>');
                             });
                         } else {
                             $.each(data, function(index, obj) {
@@ -767,12 +780,36 @@ var formula = {
                 }
                 lineObject.data.function1 = element.children('.function1').val();
                 lineObject.data.operand1 = element.children('.operand1').val();
+                switch (lineObject.data.function1) {
+                    case 'metric':
+                        lineObject.data.level1 = element.children('.operand1').find(':selected').data('level');
+                        break;
+                    case 'indicator':
+                        lineObject.data.level1 = 'node';
+                        break;
+                    default:
+                        lineObject.data.level1 = 'service';
+                        break;
+                }
+                if (lineObject.data.function1 === 'metric') {
+                }
                 lineObject.data.operator = element.children('.operator').val();
                 lineObject.data.function2 = element.children('.function2').val();
                 if (lineObject.data.function2 === 'value') {
                     lineObject.data.operand2 = element.children('.condition-value').val();
                 } else {
                     lineObject.data.operand2 = element.children('.operand2').val();
+                    switch (lineObject.data.function2) {
+                        case 'metric':
+                            lineObject.data.level2 = element.children('.operand2').find(':selected').data('level');
+                            break;
+                        case 'indicator':
+                            lineObject.data.level2 = 'node';
+                            break;
+                        default:
+                            lineObject.data.level2 = 'service';
+                            break;
+                    }
                 }
                 formula.data.push(lineObject);
             }
@@ -801,7 +838,6 @@ var formula = {
 
         // Check if the formula combines service and node metric
         str = stringFormula;
-        console.debug(str);
         // Remove service indicator from the formula
         for (i = 0; i < statisticFunctionData.length; i++) {
             j = str.indexOf(statisticFunctionData[i].code);
@@ -818,7 +854,6 @@ var formula = {
             str = str.substring(0, j) + str.substring(k + 1);
             j = str.indexOf('|ms');
         }
-        console.debug(str);
         // Check if a node metric is used in the modified formula
         if (str !== stringFormula && (str.indexOf('|i') > -1 || str.indexOf('|mn') > -1)) {
             ret = false;
@@ -856,7 +891,349 @@ var formula = {
         return level;
     }
 
-    function formatFormula(stringFormula) {
-        return stringFormula;
+    function getRuleFormula(groupObject, level, isRoot) {
+
+        var i, conditionId;
+        var formula = '';
+        var operator = groupObject.logic;
+
+        isRoot = (isRoot === 'undefined') ? true : isRoot;
+
+        $.each(groupObject.data, function(index, obj) {
+            if (index > 0) {
+                formula += ' ' + operator + ' ';
+            }
+            switch (obj.type) {
+                case 'line':
+                    for (i = 1; i <= 2; i++) {
+                        switch (obj.data['function' + i]) {
+                            case 'value':
+                                obj.data['id' + i] = getConstantMetricId(obj.data['operand' + i], serviceProviderId);
+                                break;
+                            case 'indicator':
+                                obj.data['id' + i] = getNodeMetricId(obj.data['operand' + i], serviceProviderId);
+                                break;
+                            case 'metric':
+                                obj.data['id' + i] = obj.data['operand' + i];
+                                break;
+                            default:
+                                obj.data['id' + i] = getServiceMetricId(obj.data['operand' + i], obj.data['function' + i], serviceProviderId);
+                                break;
+                        }
+                    }
+                    conditionId = getConditionId(obj.data, level, serviceProviderId);
+                    formula += 'id' + conditionId;
+                    break;
+
+                case 'group':
+                    formula += getRuleFormula(obj, level, false);
+                    break;
+            }
+        });
+        if (isRoot === false && groupObject.data.length > 1) {
+            formula = '(' + formula + ')';
+        }
+
+        return formula;
     }
-};
+
+    function getConstantMetricId(constant, serviceProviderId) {
+
+        var constantMetricId = -1;
+
+        $.ajax({
+            dataType: 'json',
+            url: '/api/combination',
+            data: {
+                'combination_formula_string': constant,
+                'service_provider_id': serviceProviderId
+            },
+            async: false,
+            success: function(data) {
+                if (data.length > 0) {
+                    constantMetricId = data[0].pk;
+                } else {
+                    constantMetricId = 0;
+                }
+            }
+        });
+
+        return constantMetricId;
+    }
+
+    function getNodeMetricId(indicatorId, serviceProviderId) {
+
+        var nodeMetricId = -1;
+
+        $.ajax({
+            dataType: 'json',
+            url: '/api/nodemetriccombination',
+            data: {
+                'nodemetric_combination_formula': 'id' + indicatorId,
+                'service_provider_id': serviceProviderId
+            },
+            async: false,
+            success: function(data) {
+                if (data.length > 0) {
+                    nodeMetricId = data[0].pk;
+                } else {
+                    nodeMetricId = createNodeMetric(indicatorId, serviceProviderId);
+                }
+            }
+        });
+
+        return nodeMetricId;
+    }
+
+    function createNodeMetric(indicatorId, serviceProviderId) {
+
+        var nodeMetricId = -1;
+
+        $.ajax({
+            url: '/api/nodemetriccombination',
+            type: 'POST',
+            data: {
+                'nodemetric_combination_formula': 'id' + indicatorId,
+                'service_provider_id': serviceProviderId
+            },
+            async: false,
+            success: function(data) {
+                nodeMetricId = data.pk;
+            }
+        });
+
+        return nodeMetricId;
+    }
+
+    function getServiceMetricId(indicatorId, statisticFunctionName, serviceProviderId) {
+
+        var serviceMetricId = -1;
+
+        var serviceIndicatorId = getServiceIndicatorId(indicatorId, statisticFunctionName, serviceProviderId);
+        if (serviceIndicatorId === -1) {
+            return -1;
+        }
+
+        $.ajax({
+            dataType: 'json',
+            url: '/api/aggregatecombination',
+            data: {
+                'aggregate_combination_formula': 'id' + serviceIndicatorId,
+                'service_provider_id': serviceProviderId
+            },
+            async: false,
+            success: function(data) {
+                if (data.length > 0) {
+                    serviceMetricId = data[0].pk;
+                } else {
+                    serviceMetricId = createServiceMetric(serviceIndicatorId, serviceProviderId);
+                }
+            }
+        });
+
+        return serviceMetricId;
+    }
+
+    function createServiceMetric(serviceIndicatorId, serviceProviderId) {
+
+        var serviceMetricId = -1;
+
+        $.ajax({
+            url: '/api/aggregatecombination',
+            type: 'POST',
+            data: {
+                'aggregate_combination_formula': 'id' + serviceIndicatorId,
+                'service_provider_id': serviceProviderId
+            },
+            async: false,
+            success: function(data) {
+                serviceMetricId = data.pk;
+            }
+        });
+
+        return serviceMetricId;
+    }
+
+    function getServiceIndicatorId(indicatorId, statisticFunctionName, serviceProviderId, isReadOnly) {
+
+        var serviceIndicatorId = -1;
+
+        isReadOnly = isReadOnly || false;
+
+        $.ajax({
+            dataType: 'json',
+            url: '/api/clustermetric',
+            data: {
+                'clustermetric_statistics_function_name': statisticFunctionName,
+                'clustermetric_indicator_id': indicatorId,
+                'clustermetric_service_provider_id': serviceProviderId
+            },
+            async: false,
+            success: function(data) {
+                if (data.length > 0) {
+                    serviceIndicatorId = data[0].pk;
+                } else if (isReadOnly) {
+                    serviceIndicatorId = -1;
+                } else {
+                    serviceIndicatorId = createServiceIndicator(indicatorId, statisticFunctionName, serviceProviderId);
+                }
+            }
+        });
+
+        return serviceIndicatorId;
+    }
+
+    function createServiceIndicator(indicatorId, statisticFunctionName, serviceProviderId) {
+
+        var serviceIndicatorId;
+
+        $.ajax({
+            url: '/api/clustermetric',
+            type: 'POST',
+            data: {
+                'clustermetric_statistics_function_name': statisticFunctionName,
+                'clustermetric_indicator_id': indicatorId,
+                'clustermetric_service_provider_id': serviceProviderId,
+                'clustermetric_window_time': 1200
+            },
+            async: false,
+            success: function(data) {
+                serviceIndicatorId = data.pk;
+            }
+        });
+
+        return serviceIndicatorId;
+    }
+
+    function getConditionId(obj, level, serviceProviderId) {
+
+        var conditionId = -1;
+
+        switch (level) {
+            case 'node':
+                conditionId = getNodeConditionId(obj, serviceProviderId);
+                break;
+            case 'service':
+                conditionId = getServiceConditionId(obj, serviceProviderId);
+                break;
+        }
+
+        return conditionId;
+    }
+
+    function getNodeConditionId(obj, serviceProviderId) {
+
+        var nodeConditionId = -1;
+
+        if (obj.id2 === 0) {
+            nodeConditionId = createNodeCondition(obj, serviceProviderId);
+        } else {
+            $.ajax({
+                dataType: 'json',
+                url: '/api/nodemetriccondition',
+                data: {
+                    'left_combination_id': obj.id1,
+                    'nodemetric_condition_comparator': obj.operator,
+                    'right_combination_id': obj.id2,
+                    'nodemetric_condition_service_provider_id': serviceProviderId
+                },
+                async: false,
+                success: function(data) {
+                    if (data.length > 0) {
+                        nodeConditionId = data[0].pk;
+                    } else {
+                        nodeConditionId = createNodeCondition(obj, serviceProviderId);
+                    }
+                }
+            });
+        }
+
+        return nodeConditionId;
+    }
+
+    function createNodeCondition(obj, serviceProviderId) {
+
+        var nodeConditionId = -1;
+
+        var data = {
+            'left_combination_id': obj.id1,
+            'nodemetric_condition_comparator': obj.operator,
+            'nodemetric_condition_service_provider_id': serviceProviderId
+        };
+        if (obj.id2 === 0) {
+            data.nodemetric_condition_threshold = obj.operand2;
+        } else {
+            data.right_combination_id = obj.id2;
+        }
+
+        $.ajax({
+            url: '/api/nodemetriccondition',
+            type: 'POST',
+            data: data,
+            async: false,
+            success: function(data) {
+                nodeConditionId = data.pk;
+            }
+        });
+
+        return nodeConditionId;
+    }
+
+    function getServiceConditionId(obj, serviceProviderId) {
+
+        var serviceConditionId = -1;
+
+        if (obj.id2 === 0) {
+            serviceConditionId = createServiceCondition(obj, serviceProviderId);
+        } else {
+            $.ajax({
+                dataType: 'json',
+                url: '/api/aggregatecondition',
+                data: {
+                    'left_combination_id': obj.id1,
+                    'comparator': obj.operator,
+                    'right_combination_id': obj.id2,
+                    'aggregate_condition_service_provider_id': serviceProviderId
+                },
+                async: false,
+                success: function(data) {
+                    if (data.length > 0) {
+                        serviceConditionId = data[0].pk;
+                    } else {
+                        serviceConditionId = createServiceCondition(obj, serviceProviderId);
+                    }
+                }
+            });
+        }
+
+        return serviceConditionId;
+    }
+
+    function createServiceCondition(obj, serviceProviderId) {
+
+        var serviceConditionId = -1;
+
+        var data = {
+            'left_combination_id': obj.id1,
+            'comparator': obj.operator,
+            'aggregate_condition_service_provider_id': serviceProviderId
+        };
+        if (obj.id2 === 0) {
+            data.threshold = obj.operand2;
+        } else {
+            data.right_combination_id = obj.id2;
+        }
+
+        $.ajax({
+            url: '/api/aggregatecondition',
+            type: 'POST',
+            data: data,
+            async: false,
+            success: function(data) {
+                serviceConditionId = data.pk;
+            }
+        });
+
+        return serviceConditionId;
+    }
+}

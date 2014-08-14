@@ -256,6 +256,10 @@ ul.submenu div.scrollarrowright {
     width: 400px;
 }
 
+#rule-identification input.large {
+    width: 800px;
+}
+
 #rule-conditions-builder {
     margin-top: 10px;
 }
