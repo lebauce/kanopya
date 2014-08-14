@@ -258,9 +258,13 @@ sub finish {
     $self->{context}->{host}->setConsumerState(state => 'stopping', consumer => $self->workflow);
 
     # Ask to the deployment manager t release the node
+    # Merge all manager parameters for the deployment manager
+    my $managers_params = $self->{context}->{cluster}->getManagerParameters();
     $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager')->releaseNode(
-        node     => $self->{context}->{host}->node,
-        workflow => $self->workflow
+        node         => $self->{context}->{host}->node,
+        boot_manager => $self->{context}->{cluster}->getManager(manager_type => 'BootManager'),
+        workflow     => $self->workflow,
+        %{ $managers_params }
     );
 
     return 0;

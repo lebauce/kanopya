@@ -772,6 +772,32 @@ sub unregisterNode {
     return $self->SUPER::unregisterNode(%args);
 }
 
+
+=pod
+=begin classdoc
+
+Overide the parent method to add to the resulting params the network interfaces
+to the network policy params as we are not able to store objects in the manager params.
+
+@optional manager_type the type of the manager that we want the parameters
+
+=end classdoc
+=cut
+
+sub getManagerParameters {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'manager_type' => undef });
+
+    my $params = $self->SUPER::getManagerParameters(%args);
+    if (! defined $args{manager_type} || $args{manager_type} eq "NetworkManager") {
+        my @interfaces = $self->interfaces;
+        $params->{interfaces} = \@interfaces;
+    }
+    return $params;
+}
+
+
 sub getHosts {
     my ($self) = @_;
 

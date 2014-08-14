@@ -101,8 +101,8 @@ sub getPolicyDef {
         $manager_options->{$component->id} = $component->toJSON;
         $manager_options->{$component->id}->{label} = $component->label;
     }
-    my @diskmanageroptions = values %{$manager_options};
-    $args{attributes}->{attributes}->{storage_manager_id}->{options} = \@diskmanageroptions;
+    my @manageroptions = values %{$manager_options};
+    $args{attributes}->{attributes}->{storage_manager_id}->{options} = \@manageroptions;
 
     # If storage_manager_id defined but do not corresponding to a available value,
     # it is an old value, so delete it.

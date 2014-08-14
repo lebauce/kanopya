@@ -20,8 +20,6 @@
 
 HCM native storage manager. Create system images for nodes from disk and export managers.
 
-Create a disk via the 
-
 =end classdoc
 =cut
 
@@ -49,7 +47,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 0,
     },
     storage_type => {

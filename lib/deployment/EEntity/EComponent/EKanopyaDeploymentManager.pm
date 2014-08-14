@@ -57,20 +57,21 @@ sub prepareNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'systemimage', 'boot_policy' ],
-                         optional => { 'boot_manager_id'  => $self->id,
-                                       'kernel_id'        => undef,
-                                       'deploy_on_disk'   => 0,
-                                       'hypervisor'       => undef,
-                                       'erollback'        => undef });
+                         required => [ 'node', 'systemimage', 'boot_policy',
+                                       'network_manager', 'boot_manager' ],
+                         optional => { 'kernel_id'      => undef,
+                                       'deploy_on_disk' => 0,
+                                       'hypervisor'     => undef,
+                                       'erollback'      => undef });
 
     # Attach the system image to the node
     # Ask to the storage manager to do this, forward all the managers params
     $args{systemimage}->attach(%args);
 
-    $log->info("Assign ips to the node network interfaces");
+    $log->info("Configure network interfaces via network manager " . $args{network_manager}->label);
 
-    $self->_assignNetworkInterfaces(node => $args{node});
+    # Ask to the network manager to configure the interfaces, forward all the managers params
+    $args{network_manager}->configureNetworkInterfaces(%args);
 
     # Mount the systemimage on the executor.
     my $mountpoint;
@@ -106,11 +107,10 @@ sub prepareNode {
         }
     }
 
-    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
-    $log->info("Operate boot configuration via boot manager " . $boot_manager->label);
+    $log->info("Operate boot configuration via boot manager " . $args{boot_manager}->label);
 
     # Ask to the boot manager to configure the boot, forward all the managers params
-    $boot_manager->configureBoot(%args);
+    $args{boot_manager}->configureBoot(%args);
 }
 
 
@@ -126,18 +126,14 @@ sub deployNode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args,
-                         required => [ 'node' ],
-                         optional => { 'boot_manager_id' => $self->id,
-                                       'hypervisor'      => undef,
-                                       'erollback'       => undef });
+                         required => [ 'node', 'boot_manager' ],
+                         optional => { 'hypervisor'   => undef,
+                                       'erollback'    => undef });
 
-    # Ask to the boot manager to operation the configuration required for boot
-    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
-
-    $log->info("Applying boot configuration via boot manager " . $boot_manager->label);
+    $log->info("Applying boot configuration via boot manager " . $args{boot_manager}->label);
 
     # Ask to the boot manager to aplly the boot configuration, forward all the managers params
-    $boot_manager->applyBootConfiguration(%args);
+    $args{boot_manager}->applyBootConfiguration(%args);
 
     # Finally we start the node
     # Implicitly ask to the host manager to start the host, forward all the managers params
@@ -270,12 +266,10 @@ sub unconfigureNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node' ],
-                         optional => { 'boot_manager_id' => $self->id });
+                         required => [ 'node', 'boot_manager' ]);
 
     # Ask to the boot manager to remove the node from the boot system
-    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
-    $boot_manager->configureBoot(node => $args{node}, remove => 1);
+    $args{boot_manager}->configureBoot(node => $args{node}, remove => 1);
 }
 
 
@@ -291,12 +285,10 @@ sub releaseNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node' ],
-                         optional => { 'boot_manager_id' => $self->id });
+                         required => [ 'node', 'boot_manager' ]);
 
     # Ask to the boot manager to remove the node from the boot system
-    my $boot_manager = EEntity->new(entity => Entity::Component->get(id => $args{boot_manager_id}));
-    $boot_manager->applyBootConfiguration(node => $args{node}, remove => 1);
+    $args{boot_manager}->applyBootConfiguration(node => $args{node}, remove => 1);
 
     # Finaly halt the node
     $log->info("Poweroff host " . $args{node}->host->label);
@@ -399,53 +391,6 @@ sub cancelPrepareNode {
 
     $self->unconfigureNode(node => $args{node});
     EEntity->new(entity => $self->dhcp_component)->applyConfiguration();
-}
-
-
-=pod
-=begin classdoc
-
-Assign ip to the host network interfaces.
-
-=end classdoc
-=cut
-
-sub _assignNetworkInterfaces {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'node' ]);
-
-    # Search for any load balanced component on the node
-    my $is_loadbalanced = $args{node}->isLoadBalanced;
-    # Search for any component master node
-    my $is_masternode = (scalar(grep { $_->master_node } $args{node}->component_nodes) > 0);
-
-    IFACE:
-    foreach my $iface (@{ $args{node}->host->getIfaces }) {
-        # Handle associated ifaces only
-        if ($iface->netconfs) {
-            # Public network on loadbalanced component node must be configured only
-            # on the master node
-            if ($iface->hasRole(role => 'public') and $is_loadbalanced and not $is_masternode) {
-                $log->info("Skipping interface " . $iface->iface_name);
-                next IFACE;
-            }
-
-            # Assign ip from the associated interface poolip
-            $iface->assignIp();
-
-            # Apply VLAN's
-            for my $netconf ($iface->netconfs) {
-                for my $vlan ($netconf->vlans) {
-                    $log->info("Apply VLAN on " . $iface->iface_name);
-                    $args{node}->host->host_manager->applyVLAN(iface => $iface, vlan => $vlan);
-                }
-            }
-        }
-        else {
-            $log->info("Skipping interface " . $iface->iface_name . ", no associated netconfs");
-        }
-    }
 }
 
 

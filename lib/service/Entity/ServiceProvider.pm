@@ -197,25 +197,6 @@ sub registerNode {
         $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
     }
 
-    # If the node linked to a host, configure the network connectivity
-    # TODO: Manage network connectivity on node instead of host.
-    if (defined $node->host) {
-        # Set the ifaces netconf according to the cluster interfaces
-        # We consider that the available ifaces match the cluster
-        # interfaces since getFreeHost selection done.
-        foreach my $interface ($self->interfaces) {
-            # Firstly find the corresponding iface from name
-            my $iface = $node->host->find(related => 'ifaces',
-                                          hash    => { iface_name => $interface->interface_name });
-
-            # Set the related netconfs
-            my @netconfs = $interface->netconfs;
-
-            $log->info("Configure iface " . $iface->iface_name . " with netconfs " . join(', ', @netconfs));
-            $iface->update(netconf_ifaces => \@netconfs, override_relations => 1);
-        }
-    }
-
     # Create the nodemetric for the new node from the existing clustermetrics indicators
     # Create Nodemetrics for all existing nodes fo the service provider
     for my $clustermetric ($self->clustermetrics) {
@@ -490,17 +471,35 @@ sub addManagerParameters {
 }
 
 
+=pod
+=begin classdoc
+
+Return the parameters of the manager corresponding to the requested type.
+If no type given, return the parameters of all the manager of the service.
+
+@optional manager_type the type of the manager that we want the parameters
+
+=end classdoc
+=cut
+
 sub getManagerParameters {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'manager_type' ]);
+    General::checkParams(args => \%args, optional => { 'manager_type' => undef });
 
-    my $cluster_manager = $self->find(related => "service_provider_managers",
-                                      custom  => { category => $args{manager_type} });
+    # If no manager type defined, search all managers
+    my $query = { related => "service_provider_managers" };
+    if (defined $args{manager_type}) {
+        $query->{custom} = { category => $args{manager_type} };
+    }
 
-    return $cluster_manager->getParams();
+    my $params = {};
+    for my $manager ($self->search(%{ $query })) {
+        $params = $merge->merge($params, $manager->getParams());
+    }
+    return $params;
 }
+
 
 =pod
 =begin classdoc

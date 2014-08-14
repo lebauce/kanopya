@@ -55,7 +55,8 @@ sub check {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => $self->{context}, required => [ "deployment_manager", "node" ]);
+    General::checkParams(args     => $self->{context},
+                         required => [ "deployment_manager", "node", "boot_manager" ]);
 }
 
 
@@ -71,7 +72,8 @@ sub execute {
     my $self = shift;
 
     $self->{context}->{deployment_manager}->unconfigureNode(
-        node => $self->{context}->{node},
+        node         => $self->{context}->{node},
+        boot_manager => $self->{context}->{boot_manager},
         %{ $self->{params} }
     );
 }

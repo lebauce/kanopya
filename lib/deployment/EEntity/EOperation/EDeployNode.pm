@@ -61,7 +61,7 @@ sub check {
     my %args = @_;
 
     General::checkParams(args     => $self->{context},
-                         required => [ 'deployment_manager', 'node' ],
+                         required => [ 'deployment_manager', 'node', 'boot_manager' ],
                          optional => { 'hypervisor' => undef });
 
     General::checkParams(args => $self->{params}, optional => { 'deploy_on_disk' => 0  });
@@ -80,9 +80,10 @@ sub execute {
     my ($self, %args) = @_;
 
     $self->{context}->{deployment_manager}->deployNode(
-        node           => $self->{context}->{node},
-        hypervisor     => $self->{context}->{hypervisor},
-        erollback      => $self->{erollback},
+        node         => $self->{context}->{node},
+        hypervisor   => $self->{context}->{hypervisor},
+        boot_manager => $self->{context}->{boot_manager},
+        erollback    => $self->{erollback},
         %{ $self->{params} }
     );
 }
@@ -100,7 +101,6 @@ sub postrequisites {
 
     return $self->{context}->{deployment_manager}->checkNodeUp(
         node           => $self->{context}->{node},
-        # deploy_on_disk => $self->{params}->{deploy_on_disk},
         erollback      => $self->{erollback},
         %{ $self->{params} }
     );
@@ -119,7 +119,8 @@ sub finish {
     my ($self, %args) = @_;
 
     delete $self->{context}->{deployment_manager};
-    # delete $self->{context}->{node};
+    delete $self->{context}->{boot_manager};
+    delete $self->{context}->{network_manager};
     delete $self->{context}->{systemimage};
 }
 

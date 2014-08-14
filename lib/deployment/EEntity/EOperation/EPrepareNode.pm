@@ -61,7 +61,8 @@ sub check {
     my %args = @_;
 
     General::checkParams(args     => $self->{context},
-                         required => [ 'deployment_manager', 'node', 'systemimage' ],
+                         required => [ 'deployment_manager', 'node', 'systemimage',
+                                       'boot_manager', 'network_manager' ],
                          optional => { 'hypervisor' => undef });
 
     General::checkParams(args     => $self->{params},
@@ -82,13 +83,12 @@ sub execute {
     my ($self, %args) = @_;
 
     $self->{context}->{deployment_manager}->prepareNode(
-        node           => $self->{context}->{node},
-        systemimage    => $self->{context}->{systemimage},
-        hypervisor     => $self->{context}->{hypervisor},
-        # boot_policy    => $self->{params}->{boot_policy},
-        # deploy_on_disk => $self->{params}->{deploy_on_disk},
-        # kernel_id      => $self->{params}->{kernel_id},
-        erollback      => $self->{erollback},
+        node            => $self->{context}->{node},
+        systemimage     => $self->{context}->{systemimage},
+        hypervisor      => $self->{context}->{hypervisor},
+        boot_manager    => $self->{context}->{boot_manager},
+        network_manager => $self->{context}->{network_manager},
+        erollback       => $self->{erollback},
         %{ $self->{params} }
     );
 }

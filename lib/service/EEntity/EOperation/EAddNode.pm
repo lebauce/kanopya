@@ -317,12 +317,9 @@ sub execute {
     }
     else {
         # Get a free host
-        my @interfaces = $self->{context}->{cluster}->interfaces;
-        my $host_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'HostManager');
-        $self->{context}->{host} = $self->{context}->{host_manager}->getFreeHost(
-                                       interfaces => \@interfaces,
-                                       %{ $host_params }
-                                   );
+        # Merge all manager parameters to gather all required params for searching a free host
+        my $managers_params = $self->{context}->{cluster}->getManagerParameters();
+        $self->{context}->{host} = $self->{context}->{host_manager}->getFreeHost(%{ $managers_params });
 
         if (not defined $self->{context}->{host}) {
             throw Kanopya::Exception::Internal(error => "Could not find a usable host");

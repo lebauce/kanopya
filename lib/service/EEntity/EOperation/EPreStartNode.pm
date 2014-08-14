@@ -128,24 +128,16 @@ sub finish {
 
     $self->{context}->{node}->setState(state => "pregoingin");
 
-    # Merge all manager parameters for the deployment manager
-    my $managers_params = {};
-    for my $managertype ('HostManager', 'DeploymentManager', 'StorageManager', 'NetworkManager') {
-        try {
-            my $params = $self->{context}->{cluster}->getManagerParameters(manager_type => $managertype);
-            $managers_params = $merge->merge($params, $managers_params);
-        }
-        catch (Kanopya::Exception::Internal::NotFound $err) {
-            $log->warn("No manager of type $managertype found for params, skipping...");
-        }
-    }
-
     # Ask to the DeploymentManager to deploy the node from the systemimage
+    # Merge all manager parameters for the deployment manager
+    my $managers_params = $self->{context}->{cluster}->getManagerParameters();
     $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager')->deployNode(
-        node           => $self->{context}->{node},
-        systemimage    => $self->{context}->{systemimage},
-        kernel_id      => $self->{context}->{cluster}->kernel_id,
-        workflow       => $self->workflow,
+        node            => $self->{context}->{node},
+        boot_manager    => $self->{context}->{cluster}->getManager(manager_type => 'BootManager'),
+        network_manager => $self->{context}->{cluster}->getManager(manager_type => 'NetworkManager'),
+        systemimage     => $self->{context}->{systemimage},
+        kernel_id       => $self->{context}->{cluster}->kernel_id,
+        workflow        => $self->workflow,
         %{ $managers_params }
     );
 }

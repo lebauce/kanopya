@@ -146,7 +146,8 @@ sub deployNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'systemimage', 'boot_policy' ],
+                         required => [ 'node', 'systemimage', 'boot_policy',
+                                       'boot_manager', 'network_manager' ],
                          optional => { 'hypervisor' => undef, 'kernel_id' => undef,
                                        'deploy_on_disk' => 0, 'workflow' => undef });
 
@@ -157,13 +158,12 @@ sub deployNode {
                params => {
                    context => {
                        deployment_manager => $self,
+                       boot_manager       => delete $args{boot_manager},
+                       network_manager    => delete $args{network_manager},
                        node               => delete $args{node},
                        systemimage        => delete $args{systemimage},
                    },
                    %args,
-                   # boot_policy    => $args{boot_policy},
-                   # deploy_on_disk => $args{deploy_on_disk},
-                   # kernel_id      => $args{kernel_id},
                }
            );
 }
@@ -187,7 +187,7 @@ sub releaseNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node' ],
+                         required => [ 'node', 'boot_manager' ],
                          optional => { 'workflow' => undef });
 
     $args{context}->{deployment_manager} = $self;
@@ -197,6 +197,7 @@ sub releaseNode {
                params   => {
                    context => {
                        deployment_manager => $self,
+                       boot_manager       => delete $args{boot_manager},
                        node               => delete $args{node},
                    },
                },
@@ -219,7 +220,7 @@ sub configureBoot {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "node", "systemimage", "boot_policy" ]);
+                         required => [ "node", "systemimage", "boot_policy", "boot_manager" ]);
 
     throw Kanopya::Exception::NotImplemented();
 }
@@ -242,7 +243,7 @@ sub applyBootConfiguration {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "node", "systemimage", "boot_policy" ]);
+                         required => [ "node", "systemimage", "boot_policy", "boot_manager" ]);
 
     throw Kanopya::Exception::NotImplemented();
 }
