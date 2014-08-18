@@ -133,7 +133,6 @@ sub finish {
     my $managers_params = $self->{context}->{cluster}->getManagerParameters();
     $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager')->deployNode(
         node            => $self->{context}->{node},
-        boot_manager    => $self->{context}->{cluster}->getManager(manager_type => 'BootManager'),
         network_manager => $self->{context}->{cluster}->getManager(manager_type => 'NetworkManager'),
         systemimage     => $self->{context}->{systemimage},
         kernel_id       => $self->{context}->{cluster}->kernel_id,
