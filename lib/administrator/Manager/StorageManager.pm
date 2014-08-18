@@ -159,6 +159,31 @@ sub umountSystemImage {
 =pod
 =begin classdoc
 
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
+        systemimage_size => {
+            label        => 'System image size',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 0,
+        },
+    };
+}
+
+
+=pod
+=begin classdoc
+
 Check params required for managing system images.
 
 =end classdoc

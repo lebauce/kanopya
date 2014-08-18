@@ -81,21 +81,6 @@ sub storageType {
 =pod
 =begin classdoc
 
-@return the component label
-
-=end classdoc
-=cut
-
-sub label {
-    my ($self, %args) = @_;
-
-    return $self->storageType;
-}
-
-
-=pod
-=begin classdoc
-
 @return the manager params definition.
 
 =end classdoc
@@ -114,13 +99,6 @@ sub getManagerParamsDef {
             type         => 'enum',
             is_mandatory => 1,
             options      => \@boot_policies,
-        },
-        systemimage_size => {
-            label        => 'System image size',
-            type         => 'integer',
-            unit         => 'byte',
-            pattern      => '^\d*$',
-            is_mandatory => 0,
         },
         disk_manager_id => {
             label        => 'Disk manager',
