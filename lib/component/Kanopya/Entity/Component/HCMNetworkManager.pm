@@ -51,47 +51,12 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0,
     },
-    network_type => {
-        is_virtual => 1
-    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new();
-
-
-=pod
-=begin classdoc
-
-@return the storage type description.
-
-@see <package>Manager::NetworkManager</package>
-
-=end classdoc
-=cut
-
-sub networkType {
-    my ($self, %args) = @_;
-
-    return "HCM network manager";
-}
-
-
-=pod
-=begin classdoc
-
-@return the component label
-
-=end classdoc
-=cut
-
-sub label {
-    my ($self, %args) = @_;
-
-    return $self->networkType;
-}
 
 
 =pod
@@ -105,7 +70,6 @@ sub label {
 sub getManagerParamsDef {
     my ($self, %args) = @_;
 
-    my @boot_policies = values(Manager::HostManager->BOOT_POLICIES);
     return {
         # TODO: call super on all Manager supers
         %{ $self->SUPER::getManagerParamsDef },
