@@ -338,7 +338,8 @@ sub buildInstantiationParams {
     my $confpattern = $class->buildConfigurationPattern(%args);
 
     General::checkParams(args => $confpattern, required => [ 'managers' ]);
-    General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'storage_manager' ]);
+    General::checkParams(args     => $confpattern->{managers},
+                         required => [ 'host_manager', 'storage_manager', 'network_manager' ]);
 
     my $composite_params;
     for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
@@ -349,10 +350,7 @@ sub buildInstantiationParams {
 
     $class->checkConfigurationPattern(attrs => $confpattern, composite => $composite_params);
 
-    my $op_params = {
-        cluster_params => $confpattern,
-        %$composite_params
-    };
+    my $op_params = { cluster_params => $confpattern, %$composite_params };
 
     $log->debug("Instanciation params for service $args{cluster_name}:\n" . Dumper($op_params));
 
@@ -408,7 +406,7 @@ sub checkConfigurationPattern {
         # For now, only check the manaher paramters only
         for my $manager_def (values %{ $args{composite}->{managers} }) {
             if (defined $manager_def->{manager_id}) {
-                my $manager = Entity->get(id => $manager_def->{manager_id});
+                my $manager = Entity::Component->get(id => $manager_def->{manager_id});
 
                 $manager_def->{manager_params} = $manager->checkManagerParams(
                                                      manager_type   => $manager_def->{manager_type},
