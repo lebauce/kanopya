@@ -107,6 +107,9 @@ sub checkManagerParams {
     elsif ($args{manager_type} eq 'NotificationManager') {
         $updated = $self->checkNotificationManagerParams(%{ $args{manager_params} });
     }
+    elsif ($args{manager_type} eq 'DeploymentManager') {
+        $updated = $self->checkDeploymentManagerParams(%{ $args{manager_params} });
+    }
 
     if (ref($updated) eq "HASH") {
         # The params has been updated/completed by the manager

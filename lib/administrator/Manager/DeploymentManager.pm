@@ -87,4 +87,34 @@ sub releaseNode {
     throw Kanopya::Exception::NotImplemented();
 }
 
+
+=pod
+=begin classdoc
+
+Check params required for managing deployment of nodes.
+
+=end classdoc
+=cut
+
+sub checkDeploymentkManagerParams {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+=begin classdoc
+
+@return the deployment manager parameters as an attribute definition.
+
+=end classdoc
+=cut
+
+sub getDeploymentManagerParams {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
 1;
