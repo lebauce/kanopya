@@ -105,6 +105,16 @@ sub createCluster {
     diag('Get physical hoster');
     my $physical_hoster = $kanopya_cluster->getHostManager();
 
+    diag('Retrieving HCM deployment manager');
+    my $deployment_manager = EEntity->new(
+                              entity => $kanopya_cluster->getComponent(name => "KanopyaDeploymentManager"),
+                          );
+
+    diag('Retrieving HCM network manager');
+    my $network_manager = EEntity->new(
+                              entity => $kanopya_cluster->getComponent(name => "HCMNetworkManager"),
+                          );
+
     diag('Retrieving HCM storage manager');
     my $storage_manager = EEntity->new(
                               entity => $kanopya_cluster->getComponent(name => "HCMStorageManager"),
@@ -172,8 +182,6 @@ sub createCluster {
     }
 
     $default_conf->{default_gateway_id} = ($adminnetconf->poolips)[0]->network->id;
-    $default_conf->{components} = {};
-    $default_conf->{interfaces} = {};
     $default_conf->{managers} = {
         host_manager => {
             manager_id     => $physical_hoster->id,
@@ -194,6 +202,21 @@ sub createCluster {
                 iscsi_portals     => \@iscsi_portal_ids,
             },
         },
+        deployment_manager => {
+            manager_id     => $deployment_manager->id,
+            manager_type   => "DeploymentManager",
+            manager_params => {
+                boot_manager_id => $deployment_manager->id,
+                components      => {}
+            },
+        },
+        network_manager => {
+            manager_id     => $network_manager->id,
+            manager_type   => "NetworkManager",
+            manager_params => {
+                interfaces  => {}
+            },
+        },
     };
 
     if (defined $args{cluster_conf}) {
@@ -207,12 +230,18 @@ sub createCluster {
     if (defined $components) {
         while (my ($component,$comp_conf) = each %$components) {
             my $tmp = {
-                components => {
-                    $component => {
-                        component_type => ClassType::ComponentType->find(hash => {
-                                               component_name => $component
-                                          })->id,
-                        component_configuration => $comp_conf
+                managers => {
+                    deployment_manager => {
+                        manager_params => {
+                            components => {
+                                $component => {
+                                    component_type => ClassType::ComponentType->find(hash => {
+                                                           component_name => $component
+                                                      })->id,
+                                    component_configuration => $comp_conf
+                                }
+                            }
+                        }
                     }
                 }
             };
@@ -238,11 +267,11 @@ sub createCluster {
     }
 
     if (defined $interfaces) {
-        my $ifcs = { interfaces => $interfaces };
+        my $ifcs = { managers => { network_manager => { manager_params => { interfaces => $interfaces } } } };
         $cluster_conf = $merge->merge($cluster_conf, $ifcs);
     }
     else {
-        $cluster_conf->{interfaces}->{admin} = {
+        $cluster_conf->{managers}->{network_manager}->{manager_params}->{interfaces}->{admin} = {
             interface_name => 'eth0',
             netconfs  => { $adminnetconf->id => $adminnetconf->id },
         };
