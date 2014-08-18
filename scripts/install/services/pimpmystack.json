@@ -58,6 +58,14 @@
         "PMS Compute" : {
             "policy_name": "PMS Compute",
             "deploy_on_disk": "1",
+            "deployment_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "boot_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "components":[
                 {
                     "component_type" : {
@@ -80,6 +88,14 @@
         "PMS DB and Messaging" : {
             "policy_name": "PMS DB and Messaging",
             "deploy_on_disk": "1",
+            "deployment_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "boot_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "components": [
                 {
                     "component_type" : {
@@ -102,6 +118,14 @@
         "PMS Distributed Controller" : {
             "policy_name": "PMS Distributed Controller",
             "deploy_on_disk": "1",
+            "deployment_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "boot_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "components": [
                 {
                     "component_type" : {
@@ -154,6 +178,14 @@
         "PMS Full Controller" : {
             "policy_name": "PMS Full Controller",
             "deploy_on_disk": "1",
+            "deployment_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "boot_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "components": [
                 {
                     "component_type" : {
@@ -218,6 +250,14 @@
         "PMS HA Controller" : {
             "policy_name": "PMS HA Controller",
             "deploy_on_disk": "1",
+            "deployment_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "boot_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "components": [
                 {
                     "component_type" : {

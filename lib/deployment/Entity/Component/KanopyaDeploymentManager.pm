@@ -39,6 +39,8 @@ use parent Manager::BootManager;
 use strict;
 use warnings;
 
+use Entity::Component;
+
 use TryCatch;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -126,6 +128,128 @@ sub new {
 =pod
 =begin classdoc
 
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
+        kernel_id => {
+            label        => 'Kernel',
+            type         => 'relation',
+            relation     => 'single',
+            pattern      => '^\d*$',
+        },
+        deploy_on_disk => {
+            label        => 'Deploy on hard disk',
+            type         => 'boolean',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        boot_manager_id => {
+            label        => 'Boot manager',
+            type         => 'relation',
+            relation     => 'single',
+            pattern      => '^[0-9\.]*$',
+            is_mandatory => 1,
+            is_editable  => 0,
+        },
+        components => {
+            label        => 'Components',
+            type         => 'relation',
+            relation     => 'single_multi',
+            is_mandatory => 1,
+            attributes   => {
+                attributes => {
+                    policy_id => {
+                        type     => 'relation',
+                        relation => 'single',
+                    },
+                    component_type => {
+                        label        => 'Component type',
+                        type         => 'relation',
+                        relation     => 'single',
+                        pattern      => '^\d*$',
+                        is_mandatory => 1,
+                        is_editable  => 1
+                    },
+                }
+            }
+        },
+    };
+}
+
+
+=pod
+=begin classdoc
+
+Check params required for managing deployment of nodes.
+
+@see <package>Manager::DeploymentManager</package>
+
+=end classdoc
+=cut
+
+sub checkDeploymentManagerParams {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "components", "boot_manager_id" ],
+                         optional => { "deploy_on_disk" => 0, "kernel_id" => undef });
+}
+
+
+=pod
+=begin classdoc
+
+@return the network manager parameters as an attribute definition. 
+
+@see <package>Manager::DeploymentManager</package>
+
+=end classdoc
+=cut
+
+sub getDeploymentManagerParams {
+    my ($self, %args) = @_;
+
+    my $paramdef = $self->getManagerParamsDef();
+
+    my @kernels;
+    for my $kernel (Entity::Kernel->search(hash => {})) {
+        push @kernels, $kernel->toJSON();
+    }
+
+    # Get the list of possible component types from the cluster type
+    my $clustertype;
+    if (defined $args{params}->{masterimage_id}) {
+        $clustertype
+            = Entity::Masterimage->get(id => $args{params}->{masterimage_id})->masterimage_cluster_type;
+    }
+    else {
+        $clustertype = ClassType::ServiceProviderType->find(hash => {
+                            service_provider_name => "Cluster"
+                       });
+    }
+    my @componenttypes;
+    for my $componenttype ($clustertype->search(related => 'component_types', hash => { deployable => 1 })) {
+        push @componenttypes, $componenttype->toJSON();
+    }
+
+    $paramdef->{kernel_id}->{options} = \@kernels;
+    $paramdef->{components}->{attributes}->{attributes}->{component_type}->{options} = \@componenttypes;
+
+    return $paramdef;
+}
+
+
+=pod
+=begin classdoc
+
 Use the executor to run the operation AddCluster.
 
 @param node the node to deploy
@@ -147,7 +271,7 @@ sub deployNode {
 
     General::checkParams(args     => \%args,
                          required => [ 'node', 'systemimage', 'boot_policy',
-                                       'boot_manager', 'network_manager' ],
+                                       'boot_manager_id', 'network_manager' ],
                          optional => { 'hypervisor' => undef, 'kernel_id' => undef,
                                        'deploy_on_disk' => 0, 'workflow' => undef });
 
@@ -158,7 +282,7 @@ sub deployNode {
                params => {
                    context => {
                        deployment_manager => $self,
-                       boot_manager       => delete $args{boot_manager},
+                       boot_manager       => Entity::Component->get(id => delete $args{boot_manager_id}),
                        network_manager    => delete $args{network_manager},
                        node               => delete $args{node},
                        systemimage        => delete $args{systemimage},

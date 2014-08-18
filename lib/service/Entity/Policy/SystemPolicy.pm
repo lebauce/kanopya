@@ -62,12 +62,6 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^\d*$',
         reload       => 1,
     },
-    kernel_id => {
-        label        => 'Kernel',
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-    },
     cluster_si_persistent => {
         label        => 'Persistent system images',
         type         => 'boolean',
@@ -79,28 +73,13 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^[A-Za-z0-9]+$',
         is_mandatory => 0
     },
-    components => {
-        label        => 'Components',
+    deployment_manager_id => {
+        label        => "Deployment manager",
         type         => 'relation',
-        relation     => 'single_multi',
-        is_editable  => 1,
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
         is_mandatory => 1,
-        attributes   => {
-            attributes => {
-                policy_id => {
-                    type     => 'relation',
-                    relation => 'single',
-                },
-                component_type => {
-                    label        => 'Component type',
-                    type         => 'relation',
-                    relation     => 'single',
-                    pattern      => '^\d*$',
-                    is_mandatory => 1,
-                    is_editable  => 1
-                },
-            }
-        }
     },
 };
 
@@ -130,60 +109,92 @@ sub getPolicyDef {
                          optional => { 'params' => {}, 'trigger' => undef });
 
     # Add the dynamic attributes to displayed
-    push @{ $args{attributes}->{displayed} }, 'kernel_id';
     push @{ $args{attributes}->{displayed} }, 'masterimage_id';
     push @{ $args{attributes}->{displayed} }, 'systemimage_size';
     push @{ $args{attributes}->{displayed} }, 'cluster_basehostname';
     push @{ $args{attributes}->{displayed} }, 'cluster_si_persistent';
-    push @{ $args{attributes}->{displayed} }, 'deploy_on_disk';
-    push @{ $args{attributes}->{displayed} }, { components => [ 'component_type' ] };
-
-    # Add the components to the relations definition
-    $args{attributes}->{relations}->{components} = {
-        attrs    => { accessor => 'multi' },
-        cond     => { 'foreign.policy_id' => 'self.policy_id' },
-        resource => 'component'
-    };
+    push @{ $args{attributes}->{displayed} }, 'deployment_manager_id';
 
     my @masterimages;
     for my $masterimage (Entity::Masterimage->search(hash => {})) {
         push @masterimages, $masterimage->toJSON();
     }
-    my @kernels;
-    for my $kernel (Entity::Kernel->search(hash => {})) {
-        push @kernels, $kernel->toJSON();
-    }
 
-    # Get the list of possible component types from the cluster type
-    my $clustertype;
-    if (defined $args{params}->{masterimage_id}) {
-        $clustertype
-            = Entity::Masterimage->get(id => $args{params}->{masterimage_id})->masterimage_cluster_type;
-    }
-    else {
-        $clustertype = ClassType::ServiceProviderType->find(hash => {
-                            service_provider_name => "Cluster"
-                       });
-    }
-    my @componenttypes;
-    for my $componenttype ($clustertype->search(related => 'component_types', hash => { deployable => 1 })) {
-        push @componenttypes, $componenttype->toJSON();
-    }
-
-    # Manually add the systemimage_size and deploy_on_disk attrs because they are manager params
-    $args{attributes}->{attributes}->{deploy_on_disk}
-        = Manager::HostManager->getManagerParamsDef->{deploy_on_disk};
-
+    # Manually add the systemimage_size attrs because they are manager params
     $args{attributes}->{attributes}->{systemimage_size}
         = Manager::StorageManager->getManagerParamsDef->{systemimage_size};
 
     $args{attributes}->{attributes}->{systemimage_size}->{is_mandatory}
         = defined $args{params}->{masterimage_id} ? 1 : 0;
 
-    $args{attributes}->{attributes}->{kernel_id}->{options} = \@kernels;
     $args{attributes}->{attributes}->{masterimage_id}->{options} = \@masterimages;
-    $args{attributes}->{attributes}->{components}->{attributes}->{attributes}->{component_type}->{options}
-        = \@componenttypes;
+
+    # Build the list of deployment managers
+    my $manager_options = {};
+    for my $component (Entity::Component->search(custom => { category => 'DeploymentManager' })) {
+        $manager_options->{$component->id} = $component->toJSON;
+        $manager_options->{$component->id}->{label} = $component->label;
+    }
+    my @manageroptions = values %{$manager_options};
+    $args{attributes}->{attributes}->{deployment_manager_id}->{options} = \@manageroptions;
+
+    # If deployment_manager_id defined but do not corresponding to a available value,
+    # it is an old value, so delete it.
+    if (not $manager_options->{$args{params}->{deployment_manager_id}}) {
+        delete $args{params}->{deployment_manager_id};
+    }
+    # If no disk_manager_id defined and and attr is mandatory, use the first one as value
+    if (! $args{params}->{deployment_manager_id} && $args{set_mandatory}) {
+        $self->setFirstSelected(name       => 'deployment_manager_id',
+                                attributes => $args{attributes}->{attributes},
+                                params     => $args{params});
+    }
+
+    if ($args{params}->{deployment_manager_id}) {
+        # Get the deployment manager params from the selected deployment manager
+        my $deploymentmanager = Entity->get(id => $args{params}->{deployment_manager_id});
+        my $managerparams = $deploymentmanager->getDeploymentManagerParams(params => $args{params});
+
+        for my $attrname (keys %{ $managerparams }) {
+            $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
+            # If no value defined in params, use the first one
+            if (! $args{params}->{$attrname} && $args{set_mandatory}) {
+                $self->setFirstSelected(name       => $attrname,
+                                        attributes => $args{attributes}->{attributes},
+                                        params     => $args{params});
+            }
+
+            # If the attribute is a manager, set it as reload trigger as
+            # it probably hav specific params too
+            if ($attrname =~ m/.*_manager_id/) {
+                $args{attributes}->{attributes}->{$attrname}->{reload} = 1;
+            }
+
+            # HCMDeploymentManager specific, should not be in the generic policy code
+            if ($attrname eq "components") {
+                push @{ $args{attributes}->{displayed} }, { components => [ 'component_type' ] };
+
+                # Add the components to the relations definition
+                $args{attributes}->{relations}->{components} = {
+                    attrs    => { accessor => 'multi' },
+                    cond     => { 'foreign.policy_id' => 'self.policy_id' },
+                    resource => 'component'
+                };
+            }
+            else {
+                # Add the attribute to the displayed list
+                push @{ $args{attributes}->{displayed} }, $attrname;
+            }
+        }
+    }
+    # Remove possibly defined value of attributes that depends on disk_manager_id.
+    # (It is probably a first implementation of the full generic version of
+    # manager management in policies...)
+    else {
+        for my $dependency (@{ $self->getPolicySelectorMap->{deployment_manager_id} }) {
+            delete $args{params}->{$dependency};
+        }
+    }
 
     return $args{attributes};
 }

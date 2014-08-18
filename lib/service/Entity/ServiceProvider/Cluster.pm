@@ -501,12 +501,6 @@ sub configureManagers {
         $args{managers}->{collector_manager} = { manager_id   => $collector_manager->id,
                                                  manager_type => "CollectorManager" };
 
-        # Add default deployment manager
-        # TODO: Get from the system policy
-        my $deployment_manager = $kanopya->getComponent(name => "KanopyaDeploymentManager");
-        $args{managers}->{deployment_manager} = { manager_id   => $deployment_manager->id,
-                                                  manager_type => "DeploymentManager" };
-
         for my $manager (values %{ $args{managers} }) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.

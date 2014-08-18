@@ -135,12 +135,6 @@ sub getManagerParamsDef {
             relation     => 'multi',
             is_mandatory => 0,
         },
-        deploy_on_disk => {
-            label        => 'Deploy on hard disk',
-            type         => 'boolean',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        }
     };
 }
 

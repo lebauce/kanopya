@@ -83,6 +83,14 @@
             "policy_type" : "system",
             "cluster_si_persistent" : 0,
             "systemimage_size" : 5368709120,
+            "deployment_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "boot_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "components" : [
                 {
                     "component_type" : {
