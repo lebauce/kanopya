@@ -70,7 +70,7 @@ sub configureNetworkInterfaces {
 
     # If the node linked to a host, configure the network connectivity
     # TODO: Manage network connectivity on node instead of host.
-    if (defined $args{interfaces}->host) {
+    if (defined $args{node}->host) {
         # Set the ifaces netconf according to the cluster interfaces
         # We consider that the available ifaces match the cluster
         # interfaces since getFreeHost selection done.
