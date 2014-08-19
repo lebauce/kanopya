@@ -47,9 +47,12 @@ sub execute {
     foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {
         try {
             # Ask to the deployment manager t release the node
+            # Merge all manager parameters for the deployment manager
+            my $managers_params = $self->{context}->{cluster}->getManagerParameters();
             my $deployer = $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager');
             EEntity->new(entity => $deployer)->releaseNode(node     => $node,
-                                                           workflow => $self->workflow);
+                                                           workflow => $self->workflow,
+                                                           %{ $managers_params });
         }
         catch ($err) {
             $log->warn($err);

@@ -275,7 +275,6 @@ sub deployNode {
                          optional => { 'hypervisor' => undef, 'kernel_id' => undef,
                                        'deploy_on_disk' => 0, 'workflow' => undef });
 
-    $args{context}->{deployment_manager} = $self;
     return $self->executor_component->run(
                name     => 'DeployNode',
                workflow => delete $args{workflow},
@@ -311,17 +310,16 @@ sub releaseNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'boot_manager' ],
+                         required => [ 'node', 'boot_manager_id' ],
                          optional => { 'workflow' => undef });
 
-    $args{context}->{deployment_manager} = $self;
     return $self->executor_component->run(
                name     => 'ReleaseNode',
                workflow => delete $args{workflow},
                params   => {
                    context => {
                        deployment_manager => $self,
-                       boot_manager       => delete $args{boot_manager},
+                       boot_manager       => Entity::Component->get(id => delete $args{boot_manager_id}),
                        node               => delete $args{node},
                    },
                },
@@ -344,7 +342,7 @@ sub configureBoot {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "node", "systemimage", "boot_policy", "boot_manager" ]);
+                         required => [ "node", "systemimage", "boot_policy" ]);
 
     throw Kanopya::Exception::NotImplemented();
 }
@@ -367,7 +365,7 @@ sub applyBootConfiguration {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "node", "systemimage", "boot_policy", "boot_manager" ]);
+                         required => [ "node", "systemimage", "boot_policy" ]);
 
     throw Kanopya::Exception::NotImplemented();
 }

@@ -262,7 +262,6 @@ sub finish {
     my $managers_params = $self->{context}->{cluster}->getManagerParameters();
     $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager')->releaseNode(
         node         => $self->{context}->{host}->node,
-        boot_manager => $self->{context}->{cluster}->getManager(manager_type => 'BootManager'),
         workflow     => $self->workflow,
         %{ $managers_params }
     );
