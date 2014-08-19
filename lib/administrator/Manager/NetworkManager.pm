@@ -34,8 +34,11 @@ use parent Manager;
 use strict;
 use warnings;
 
+use Entity::Netconf;
+use Entity::Component;
 use Kanopya::Exceptions;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -50,6 +53,60 @@ sub methods {
         applyVLAN => {
             description => 'apply the vlan configuration for the node',
         },
+    };
+}
+
+
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
+        interfaces => {
+            label        => 'Interfaces',
+            type         => 'relation',
+            relation     => 'single_multi',
+            # is_editable  => 1,
+            is_mandatory => 1,
+            attributes   => {
+                attributes => {
+                    policy_id => {
+                        type     => 'relation',
+                        relation => 'single',
+                    },
+                    netconfs => {
+                        label       => 'Network configurations',
+                        type        => 'relation',
+                        relation    => 'multi',
+                        link_to     => 'netconf',
+                        pattern     => '^\d*$',
+                        is_editable => 1,
+                    },
+                    bonds_number => {
+                        label       => 'Bonding slave count',
+                        type        => 'integer',
+                        pattern     => '^\d*$',
+                        is_editable => 1,
+                    },
+                    interface_name => {
+                        label        => 'Name',
+                        type         => 'string',
+                        pattern      => '^.*$',
+                        is_editable  => 1,
+                        is_mandatory => 1,
+                    },
+                },
+            },
+        }
     };
 }
 
@@ -74,13 +131,25 @@ sub configureNetworkInterfaces {
         # Set the ifaces netconf according to the cluster interfaces
         # We consider that the available ifaces match the cluster
         # interfaces since getFreeHost selection done.
-        foreach my $interface (@{ $args{interfaces} }) {
+        foreach my $interface (values %{ $args{interfaces} }) {
+            # Validate the interface param pattern
+            try {
+                General::checkParams(args     => $interface,
+                                     required => [ "interface_name" ],
+                                     optional => { netconfs => {} });
+            }
+            catch ($err) {
+                throw Kanopya::Exception::Internal::Inconsistency(
+                          error => "Malformed manager param <interface>: $err"
+                      );
+            }
+
             # Firstly find the corresponding iface from name
             my $iface = $args{node}->host->find(related => 'ifaces',
-                                                hash    => { iface_name => $interface->interface_name });
+                                                hash    => { iface_name => $interface->{interface_name} });
 
             # Set the related netconfs
-            my @netconfs = $interface->netconfs;
+            my @netconfs = map { Entity::Netconf->get(id => $_) } values %{ $interface->{netconfs} };
 
             $log->info("Configure iface " . $iface->iface_name . " with netconfs " . join(', ', @netconfs));
             $iface->update(netconf_ifaces => \@netconfs, override_relations => 1);
@@ -152,7 +221,7 @@ Check params required for managing network connectivity.
 sub checkNetworkManagerParams {
     my ($self, %args) = @_;
 
-    throw Kanopya::Exception::NotImplemented();
+    General::checkParams(args => \%args, required => [ "interfaces" ]);
 }
 
 
@@ -167,7 +236,19 @@ sub checkNetworkManagerParams {
 sub getNetworkManagerParams {
     my ($self, %args) = @_;
 
-    throw Kanopya::Exception::NotImplemented();
+    General::checkParams(args => \%args, optional => { "params" => {} });
+
+    my $paramdef = $self->getManagerParamsDef();
+
+    my @netconfs;
+    for my $netconf (Entity::Netconf->search(hash => {})) {
+        push @netconfs, $netconf->toJSON();
+    }
+
+    $paramdef->{interfaces}->{attributes}->{attributes}->{netconfs}->{options}
+        = \@netconfs;
+
+    return $paramdef;
 }
 
 1;

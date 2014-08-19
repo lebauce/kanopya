@@ -32,9 +32,6 @@ use parent Manager::NetworkManager;
 use strict;
 use warnings;
 
-use Entity::Component;
-use Kanopya::Exceptions;
-
 use TryCatch;
 use Hash::Merge;
 use Date::Simple (':all');
@@ -57,107 +54,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new();
-
-
-=pod
-=begin classdoc
-
-@return the manager params definition.
-
-=end classdoc
-=cut
-
-sub getManagerParamsDef {
-    my ($self, %args) = @_;
-
-    return {
-        # TODO: call super on all Manager supers
-        %{ $self->SUPER::getManagerParamsDef },
-        interfaces => {
-            label        => 'Interfaces',
-            type         => 'relation',
-            relation     => 'single_multi',
-            # is_editable  => 1,
-            is_mandatory => 1,
-            attributes   => {
-                attributes => {
-                    policy_id => {
-                        type     => 'relation',
-                        relation => 'single',
-                    },
-                    netconfs => {
-                        label       => 'Network configurations',
-                        type        => 'relation',
-                        relation    => 'multi',
-                        link_to     => 'netconf',
-                        pattern     => '^\d*$',
-                        is_editable => 1,
-                    },
-                    bonds_number => {
-                        label       => 'Bonding slave count',
-                        type        => 'integer',
-                        pattern     => '^\d*$',
-                        is_editable => 1,
-                    },
-                    interface_name => {
-                        label        => 'Name',
-                        type         => 'string',
-                        pattern      => '^.*$',
-                        is_editable  => 1,
-                        is_mandatory => 1,
-                    },
-                },
-            },
-        }
-    };
-}
-
-
-=pod
-=begin classdoc
-
-@return the managers parameters as an attribute definition. 
-
-@see <package>Manager::NetworkManager</package>
-
-=end classdoc
-=cut
-
-sub getNetworkManagerParams {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, optional => { "params" => {} });
-
-    my $paramdef = $self->getManagerParamsDef();
-
-    my @netconfs;
-    for my $netconf (Entity::Netconf->search(hash => {})) {
-        push @netconfs, $netconf->toJSON();
-    }
-
-    $paramdef->{interfaces}->{attributes}->{attributes}->{netconfs}->{options}
-        = \@netconfs;
-
-    return $paramdef;
-}
-
-
-=pod
-=begin classdoc
-
-Check params required for creating disks.
-
-@see <package>Manager::NetworkManager</package>
-
-=end classdoc
-=cut
-
-sub checkNetworkManagerParams {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "interfaces" ]);
-}
 
 
 =pod

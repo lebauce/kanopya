@@ -95,13 +95,13 @@ sub getHost {
         # Pre-filter the host list from required ifaces names on cluster
         # TODO: hande the constraints on the iface name in the constraint solver
         INTERFACE:
-        for my $interface (@{ $args{interfaces} }) {
+        for my $interface (values %{ $args{interfaces} }) {
             try {
-                $host->find(related => 'ifaces', hash => { iface_name => $interface->interface_name });
+                $host->find(related => 'ifaces', hash => { iface_name => $interface->{interface_name} });
             }
             catch ($err) {
                 $log->debug("Pre filter on interface names: skip host <" . $host->id .
-                            ">, no iface <" . $interface->interface_name . "> found.");
+                            ">, no iface <" . $interface->{interface_name} . "> found.");
                 next HOST;
             }
         }
@@ -151,7 +151,7 @@ sub getHost {
 
     # Construct json interfaces (bonds number + netIPs)
     my @json_interfaces;
-    for my $interface (@{ $args{interfaces} }) {
+    for my $interface (values %{ $args{interfaces} }) {
         my @networks;
 
         # Do not handle constraints on network connectivity if the host's ifaces not configured
@@ -162,7 +162,7 @@ sub getHost {
         # }
 
         my $json_interface = {
-            bondsNumberMin => $interface->bonds_number + 1,
+            bondsNumberMin => $interface->{bonds_number} + 1,
             netIPsMin      => \@networks,
         };
         push @json_interfaces, $json_interface;
