@@ -45,7 +45,7 @@ sub addHost {
     my $subnet = ($pxe_iface->networks)[0];
     if (! defined $subnet) {
         throw Kanopya::Exception::Internal(
-                  error => "PXE iface <" . $pxe_iface->id .  "> on host <" . $args{host}->id .
+                  error => "PXE iface <" . $pxe_iface->label .  "> on host <" . $args{host}->label .
                            "> is not connected to any network."
               );
     }

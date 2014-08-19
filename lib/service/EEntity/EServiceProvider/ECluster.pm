@@ -44,9 +44,7 @@ sub create {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'managers' ],
-                         optional => { 'interfaces' => {}, 'components' => {} });
+    General::checkParams(args => \%args, required => [ 'managers' ]);
 
     # Generate cluster base hostname
     # Who will dare using that pattern? $str =~ s/([_.])/${ \($1 eq q?_??"-":$,) }/g;
@@ -86,8 +84,6 @@ sub create {
     # Use the method for policy applying to configure manager, components, and interfaces.
     $self->applyPolicies(
         pattern => {
-            components      => $args{components},
-            interfaces      => $args{interfaces},
             managers        => $args{managers},
             billing_limits  => $args{billing_limits},
             orchestration   => $args{orchestration},

@@ -71,7 +71,8 @@ sub check {
 
     # Check required params within managers
     General::checkParams(args     => $self->{params}->{managers},
-                         required => [ "host_manager", "storage_manager" ]);
+                         required => [ "host_manager", "storage_manager",
+                                       "deployment_manager", "network_manager" ]);
 }
 
 
@@ -100,8 +101,6 @@ sub execute {
     # Execute create on the cluster
     $self->{context}->{cluster} = EEntity->new(data => $cluster);
     $self->{context}->{cluster}->create(managers        => $self->{params}->{managers},
-                                        components      => $self->{params}->{components},
-                                        interfaces      => $self->{params}->{interfaces},
                                         billing_limits  => $self->{params}->{billing_limits},
                                         orchestration   => $self->{params}->{orchestration},
                                         erollback       => $self->{erollback});

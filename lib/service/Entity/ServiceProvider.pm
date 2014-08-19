@@ -441,10 +441,8 @@ sub addManagerParameter {
 
     General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
 
-    my $cluster_manager = $self->findRelated(filters => [ 'service_provider_managers' ],
-                                             custom  => { category => $args{manager_type} });
-
-    $cluster_manager->addParams(params => { $args{name} => $args{value} });
+    return $self->addManagerParameters(manager_type => $args{manager_type},
+                                       params       => { $args{name} => $args{value} });
 }
 
 
@@ -467,8 +465,8 @@ sub addManagerParameters {
                          required => [ "manager_type", "params" ],
                          optional => { "override" => 0 });
 
-    my $manager = $self->findRelated(filters => [ 'service_provider_managers' ],
-                                     custom  => { category => $args{manager_type} });
+    my $manager = $self->find(related => "service_provider_managers",
+                              custom  => { category => $args{manager_type} });
 
     $manager->addParams(params => $args{params}, override => $args{override});
 }

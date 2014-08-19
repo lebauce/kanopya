@@ -339,10 +339,11 @@ sub buildInstantiationParams {
 
     General::checkParams(args => $confpattern, required => [ 'managers' ]);
     General::checkParams(args     => $confpattern->{managers},
-                         required => [ 'host_manager', 'storage_manager', 'network_manager' ]);
+                         required => [ 'host_manager', 'storage_manager',
+                                       'network_manager', 'deployment_manager' ]);
 
     my $composite_params;
-    for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
+    for my $name ('managers', 'billing_limits', 'orchestration') {
         if ($confpattern->{$name}) {
             $composite_params->{$name} = delete $confpattern->{$name};
         }
@@ -436,37 +437,7 @@ sub applyPolicies {
     for my $name (keys %{ $args{pattern} }) {
         $value = $args{pattern}->{$name};
 
-        # Handle components cluster config
-        if ($name eq 'components') {
-            if ($args{update}) { next; }
-
-            for my $component (values %$value) {
-                # If installing the system component, set the required configuration from cluster definition
-                my $componenttype = ClassType::ComponentType->get(id => $component->{component_type});
-                if ($componenttype->hasCategory(category => "System")) {
-                    $component->{component_configuration}->{owner_id} = $self->owner_id;
-                    $component->{component_configuration}->{domainname} = $self->cluster_domainname;
-                    $component->{component_configuration}->{nameserver1} = $self->cluster_nameserver1;
-                    $component->{component_configuration}->{nameserver2} = $self->cluster_nameserver2;
-                    $component->{component_configuration}->{default_gateway_id} = $self->default_gateway_id;
-                }
-                # Give ref to the executor user by the service manager itself
-                $component->{component_configuration}->{executor_component}
-                    = $self->service_manager->executor_component;
-
-                # TODO: Check if the component is already installed
-                $self->addComponent(
-                    component_type_id             => $component->{component_type},
-                    component_configuration       => $component->{component_configuration},
-                    component_extra_configuration => $component->{component_extra_configuration},
-                );
-            }
-        }
-        # Handle network interfaces cluster config
-        elsif ($name eq 'interfaces') {
-            $self->configureInterfaces(interfaces => $value);
-        }
-        elsif ($name eq 'billing_limits') {
+        if ($name eq 'billing_limits') {
             $self->configureBillingLimits(billing_limits => $value);
         }
         elsif ($name eq 'orchestration') {
@@ -537,6 +508,70 @@ sub configureManagers {
         }
     }
 }
+
+
+=pod
+=begin classdoc
+
+Override the parent method to handle some cluster relation updates at
+manager parameters update.
+
+@param manager_type the type of the manager on which we set the params
+@param params the parameters hash to set
+
+=end classdoc
+=cut
+
+sub addManagerParameters {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "manager_type", "params" ],
+                         optional => { "override" => 0 });
+
+    $self->SUPER::addManagerParameters(%args);
+
+    # If the deployment manager params "components" is set/updated,
+    # add the components to the cluster.
+    # TODO: Do not link the cluster to the components of the nodes any more,
+    #       keep the component definition in the deployment manager params
+    if ($args{params}->{components}) {
+        $log->info("Install components as described by the deployment manager");
+
+        for my $component (values %{ $args{params}->{components} }) {
+            # If installing the system component, set the required configuration from cluster definition
+            my $componenttype = ClassType::ComponentType->get(id => $component->{component_type});
+            if ($componenttype->hasCategory(category => "System")) {
+                $component->{component_configuration}->{owner_id} = $self->owner_id;
+                $component->{component_configuration}->{domainname} = $self->cluster_domainname;
+                $component->{component_configuration}->{nameserver1} = $self->cluster_nameserver1;
+                $component->{component_configuration}->{nameserver2} = $self->cluster_nameserver2;
+                $component->{component_configuration}->{default_gateway_id} = $self->default_gateway_id;
+            }
+            # Give ref to the executor user by the service manager itself
+            $component->{component_configuration}->{executor_component}
+                = $self->service_manager->executor_component;
+
+            # TODO: Check if the component is already installed
+            $self->addComponent(
+                component_type_id             => $component->{component_type},
+                component_configuration       => $component->{component_configuration},
+                component_extra_configuration => $component->{component_extra_configuration},
+            );
+        }
+    }
+    # If the network manager params "interfaces" is set/updated,
+    # add the interfaces to the cluster.
+    # We are creating objects related to the cluster has we can not
+    # store objects in the manager params.
+    # TODO: Do not link the cluster to the interfaces any more,
+    #       keep the interfaces definition in the networkmanager manager params
+    if ($args{params}->{interfaces}) {
+        $log->info("Install network interfaces as described by the network manager");
+        $self->configureInterfaces(interfaces => $args{params}->{interfaces});
+    }
+}
+
 
 sub configureInterfaces {
     my ($self, %args) = @_;

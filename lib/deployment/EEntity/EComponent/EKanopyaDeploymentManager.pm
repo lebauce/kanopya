@@ -620,11 +620,9 @@ sub _generatePXEConf {
     }
 
     # Configure DHCP Component
-    EEntity->new(entity => $self->dhcp_component)->addHost(
-        host      => $args{node}->host,
-        pxe       => 1,
-        erollback => $args{erollback}
-    );
+    EEntity->new(entity => $self->dhcp_component)->addHost(host      => $args{node}->host,
+                                                           pxe       => 1,
+                                                           erollback => $args{erollback});
 
     $log->info('Kanopya dhcp server reconfigured');
 
