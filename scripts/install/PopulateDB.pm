@@ -1631,6 +1631,9 @@ sub registerKanopyaMaster {
         },
         'HCMNetworkManager' => {
             manager => 'NetworkManager',
+            require => {
+                executor_component => 'KanopyaExecutor',
+            }
         },
         'KanopyaAnomalyDetector' => {},
         'KanopyaRulesEngine' => {},

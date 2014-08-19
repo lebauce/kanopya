@@ -58,10 +58,18 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    host_type => {
+        is_virtual => 1
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub hostType {
+    my $self = shift;
+    return $self->label;
+}
 
 =pod
 =begin classdoc
@@ -136,9 +144,19 @@ sub getManagerParamsDef {
         %{ $self->SUPER::getManagerParamsDef },
         flavor => {
             label        => 'Flavor',
-            # TODO: Use type enum, and return flavors contained in
-            # the extra configuration filled at sync
-            type         => 'string',
+            type         => 'enum',
+            pattern      => '^.*$',
+            is_mandatory => 1
+        },
+        availability_zone => {
+            label        => 'Availability Zone',
+            type         => 'enum',
+            pattern      => '^.*$',
+            is_mandatory => 1
+        },
+        tenant => {
+            label        => 'Tenant',
+            type         => 'enum',
             pattern      => '^.*$',
             is_mandatory => 1
         },
@@ -179,11 +197,26 @@ sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
-    my $flavor = $self->getManagerParamsDef->{flavor};
-    $flavor->{enum} = $self->param_preset->load->{flavor_names},
-    return {
-        flavor => $flavor,
-    }
+    my $params = $self->getManagerParamsDef;
+    my $pp = $self->param_preset->load;
+
+    my $flavors = $params->{flavor};
+    $flavors->{options} = $pp->{flavor_names};
+
+    my $zones = $params->{availability_zone};
+    $zones->{options} = $pp->{zone_names};
+
+    my @tenant_names = keys %{$pp->{tenants_name_id}};
+    my $tenants = $params->{tenant};
+    $tenants->{options} = \@tenant_names;
+
+    my $hash = {
+        flavor => $flavors,
+        availability_zone => $zones,
+        tenant => $tenants,
+    };
+
+    return $hash;
 }
 
 
@@ -241,7 +274,7 @@ sub checkStorageManagerParams {
 =pod
 =begin classdoc
 
-@return the network manager parameters as an attribute definition. 
+@return the network manager parameters as an attribute definition.
 
 @see <package>Manager::NetworkManager</package>
 
@@ -251,7 +284,30 @@ sub checkStorageManagerParams {
 sub getNetworkManagerParams {
     my ($self, %args) = @_;
 
-    return { networks => $self->getManagerParamsDef->{networks} };
+    my $params = $self->getManagerParamsDef;
+    my $pp = $self->param_preset->load;
+
+    my @tenant_names = keys %{$pp->{tenants_name_id}};
+    my $tenants = $params->{tenant};
+    $tenants->{options} = \@tenant_names;
+    $tenants->{reload} = 1;
+    my $hash = {
+        tenant => $tenants,
+    };
+
+    if (defined $args{params}->{tenant}) {
+        my $tenant_id = $pp->{tenants_name_id}->{$args{params}->{tenant}};
+        my $networks = $self->getManagerParamsDef->{networks};
+        $networks->{options} = [];
+
+        for my $network_id (@{$pp->{tenants}->{$tenant_id}->{networks}}) {
+            push @{$networks->{options}}, $pp->{networks}->{$network_id}->{name};
+        }
+
+        $hash->{networks} = $networks;
+    }
+
+    return $hash;
 }
 
 
@@ -670,11 +726,35 @@ sub _load {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'infra' ]);
 
-    # Store Flavor Params for Policies
+    my $tenants_name_id = {};
+    my $tenants = {};
+    for my $tenant (@{$args{infra}->{tenants}}) {
+        $tenants_name_id->{$tenant->{name}} = $tenant->{id};
+        $tenants->{$tenant->{id}}->{name} = $tenant->{name};
+        $tenants->{$tenant->{id}}->{networks} = [];
+    }
+
+    my $networks = {};
+    for my $network (@{$args{infra}->{networks}}) {
+        push @{$tenants->{$network->{tenant_id}}->{networks}}, $network->{id};
+        $networks->{$network->{id}}->{name} = $network->{name};
+        $networks->{$network->{id}}->{subnets} = $network->{subnets};
+    }
+
+    # Store Params for Policies
     my @flavor_names = map {$_->{name}} @{$args{infra}->{flavors}};
+    my @zone_names = map {$_->{zoneName}} @{$args{infra}->{availability_zones}};
 
     my $pp = $self->param_preset;
-    $pp->update(params => {flavor_names => \@flavor_names});
+    $pp->update(
+        params => {
+            flavor_names => \@flavor_names,
+            zone_names => \@zone_names,
+            tenants_name_id => $tenants_name_id,
+            tenants => $tenants,
+            networks => $networks,
+        }
+    );
 
     # Manage images
     my $cluster_type = ClassType::ServiceProviderType::ClusterType->find(
@@ -738,10 +818,9 @@ sub _load {
             while(my ($name, $ip_infos) = each(%$network_info)) {
 
                 # TODO Manage floating ips
-                # while(($b = (pop @a)) && ($b ne 5)) {}
 
                 my $ip_info;
-                # '=' is ok, we assign first and the test
+                # '=' is ok, we assign first and then we test
                 while(($ip_info = (pop @$ip_infos)) && ($ip_info->{'OS-EXT-IPS:type'} ne 'fixed')) {}
 
                 if (defined $ip_info) {

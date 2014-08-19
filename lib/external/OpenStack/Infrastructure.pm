@@ -30,6 +30,7 @@ use OpenStack::Volume;
 use OpenStack::Flavor;
 use OpenStack::Tenant;
 use OpenStack::Network;
+use OpenStack::Zone;
 
 sub load {
     my ($class, %args) = @_;
@@ -53,6 +54,8 @@ sub load {
         'tenants' => OpenStack::Tenant->list(%args, all_tenants => 1),
         'flavors' => OpenStack::Flavor->list(%args),
         'networks' => OpenStack::Network->list(%args),
+        'availability_zones' => OpenStack::Zone->list(%args),
+        'subnets' => OpenStack::Subnet->list(%args),
     }
 }
 
