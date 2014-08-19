@@ -62,12 +62,13 @@ sub create {
     $self->_host->getEContext->execute(command => $command);
 
     # Add all the components provided by the master image
-    if ($self->masterimage) {
+    if ($self->masterimage && defined $args{managers}->{deployment_manager}) {
         # Firstly set the service provider type from masterimage
         $self->service_provider_type_id($self->masterimage->masterimage_cluster_type->id);
 
+        my $params = $args{managers}->{deployment_manager}->{manager_params};
         foreach my $component ($self->masterimage->components_provided) {
-            $args{components}->{$component->component_type->component_name} = {
+            $params->{components}->{$component->component_type->component_name} = {
                 component_type => $component->component_type_id
             };
         }
