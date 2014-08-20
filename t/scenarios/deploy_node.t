@@ -154,7 +154,7 @@ sub main {
                             kernel_id    => $masterimage->masterimage_defaultkernel_id,
                             boot_policy  => 'PXE Boot via ISCSI',
                             boot_manager_id => $deployment_mamager->id,
-                            network_manager => Entity::Component:HCMNetworkManager->find()
+                            network_manager => Entity::Component::HCMNetworkManager->find()
                         );
         Kanopya::Test::Execution->executeOne(entity => $operation);
     } 'Deploy the node via the KanopyaDeploymentManager';
