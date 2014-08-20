@@ -199,6 +199,9 @@ my %common_fixed_value = (
     node_hostname => 'hostname'
 );
 
+my %_skip_resources;
+
+
 sub fillMissingFixedAttr {
     # host_manager_ids
     my $resp = dancer_response(GET => "/api/physicalhoster0", {});
@@ -267,12 +270,12 @@ sub fillMissingFixedAttr {
     $attribute_fixed_value{fileimagemanager0}{executor_component_id} = $executor->{pk};
 }
 
+
 sub run {
     my $resource = shift;
 
     # Firstly login to the api
     APITestLib::login();
-    fillMissingFixedAttr();
 
     # Check Kanopya DB consistance
     my $rq  = dancer_response GET => '/api/entity';
@@ -280,32 +283,53 @@ sub run {
         die 'First Kanopya DB consistance check. Wrong status GET /api/entity'
     }
 
-    my %_skip_resources = map {$_ => 1} @skip_resources;
+    %_skip_resources = map { $_ => 1 } @skip_resources;
+
+    # Firtly manage resource required for others
+    manage_resource("opennebula3", 1);
+    manage_resource("novacontroller", 1);
+
+    $_skip_resources{opennebula3} = 1;
+    $_skip_resources{novacontroller} = 1;
+
+    # Fix params for specific resources
+    fillMissingFixedAttr();
+
     my @api_resources = $resource ? ($resource) : keys %REST::api::resources;
     #@api_resources = @api_resources[0 .. 20];
     #@api_resources = ('operation', 'netapp');
+
     RESOURCE:
     for my $resource_name (@api_resources) {
-        lives_ok {
-            if (exists $_skip_resources{$resource_name}) {
-                SKIP: {
-                    skip "POST '$resource_name' not managed in this test", 1;
-                }
-                next RESOURCE;
-            }
-            post_resource($resource_name);
-
-            # Check if resource deletion has not corrupted Kanopya DB
-            # (e.g. with unmanaged delete on cascade)
-
-            my $rq  = dancer_response GET => '/api/entity';
-            if ($rq->{status} ne 200) {
-                die 'Wrong status GET /api/entity got <' . $rq->{status}
-                    . '> instead of <200> after managing resource < ' . $resource_name . '>'
-                    . ', ' . $rq->{content};
-            }
-        } 'Manage '. $resource_name;
+        manage_resource($resource_name);
     }
+}
+
+
+# POST a resource and test response status
+# Attributes values are generated
+sub manage_resource {
+    my ($resource_name, $persitent) = @_;
+
+    lives_ok {
+        if (exists $_skip_resources{$resource_name}) {
+            SKIP: {
+                skip "POST '$resource_name' not managed in this test", 1;
+            }
+            next RESOURCE;
+        }
+        post_resource($resource_name, $persitent);
+
+        # Check if resource deletion has not corrupted Kanopya DB
+        # (e.g. with unmanaged delete on cascade)
+
+        my $rq  = dancer_response GET => '/api/entity';
+        if ($rq->{status} ne 200) {
+            die 'Wrong status GET /api/entity got <' . $rq->{status}
+                . '> instead of <200> after managing resource < ' . $resource_name . '>'
+                . ', ' . $rq->{content};
+        }
+    } 'Manage '. $resource_name;
 }
 
 # Generate values for (mandatory) attributes of a resource
@@ -331,7 +355,7 @@ sub _generate_values {
                 (my $relation = $attr_name) =~ s/_id$//;
                 my $related_resource = $resource_info->{relations}{$relation}{resource};
                 if (not defined $related_resource) {($related_resource = $relation) =~ s/_//g;}
-                $value = get_resource($related_resource);
+                $value = get_resource($related_resource, $resource_name);
             }
             else {
                 # Generate value using pattern
@@ -367,12 +391,12 @@ sub _generate_values {
     return \%params;
 }
 
-my @temp_resources = ();
+my $temp_resources = {};
 
 # POST a resource and test response status
 # Attributes values are generated
 sub post_resource {
-    my ($resource_name, $persistent) = @_;
+    my ($resource_name, $persistent, $related_resource_name) = @_;
 
     $log->debug("POST $resource_name");
 
@@ -393,16 +417,22 @@ sub post_resource {
     if ($new_resp->{status} == 200) {
         my $new_resource = Dancer::from_json($new_resp->{content});
         if ($persistent) {
-            push @temp_resources, $new_resource->{pk};
+            if (! defined $temp_resources->{$resource_name}) {
+                $temp_resources->{$resource_name} = ();
+            }
+            push @{ $temp_resources->{$related_resource_name} }, $new_resource->{pk};
             return $new_resource->{pk};
-        } else {
+        }
+        else {
             # If resource created (i.e do not need operation execution) then we delete it
             if (!$new_resource->{operation_id}) {
                 delete_resource($resource_name, $new_resource->{pk});
             }
             # Delete related resources created before (persistent)
-            foreach (@temp_resources) {delete_resource('entity', $_, 1)};
-            @temp_resources = ();
+            foreach (@{ $temp_resources->{$resource_name} }) {
+                delete_resource('entity', $_, 1)
+            };
+            $temp_resources->{$resource_name} = ();
         }
     } else {
        $log->error(Dumper $new_resp) if ($new_resp->{status} != $expect_status);
@@ -426,7 +456,7 @@ sub delete_resource {
 
 # Get or create if empty
 sub get_resource {
-    my $resource_name = shift;
+    my ($resource_name, $related_resource_name) = @_;
 
     $log->debug("GET $resource_name");
     my $resource_resp = dancer_response(GET => "/api/$resource_name", {});
@@ -451,9 +481,10 @@ sub get_resource {
 
     if ((ref $resource) eq 'ARRAY' && $resource->[0]) {
         return $resource->[0]{pk};
-    } else {
+    }
+    else {
         $log->info("No resource of type '$resource_name', we will create it");
-        return post_resource($resource_name, 1);
+        return post_resource($resource_name, 1, $related_resource_name);
     }
 }
 

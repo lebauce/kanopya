@@ -309,7 +309,7 @@ sub computeInstanceCreateEnd {
                    ram    => $args{payload}->{memory_mb} << 20, #convert mb into b
                    core   => $args{payload}->{vcpus},
                    ifaces => scalar (@ip_infos),
-                   vm_uuid       => $args{payload}->{instance_id},
+                   openstack_vm_uuid => $args{payload}->{instance_id},
                    hypervisor_id => $hypervisor->id,
                 );
 
