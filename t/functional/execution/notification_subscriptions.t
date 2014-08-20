@@ -330,6 +330,7 @@ sub main {
 
         $postreport = 0;
 
+        sleep 10;
         Kanopya::Test::Execution->oneRun();
 
     } 'Run workflow DummyOperation';

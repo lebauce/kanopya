@@ -137,7 +137,8 @@ sub test2e {
     for my $interface ($cluster->interfaces) {
         $interface->delete();
     }
-    $cluster->configureInterfaces(
+
+    my $network_manager_params = {
         interfaces => {
             interface1 => {
                 netconfs       => {$netConf1->netconf_name => $netConf1 },
@@ -155,7 +156,8 @@ sub test2e {
                 interface_name => "eth2"
             },
         }
-    );
+    };
+    $cluster->configureInterfaces(%{ $network_manager_params });
 
     ######################
     #### Create Hosts ####
@@ -442,10 +444,9 @@ sub test2e {
     ##########################
 
     throws_ok {
-        my @interfaces = $cluster->interfaces;
         my $selected_host = DecisionMaker::HostSelector->getHost(
                                 host_manager => Entity::Component::Physicalhoster0->find(),
-                                interfaces   => \@interfaces,
+                                %{ $network_manager_params },
                                 %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
                             );
 
