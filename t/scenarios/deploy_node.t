@@ -37,6 +37,7 @@ use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::Linux::Debian;
 use Entity::Component::Openssh5;
+use Entity::Component::HCMNetworkManager;
 
 my $testing = 0;
 
@@ -152,6 +153,8 @@ sub main {
                             systemimage  => $systemimage,
                             kernel_id    => $masterimage->masterimage_defaultkernel_id,
                             boot_policy  => 'PXE Boot via ISCSI',
+                            boot_manager_id => $deployment_mamager->id,
+                            network_manager => Entity::Component:HCMNetworkManager->find()
                         );
         Kanopya::Test::Execution->executeOne(entity => $operation);
     } 'Deploy the node via the KanopyaDeploymentManager';

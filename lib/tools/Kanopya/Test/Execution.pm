@@ -49,6 +49,7 @@ use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Systemimage;
 use Entity::Component::KanopyaDeploymentManager;
+use Entity::Component::HCMNetworkManager;
 use Entity::Masterimage;
 
 use Daemon::MessageQueuing::Executor;
@@ -384,6 +385,8 @@ sub deployNode {
                         systemimage  => $systemimage,
                         kernel_id    => $masterimage->masterimage_defaultkernel_id,
                         boot_policy  => 'PXE Boot via ISCSI',
+                        boot_manager_id => $deployment_mamager->id,
+                        network_manager => Entity::Component::HCMNetworkManager->find()
                     );
 
     Kanopya::Test::Execution->executeOne(entity => $operation);
