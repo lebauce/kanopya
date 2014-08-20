@@ -272,7 +272,7 @@ sub promote {
 
     # Check if the new type is in the same hierarchy
     my $baseclass = ref($promoted);
-    if (not ($class =~ m/$baseclass/)) {
+    if (! ($class =~ m/$baseclass/) || $class eq $baseclass) {
         throw Kanopya::Exception::Internal::IncorrectParam(
                   error => "Unable to promote " . ref($promoted) . " to " . $class
               );
@@ -281,6 +281,8 @@ sub promote {
     (my $subclass = $class) =~ s/$baseclass\:\://g;
     my $topclassname = BaseDB->_rootClassName(class => $subclass);
     my $topclass = $baseclass . "::" . $topclassname;
+
+    General::requireClass($topclass);
 
     # Set the primary key to the parent primary key value.
     $attrs->{$topclass->_primaryKeyName} = $promoted->id;

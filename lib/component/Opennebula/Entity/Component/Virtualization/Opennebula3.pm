@@ -462,9 +462,10 @@ sub addVM {
 sub createVirtualHost {
     my ($self, %args) = @_;
 
-    my $vm = $self->SUPER::createVirtualHost(%args);
+    General::checkParams(args => \%args, required => [ 'id' ]);
+
     return Entity::Host::VirtualMachine::Opennebula3Vm->promote(
-               promoted       => $vm,
+               promoted       => $self->SUPER::createVirtualHost(%args),
                opennebula3_id => $self->id,
                onevm_id       => $args{id},
            );

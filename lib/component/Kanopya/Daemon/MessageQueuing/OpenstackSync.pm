@@ -301,10 +301,16 @@ sub computeInstanceCreateEnd {
 
     my @ip_infos = @{$args{payload}->{fixed_ips}};
 
+    my $hypervisor = Entity::Host::Hypervisor::OpenstackHypervisor->find(
+                         hash => {'node.node_hostname' => $args{payload}->{host}},
+                     );
+
     my $host = $args{host_manager}->createVirtualHost(
                    ram    => $args{payload}->{memory_mb} << 20, #convert mb into b
                    core   => $args{payload}->{vcpus},
-                   ifaces => scalar (@ip_infos)
+                   ifaces => scalar (@ip_infos),
+                   vm_uuid       => $args{payload}->{instance_id},
+                   hypervisor_id => $hypervisor->id,
                 );
 
     my @ifaces = $host->ifaces;
@@ -313,16 +319,6 @@ sub computeInstanceCreateEnd {
         Ip->new(ip_addr  => (pop @ip_infos)->{address},
                 iface_id => $iface->id);
     }
-
-    my $hypervisor = Entity::Host::Hypervisor::OpenstackHypervisor->find(
-                         hash => {'node.node_hostname' => $args{payload}->{host}},
-                     );
-
-    $host = $args{host_manager}->promoteVm(
-                host          => $host,
-                vm_uuid       => $args{payload}->{instance_id},
-                hypervisor_id => $hypervisor->id,
-            );
 
     my $cluster_name_prefix = 'UnmanagedVirtualMachines';
     my $cluster_name = $cluster_name_prefix . $args{host_manager}->id;

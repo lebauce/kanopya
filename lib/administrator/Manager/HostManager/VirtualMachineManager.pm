@@ -62,13 +62,16 @@ sub methods {
 sub createVirtualHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ], optional => { 'ifaces' => 0 });
+    General::checkParams(args     => \%args,
+                         required => [ 'ram', 'core' ],
+                         optional => { 'ifaces' => 0, 'hypervisor_id' => undef });
 
     # Use the first kernel found...
     my $kernel = Entity::Kernel->find(hash => {});
 
     my $vm = Entity::Host::VirtualMachine->new(
                  host_manager_id    => $self->id,
+                 hypervisor_id       => $args{hypervisor_id},
                  host_serial_number => "Virtual Host managed by component " . $self->id,
                  kernel_id          => $kernel->id,
                  host_ram           => $args{ram},
@@ -91,7 +94,7 @@ sub createVirtualHost {
 =pod
 =begin classdoc
 
-Redict calls to createHost to createVirtualHost, should be never call,
+Redirect calls to createHost to createVirtualHost, should be never call,
 usefull for test purpose.
 
 @return the created virtual machine

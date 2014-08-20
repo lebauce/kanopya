@@ -513,9 +513,10 @@ sub unregisterFromOpenstackSync {
 sub createVirtualHost {
     my ($self, %args) = @_;
 
-    my $vm = $self->SUPER::createVirtualHost(%args);
+    General::checkParams(args => \%args, required => [ 'vm_uuid' ]);
+
     return Entity::Host::VirtualMachine::OpenstackVm->promote(
-               promoted           => $vm,
+               promoted           => $self->SUPER::createVirtualHost(%args),
                nova_controller_id => $self->id,
                openstack_vm_uuid  => $args{vm_uuid},
            );
