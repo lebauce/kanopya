@@ -66,6 +66,46 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+=begin classdoc
+
+@constructor
+
+Override the parent constructor to store uri and credentials params
+the the related param preset.
+
+@return a class instance
+
+=end classdoc
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+
+
+    General::checkParams(args     => \%args,
+                         required => [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ]);
+
+    # Firstly pop the policy atrributes
+    my $params = {
+        api_username => delete $args{api_username},
+        api_password => delete $args{api_password},
+        keystone_url => delete $args{keystone_url},
+        tenant_name  => delete $args{tenant_name},
+    };
+
+    my $self = $class->SUPER::new(%args);
+
+    # Initialize the param preset entry used to store available configuration
+    $self->param_preset(ParamPreset->new());
+
+    # Store the initial configuration
+    $self->param_preset->update(params => $params);
+
+    return $self;
+}
+
 sub hostType {
     my $self = shift;
     return $self->label;
@@ -233,7 +273,7 @@ Check parameters that will be given to the VirtualMachineManager api methods.
 sub checkHostManagerParams {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'flavor' ]);
+    General::checkParams(args => \%args, required => [ 'flavor', 'availability_zone', 'tenant' ]);
 }
 
 
@@ -324,7 +364,7 @@ Check params required for managing network connectivity.
 sub checkNetworkManagerParams {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'network' ]);
+    General::checkParams(args => \%args, required => [ 'networks' ]);
 }
 
 
@@ -624,6 +664,7 @@ and all options available in the existing OpenStack.
 
 sub synchronize {
     my ($self, @args) = @_;
+
     my $os_infra = OpenStack::Infrastructure->load(api => $self->_api);
     return $self->_load(infra => $os_infra);
 }
@@ -651,26 +692,6 @@ sub _addHypervisor {
            );
 }
 
-sub configure {
-    my ($self, %args) = @_;
-
-    my $pp = $self->param_preset;
-
-    if (! defined $pp) {
-        $pp = ParamPreset->new();
-        $self->param_preset_id($pp->id);
-    }
-
-    my @allowed_params = ('api_username', 'api_password', 'keystone_url', 'tenant_name');
-    my $params= {};
-    for my $param (@allowed_params) {
-        if (defined $args{$param}) {
-            $params->{$param} = $args{$param};
-        }
-    }
-    $pp->update(params => $params);
-    return;
-}
 
 sub _api {
     my ($self, %args) = @_;
