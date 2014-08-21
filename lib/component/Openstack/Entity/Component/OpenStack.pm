@@ -200,7 +200,7 @@ sub getManagerParamsDef {
             pattern      => '^.*$',
             is_mandatory => 1
         },
-        cinder_backend => {
+        volume_type => {
             label        => 'Storage backend',
             type         => 'enum',
             is_mandatory => 1,
@@ -297,7 +297,7 @@ Return the parameters definition available for the DiskManager api.
 sub getStorageManagerParams {
     my ($self, %args) = @_;
 
-    return { cinder_backend => $self->getManagerParamsDef->{cinder_backend} };
+    return { volume_type => $self->getManagerParamsDef->{volume_type} };
 }
 
 
@@ -314,7 +314,7 @@ Check parameters that will be given to the DiskManager api methods.
 sub checkStorageManagerParams {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cinder_backend' ]);
+    General::checkParams(args => \%args, required => [ 'volume_type' ]);
 }
 
 

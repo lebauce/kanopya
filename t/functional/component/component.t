@@ -11,6 +11,8 @@ use Entity::Component::KanopyaExecutor;
 use Entity::Node;
 use EEntity;
 
+use Kanopya::Test::Register;
+
 use Data::Dumper;
 use File::Basename;
 use Log::Log4perl qw(:easy get_logger);
@@ -55,32 +57,12 @@ diag("Running test suite of components $envargs->{COMPONENTS} installed on exist
 for my $componenttype (@types) {
     # Firstly find/register the node where to test the running component
     diag('Find/Register the node where to test the component ' . $componenttype);
-    my $node = Entity::Node->findOrCreate(node_hostname => $hostname);
-    if (! defined $node->adminIp) {
-        $node->admin_ip_addr($ip);
-    }
 
-    my $component;
-    eval {
-        (my $componentname = $componenttype) =~ s/\d+//g;
-        $component = $node->getComponent(name => $componentname);
-        diag('Component ' . $componenttype . ' found on node ' . $node->label);
-    };
-    if ($@) {
-        my $componentclass = BaseDB->_classType(classname => $componenttype);
-
-        General::requireClass($componentclass);
-
-        diag('Get any executor');
-        my $executor = Entity::Component::KanopyaExecutor->find();
-
-        # Create the component
-        $component = $componentclass->new(executor_component => $executor);
-
-        # And register it on the node
-        $component->registerNode(node => $node, master_node => 1);
-        diag('Created and registred ' . $componenttype . ' on node ' . $node->label);
-    }
+    my $component = Kanopya::Test::Register->registerComponentOnNode(
+                        componenttype => $componenttype,
+                        hostname      => $hostname,
+                        ip_addr       => $ip
+                    );
 
     diag('Check for component ' . $component->label . ' up');
     lives_ok {

@@ -218,4 +218,52 @@ sub registerNode {
     return $node;
 }
 
+
+=pod
+
+=begin classdoc
+
+Register a node with components.
+
+=end classdoc
+
+=cut
+
+sub registerComponentOnNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'componenttype', 'hostname' ],
+                         optional => { 'component_params' => {}, 'ip_addr' => undef });
+
+    my $node = Entity::Node->findOrCreate(node_hostname => $args{hostname});
+    if (! defined $node->adminIp) {
+        General::checkParams(args => \%args, required => [ 'ip_addr' ]);
+        $node->admin_ip_addr($args{ip_addr});
+    }
+
+    my $component;
+    eval {
+        (my $componentname = $args{componenttype}) =~ s/\d+//g;
+        $component = $node->getComponent(name => $componentname);
+        diag('Component ' . $args{componenttype} . ' found on node ' . $node->label);
+    };
+    if ($@) {
+        my $componentclass = BaseDB->_classType(classname => $args{componenttype});
+
+        General::requireClass($componentclass);
+
+        diag('Get any executor');
+        my $executor = Entity::Component::KanopyaExecutor->find();
+
+        # Create the component
+        $component = $componentclass->new(executor_component => $executor, %{ $args{component_params} });
+
+        # And register it on the node
+        $component->registerNode(node => $node, master_node => 1);
+        diag('Created and registred ' . $args{componenttype} . ' on node ' . $node->label);
+    }
+    return $component;
+}
+
 1;
