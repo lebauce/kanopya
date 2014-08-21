@@ -211,7 +211,12 @@ sub getManagerParamsDef {
             label        => 'Networks',
             type         => 'enum',
             is_mandatory => 1,
-            # TODO:  Get the enum options from the available synchronized backend
+            options      => []
+        },
+        subnets => {
+            label        => 'Subnets',
+            type         => 'enum',
+            is_mandatory => 1,
             options      => []
         },
         repository   => {
@@ -241,10 +246,12 @@ sub getHostManagerParams {
     my $pp = $self->param_preset->load;
 
     my $flavors = $params->{flavor};
-    $flavors->{options} = $pp->{flavor_names};
+    my @flavor_names = map {$pp->{flavors}->{$_}->{name}} keys %{$pp->{flavors}};
+    $flavors->{options} = \@flavor_names;
 
     my $zones = $params->{availability_zone};
-    $zones->{options} = $pp->{zone_names};
+    my @zone_names = keys %{$pp->{zones}};
+    $zones->{options} = \@zone_names;
 
     my @tenant_names = keys %{$pp->{tenants_name_id}};
     my $tenants = $params->{tenant};
@@ -339,12 +346,27 @@ sub getNetworkManagerParams {
         my $tenant_id = $pp->{tenants_name_id}->{$args{params}->{tenant}};
         my $networks = $self->getManagerParamsDef->{networks};
         $networks->{options} = [];
+        $networks->{reload} = 1;
 
         for my $network_id (@{$pp->{tenants}->{$tenant_id}->{networks}}) {
             push @{$networks->{options}}, $pp->{networks}->{$network_id}->{name};
         }
 
         $hash->{networks} = $networks;
+    }
+
+    if (defined $args{params}->{networks}) {
+        my $network_id = $pp->{networks_name_id}->{$args{params}->{networks}};
+        $log->info("network id = " . $network_id);
+        my $subnets = $self->getManagerParamsDef->{subnets};
+        $subnets->{options} = [];
+
+        for my $subnet_id (@{$pp->{networks}->{$network_id}->{subnets}}) {
+            $log->info("subnet_id = $subnet_id, cird = " . $pp->{subnets}->{$subnet_id}->{cidr});
+            push @{$subnets->{options}}, $pp->{subnets}->{$subnet_id}->{cidr};
+        }
+
+        $hash->{subnets} = $subnets;
     }
 
     return $hash;
@@ -736,29 +758,45 @@ sub _load {
     my $tenants = {};
     for my $tenant (@{$args{infra}->{tenants}}) {
         $tenants_name_id->{$tenant->{name}} = $tenant->{id};
-        $tenants->{$tenant->{id}}->{name} = $tenant->{name};
+        $tenants->{$tenant->{id}} = $tenant;
         $tenants->{$tenant->{id}}->{networks} = [];
     }
 
+    my $zones = {};
+    for my $zone (@{$args{infra}->{availability_zones}}) {
+        # A zone has no id
+        $zones->{$zone->{zoneName}} = $zone;
+    }
+
+    my $flavors = {};
+    for my $flavor (@{$args{infra}->{flavors}}) {
+        $flavors->{$flavor->{id}} = $flavor;
+    }
+
+    my $subnets = {};
+    for my $subnet (@{$args{infra}->{subnets}}) {
+        $subnets->{$subnet->{id}} = $subnet;
+    }
+
+    my $networks_name_id = {};
     my $networks = {};
     for my $network (@{$args{infra}->{networks}}) {
         push @{$tenants->{$network->{tenant_id}}->{networks}}, $network->{id};
-        $networks->{$network->{id}}->{name} = $network->{name};
-        $networks->{$network->{id}}->{subnets} = $network->{subnets};
+        $networks_name_id->{$network->{name}} = $network->{id};
+        $networks->{$network->{id}} = $network
     }
-
-    # Store Params for Policies
-    my @flavor_names = map {$_->{name}} @{$args{infra}->{flavors}};
-    my @zone_names = map {$_->{zoneName}} @{$args{infra}->{availability_zones}};
 
     my $pp = $self->param_preset;
     $pp->update(
         params => {
-            flavor_names => \@flavor_names,
-            zone_names => \@zone_names,
-            tenants_name_id => $tenants_name_id,
             tenants => $tenants,
             networks => $networks,
+            subnets => $subnets,
+            flavors => $flavors,
+            zones => $zones,
+            # TODO Remove following and find better method
+            networks_name_id => $networks_name_id,
+            tenants_name_id => $tenants_name_id,
         }
     );
 
