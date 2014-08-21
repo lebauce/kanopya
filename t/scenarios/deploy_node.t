@@ -38,6 +38,7 @@ use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::Linux::Debian;
 use Entity::Component::Openssh5;
 use Entity::Component::HCMNetworkManager;
+use Entity::Component::HCMStorageManager;
 
 my $testing = 0;
 
@@ -112,36 +113,13 @@ sub main {
     lives_ok {
         my $lvm = Entity::Component::Lvm2->find();
         my $iscsi = Entity::Component::Iscsi::Iscsitarget1->find();
-        $systemimage = Entity::Systemimage->new(systemimage_name => "deploy_node_test");
 
-        my $container = EEntity->new(entity => $lvm)->createDisk(
-                            name       => $systemimage ->systemimage_name . '_' . time(),
-                            size       => 1024 * 1024 * 1024 * 4,
-                            filesystem => 'ext3',
-                        );
-
-        # Create a temporary local container to access to the masterimage file.
-        my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
-                                   container_name       => $masterimage->masterimage_name,
-                                   container_size       => $masterimage->masterimage_size,
-                                   container_filesystem => 'ext3',
-                                   container_device     => $masterimage->masterimage_file,
-                               ));
-
-        # Copy the masterimage container contents to the new container
-        $master_container->copy(dest     => $container,
-                                econtext => Kanopya::Test::Execution->_executor->_host->getEContext);
-
-        # Remove the temporary container
-        $master_container->remove();
-
-        my $container_access = EEntity->new(entity => $iscsi)->createExport(
-                                   container    => $container,
-                                   export_name  => $systemimage->systemimage_name,
-                                   iscsi_portal => IscsiPortal->find()->id
-                               );
-
-        EEntity->new(entity => $systemimage)->activate(container_accesses => [ $container_access ]);
+        my $hcmstorage = EEntity->new(entity => Entity::Component::HCMStorageManager->find());
+        $systemimage = $hcmstorage->createSystemImage(systemimage_name  => "deploy_node_test_" . time(),
+                                                      systemimage_size  => 1024 * 1024 * 1024 * 4,
+                                                      disk_manager_id   => $lvm->id,
+                                                      export_manager_id => $iscsi->id,
+                                                      masterimage       => $masterimage);
 
     } 'Create the system image for the node to deploy';
 
