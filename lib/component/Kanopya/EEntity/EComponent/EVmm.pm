@@ -18,7 +18,9 @@ use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
-use Data::Dumper;
+
+use EEntity;
+
 use Log::Log4perl "get_logger";
 use General;
 
@@ -30,7 +32,7 @@ sub postStartNode {
 
     General::checkParams(args => \%args, required => [ 'node' ]);
 
-    $self->iaas->registerHypervisor(host => $args{node}->host);
+    $self->iaas->registerHypervisor(host => EEntity->new(entity => $args{node}->host));
 }
 
 sub stopNode {
