@@ -52,9 +52,6 @@ sub getFreeHost {
             last;
         }
     }
-
-    #TODO manage with Network Policies
-    $args{interfaces} = [];
     return $self->_entity->getFreeHost(%args);
 }
 

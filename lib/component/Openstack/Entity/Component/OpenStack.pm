@@ -407,7 +407,7 @@ sub getFreeHost {
 
     $log->info("Looking for a virtual host");
     try {
-        return $self->createVirtualHost(%args);
+        return $self->createVirtualHost(ifaces => scalar(@{ $args{networks} }), %args);
     }
     catch ($err) {
         # We can't create virtual host for some reasons (e.g can't meet constraints)
