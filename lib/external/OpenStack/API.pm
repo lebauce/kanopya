@@ -27,15 +27,32 @@ my $log = get_logger("");
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'credentials', 'config' ]);
+    General::checkParams(args => \%args, required => [ 'user', 'password', 'tenant_name', 'keystone_url' ]);
 
     my $self = {};
     bless $self , $class;
 
-    $self->{config} = $args{config};
+    my $config = {
+        verify_ssl => 0,
+        identity => {
+            url => 'http://' . $args{keystone_url} . ':5000/v2.0'
+        },
+    };
+
+    my $credentials = {
+        auth => {
+            passwordCredentials => {
+                username => $args{user},
+                password => $args{password},
+            },
+            tenantName => $args{tenant_name},
+        }
+    };
+
+    $self->{config} = $config;
     $log->debug('Openstack::API config ' . (Dumper $self->{config}));
 
-    $self->login(credentials => $args{credentials});
+    $self->_login(credentials => $credentials);
 
     return $self;
 }
@@ -46,7 +63,7 @@ my $api_version = {
     metering => 'v2',
 };
 
-sub login {
+sub _login {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'credentials' ]);

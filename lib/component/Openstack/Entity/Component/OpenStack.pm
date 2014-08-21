@@ -707,26 +707,11 @@ sub _api {
         }
     );
 
-    my $credentials = {
-        auth => {
-            passwordCredentials => {
-                username => $args{api_username},
-                password => $args{api_password},
-            },
-            tenantName => $args{tenant_name},
-        }
-    };
-
-    my $config = {
-        verify_ssl => 0,
-        identity => {
-            url => 'http://' . $args{keystone_url} . ':5000/v2.0'
-        },
-    };
-
     return OpenStack::API->new(
-               credentials => $credentials,
-               config      => $config
+               user => $args{api_username},
+               password => $args{api_password},
+               tenant_name => $args{tenant_name},
+               keystone_url => $args{keystone_url},
            );
 }
 
