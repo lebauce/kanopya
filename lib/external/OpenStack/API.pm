@@ -82,9 +82,12 @@ sub _login {
     for my $service (@{$response->{access}->{serviceCatalog}}) {
         my $name = $service->{type};
 
-        $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL} .
-                                          ((defined $api_version->{$name}) ? '/' . $api_version->{$name}
-                                                                           : '');
+        $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL};
+
+        if (! ($self->{config}->{$name}->{url} =~ /^http:\/\/.*\/v\d(\.\d)?(\/.*)?$/)) {
+            $self->{config}->{$name}->{url} .= ((defined $api_version->{$name}) ? '/' . $api_version->{$name}
+                                                                                : '/v1');
+        }
 
         $self->{config}->{$name}->{adminURL} = $service->{endpoints}->[0]->{adminURL};
 
