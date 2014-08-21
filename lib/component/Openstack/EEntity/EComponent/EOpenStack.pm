@@ -12,12 +12,39 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+Execution lib for component OpenStack.
+
+@see <package>Entity::Component::OpenStack</package>
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::EOpenStack;
 use parent EEntity::EComponent;
 use parent EManager::EHostManager::EVirtualMachineManager;
 
 use strict;
 use warnings;
+
+
+=pod
+=begin classdoc
+
+Override the parent execution method to forward the call to the component entity.
+
+@see <package>EManager::EHostManager</package>
+
+=end classdoc
+=cut
+
+sub getFreeHost {
+    my ($self, %args) = @_;
+
+    return $self->_entity->getFreeHost(%args);
+}
 
 1;
 

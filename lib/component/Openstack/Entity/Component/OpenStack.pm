@@ -24,8 +24,6 @@ the available parameters/option for each OpenStack services.
 
 It implements the 3 HCM drivers interfaces VirtualMachineManager, DiskManager, ExportManager.
 
-To instanciate this component in way to manage an existing OpenStack installation,
-
 =end classdoc
 =cut
 
@@ -387,6 +385,37 @@ sub checkNetworkManagerParams {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'networks' ]);
+}
+
+
+
+=pod
+=begin classdoc
+
+Check for virtual machine placement, and create the virtual host instance.
+
+@see <package>Manager::HostManager</package>
+
+=end classdoc
+=cut
+
+sub getFreeHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args,
+                         required => [ 'networks', 'flavor', 'availability_zone', 'tenant' ]);
+
+    $log->info("Looking for a virtual host");
+    try {
+        return $self->createVirtualHost(%args);
+    }
+    catch ($err) {
+        # We can't create virtual host for some reasons (e.g can't meet constraints)
+        throw Kanopya::Exception::Internal(
+                  error => "Virtual machine manager <" . $self->label . "> has not capabilities " .
+                           "to host this vm with flavor <$args{flavor}>:\n" . $err
+              );
+    }
 }
 
 

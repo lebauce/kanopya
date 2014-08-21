@@ -148,6 +148,13 @@ sub stopHost {
 }
 
 
+sub getFreeHost {
+    my ($self,%args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
 sub resubmitHost {
     my ($self, %args) = @_;
 
