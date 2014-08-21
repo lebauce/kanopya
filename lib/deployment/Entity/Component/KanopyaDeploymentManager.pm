@@ -243,6 +243,14 @@ sub getDeploymentManagerParams {
     $paramdef->{kernel_id}->{options} = \@kernels;
     $paramdef->{components}->{attributes}->{attributes}->{component_type}->{options} = \@componenttypes;
 
+    # Fill the attribute definition with availables values for boot_manager_id
+    my $manager_options = {};
+    for my $boot_manager (Entity::Component->search(custom => { category => 'BootManager' })) {
+        $manager_options->{$boot_manager->id} = $boot_manager->toJSON;
+    }
+    my @manageroptions = values %{ $manager_options };
+    $paramdef->{boot_manager_id}->{options} = \@manageroptions;
+
     return $paramdef;
 }
 
