@@ -43,6 +43,18 @@ Override the parent execution method to forward the call to the component entity
 sub getFreeHost {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'flavor' ]);
+
+    while ( my ($flavor_id, $flavor) = each (%{$self->param_preset->load->{flavors}})) {
+        if ($flavor->{name} eq $args{flavor}) {
+            $args{ram} = $flavor->{ram} * 1024 * 1024; # MB to B
+            $args{core} = $flavor->{vcpus};
+            last;
+        }
+    }
+
+    #TODO manage with Network Policies
+    $args{interfaces} = [];
     return $self->_entity->getFreeHost(%args);
 }
 
