@@ -39,6 +39,7 @@ use Entity::Component::Linux::Debian;
 use Entity::Component::Openssh5;
 use Entity::Component::HCMNetworkManager;
 use Entity::Component::HCMStorageManager;
+use IscsiPortal;
 
 my $testing = 0;
 
@@ -85,8 +86,6 @@ sub main {
     my $adminnetconf;
     lives_ok {
         $adminnetconf = Entity::Netconf->find(hash => { netconf_name => "Kanopya admin" });
-        my $iface = $host->find(related => 'ifaces', hash => { iface_name => "eth0" });
-        $iface->update(netconf_ifaces => [ $adminnetconf ]);
     } 'Configure node iface with admin network';
 
     diag('Add Lvm, Iscsi  and Debian components on the node');
@@ -119,7 +118,8 @@ sub main {
                                                       systemimage_size  => 1024 * 1024 * 1024 * 4,
                                                       disk_manager_id   => $lvm->id,
                                                       export_manager_id => $iscsi->id,
-                                                      masterimage       => $masterimage);
+                                                      masterimage       => $masterimage,
+                                                      iscsi_portal      => IscsiPortal->find()->id);
 
     } 'Create the system image for the node to deploy';
 
@@ -127,12 +127,20 @@ sub main {
     lives_ok {
         my $deployment_mamager = Entity::Component::KanopyaDeploymentManager->find();
         my $operation = $deployment_mamager->deployNode(
-                            node         => $node,
-                            systemimage  => $systemimage,
-                            kernel_id    => $masterimage->masterimage_defaultkernel_id,
-                            boot_policy  => 'PXE Boot via ISCSI',
+                            node            => $node,
+                            systemimage     => $systemimage,
+                            kernel_id       => $masterimage->masterimage_defaultkernel_id,
+                            boot_policy     => 'PXE Boot via ISCSI',
                             boot_manager_id => $deployment_mamager->id,
-                            network_manager => Entity::Component::HCMNetworkManager->find()
+                            network_manager => Entity::Component::HCMNetworkManager->find(),
+                            interfaces      => {
+                                admin => {
+                                    interface_name => "eth0",
+                                    netconfs       => {
+                                        admin_netconf => $adminnetconf->id
+                                    }
+                                }
+                            }
                         );
         Kanopya::Test::Execution->executeOne(entity => $operation);
     } 'Deploy the node via the KanopyaDeploymentManager';
