@@ -92,6 +92,7 @@ our %resources = (
     "keepalived1"              => "Entity::Component::Keepalived1",
     "keepalived1vrrpinstance"  => "Keepalived1Vrrpinstance",
     "kernel"                   => "Entity::Kernel",
+    "openstack"                => "Entity::Component::OpenStack",
     "keystone"                 => "Entity::Component::Keystone",
     "linux"                    => "Entity::Component::Linux",
     "linuxmount"               => "LinuxMount",

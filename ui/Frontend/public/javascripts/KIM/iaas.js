@@ -1,5 +1,20 @@
 require('KIM/services.js');
 
+function iaas_registerbutton_action(e, grid) {
+    (new KanopyaFormWizard({
+        title      : 'Register an existing OpenStack',
+        type       : 'openstack',
+        id         : (!(e instanceof Object)) ? e : undefined,
+        displayed  : [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ],
+        callback   : function (iaas) {
+            handleCreate(grid);
+
+            // Raise the Iaas component synchronisation
+            ajax('POST', '/api/component/' + iaas.pk + '/synchronize');
+        }
+    })).start();
+}
+
 /* Temporary redefinition of a nested function of KIM/services.js */
 function NodeIndicatorDetailsHistorical(cid, node_id, elem_id) {
     var cont = $('#' + cid);
@@ -233,5 +248,14 @@ function load_iaas_content (container_id) {
             tabs        : tabs
         },
         deactivate  : true,
+    });
+
+    var registerButton  = $('<a>', { text : 'Register an existing OpenStack' })
+                              .button({ icons : { primary : 'ui-icon-plusthick' } });
+
+    var action_div = $('#' + container_id).prevAll('.action_buttons');
+    action_div.append(registerButton);
+    $(registerButton).bind('click', function (e) {
+        iaas_registerbutton_action(e, grid);
     });
 }
