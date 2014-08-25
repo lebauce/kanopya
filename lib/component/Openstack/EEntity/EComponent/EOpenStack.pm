@@ -55,5 +55,19 @@ sub getFreeHost {
     return $self->_entity->getFreeHost(%args);
 }
 
+=pod
+=begin classdoc
+
+Create and start a virtual machine from the given parameters by calling the nova api.
+
+@see <package>Manager::HostManager</package>
+
+=end classdoc
+=cut
+
+sub startHost {
+    my ($self, %args) = @_;
+    return $self->_entity->startHost(%args);
+}
 1;
 

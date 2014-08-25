@@ -55,14 +55,13 @@ sub create {
     my ($class, %args) = @_;
     General::checkParams(
         args => \%args,
-        required => [ 'api', 'ip_address', 'network_id', 'subnet_id' ],
-        optional => {name => undef, mac_address => undef},
+        required => [ 'api', 'network_id', 'subnet_id' ],
+        optional => {name => undef, mac_address => undef, ip_address => undef},
     );
 
     my $params = {
         port => {
             fixed_ips => [{
-                ip_address => $args{ip_address},
                 subnet_id => $args{subnet_id},
             }],
             network_id => $args{network_id},
@@ -77,10 +76,14 @@ sub create {
         $params->{port}->{mac_address} = $args{mac_address},
     }
 
+    if (defined $args{ip_address}) {
+        $params->{port}->{fixed_ips}->[0]->{ip_address} = $args{ip_address},
+    }
+
     my $response = $args{api}->network->ports->post(
         content => $params
     );
 
-    return $response->{port};
+    return $response;
 }
 1;

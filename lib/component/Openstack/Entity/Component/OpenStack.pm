@@ -37,6 +37,7 @@ use parent Manager::NetworkManager;
 use strict;
 use warnings;
 use Hash::Merge;
+use Data::Dumper;
 
 use Kanopya::Exceptions;
 use ParamPreset;
@@ -47,6 +48,9 @@ use Entity::Masterimage;
 use Entity::Node;
 
 use OpenStack::API;
+use OpenStack::Port;
+use OpenStack::Volume;
+use OpenStack::Server;
 use OpenStack::Infrastructure;
 
 use ClassType::ServiceProviderType::ClusterType;
@@ -407,7 +411,7 @@ sub getFreeHost {
 
     $log->info("Looking for a virtual host");
     try {
-        return $self->createVirtualHost(ifaces => scalar(@{ $args{networks} }), %args);
+        return $self->createVirtualHost(ifaces => scalar(@{ [ $args{networks} ] }), %args);
     }
     catch ($err) {
         # We can't create virtual host for some reasons (e.g can't meet constraints)
@@ -449,9 +453,38 @@ Create and start a virtual machine from the given parameters by calling the nova
 sub startHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args  => \%args, required => [ "host" ]);
+    General::checkParams(args  => \%args, required => [ 'host', 'flavor' ]);
 
-    throw Kanopya::Exception::NotImplemented();
+    my $flavor_id = undef;
+    my %flavors = %{$self->param_preset->load->{flavors}};
+    while (my ($id, $flavor) = each (%flavors)) {
+        if ($flavor->{name} eq $args{flavor}) {
+            $flavor_id = $id;
+            last;
+        }
+    }
+
+    my @ids = map {$_->id} $args{host}->ifaces;
+    my @macs = map {$_->iface_mac_addr} $args{host}->ifaces;
+    my $port_macs = $self->param_preset->load->{port_macs};
+    my @ports_ids = map {$port_macs->{$_}} @macs;
+
+    #TODO use an other field to store volume_id
+    my $server = OpenStack::Server->create(
+                     api => $self->_api,
+                     volume_id => $args{host}->node->systemimage->systemimage_desc,
+                     flavor_id => $flavor_id,
+                     port_ids => \@ports_ids,
+                     instance_name => $args{host}->node->node_hostname,
+                 );
+    $log->debug(Dumper $server);
+
+    $self->promoteVm(
+        host => $args{host}->_entity,
+        vm_uuid => $server->{server}->{id},
+    );
+
+    return;
 }
 
 
@@ -549,7 +582,11 @@ Promote host into OpenstackVm and set its hypervisor id
 
 sub promoteVm {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host', 'vm_uuid', 'hypervisor_id' ]);
+    General::checkParams(
+        args => \%args,
+        required => [ 'host', 'vm_uuid' ],
+        optional => {hypervisor_id => undef},
+    );
 
      $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
                       promoted           => $args{host},
@@ -562,12 +599,80 @@ sub promoteVm {
 }
 
 
+=pod
+
+=begin classdoc
+
+Get the detail of a vm
+
+@params host vm
+
+=end classdoc
+
+=cut
+
+sub getVMDetails {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $details = OpenStack::Server->detail(
+                      api => $self->_api,
+                      id => $args{host}->openstack_vm_uuid,
+                  );
+
+    if (defined $details->{itemNotFound}) {
+        throw Kanopya::Exception(error => $details->{itemNotFound});
+    }
+
+    return {
+        hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
+        state => $details->{server}->{status},
+    };
+}
+
+
+=pod
+
+=begin classdoc
+
+Retrieve the state of a given VM
+
+@return state
+
+=end classdoc
+
+=cut
+
+sub getVMState {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    try {
+        my $details =  $self->getVMDetails(%args);
+
+        my $state_map = {
+            'MIGRATING' => 'migr',
+            'BUILD'     => 'pend',
+            'REBUILD'   => 'pend',
+            'ACTIVE'    => 'runn',
+            'ERROR'     => 'fail',
+            'SHUTOFF'   => 'shut'
+        };
+
+        return {
+            state      => $state_map->{$details->{state}} || 'fail',
+            hypervisor => $details->{hypervisor},
+        };
+    }
+    catch ($err) {
+        $log->warn($err);
+    }
+}
 
 =pod
 =begin classdoc
 
-Create a system image for a node.
-Should fill the systemimage with the masterimage contents if defined.
+Create a Glance volume via Openstack API.
 
 @see <package>Manager::StorageManager</package>
 
@@ -578,11 +683,40 @@ sub createSystemImage {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "systemimage_name" ],
-                         optional => { "systemimage_desc" => "",
-                                       "masterimage"      => undef });
+                         required => [ "systemimage_name", "masterimage", "systemimage_size" ],);
 
-    throw Kanopya::Exception::NotImplemented();
+    # Create Glance Volume
+    my $image_id = undef;
+    my %images = %{$self->param_preset->load->{images}};
+    while (my ($id, $image) = each (%images)) {
+        if ($image->{name} eq $args{masterimage}->masterimage_name) {
+            $image_id = $id;
+            last;
+        }
+    }
+
+    #TODO destroy volume during rollback
+    my $volume = OpenStack::Volume->create(
+                     api => $self->_api,
+                     image_id => $image_id,
+                     size => $args{systemimage_size} / (1024 ** 3),
+                 );
+
+    $log->debug($volume);
+
+    my $detail;
+    my $time_out = time + 240;
+    do {
+        sleep 10;
+        $detail = OpenStack::Volume->detail(api => $self->_api, id => $volume->{volume}->{id});
+        $log->debug($detail->{status});
+    } while ($detail->{status} eq 'downloading' && time < $time_out);
+
+    return Entity::Systemimage->new(
+               systemimage_name => $args{systemimage_name},
+               systemimage_desc => $volume->{volume}->{id},
+               storage_manager_id => $self->id,
+           );
 }
 
 
@@ -619,8 +753,8 @@ sub attachSystemImage {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "node", "systemimage" ]);
-
-    throw Kanopya::Exception::NotImplemented();
+    $log->debug('No system image to attach');
+    return;
 }
 
 
@@ -656,7 +790,8 @@ sub configureBoot {
                          required => [ "node", "systemimage", "boot_policy" ],
                          optional => { "remove" => 0 });
 
-    throw Kanopya::Exception::NotImplemented();
+    $log->debug('No boot configuration');
+    return;
 }
 
 
@@ -677,10 +812,11 @@ sub applyBootConfiguration {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "node", "systemimage", "boot_policy" ],
+                         required => [ "node", "boot_policy" ],
                          optional => { "remove" => 0 });
 
-    throw Kanopya::Exception::NotImplemented();
+    $log->debug('No boot configuration to apply');
+    return;
 }
 
 
@@ -697,15 +833,51 @@ to the node from the network manager params.
 
 sub configureNetworkInterfaces {
     my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'networks', 'subnets' ]);
 
-    General::checkParams(args => \%args, required => [ "networks" ]);
+    my $pp = $self->param_preset->load;
+    my $net_id = $pp->{networks_name_id}->{$args{networks}};
 
-    # TODO: Apply some configuration on neutron if required
+    my $subnet_id = undef;
+    for my $id (@{$pp->{networks}->{$net_id}->{subnets}}) {
+        if ($pp->{subnets}->{$id}->{cidr} eq $args{subnets}) {
+            $subnet_id = $id;
+            last;
+        }
+    }
+
+    my $port = OpenStack::Port->create(
+                   api => $self->_api,
+                   network_id => $net_id,
+                   subnet_id =>  $subnet_id,
+               );
+
+    #TODO store information elsewhere
+    $self->param_preset->update(
+        params => {
+            port_macs => {
+                $port->{port}->{mac_address} => $port->{port}->{id}
+            }
+        }
+    );
+
+    $log->debug(Dumper $port);
+
+    # Currently manage only on iface
+    my @ifaces = $args{node}->host->getIfaces;
+    foreach my $iface (@{ $args{node}->host->getIfaces }) {
+        $iface->assignIp(ip_addr => $port->{port}->{fixed_ips}->[0]->{ip_address});
+        $args{node}->admin_ip_addr($port->{port}->{fixed_ips}->[0]->{ip_address});
+        $iface->iface_mac_addr($port->{port}->{mac_address});
+    }
+
+    return;
 }
 
 
 =pod
 =begin classdoc
+
 
 Querry the openstack API to register exsting hypervisors, virtaul machines
 and all options available in the existing OpenStack.
@@ -746,6 +918,11 @@ sub _addHypervisor {
 
 sub _api {
     my ($self, %args) = @_;
+
+    if (defined $self->{_api}) {
+        return $self->{_api};
+    }
+
     my $params = $self->param_preset->load;
 
     General::checkParams(
@@ -758,12 +935,14 @@ sub _api {
         }
     );
 
-    return OpenStack::API->new(
-               user => $args{api_username},
-               password => $args{api_password},
-               tenant_name => $args{tenant_name},
-               keystone_url => $args{keystone_url},
-           );
+    $self->{_api} = OpenStack::API->new(
+                        user => $args{api_username},
+                        password => $args{api_password},
+                        tenant_name => $args{tenant_name},
+                        keystone_url => $args{keystone_url},
+                    );
+
+    return $self->{_api}
 }
 
 my $vm_states = {
@@ -807,6 +986,11 @@ sub _load {
         $subnets->{$subnet->{id}} = $subnet;
     }
 
+    my $images = {};
+    for my $image (@{$args{infra}->{images}}) {
+        $images->{$image->{id}} = $image;
+    }
+
     my $networks_name_id = {};
     my $networks = {};
     for my $network (@{$args{infra}->{networks}}) {
@@ -823,6 +1007,7 @@ sub _load {
             subnets => $subnets,
             flavors => $flavors,
             zones => $zones,
+            images => $images,
             # TODO Remove following and find better method
             networks_name_id => $networks_name_id,
             tenants_name_id => $tenants_name_id,

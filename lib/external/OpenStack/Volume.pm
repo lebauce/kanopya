@@ -53,6 +53,29 @@ sub detail {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' , 'id' ]);
 
-    return $args{api}->volume->volumes(id => $args{id})->get->{volumes};
+    return $args{api}->volume->volumes(id => $args{id})->get->{volume};
 }
+
+sub create {
+    my ($class, %args) = @_;
+    General::checkParams(
+        args => \%args,
+        required => [ 'api', 'image_id' ],
+        optional => {size => 5, display_name => undef} );
+
+    my $params = {
+        volume => {
+            imageRef => $args{image_id},
+            size => $args{size},
+            display_name => $args{display_name},
+            # availability_zone => undef,
+            # volume_type => undef,
+            # display_description => undef,
+            # snapshot_id => undef,
+        }
+    };
+
+    return $args{api}->volume->volumes->post(content => $params);
+}
+
 1;

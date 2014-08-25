@@ -54,6 +54,7 @@ sub main {
                         }
                     );
 
+    $openstack->synchronize();
     diag('Create and configure the openstack vm cluster');
     my $cluster;
     lives_ok {

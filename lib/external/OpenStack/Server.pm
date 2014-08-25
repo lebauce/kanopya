@@ -66,18 +66,55 @@ sub detail {
         optional => {flavor_detail => 0},
     );
 
-    my $vm_detail = $args{api}->compute->servers(id => $args{id})->get->{server};
+    my $response = $args{api}->compute->servers(id => $args{id})->get;
+
+    if (! defined $response->{server}) {
+        return $response;
+    }
 
     if ($args{flavor_detail} eq 1) {
         my $flavor_detail = OpenStack::Flavor->detail(
-                                id => $vm_detail->{flavor}->{id},
+                                id => $response->{server}->{flavor}->{id},
                                 api => $args{api},
                             );
 
-        $vm_detail->{flavor} = $flavor_detail;
+        $response->{server}->{flavor} = $flavor_detail;
     }
 
-    return $vm_detail;
+    return $response;
 }
 
+sub create {
+    my ($class, %args) = @_;
+    General::checkParams(
+        args => \%args,
+        required => [ 'api', 'volume_id', 'flavor_id', 'instance_name' ],
+        optional => {port_ids => []},
+    );
+
+    my $networks = [];
+
+    for my $port_id (@{$args{port_ids}}) {
+        push @{$networks}, {port => $port_id};
+    }
+
+    my $route = 'os-volumes_boot';
+
+    my $params = {
+        server => {
+            name => $args{instance_name},
+            imageRef => "",
+            block_device_mapping_v2 => [{
+                source_type => "volume",
+                delete_on_termination => "false",
+                boot_index => 0,
+                uuid => $args{volume_id},
+                destination_type => "volume"}],
+            flavorRef => $args{flavor_id},
+            networks => $networks,
+        }
+    };
+
+    return $args{api}->compute->$route->post(content => $params);
+}
 1;

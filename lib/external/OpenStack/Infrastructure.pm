@@ -42,7 +42,7 @@ sub load {
         my @vm_details = ();
         for my $vm (@$vms) {
             my $detail = OpenStack::Server->detail(%args, id => $vm->{uuid}, flavor_detail => 1);
-            push @vm_details, $detail;
+            push @vm_details, $detail->{server};
         }
         $hypervisor->{servers} = \@vm_details;
     }
