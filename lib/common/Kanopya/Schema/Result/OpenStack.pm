@@ -1,12 +1,12 @@
 use utf8;
-package Kanopya::Schema::Result::OpenstackHypervisor;
+package Kanopya::Schema::Result::OpenStack;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-Kanopya::Schema::Result::OpenstackHypervisor
+Kanopya::Schema::Result::OpenStack
 
 =cut
 
@@ -31,62 +31,80 @@ use base 'DBIx::Class::IntrospectableM2M';
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<openstack_hypervisor>
+=head1 TABLE: C<open_stack>
 
 =cut
 
-__PACKAGE__->table("openstack_hypervisor");
+__PACKAGE__->table("open_stack");
 
 =head1 ACCESSORS
 
-=head2 openstack_hypervisor_id
+=head2 open_stack_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 nova_controller_id
+=head2 api_username
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
+  data_type: 'varchar'
   is_nullable: 0
+  size: 255
+
+=head2 api_password
+
+  data_type: 'varchar'
+  is_nullable: 0
+  size: 255
+
+=head2 keystone_url
+
+  data_type: 'varchar'
+  is_nullable: 0
+  size: 255
+
+=head2 tenant_name
+
+  data_type: 'varchar'
+  is_nullable: 0
+  size: 255
 
 =cut
 
 __PACKAGE__->add_columns(
-  "openstack_hypervisor_id",
+  "open_stack_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "nova_controller_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
+  "api_username",
+  { data_type => "varchar", is_nullable => 0, size => 255 },
+  "api_password",
+  { data_type => "varchar", is_nullable => 0, size => 255 },
+  "keystone_url",
+  { data_type => "varchar", is_nullable => 0, size => 255 },
+  "tenant_name",
+  { data_type => "varchar", is_nullable => 0, size => 255 },
 );
 
 =head1 PRIMARY KEY
 
 =over 4
 
-=item * L</openstack_hypervisor_id>
+=item * L</open_stack_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("openstack_hypervisor_id");
+__PACKAGE__->set_primary_key("open_stack_id");
 
 =head1 RELATIONS
 
-=head2 nova_controller
+=head2 open_stack
 
 Type: belongs_to
 
@@ -95,30 +113,15 @@ Related object: L<Kanopya::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "nova_controller",
+  "open_stack",
   "Kanopya::Schema::Result::Component",
-  { component_id => "nova_controller_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
-);
-
-=head2 openstack_hypervisor
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::Hypervisor>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "openstack_hypervisor",
-  "Kanopya::Schema::Result::Hypervisor",
-  { hypervisor_id => "openstack_hypervisor_id" },
+  { component_id => "open_stack_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-22 14:07:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fii+l/i0h7ox2+SEzF24KA
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DsVBUDEefBl41ibymQl4yQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

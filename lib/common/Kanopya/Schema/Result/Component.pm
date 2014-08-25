@@ -902,6 +902,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 open_stack
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::OpenStack>
+
+=cut
+
+__PACKAGE__->might_have(
+  "open_stack",
+  "Kanopya::Schema::Result::OpenStack",
+  { "foreign.open_stack_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 openiscsi2
 
 Type: might_have
@@ -929,6 +944,36 @@ __PACKAGE__->might_have(
   "openssh5",
   "Kanopya::Schema::Result::Openssh5",
   { "foreign.openssh5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 openstack_hypervisors
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::OpenstackHypervisor>
+
+=cut
+
+__PACKAGE__->has_many(
+  "openstack_hypervisors",
+  "Kanopya::Schema::Result::OpenstackHypervisor",
+  { "foreign.nova_controller_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 openstack_vms
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::OpenstackVm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "openstack_vms",
+  "Kanopya::Schema::Result::OpenstackVm",
+  { "foreign.nova_controller_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -1268,8 +1313,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-07-30 17:09:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4hnBKRukxyXKEGoATrh8SQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-22 14:07:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QKJis82t7gDqLlH3ifZygA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -2,6 +2,16 @@ USE `kanopya`
 
 SET foreign_key_checks=0;
 
+CREATE TABLE `open_stack` (
+  `open_stack_id` int(8) unsigned NOT NULL,
+  `api_username` varchar(255) NOT NULL,
+  `api_password` varchar(255) NOT NULL,
+  `keystone_url` varchar(255) NOT NULL,
+  `tenant_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`open_stack_id`),
+  FOREIGN KEY (`open_stack_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `glance` (
   `glance_id` int(8) unsigned NOT NULL,
   `mysql5_id` int(8) unsigned NULL DEFAULT NULL,

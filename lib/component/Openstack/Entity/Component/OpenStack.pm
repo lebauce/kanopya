@@ -61,12 +61,56 @@ my $log = get_logger("");
 
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
+    api_username => {
+        label        => 'Openstack login',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1
+    },
+    api_password => {
+        label        => 'Openstack password',
+        type         => 'password',
+        pattern      => '^.*$',
+        is_mandatory => 1
+    },
+    keystone_url => {
+        label        => 'Keystone URL',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1
+    },
+    tenant_name => {
+        label        => 'Tenant',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1
+    },
     host_type => {
         is_virtual => 1
     }
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+my $vm_states = { active       => 'in',
+                  build        => 'in',
+                  deleted      => 'out',
+                  error        => 'broken',
+                  paused       => 'out',
+                  rescued      => 'broken',
+                  resized      => 'in',
+                  soft_deleted => 'out',
+                  stopped      => 'out',
+                  suspended    => 'out' };
 
 
 =pod
@@ -89,21 +133,10 @@ sub new {
     General::checkParams(args     => \%args,
                          required => [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ]);
 
-    # Firstly pop the policy atrributes
-    my $params = {
-        api_username => delete $args{api_username},
-        api_password => delete $args{api_password},
-        keystone_url => delete $args{keystone_url},
-        tenant_name  => delete $args{tenant_name},
-    };
-
     my $self = $class->SUPER::new(%args);
 
     # Initialize the param preset entry used to store available configuration
     $self->param_preset(ParamPreset->new());
-
-    # Store the initial configuration
-    $self->param_preset->update(params => $params);
 
     return $self;
 }
@@ -923,43 +956,24 @@ sub _api {
         return $self->{_api};
     }
 
-    my $params = $self->param_preset->load;
+    General::checkParams(args => \%args,
+                         optional => { api_username => $self->api_username || 'admin',
+                                       api_password => $self->api_password || 'keystone',
+                                       keystone_url => $self->keystone_url || 'localhost',
+                                       tenant_name  => $self->tenant_name  || 'openstack' } );
 
-    General::checkParams(
-        args => \%args,
-        optional => {
-            api_username => $params->{api_username} || 'admin',
-            api_password => $params->{api_password} || 'keystone',
-            keystone_url => $params->{keystone_url} || 'localhost',
-            tenant_name => $params->{tenant_name} || 'openstack',
-        }
-    );
-
-    $self->{_api} = OpenStack::API->new(
-                        user => $args{api_username},
-                        password => $args{api_password},
-                        tenant_name => $args{tenant_name},
-                        keystone_url => $args{keystone_url},
-                    );
+    $self->{_api} = OpenStack::API->new(user         => $args{api_username},
+                                        password     => $args{api_password},
+                                        tenant_name  => $args{tenant_name},
+                                        keystone_url => $args{keystone_url});
 
     return $self->{_api}
 }
 
-my $vm_states = {
-    active => 'in',
-    build => 'in',
-    deleted => 'out',
-    error => 'broken',
-    paused => 'out',
-    rescued => 'broken',
-    resized => 'in',
-    soft_deleted => 'out',
-    stopped => 'out',
-    suspended => 'out',
-};
 
 sub _load {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'infra' ]);
 
     my $tenants_name_id = {};
