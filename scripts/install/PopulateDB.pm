@@ -725,6 +725,7 @@ sub registerManagerCategories {
 
     my $managers = [
         'HostManager',
+        'VirtualMachineManager',
         'StorageManager',
         'DiskManager',
         'ExportManager',
@@ -921,7 +922,7 @@ sub registerComponents {
             component_name         => 'Opennebula',
             component_version      => 3,
             deployable             => 1,
-            component_categories   => [ 'HostManager', 'NetworkManager' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'NetworkManager' ],
             service_provider_types => [ 'Cluster', 'Centos6', 'Sles6' ],
         },
         {
@@ -1005,7 +1006,7 @@ sub registerComponents {
             component_name         => 'Vsphere',
             component_version      => 5,
             deployable             => 1,
-            component_categories   => [ 'Hostmanager', 'Hypervisor' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'Hypervisor' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
@@ -1113,7 +1114,7 @@ sub registerComponents {
             component_name         => 'OpenStack',
             component_version      => 6,
             deployable             => 1,
-            component_categories   => [ 'HostManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
@@ -1134,7 +1135,7 @@ sub registerComponents {
             component_name         => 'NovaController',
             component_version      => 6,
             deployable             => 1,
-            component_categories   => [ 'HostManager', 'NetworkManager' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'NetworkManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
