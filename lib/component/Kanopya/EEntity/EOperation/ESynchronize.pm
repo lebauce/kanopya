@@ -1,4 +1,4 @@
-#    Copyright © 2012-2013 Hedera Technology SAS
+#    Copyright © 2012-2014 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -14,19 +14,14 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EOperation::ESynchronize;
-use base "EEntity::EOperation";
+use parent EEntity::EOperation;
 
 use strict;
 use warnings;
 
-use EEntity;
-use Kanopya::Exceptions;
-
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-
 my $log = get_logger("");
-my $errmsg;
+
 
 sub check {
     my ($self,%args) = @_;
@@ -37,10 +32,7 @@ sub check {
 sub execute {
     my ($self, %args) = @_;
 
-    $self->{context}->{entity}->synchronize(
-        erollback => $self->{erollback},
-        %{ $self->{params} },
-    );
+    $self->{context}->{entity}->synchronize(erollback => $self->{erollback}, %{ $self->{params} });
 }
 
 1;

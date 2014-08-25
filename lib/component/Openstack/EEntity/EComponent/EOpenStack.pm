@@ -69,5 +69,23 @@ sub startHost {
     my ($self, %args) = @_;
     return $self->_entity->startHost(%args);
 }
+
+
+=pod
+=begin classdoc
+
+Querry the openstack API to register exsting hypervisors, virtaul machines
+and all options available in the existing OpenStack.
+
+=end classdoc
+=cut
+
+sub synchronize {
+    my ($self, %args) = @_;
+
+    my $os_infra = OpenStack::Infrastructure->load(api => $self->_api);
+    return $self->_load(infra => $os_infra);
+}
+
 1;
 

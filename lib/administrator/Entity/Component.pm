@@ -86,6 +86,9 @@ sub methods {
         setConf => {
             description => 'set configuration of the component.',
         },
+        synchronize => {
+            description => 'synchronize the component infrastructure.',
+        },
     };
 }
 

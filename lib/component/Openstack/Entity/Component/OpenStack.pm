@@ -919,10 +919,19 @@ and all options available in the existing OpenStack.
 =cut
 
 sub synchronize {
-    my ($self, @args) = @_;
+    my ($self, %args) = @_;
 
-    my $os_infra = OpenStack::Infrastructure->load(api => $self->_api);
-    return $self->_load(infra => $os_infra);
+    General::checkParams(args => \%args, optional => { 'workflow' => undef });
+
+    return $self->executor_component->run(
+               name   => 'Synchronize',
+               workflow => delete $args{workflow},
+               params => {
+                   context => {
+                       entity => $self
+                   }
+               }
+           );
 }
 
 
@@ -937,8 +946,7 @@ Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
 =cut
 
 sub _addHypervisor {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
