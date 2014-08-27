@@ -479,7 +479,7 @@ function migrate(spid, eid) {
         success     : function(hmgr) {
             $.ajax({
                 url     : '/api/virtualization/' + hmgr[0].manager_id + '/hypervisors?expand=node',
-                type    : 'POST',
+                type    : 'GET',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
                         $(sel).append($('<option>', { text : data[i].node.node_hostname, value : data[i].pk }));

@@ -42,22 +42,21 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
     var container = $('#' + container_id);
 
     // Retrieve the cloud manager
-    var cloudmanagerid;
+    // Workaround to handle both param service_provider_id and cloudmanager_id
+    // If the elem_id do not corresdonf to a service provider, elem_id is the cloudmanager
     $.ajax({
-        url     : 'api/serviceprovider/'+elem_id+'/components?component_type.component_type_categories.component_category.category_name=HostManager',
+        url     : 'api/serviceprovider/'+elem_id+'/components?component_type.component_type_categories.component_category.category_name=VirtualMachineManager',
         async   : false,
         success : function(host_manager) {
-           cloudmanagerid = host_manager[0].pk;
+            if (host_manager.length > 0) {
+                elem_id = host_manager[0].pk;
+            }
         }
     });
-    if (cloudmanagerid == null) {
-        console.log('No cloud manager found');
-        return;
-    }
 
     $.ajax({
-        url     : '/api/virtualization/' + cloudmanagerid + '/hypervisors?expand=node',
-        type    : 'POST',
+        url     : '/api/virtualization/' + elem_id + '/hypervisors?expand=node',
+        type    : 'GET',
         success : function(data) {
             var topush  = [];
             for (var i in data) if (data.hasOwnProperty(i)) {
@@ -123,7 +122,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                         {
                             label   : 'Overview',
                             id      : 'hypervisor_detail_overview',
-                            onLoad  : function(cid, eid) { load_hypervisorvm_details(cid, eid, cloudmanagerid); }
+                            onLoad  : function(cid, eid) { load_hypervisorvm_details(cid, eid, elem_id); }
                         },
                         {
                             label  : 'General',
@@ -208,44 +207,42 @@ function load_iaas_content (container_id) {
         }
     }
     // Add the tab 'Hypervisor'
-    tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor, icon : 'compute'});
+    var hypervisors_tab = { label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor, icon : 'compute' };
+    tabs.push(hypervisors_tab);
+
     // change details tab callback to inform we are in IAAS mode
-    var details_tab = $.grep(tabs, function (e) {return e.id == 'service_details'});
+    var details_tab = $.grep(tabs, function (e) { return e.id == 'service_details' });
     details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
 
-    // Get cluster
-    var url = '/api/cluster';
-    // Only cluster with a component of category 'HostManager'
-    url += '?components.component_type.component_type_categories.component_category.category_name=HostManager';
-    // Need component_type info to filter during afterInsertRow() callback
-    url += '&expand=components.component_type&deep=1';
-    // Exclude kanopya cluster
-    url += '&cluster_id=<>,' + kanopya_cluster;
-
-    create_grid({
+    var url = '/api/component?custom.category=HostManager&expand=service_provider&deep=1';
+    var grid = create_grid({
         url : url,
         content_container_id    : container_id,
         grid_id                 : 'iaas_list',
-        colNames                : [ 'ID', 'Name', 'State', 'Active' ],
+        colNames                : [ 'ID', 'ServiceProvider', 'Name', 'State', 'Active' ],
         colModel                : [
             { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
-            { name : 'cluster_name', index : 'cluster_name', width : 200 },
-            { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
-            { name: 'active', index: 'active', hidden : true}
+            { name : 'service_provider_id', index : 'service_provider_id', width : 60, sorttype : 'int', hidden : true },
+            { name : 'label', index : 'label', width : 200 },
+            { name : 'service_provider.cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
+            { name : 'active', index: 'active', hidden : true}
         ],
-        afterInsertRow : function(grid, rowid, rowdata, rowelem) {
-            // Keep only instance where the component implementing HostManager manage hosts of type 'Virtual Machine'
-            // 'host_type' is a virtual attribute and so can not be filtered in the request
-            for (var i in rowelem.components) {
-                if (rowelem.components[i].host_type === 'Virtual Machine') {
-                    return true;
+        details : {
+            onSelectRow : function(elem_id, row_data, grid_id) {
+                var details = { noDialog : true };
+                if (row_data.service_provider_id) {
+                    // If the component is installed on a service provider,
+                    // display the service provider details with the additional
+                    // tab hypervisors
+                    details['tabs'] = tabs;
+                    elem_id = row_data.service_provider_id;
+
+                } else {
+                    details['tabs'] = [ hypervisors_tab ];
                 }
-            }
-            $(grid).jqGrid('delRowData', rowid);
-        },
-        details                 : {
-            noDialog    : true,
-            tabs        : tabs
+
+                display_row_details(elem_id, details, row_data, grid_id);
+            },
         },
         deactivate  : true,
     });
