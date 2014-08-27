@@ -531,16 +531,19 @@ sub label {
     }
 }
 
-sub getModel {
-    my $self = shift;
-    return $self->hostmodel;
-}
 
 sub remoteSessionUrl {
     my $self = shift;
 
-   return $self->host_manager->getRemoteSessionURL(host => $self);
+    try {
+        return $self->host_manager->getRemoteSessionURL(host => $self);
+    }
+    catch {
+        # Host not manager
+        return "";
+    }
 }
+
 
 =pod
 =begin classdoc

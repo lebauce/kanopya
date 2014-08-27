@@ -755,7 +755,7 @@ sub updateConsumption {
     my $consumption = 0;
     my @up_hosts = Entity::Host->search(hash => { host_state => { -like => 'up:%' } });
     for (@up_hosts) {
-        my %model = $_->getModel();
+        my %model = $_->hostmodel;
         $consumption += $model{hostmodel_consumption} || 0;
     }
     
