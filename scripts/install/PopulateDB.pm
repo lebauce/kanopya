@@ -129,7 +129,7 @@ my @classes = (
     'Entity::Component::Neutron',
     'Entity::Component::Keystone',
     'Entity::Component::Glance',
-    'Entity::Component::OpenStack',
+    'Entity::Component::Virtualization::OpenStack',
     'Entity::Component::SwiftProxy',
     'Entity::Component::SwiftStorage',
     'Entity::Repository::OpenstackRepository',

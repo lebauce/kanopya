@@ -126,21 +126,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5_hypervisors
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Vsphere5Hypervisor>
-
-=cut
-
-__PACKAGE__->has_many(
-  "vsphere5_hypervisors",
-  "Kanopya::Schema::Result::Vsphere5Hypervisor",
-  { "foreign.vsphere5_id" => "self.vsphere5_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 vsphere5_vms
 
 Type: has_many
@@ -157,8 +142,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-21 18:16:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SJkNZUvtzA90Rr1zWDH2Dw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5fnoszWMyvYB0eceKcnDlg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

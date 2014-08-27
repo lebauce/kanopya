@@ -27,8 +27,8 @@ It implements the 3 HCM drivers interfaces VirtualMachineManager, DiskManager, E
 =end classdoc
 =cut
 
-package Entity::Component::OpenStack;
-use parent Entity::Component;
+package Entity::Component::Virtualization::OpenStack;
+use parent Entity::Component::Virtualization;
 use parent Manager::HostManager::VirtualMachineManager;
 use parent Manager::StorageManager;
 use parent Manager::BootManager;
@@ -585,25 +585,6 @@ sub migrate {
 =pod
 =begin classdoc
 
-Return a list of hypervisors under the rule of this instance of manager
-
-@return opnestack_hypervisors
-
-@see <package>Manager::HostManager::VirtualMachineManager</package>
-
-=end classdoc
-=cut
-
-sub hypervisors {
-    my $self = shift;
-
-    throw Kanopya::Exception::NotImplemented();
-}
-
-
-=pod
-=begin classdoc
-
 Promote host into OpenstackVm and set its hypervisor id
 
 @return the promoted host
@@ -935,28 +916,6 @@ sub synchronize {
 }
 
 
-=pod
-=begin classdoc
-
-Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
-
-@return OpenstackHypervisor instance of OpenstackHypervisor
-
-=end classdoc
-=cut
-
-sub _addHypervisor {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    return Entity::Host::Hypervisor::OpenstackHypervisor->promote(
-               promoted                  => $args{host},
-               nova_controller_id        => $self->id,
-           );
-}
-
-
 sub _api {
     my ($self, %args) = @_;
 
@@ -1064,7 +1023,7 @@ sub _load {
                                   . $hypervisor_info->{hypervisor_hostname},
         );
 
-        $self->_addHypervisor(host => $hypervisor);
+        $self->addHypervisor(host => $hypervisor);
 
         for my $vm_info (@{$hypervisor_info->{servers}}) {
             $count++;

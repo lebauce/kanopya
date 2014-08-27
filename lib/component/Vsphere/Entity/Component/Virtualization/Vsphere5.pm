@@ -1177,27 +1177,6 @@ sub generateMacAddress {
     );
 }
 
-=pod
-
-=begin classdoc
-
-Return the list of hypervisors managed by the component
-
-@return \@hypervisors
-
-=end classdoc
-
-=cut
-
-sub hypervisors {
-    my $self = shift;
-
-    my @hypervisors = Entity::Host::Hypervisor::Vsphere5Hypervisor->search(
-                          hash => { vsphere5_id => $self->id }
-                      );
-
-    return \@hypervisors;
-}
 
 =pod
 
@@ -1374,40 +1353,17 @@ Promote an Hypervisor class into a Vsphere5Hypervisor one
 =cut
 
 sub addHypervisor {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'datacenter_id', 'uuid' ]);
 
     return Entity::Host::Hypervisor::Vsphere5Hypervisor->promote(
-                                 promoted               => $args{host},
-                                 vsphere5_id            => $self->id,
-                                 vsphere5_datacenter_id => $args{datacenter_id},
-                                 vsphere5_uuid          => $args{uuid},
+               promoted               => $self->SUPER::addHypervisor(host => $args{host}),
+               vsphere5_datacenter_id => $args{datacenter_id},
+               vsphere5_uuid          => $args{uuid},
            );
 }
 
-=pod
-
-=begin classdoc
-
-Return a list of active hypervisors ruled by this manager
-
-@return active_hypervisors
-
-=end classdoc
-
-=cut
-
-sub activeHypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(
-                          filters => [ 'vsphere5_hypervisors' ],
-                          hash    => { active => 1 }
-                      );
-
-    return wantarray ? @hypervisors : \@hypervisors;
-}
 
 =pod
 

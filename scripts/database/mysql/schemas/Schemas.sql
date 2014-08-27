@@ -506,8 +506,10 @@ CREATE TABLE `virtual_machine` (
 
 CREATE TABLE `hypervisor` (
   `hypervisor_id` int(8) unsigned NOT NULL,
+  `iaas_id` int(8) unsigned NULL,
   PRIMARY KEY (`hypervisor_id`),
-  FOREIGN KEY (`hypervisor_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`hypervisor_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`iaas_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

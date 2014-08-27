@@ -41,10 +41,4 @@ sub methods {
     return { };
 }
 
-sub getCloudManager {
-    my $self = shift;
-
-    return $self->nova_controller;
-}
-
 1;

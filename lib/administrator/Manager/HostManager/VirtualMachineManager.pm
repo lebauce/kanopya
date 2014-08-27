@@ -51,10 +51,6 @@ sub methods {
         optimiaas  => {
             description => 'optimize IaaS (packing)',
         },
-        hypervisors => {
-            description => 'get the hypervisors manzaged by the cloud component',
-            is_virtual  => 1
-        },
     };
 }
 
@@ -235,22 +231,6 @@ sub migrateHost {
     }
 }
 
-
-=pod
-
-=begin classdoc
-
-Abstract method to get the list of hypervisors managed by this host manager.
-
-@return the hypervisor list
-
-=end classdoc
-
-=cut
-
-sub hypervisors {
-    throw Kanopya::Exception::NotImplemented();
-}
 
 sub hostType {
     return "Virtual Machine";

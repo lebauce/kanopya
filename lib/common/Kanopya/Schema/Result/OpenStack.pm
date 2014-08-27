@@ -108,20 +108,20 @@ __PACKAGE__->set_primary_key("open_stack_id");
 
 Type: belongs_to
 
-Related object: L<Kanopya::Schema::Result::Component>
+Related object: L<Kanopya::Schema::Result::Virtualization>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "open_stack",
-  "Kanopya::Schema::Result::Component",
-  { component_id => "open_stack_id" },
+  "Kanopya::Schema::Result::Virtualization",
+  { virtualization_id => "open_stack_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-22 14:07:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DsVBUDEefBl41ibymQl4yQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ua95HkTmapf2fYkWwiyfGw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

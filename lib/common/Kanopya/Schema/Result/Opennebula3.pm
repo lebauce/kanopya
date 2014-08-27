@@ -208,21 +208,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 opennebula3_hypervisors
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Opennebula3Hypervisor>
-
-=cut
-
-__PACKAGE__->has_many(
-  "opennebula3_hypervisors",
-  "Kanopya::Schema::Result::Opennebula3Hypervisor",
-  { "foreign.opennebula3_id" => "self.opennebula3_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 opennebula3_vms
 
 Type: has_many
@@ -239,8 +224,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Z30hq5F3nlbv4offGNumog
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:by+eKD+1aVz2mf2wS7ubWg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

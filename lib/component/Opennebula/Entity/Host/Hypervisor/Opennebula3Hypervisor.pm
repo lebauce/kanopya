@@ -46,8 +46,4 @@ sub methods {
     return {};
 }
 
-sub getCloudManager {
-    my $self = shift;
-    return $self->opennebula3;
-}
 1;

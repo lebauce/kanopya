@@ -34,9 +34,7 @@ sub check {
 
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 
-    $self->{context}->{cloud_manager} = EEntity->new(
-                                            data => $self->{context}->{host}->getCloudManager(),
-                                        );
+    $self->{context}->{cloud_manager} = EEntity->new(data => $self->{context}->{host}->iaas);
 }
 
 

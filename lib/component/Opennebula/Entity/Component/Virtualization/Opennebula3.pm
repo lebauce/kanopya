@@ -164,24 +164,6 @@ sub getBaseConfiguration {
     };
 }
 
-sub hypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->opennebula3_hypervisors;
-    return \@hypervisors;
-}
-
-sub activeHypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(
-                          filters => ['opennebula3_hypervisors'],
-                          hash    => { active => 1 }
-                      );
-
-    return wantarray ? @hypervisors : \@hypervisors;
-}
-
 
 sub getHypervisorType {
     my ($self) = @_;
@@ -412,8 +394,7 @@ sub addHypervisor {
     General::checkParams(args => \%args, required => [ 'host', 'onehost_id' ]);
 
     return Entity::Host::Hypervisor::Opennebula3Hypervisor->promote(
-               promoted       => $args{host},
-               opennebula3_id => $self->id,
+               promoted       => $self->SUPER::addHypervisor(host => $args{host}),
                onehost_id     => $args{onehost_id}
            );
 }

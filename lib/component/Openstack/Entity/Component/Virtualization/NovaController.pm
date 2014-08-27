@@ -284,47 +284,6 @@ sub checkConfiguration {
 =pod
 =begin classdoc
 
-Return a list of hypervisors under the rule of this instance of manager
-
-@return opnestack_hypervisors
-
-=end classdoc
-=cut
-
-sub hypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(filters  => [ 'openstack_hypervisors' ],
-                                           prefetch => [ 'node' ]);
-    return \@hypervisors;
-}
-
-
-=pod
-=begin classdoc
-
-Return a list of active hypervisors ruled by this manager
-
-@return active_hypervisors
-
-=end classdoc
-=cut
-
-sub activeHypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(
-                          filters => [ 'openstack_hypervisors' ],
-                          hash    => { active => 1 }
-                      );
-
-    return wantarray ? @hypervisors : \@hypervisors;
-}
-
-
-=pod
-=begin classdoc
-
 Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
 
 @return OpenstackHypervisor instance of OpenstackHypervisor
@@ -339,8 +298,7 @@ sub addHypervisor {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     return Entity::Host::Hypervisor::OpenstackHypervisor->promote(
-               promoted                  => $args{host},
-               nova_controller_id        => $self->id,
+               promoted => $self->SUPER::addHypervisor(host => $args{host}),
            );
 }
 

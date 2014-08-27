@@ -9,7 +9,7 @@ CREATE TABLE `open_stack` (
   `keystone_url` varchar(255) NOT NULL,
   `tenant_name` varchar(255) NOT NULL,
   PRIMARY KEY (`open_stack_id`),
-  FOREIGN KEY (`open_stack_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`open_stack_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `glance` (
@@ -77,10 +77,8 @@ CREATE TABLE `neutron` (
 
 CREATE TABLE `openstack_hypervisor` (
   `openstack_hypervisor_id` int(8) unsigned NOT NULL,
-  `nova_controller_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`openstack_hypervisor_id`),
-  FOREIGN KEY (`openstack_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`nova_controller_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`openstack_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `openstack_vm` (

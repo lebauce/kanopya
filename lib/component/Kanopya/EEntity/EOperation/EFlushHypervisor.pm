@@ -47,9 +47,8 @@ sub check {
         throw Kanopya::Exception(error => $error);
     }
 
-    $self->{context}->{cloud_manager} = EEntity->new(
-                                            data => $self->{context}->{flushed_hypervisor}->getCloudManager(),
-                                        );
+    $self->{context}->{cloud_manager}
+        = EEntity->new(data => $self->{context}->{flushed_hypervisor}->iaas);
 
     $self->{context}->{cloud_manager_sp} = $self->{context}->{cloud_manager}->service_provider;
 

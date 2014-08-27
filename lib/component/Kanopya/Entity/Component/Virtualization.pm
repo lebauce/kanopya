@@ -44,19 +44,25 @@ use constant ATTR_DEF => {
         relation    => 'single_multi',
         is_editable => 1,
     },
+    hypervisors => {
+        label       => 'Hypervisors',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+    },
     overcommitment_cpu_factor => {
         label        => 'Overcommitment cpu factor',
-        type         => 'string',
+        type         => 'integer',
         pattern      => '^\d*\.?\d+$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 0
     },
     overcommitment_memory_factor => {
         label        => 'Overcommitment memory factor',
-        type         => 'string',
+        type         => 'integer',
         pattern      => '^\d*\.?\d+$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 0
     },
 };
 
@@ -85,15 +91,50 @@ sub getBaseConfiguration {
 
 
 =pod
-
 =begin classdoc
 
-Return a list of active hypervisors whose nodes are 'in', ruled by this manager
+Promote a host to the Entity::Host::Hypervisor class
+
+@return OpenstackHypervisor instance of OpenstackHypervisor
+
+=end classdoc
+=cut
+
+sub addHypervisor {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return Entity::Host::Hypervisor->promote(promoted => $args{host}, iaas_id => $self->id);
+}
+
+
+=pod
+=begin classdoc
+
+@return a list of active hypervisors
+
+=end classdoc
+=cut
+
+sub activeHypervisors {
+    my $self = shift;
+
+    my @hypervisors = $self->search(related  => [ 'hypervisors' ],
+                                    hash     => { active => 1 },
+                                    prefetch => [ 'node' ]);
+
+    return \@hypervisors;
+}
+
+
+=pod
+=begin classdoc
 
 @return a list of active hypervisors whose nodes are 'in', ruled by this manager
 
 =end classdoc
-
 =cut
 
 sub activeAndInHypervisors {
@@ -102,8 +143,7 @@ sub activeAndInHypervisors {
     my $active_hypervisors = $self->activeHypervisors;
 
     my @active_in_hypervisors;
-
-    for my $active_hypervisor (@{$active_hypervisors}) {
+    for my $active_hypervisor (@{ $active_hypervisors }) {
         my ($state,$time_stamp) = $active_hypervisor->getNodeState();
         if ($state eq 'in') {
             push @active_in_hypervisors, $active_hypervisor;

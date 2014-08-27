@@ -54,9 +54,8 @@ sub execute {
                                             );
     }
     elsif ((! defined $self->{context}->{cloud_manager}) && defined $self->{context}->{hypervisor}) {
-        $self->{context}->{cloud_manager} = EEntity->new(
-                                                data => $self->{context}->{hypervisor}->getCloudManager(),
-                                            );
+        $self->{context}->{cloud_manager}
+            = EEntity->new(data => $self->{context}->{hypervisor}->iaas);
     }
 
     if (! defined $self->{params}->{diff_infra_db}) {

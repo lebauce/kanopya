@@ -46,6 +46,13 @@ __PACKAGE__->table("hypervisor");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 iaas_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -55,6 +62,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "iaas_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 
@@ -85,6 +99,26 @@ __PACKAGE__->belongs_to(
   "Kanopya::Schema::Result::Host",
   { host_id => "hypervisor_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
+=head2 iaa
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Virtualization>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "iaa",
+  "Kanopya::Schema::Result::Virtualization",
+  { virtualization_id => "iaas_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 opennebula3_hypervisor
@@ -148,8 +182,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Nm4pT0kyvMVln/Zq0h7TAQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WIhb65ddjiWKuK8m2syI/A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

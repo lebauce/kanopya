@@ -77,22 +77,13 @@ sub checkStoppable {
     my $self = shift;
     my @vms = $self->getVms();
 
-#    if (scalar @vms) {
-#        throw Kanopya::Exception(error => "The hypervisor " . $self->node->node_hostname .
-#                                          " can't be stopped as it still runs virtual machines");
-#    }
-
     return (scalar @vms) == 0 ? 1 : 0;
-}
-
-sub getCloudManager {
-    throw Kanopya::Exception::NotImplemented();
 }
 
 sub maintenance {
     my $self = shift;
 
-    $self->getCloudManager->executor_component->run(
+    $self->iaas->executor_component->run(
         name   => 'HypervisorMaintenance',
         params => {
             context => {
@@ -105,7 +96,7 @@ sub maintenance {
 sub resubmitVms {
     my $self = shift;
 
-    $self->getCloudManager->executor_component->run(
+    $self->iaas->executor_component->run(
         name   => 'ResubmitHypervisor',
         params => {
             context => {

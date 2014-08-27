@@ -21,14 +21,10 @@ CREATE TABLE `vsphere5` (
 
 CREATE TABLE `vsphere5_hypervisor` (
     `vsphere5_hypervisor_id` int(8) unsigned NOT NULL,
-    `vsphere5_id` int(8) unsigned NOT NULL,
     `vsphere5_datacenter_id` int(8) unsigned NOT NULL,
     `vsphere5_uuid` char(128) NOT NULL,
     PRIMARY KEY (`vsphere5_hypervisor_id`),
     FOREIGN KEY (`vsphere5_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    KEY (`vsphere5_id`),
-    FOREIGN KEY (`vsphere5_id`) REFERENCES `vsphere5` (`vsphere5_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    KEY (`vsphere5_datacenter_id`),
     FOREIGN KEY (`vsphere5_datacenter_id`) REFERENCES `vsphere5_datacenter` (`vsphere5_datacenter_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -43,7 +39,6 @@ CREATE TABLE `vsphere5_vm` (
     `vsphere5_uuid` char(128) NOT NULL,
     PRIMARY KEY (`vsphere5_vm_id`),
     FOREIGN KEY (`vsphere5_vm_id`) REFERENCES `virtual_machine` (`virtual_machine_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    KEY (`vsphere5_id`),
     FOREIGN KEY (`vsphere5_id`) REFERENCES `vsphere5` (`vsphere5_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

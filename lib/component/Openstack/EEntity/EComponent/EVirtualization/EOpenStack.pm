@@ -17,13 +17,13 @@
 
 Execution lib for component OpenStack.
 
-@see <package>Entity::Component::OpenStack</package>
+@see <package>Entity::Component::Virtualization::OpenStack</package>
 
 =end classdoc
 =cut
 
-package EEntity::EComponent::EOpenStack;
-use parent EEntity::EComponent;
+package EEntity::EComponent::EVirtualization::EOpenStack;
+use parent EEntity::EComponent::EVirtualization;
 use parent EManager::EHostManager::EVirtualMachineManager;
 
 use strict;
