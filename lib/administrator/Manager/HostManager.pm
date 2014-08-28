@@ -199,9 +199,11 @@ sub hostType {
     return "Host";
 }
 
-
 sub getRemoteSessionURL {
     throw Kanopya::Exception::NotImplemented();
 }
 
+sub selectHypervisor {
+    throw Kanopya::Exception::NotImplemented();
+}
 1;

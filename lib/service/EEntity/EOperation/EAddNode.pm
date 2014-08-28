@@ -179,35 +179,10 @@ the database with the infrastructure if required.
 sub prerequisites {
     my ($self, %args) = @_;
 
-    my $cluster = $self->{context}->{cluster};
-    my $host_type = $cluster->getHostManager->hostType;
-
-    # TODO: Move this virtual machine specific code to the host manager
-    if ($host_type eq 'Virtual Machine') {
-        my @hvs = @{ $self->{context}->{host_manager}->hypervisors };
-        my @hv_in_ids;
-        for my $hv (@hvs) {
-            my ($state,$time_stamp) = $hv->getNodeState();
-            $log->info('hv <'.($hv->id()).'>, state <'.($state).'>');
-            if ($state eq 'in') {
-                push @hv_in_ids, $hv->id;
-            }
-        }
-        $log->info("Hvs selected <@hv_in_ids>");
-
-        my $host_manager_params = $cluster->getManagerParameters(manager_type => 'HostManager');
-        $log->info('host_manager_params :'.(Dumper $host_manager_params));
-
-        my $cm = CapacityManagement->new(cloud_manager => $self->{context}->{host_manager});
-
-        my $hypervisor_id = $cm->getHypervisorIdForVM(
-                                selected_hv_ids => \@hv_in_ids,
-                                resources       => {
-                                    ram           => $host_manager_params->{ram},
-                                    cpu           => $host_manager_params->{core},
-                                    # Even if there is memory overcommitment VM needs effectively 1GB to boot the OS
-                                    ram_effective => 1*1024*1024*1024,
-                                }
+    try {
+        my $params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'HostManager');
+        my $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(
+                                resources => {ram => $params->{ram}, cpu => $params->{core}}
                             );
 
         if (defined $hypervisor_id) {
@@ -260,10 +235,13 @@ sub prerequisites {
             $self->{params}->{needhypervisor} = 1;
             return -1;
         }
-   }
-   else {   #Physical
-       return 0
-   }
+    }
+    catch (Kanopya::Exception::NotImplemented $err) {
+        # Physical
+        $log->warn($err);
+    }
+
+    return 0;
 }
 
 

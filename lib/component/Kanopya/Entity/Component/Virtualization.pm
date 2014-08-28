@@ -121,7 +121,7 @@ sub addHypervisor {
 sub activeHypervisors {
     my $self = shift;
 
-    my @hypervisors = $self->search(related  => [ 'hypervisors' ],
+    my @hypervisors = $self->search(related  => 'hypervisors',
                                     hash     => { active => 1 },
                                     prefetch => [ 'node' ]);
 
