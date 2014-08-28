@@ -325,13 +325,6 @@ sub checkNodeDown {
         $args{node}->host->setState(state => 'broken');
     }
 
-    my $node_ip = $args{node}->host->adminIp;
-    if (not $node_ip) {
-        throw Kanopya::Exception::Internal(
-                  error => "Host " . $args{node}->label .  " has no admin ip."
-              );
-    }
-
     # Instanciate an econtext to try initiating an ssh connexion.
     try {
         $args{node}->getEContext;

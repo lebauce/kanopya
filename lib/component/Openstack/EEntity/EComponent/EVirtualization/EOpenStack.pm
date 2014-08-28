@@ -87,5 +87,30 @@ sub synchronize {
     return $self->_load(infra => $os_infra);
 }
 
+
+=pod
+=begin classdoc
+
+Terminate a host
+
+=end classdoc
+=cut
+
+sub halt {
+    my ($self, %args) = @_;
+    return $self->_entity->halt(%args);
+}
+
+
+sub stopHost {
+    my ($self, %args) = @_;
+    return $self->_entity->stopHost(%args);
+}
+
+sub releaseHost {
+    my ($self, %args) = @_;
+    return $self->_entity->releaseHost(%args);
+}
+
 1;
 

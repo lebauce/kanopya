@@ -119,7 +119,7 @@ sub remove {
         }
     }
     catch ($err) {
-        $log->warn("Unable to remove system iamges of the cluster: $err");
+        $log->warn("Unable to remove system images of the cluster: $err");
     }
 
     $self->delete();
@@ -206,9 +206,15 @@ sub unregisterNode {
     my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $args{node}->node_hostname;
 
     $self->_host->getEContext->execute(command => "rm -r $dir");
-    $self->_host->getEContext->execute(
-        command => "rm /var/lib/puppet/yaml/node/" . $args{node}->fqdn . ".yaml"
-    );
+
+    try {
+        $self->_host->getEContext->execute(
+            command => "rm /var/lib/puppet/yaml/node/" . $args{node}->fqdn . ".yaml"
+        );
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn($err);
+    }
 
     $args{node}->host->setAttr(name => "host_initiatorname", value => undef, save => 1);
 

@@ -88,9 +88,19 @@ sub create {
     my ($class, %args) = @_;
     General::checkParams(
         args => \%args,
-        required => [ 'api', 'volume_id', 'flavor_id', 'instance_name' ],
-        optional => {port_ids => []},
+        required => [ 'api', 'flavor_id', 'instance_name' ],
+        optional => {
+            port_ids => [],
+            volume_id => undef,
+            image_id => undef
+        },
     );
+
+    if (! (defined $args{volume_id} || defined $args{image_id})) {
+        throw Kanopya::Exception::Internal::MissingParam(
+                  "Either param volume_id or image_id must be defined"
+              );
+    }
 
     my $networks = [];
 
@@ -103,18 +113,37 @@ sub create {
     my $params = {
         server => {
             name => $args{instance_name},
-            imageRef => "",
-            block_device_mapping_v2 => [{
-                source_type => "volume",
-                delete_on_termination => "false",
-                boot_index => 0,
-                uuid => $args{volume_id},
-                destination_type => "volume"}],
+            imageRef => $args{image_id} || "",
             flavorRef => $args{flavor_id},
             networks => $networks,
         }
     };
 
+    if (defined $args{volume_id}) {
+        $params->{server}->{block_device_mapping_v2} = [{
+            source_type => "volume",
+            delete_on_termination => "false",
+            boot_index => 0,
+            uuid => $args{volume_id},
+            destination_type => "volume"
+        }];
+    }
+
     return $args{api}->compute->$route->post(content => $params);
+}
+
+sub stop {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'api', 'id' ]);
+
+    return $args{api}->compute->servers(id => $args{id})->action->post(
+               content => { 'os-stop' => undef }
+           );
+}
+
+sub delete {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'api', 'id' ]);
+    return $args{api}->compute->servers(id => $args{id})->delete;
 }
 1;

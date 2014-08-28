@@ -729,7 +729,7 @@ on alert (alert_message(255), trigger_entity_id, alert_active);
 CREATE TABLE `systemimage` (
   `systemimage_id` int(8) unsigned NOT NULL,
   `storage_manager_id` int(8) unsigned DEFAULT NULL,
-  `systemimage_name` char(32) NOT NULL,
+  `systemimage_name` char(255) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),

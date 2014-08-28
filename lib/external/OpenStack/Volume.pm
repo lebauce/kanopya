@@ -78,4 +78,11 @@ sub create {
     return $args{api}->volume->volumes->post(content => $params);
 }
 
+
+sub delete {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'api' , 'id' ]);
+
+    return $args{api}->volume->volumes(id => $args{id})->delete;
+}
 1;

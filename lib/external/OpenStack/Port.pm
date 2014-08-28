@@ -86,4 +86,18 @@ sub create {
 
     return $response;
 }
+
+=pod
+=begin classdoc
+
+Delete a port
+
+=end classdoc
+=cut
+
+sub delete {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'api', 'id' ]);
+    return $args{api}->network->ports(id => $args{id})->delete;
+}
 1;

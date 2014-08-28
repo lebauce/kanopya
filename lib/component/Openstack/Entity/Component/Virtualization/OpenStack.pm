@@ -533,10 +533,9 @@ Stop the virtual machine by calling the nova api.
 
 sub stopHost {
     my ($self, %args) = @_;
-
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    throw Kanopya::Exception::NotImplemented();
+    return OpenStack::Server->delete(api => $self->_api, id => $args{host}->openstack_vm_uuid);
 }
 
 
@@ -716,7 +715,7 @@ sub createSystemImage {
                      size => $args{systemimage_size} / (1024 ** 3),
                  );
 
-    $log->debug($volume);
+    $log->debug(Dumper $volume);
 
     my $detail;
     my $time_out = time + 240;
@@ -746,10 +745,13 @@ Remove a system image from the storage system.
 
 sub removeSystemImage {
     my ($self, %args) = @_;
-
     General::checkParams(args => \%args, required => [ "systemimage" ]);
+    my $volume = OpenStack::Volume->delete(
+                     api => $self->_api,
+                     id => $args{systemimage}->systemimage_desc,
+                 );
 
-    throw Kanopya::Exception::NotImplemented();
+    $args{systemimage}->delete;
 }
 
 
@@ -765,8 +767,6 @@ Do required struff for giving access for the node to the systemimage.
 
 sub attachSystemImage {
     my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ "node", "systemimage" ]);
     $log->debug('No system image to attach');
     return;
 }
@@ -799,11 +799,6 @@ Do the required configuration/actions to provides the boot mechanism for the nod
 
 sub configureBoot {
     my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "node", "systemimage", "boot_policy" ],
-                         optional => { "remove" => 0 });
-
     $log->debug('No boot configuration');
     return;
 }
@@ -824,11 +819,6 @@ Apply the boot configuration set at configureBoot
 
 sub applyBootConfiguration {
     my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "node", "boot_policy" ],
-                         optional => { "remove" => 0 });
-
     $log->debug('No boot configuration to apply');
     return;
 }
@@ -915,6 +905,28 @@ sub synchronize {
            );
 }
 
+
+=pod
+=begin classdoc
+
+Terminate a host
+
+=end classdoc
+=cut
+
+sub halt {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return OpenStack::Server->stop(api => $self->_api, id => $args{host}->openstack_vm_uuid);
+}
+
+sub releaseHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return $args{host}->delete();
+}
 
 sub _api {
     my ($self, %args) = @_;
@@ -1011,6 +1023,7 @@ sub _load {
 
     # Manage hypervisors
     my $count = 0;
+    my $hv_count = 0;
     for my $hypervisor_info (@{$args{infra}->{hypervisors}}) {
         my $hypervisor = Entity::Host->new(
             active => 1,
@@ -1022,8 +1035,16 @@ sub _load {
             host_serial_number => 'Registered OpenStack Hypervisor - '
                                   . $hypervisor_info->{hypervisor_hostname},
         );
+        $hv_count++;
 
         $self->addHypervisor(host => $hypervisor);
+
+        Entity::Node->new(
+            node_hostname       => $hypervisor_info->{hypervisor_hostname},
+            host_id             => $hypervisor->id,
+            node_state          => 'in:' . time(),
+            node_number         => $hv_count,
+        );
 
         for my $vm_info (@{$hypervisor_info->{servers}}) {
             $count++;
