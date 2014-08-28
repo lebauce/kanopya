@@ -348,10 +348,6 @@ var filterNotifyWorkflow    = function(grid, rowid) {
 
 function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
-    console.log('loadServicesRules');
-    console.log(container_id);
-    console.log(elem_id);
-
     var container = $("#" + container_id);
 
     ext = ext || '';

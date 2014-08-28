@@ -57,19 +57,16 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
             },
             deactivate_details: mode_policy,
             action_delete: {
-                callback: function (id) {
-                    var url = '/api/anomaly/';
-                    confirmDelete(url, id, [gridId]);
-                }
+                url : '/api/rule'
             },
             multiselect: !mode_policy,
-            multiactions: {
-                multiDelete: {
-                    label: 'Delete rule(s)',
-                    action: removeGridEntry,
-                    url: '/api/anomaly',
-                    icon: 'ui-icon-trash',
-                    extraParams: {multiselect: true}
+            multiactions : {
+                multiDelete : {
+                    label       : 'Delete rule(s)',
+                    action      : removeGridEntry,
+                    url         : '/api/rule',
+                    icon        : 'ui-icon-trash',
+                    extraParams : { multiselect: true }
                 }
             }
         });
@@ -256,75 +253,6 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
             }
         });
 
-// var formula = {
-//     'type': 'group',
-//     'logic': 'OR',
-//     'data': [
-//         {
-//             'type': 'line',
-//             'data': {
-//                 'function1': 'indicator',
-//                 'operand1': 330,
-//                 'operator': '>',
-//                 'function2': 'value',
-//                 'operand2': 2
-//             }
-//         },
-//         {
-//             'type': 'group',
-//             'logic': 'OR',
-//             'data': [
-//                 {
-//                     'type': 'line',
-//                     'data': {
-//                         'function1': 'metric',
-//                         'operand1': 382,
-//                         'operator': '>',
-//                         'function2': 'value',
-//                         'operand2': 4
-//                     }
-//                 }
-//             ]
-//         },
-//         {
-//             'type': 'line',
-//             'data': {
-//                 'function1': 'metric',
-//                 'operand1': 432,
-//                 'operator': '>',
-//                 'function2': 'value',
-//                 'operand2': 6
-//             }
-//         },
-//         {
-//             'type': 'group',
-//             'logic': 'AND',
-//             'data': [
-//                 {
-//                     'type': 'line',
-//                     'data': {
-//                         'function1': 'min',
-//                         'operand1': 350,
-//                         'operator': '>',
-//                         'function2': 'metric',
-//                         'operand2': 432
-//                     }
-//                 },
-//                 {
-//                     'type': 'line',
-//                     'data': {
-//                         'function1': 'max',
-//                         'operand1': 355,
-//                         'operator': '>',
-//                         'function2': 'indicator',
-//                         'operand2': 350
-//                     }
-//                 }
-//             ]
-//         }
-//     ]
-// };
-
         $('#rule-actions-builder').find('.action-add').click(function() {
             addActionLine();
         });
@@ -411,6 +339,7 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
 
         var ret = false;
         var url = '/api/';
+        var type = 'POST';
         switch (level) {
             case 'node':
                 url += 'nodemetricrule';
@@ -421,11 +350,12 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
         }
         if (rule.id > 0) {
             url += '/' + rule.id;
+            type = 'PUT';
         }
 
         $.ajax({
             url: url,
-            type: 'POST',
+            type: type,
             dataType: 'json',
             data: {
                 'rule_name': rule.name,
