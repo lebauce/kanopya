@@ -36,16 +36,14 @@ use parent Manager::NetworkManager;
 
 use strict;
 use warnings;
-use Hash::Merge;
-use Data::Dumper;
-
-use Kanopya::Exceptions;
-use ParamPreset;
 
 use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
-use Entity::Masterimage;
+use Entity::Masterimage::GlanceMasterimage;
+use ClassType::ServiceProviderType::ClusterType;
 use Entity::Node;
+use Kanopya::Exceptions;
+use ParamPreset;
 
 use OpenStack::API;
 use OpenStack::Port;
@@ -53,8 +51,8 @@ use OpenStack::Volume;
 use OpenStack::Server;
 use OpenStack::Infrastructure;
 
-use ClassType::ServiceProviderType::ClusterType;
-
+use Hash::Merge;
+use Data::Dumper;
 use TryCatch;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -510,12 +508,11 @@ sub startHost {
                      port_ids => \@ports_ids,
                      instance_name => $args{host}->node->node_hostname,
                  );
+
     $log->debug(Dumper $server);
 
-    $self->promoteVm(
-        host => $args{host}->_entity,
-        vm_uuid => $server->{server}->{id},
-    );
+    $self->promoteVm(host    => $args{host}->_entity,
+                     vm_uuid => $server->{server}->{id});
 
     return;
 }
@@ -595,17 +592,16 @@ Promote host into OpenstackVm and set its hypervisor id
 
 sub promoteVm {
     my ($self, %args) = @_;
-    General::checkParams(
-        args => \%args,
-        required => [ 'host', 'vm_uuid' ],
-        optional => {hypervisor_id => undef},
-    );
+
+    General::checkParams(args     => \%args,
+                         required => [ 'host', 'vm_uuid' ],
+                         optional => { 'hypervisor_id' => undef });
 
      $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
-                      promoted           => $args{host},
-                      nova_controller_id => $self->id,
-                      openstack_vm_uuid  => $args{vm_uuid},
-                  );
+                       promoted           => $args{host},
+                       nova_controller_id => $self->id,
+                       openstack_vm_uuid  => $args{vm_uuid},
+                   );
 
     $args{host}->hypervisor_id($args{hypervisor_id});
     return $args{host};
@@ -715,15 +711,16 @@ sub createSystemImage {
                      size => $args{systemimage_size} / (1024 ** 3),
                  );
 
-    $log->debug(Dumper $volume);
+    $log->debug(Dumper($volume));
 
     my $detail;
-    my $time_out = time + 240;
+    my $time_out = time + 3600;
     do {
-        sleep 10;
         $detail = OpenStack::Volume->detail(api => $self->_api, id => $volume->{volume}->{id});
-        $log->debug($detail->{status});
-    } while ($detail->{status} eq 'downloading' && time < $time_out);
+
+        $log->debug("Volume creation status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
+        sleep 10;
+    } while ($detail->{status} =~ m/downloading|creating/ && time < $time_out);
 
     return Entity::Systemimage->new(
                systemimage_name => $args{systemimage_name},
@@ -1013,7 +1010,7 @@ sub _load {
                        );
 
     for my $image_info (@{$args{infra}->{images}}) {
-        Entity::Masterimage->new(
+        Entity::Masterimage::GlanceMasterimage->new(
             masterimage_name => $image_info->{name},
             masterimage_file => $image_info->{file},
             masterimage_size => $image_info->{size},

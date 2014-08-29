@@ -153,6 +153,7 @@ my @classes = (
     'Entity::Poolip',
     'Entity::Vlan',
     'Entity::Masterimage',
+    'Entity::Masterimage::GlanceMasterimage',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
     'Entity::Netconf',

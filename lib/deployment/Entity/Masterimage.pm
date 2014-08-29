@@ -110,12 +110,6 @@ sub remove {
     );
 }
 
-sub toString {
-    my $self = shift;
-
-    return $self->masterimage_name;
-}
-
 sub setProvidedComponent {
     my $self = shift;
     my %args = @_;

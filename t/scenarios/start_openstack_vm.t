@@ -16,6 +16,7 @@ use Test::Pod;
 use Kanopya::Exceptions;
 use ClassType::ComponentType;
 
+use TryCatch;
 use File::Basename;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -32,6 +33,7 @@ use Kanopya::Test::Retrieve;
 use Kanopya::Test::Create;
 
 use Entity::Component::KanopyaDeploymentManager;
+use Entity::Masterimage::GlanceMasterimage;
 
 my $testing = 1;
 
@@ -43,20 +45,36 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
-    my $localhostname = `hostname`;
-    chomp($localhostname);
-
     diag('Register/get the OpenStack component');
-    my $openstack = Kanopya::Test::Register->registerComponentOnNode(
-                        componenttype => "OpenStack",
-                        hostname      => $localhostname,
-                        component_params => {
-                        }
-                    );
+    my $openstack;
+    try {
+        $openstack = Entity::Component::Virtualization::OpenStack->find();
+    }
+    catch {
+        my $localhostname = `hostname`;
+        chomp($localhostname);
 
-    $openstack->synchronize();
+        $openstack = Kanopya::Test::Register->registerComponentOnNode(
+                         componenttype => "OpenStack",
+                         hostname      => $localhostname,
+                         component_params => {
+                             api_username => 'tgenin',
+                             api_password => 'doc@123',
+                             keystone_url => '192.168.3.10',
+                             tenant_name  => 'Doc'
+                         }
+                     );
+
+        diag('Synchronize the existing infrastructure');
+        lives_ok {
+            Kanopya::Test::Execution->executeOne(entity => $openstack->synchronize());
+
+        } 'Synchronize the existing infrastructure';
+    }
+
     diag('Create and configure the openstack vm cluster');
     my $cluster;
+    my $masterimage = Entity::Masterimage::GlanceMasterimage->find();
     lives_ok {
         my $clustername = "openstack_vm_cluster_test_" . time();
         my $create = Entity::ServiceProvider::Cluster->create(
@@ -70,6 +88,7 @@ sub main {
                         cluster_nameserver1   => '208.67.222.222',
                         cluster_nameserver2   => '127.0.0.1',
                         owner_id              => Entity::User->find(hash => { user_login => 'admin' })->id,
+                        masterimage_id        => $masterimage->id,
                         managers => {
                             host_manager => {
                                 manager_id     => $openstack->id,
@@ -84,7 +103,8 @@ sub main {
                                 manager_id     => $openstack->id,
                                 manager_type   => "StorageManager",
                                 manager_params => {
-                                    volume_type => "dummy"
+                                    volume_type => "dummy",
+                                    systemimage_size => $masterimage->masterimage_size + (1024 * 1024 * 1024),
                                 },
                             },
                             deployment_manager => {
