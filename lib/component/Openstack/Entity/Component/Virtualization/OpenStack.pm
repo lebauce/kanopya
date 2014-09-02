@@ -240,23 +240,20 @@ sub getManagerParamsDef {
             # TODO:  Get the enum options from the available synchronized backend
             options      => [ 'NFS', 'iSCSI', 'RADOS' ]
         },
-        networks => {
-            label        => 'Networks',
-            type         => 'enum',
-            is_mandatory => 1,
-            options      => []
-        },
-        subnets => {
-            label        => 'Subnets',
-            type         => 'enum',
-            is_mandatory => 1,
-            options      => []
-        },
         repository   => {
             is_mandatory => 1,
             label        => 'Repository',
             type         => 'enum',
         },
+        subnets => {
+            label        => 'Subnets',
+            is_mandatory => 1,
+            type         => 'relation',
+            relation     => 'multi',
+            is_editable  => 1,
+            options      => [],
+        },
+
     };
 }
 
@@ -371,37 +368,21 @@ sub getNetworkManagerParams {
     my $tenants = $params->{tenant};
     $tenants->{options} = \@tenant_names;
     $tenants->{reload} = 1;
-    my $hash = {
-        tenant => $tenants,
-    };
 
+    my $hash = { tenant => $tenants };
     if (defined $args{params}->{tenant}) {
         my $tenant_id = $pp->{tenants_name_id}->{$args{params}->{tenant}};
-        my $networks = $self->getManagerParamsDef->{networks};
-        $networks->{options} = [];
-        $networks->{reload} = 1;
 
-        for my $network_id (@{$pp->{tenants}->{$tenant_id}->{networks}}) {
-            push @{$networks->{options}}, $pp->{networks}->{$network_id}->{name};
-        }
-
-        $hash->{networks} = $networks;
-    }
-
-    if (defined $args{params}->{networks}) {
-        my $network_id = $pp->{networks_name_id}->{$args{params}->{networks}};
-        $log->info("network id = " . $network_id);
         my $subnets = $self->getManagerParamsDef->{subnets};
-        $subnets->{options} = [];
+        for my $network_id (@{ $pp->{tenants}->{$tenant_id}->{networks} }) {
+            my $network_name = $pp->{networks}->{$network_id}->{name};
 
-        for my $subnet_id (@{$pp->{networks}->{$network_id}->{subnets}}) {
-            $log->info("subnet_id = $subnet_id, cird = " . $pp->{subnets}->{$subnet_id}->{cidr});
-            push @{$subnets->{options}}, $pp->{subnets}->{$subnet_id}->{cidr};
+            for my $subnet_id (@{ $pp->{networks}->{$network_id}->{subnets} }) {
+                push @{ $subnets->{options} }, $pp->{subnets}->{$subnet_id}->{cidr} . " ($network_name)";
+            }
         }
-
         $hash->{subnets} = $subnets;
     }
-
     return $hash;
 }
 
@@ -419,7 +400,7 @@ Check params required for managing network connectivity.
 sub checkNetworkManagerParams {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'networks' ]);
+    General::checkParams(args => \%args, required => [ 'subnets' ]);
 }
 
 
@@ -438,11 +419,11 @@ sub getFreeHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args,
-                         required => [ 'networks', 'flavor', 'availability_zone', 'tenant' ]);
+                         required => [ 'subnets', 'flavor', 'availability_zone', 'tenant' ]);
 
     $log->info("Looking for a virtual host");
     try {
-        return $self->createVirtualHost(ifaces => scalar(@{ [ $args{networks} ] }), %args);
+        return $self->createVirtualHost(ifaces => scalar(@{ [ $args{subnets} ] }), %args);
     }
     catch ($err) {
         # We can't create virtual host for some reasons (e.g can't meet constraints)
@@ -508,8 +489,6 @@ sub startHost {
                      port_ids => \@ports_ids,
                      instance_name => $args{host}->node->node_hostname,
                  );
-
-    $log->debug(Dumper $server);
 
     $self->promoteVm(host    => $args{host}->_entity,
                      vm_uuid => $server->{server}->{id});
@@ -705,13 +684,9 @@ sub createSystemImage {
     }
 
     #TODO destroy volume during rollback
-    my $volume = OpenStack::Volume->create(
-                     api => $self->_api,
-                     image_id => $image_id,
-                     size => $args{systemimage_size} / (1024 ** 3),
-                 );
-
-    $log->debug(Dumper($volume));
+    my $volume = OpenStack::Volume->create(api => $self->_api,
+                                           image_id => $image_id,
+                                           size => $args{systemimage_size} / (1024 ** 3));
 
     my $detail;
     my $time_out = time + 3600;
@@ -719,6 +694,10 @@ sub createSystemImage {
         $detail = OpenStack::Volume->detail(api => $self->_api, id => $volume->{volume}->{id});
 
         $log->debug("Volume creation status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
+        if ($detail->{status} eq 'error') {
+            throw Kanopya::Exception::Internal(error => "Unable to create volume: " . Dumper($detail));
+        }
+
         sleep 10;
     } while ($detail->{status} =~ m/downloading|creating/ && time < $time_out);
 
@@ -742,7 +721,9 @@ Remove a system image from the storage system.
 
 sub removeSystemImage {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ "systemimage" ]);
+
     my $volume = OpenStack::Volume->delete(
                      api => $self->_api,
                      id => $args{systemimage}->systemimage_desc,
@@ -834,43 +815,54 @@ to the node from the network manager params.
 
 sub configureNetworkInterfaces {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'networks', 'subnets' ]);
+
+    General::checkParams(args => \%args, required => [ 'subnets' ]);
 
     my $pp = $self->param_preset->load;
-    my $net_id = $pp->{networks_name_id}->{$args{networks}};
-
-    my $subnet_id = undef;
-    for my $id (@{$pp->{networks}->{$net_id}->{subnets}}) {
-        if ($pp->{subnets}->{$id}->{cidr} eq $args{subnets}) {
-            $subnet_id = $id;
-            last;
-        }
-    }
-
-    my $port = OpenStack::Port->create(
-                   api => $self->_api,
-                   network_id => $net_id,
-                   subnet_id =>  $subnet_id,
-               );
-
-    #TODO store information elsewhere
-    $self->param_preset->update(
-        params => {
-            port_macs => {
-                $port->{port}->{mac_address} => $port->{port}->{id}
-            }
-        }
-    );
-
-    $log->debug(Dumper $port);
-
-    # Currently manage only on iface
     my @ifaces = $args{node}->host->getIfaces;
-    foreach my $iface (@{ $args{node}->host->getIfaces }) {
+    my $port_macs = {};
+    for my $subnet (@{ $args{subnets} }) {
+        (my $subnet_addr = $subnet) =~ s/ \(.*\)$//g;
+        (my $network_name = $subnet) =~ s/^.* \(//g;
+        $network_name =~ s/\)$//g;
+
+        my $subnet_id;
+        my $network_id = $pp->{networks_name_id}->{$network_name};
+        try {
+            my @uuids = grep { $pp->{subnets}->{$_}->{cidr} eq $subnet_addr }
+                            @{ $pp->{networks}->{$network_id}->{subnets} };
+            $subnet_id = pop(@uuids);
+        }
+        catch ($err) {
+            throw Kanopya::Exception::Internal::Inconsistency(
+                      error => "Unable to retrieve network and subnet id for $subnet:$err"
+                  );
+        }
+
+        $log->info("Found network id $network_id and subnet id $subnet_id for $subnet.");
+        my $port = OpenStack::Port->create(api        => $self->_api,
+                                           network_id => $network_id,
+                                           subnet_id  =>  $subnet_id);
+
+        $port_macs->{$port->{port}->{mac_address}} = $port->{port}->{id};
+
+        # Assign the resulting ip the the next iface
+        my $iface = shift(@ifaces);
+        $log->info("Assign iface " . $iface->iface_name . " with ip addr " .
+                   $port->{port}->{fixed_ips}->[0]->{ip_address} . " and mac addr " .
+                   $port->{port}->{mac_address});
+
         $iface->assignIp(ip_addr => $port->{port}->{fixed_ips}->[0]->{ip_address});
-        $args{node}->admin_ip_addr($port->{port}->{fixed_ips}->[0]->{ip_address});
         $iface->iface_mac_addr($port->{port}->{mac_address});
+
+        # If the node admin ip not set, use the first one
+        if (! defined $args{node}->admin_ip_addr) {
+            $args{node}->admin_ip_addr($port->{port}->{fixed_ips}->[0]->{ip_address});
+        }
     }
+
+    # TODO store information elsewhere
+    $self->param_preset->update(params => { port_macs => $port_macs });
 
     return;
 }
@@ -1092,4 +1084,5 @@ sub _load {
         }
     }
 }
+
 1;
