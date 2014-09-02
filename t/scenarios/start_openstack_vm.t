@@ -74,7 +74,10 @@ sub main {
 
     diag('Create and configure the openstack vm cluster');
     my $cluster;
-    my $masterimage = Entity::Masterimage::GlanceMasterimage->find();
+    my $masterimage = Entity::Masterimage::GlanceMasterimage->find(
+                          hash => { masterimage_name => "trusty-server-cloudimg" }
+                      );
+
     lives_ok {
         my $clustername = "openstack_vm_cluster_test_" . time();
         my $create = Entity::ServiceProvider::Cluster->create(
@@ -94,9 +97,9 @@ sub main {
                                 manager_id     => $openstack->id,
                                 manager_type   => "HostManager",
                                 manager_params => {
-                                    flavor => "dummy",
-                                    availability_zone => "dummy",
-                                    tenant => "dummy",
+                                    flavor => "m1.tiny",
+                                    availability_zone => "nova",
+                                    tenant => "Doc",
                                 },
                             },
                             storage_manager => {
@@ -112,7 +115,8 @@ sub main {
                                 manager_type   => "DeploymentManager",
                                 manager_params => {
                                     boot_manager_id => $openstack->id,
-                                    components      => {}
+                                    boot_policy     => 'Boot from Glance Image',
+                                    components => {},
                                 },
                             },
                             network_manager => {

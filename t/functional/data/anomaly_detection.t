@@ -38,7 +38,7 @@ use Entity::AggregateCondition;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::ConstantCombination;
 use Entity::Rule::AggregateRule;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
 
 Log::Log4perl->easy_init({
     level  => 'INFO',
@@ -149,7 +149,7 @@ sub seasonality_algorithm {
                            rows => 3000,
                            step => 300,
                            time => $time + 1000*300 );
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
         $ts->generatemetric(metric => $clustermetric, %function_conf);
 
         # default config
@@ -310,7 +310,7 @@ sub anomaly_detector {
 
 
 sub anomaly_rules {
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
 
         my %fonction_conf = (func => '67', # Frequency 300*288 = daily
                              rows => 50,
