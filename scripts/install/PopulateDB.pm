@@ -2112,7 +2112,7 @@ sub populate_workflow_def {
     my $optimiaas_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
     my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(
                            workflow_name => 'OptimiaasWorkflow',
-                           step          => [ $optimiaas_op_id ],
+                           steps         => [ $optimiaas_op_id ],
                            description   => "Optimizing virtual machines placement for IAAS \"[% cloudmanager_comp %]\""
                        );
 
