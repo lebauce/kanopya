@@ -25,15 +25,7 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {
-    nova_controller_id => {
-        pattern      => '^\d*$',
-        type         => 'relation',
-        relation     => 'single',
-        is_mandatory => 1,
-        is_extended  => 0
-    },
-};
+use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 

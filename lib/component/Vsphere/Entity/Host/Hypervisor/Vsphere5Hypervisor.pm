@@ -23,11 +23,6 @@ use strict;
 use warnings;
 
 use constant ATTR_DEF => {
-    vsphere5_id            => {
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_extended  => 0
-    },
     vsphere5_datacenter_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
