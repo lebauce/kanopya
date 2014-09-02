@@ -38,6 +38,7 @@ use Entity::AggregateCondition;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::ConstantCombination;
 use Entity::Rule::AggregateRule;
+use Kanopya::Tools::TimeSerie;
 
 Log::Log4perl->easy_init({
     level  => 'INFO',
