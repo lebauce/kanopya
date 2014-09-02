@@ -325,12 +325,12 @@ sub main {
         $prereport = 0;
         $postreport = 1;
 
-        sleep 10;
+        sleep 15;
         Kanopya::Test::Execution->oneRun();
 
         $postreport = 0;
 
-        sleep 10;
+        sleep 15;
         Kanopya::Test::Execution->oneRun();
 
     } 'Run workflow DummyOperation';
