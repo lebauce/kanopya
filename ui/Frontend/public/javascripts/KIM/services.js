@@ -535,12 +535,18 @@ function nodedetailsaction(cid, eid, host_id) {
             var isActive    = data.host.active;
             var isUp        = (/^up:/).test(data.host.host_state);
             var isVirtual   = false;
-            $.ajax({    
-                url     : '/api/component/' + data.host.host_manager_id,
+            $.ajax({
+                url     : '/api/component/' + data.host.host_manager_id +
+                          '?expand=component_type.component_type_categories.component_category',
                 type    : 'GET',
                 async   : false,
-                success : function(ret) {
-                    if (ret.host_type === 'Virtual Machine') isVirtual = true;
+                success : function(manager) {
+                    for (var index in manager.component_type.component_type_categories) {
+                        var manager_category = manager.component_type.component_type_categories[index];
+                        if (manager_category.component_category.category_name === 'VirtualMachineManager') {
+                            isVirtual = true;
+                        }
+                    }
                 }
             });
             var buttons   = [

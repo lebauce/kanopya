@@ -214,7 +214,7 @@ function load_iaas_content (container_id) {
     var details_tab = $.grep(tabs, function (e) { return e.id == 'service_details' });
     details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
 
-    var url = '/api/component?custom.category=HostManager&expand=service_provider&deep=1';
+    var url = '/api/component?custom.category=VirtualMachineManager&expand=service_provider&deep=1';
     var grid = create_grid({
         url : url,
         content_container_id    : container_id,
