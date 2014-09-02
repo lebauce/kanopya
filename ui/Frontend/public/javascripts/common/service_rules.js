@@ -395,9 +395,26 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         };
     }
 
-    var ruleDetails = function(cid, eid, type) {
+    var ruleDetails = function(cid, eid, type, options) {
+
+        options = options || {};
+        options.title = options.title || 'Rule details';
+
+        var onValidate = function() {
+            if (cid) {
+                $('#' + cid).parents('.ui-dialog').find('.ui-dialog-title').html($('#rule-name').val());
+                reload_content(cid, eid);
+            } else {
+                var element = $('#form_aggregaterule');
+                if (element.length > 0) {
+                    element.parents('.ui-dialog').find('.ui-dialog-title').html($('#rule-name').val());
+                    reload_content('form_aggregaterule', eid);
+                }
+            }
+        };
+
         var wizard = new KanopyaFormWizard({
-            title      : 'Rule details',
+            title      : options.title,
             type       : type.replace('_', ''),
             id         : eid,
             displayed  : [ "description", "formula_label", "entity_time_periods" ],
@@ -419,13 +436,23 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 } else {
                     buttons.push(displayAssociationButton(cid, eid, type));
                 }
-                buttons.push(createRuleButton(elem_id, type, eid, function(form) {
-                    // Update overview content
-                    if (cid) reload_content(cid, eid);
-                    // Update dialog title
-                    var rule_label = form.find('#input_' + type + '_label').val();
-                    container.parents('.ui-dialog').find('.ui-dialog-title').html(rule_label);
-                }));
+                if (options.editDialogFunction) {
+                    var editButton = createRuleButton(elem_id, type, eid);
+                    editButton.off('click');
+                    options.editDialogParameters.push(eid, onValidate);
+                    editButton.click(function() {
+                        window[options.editDialogFunction].apply(null, options.editDialogParameters);
+                    });
+                    buttons.push(editButton);
+                } else {
+                    buttons.push(createRuleButton(elem_id, type, eid, function(form) {
+                        // Update overview content
+                        if (cid) reload_content(cid, eid);
+                        // Update dialog title
+                        var rule_label = form.find('#input_' + type + '_label').val();
+                        container.parents('.ui-dialog').find('.ui-dialog-title').html(rule_label);
+                    }));
+                }
                 return buttons;
             },
             attrsCallback  : function (type, data, trigger) {
@@ -440,6 +467,11 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 };
                 return attrs;
             },
+            callback : function (data) {
+                if (options.onClose && typeof options.onClose === 'function') {
+                    options.onClose.call(null);
+                }
+            }
         });
 
         if (cid) {
@@ -450,6 +482,13 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         }
 
         return wizard;
+    }
+
+    // Added to use the previous functions in the new rules code
+    if (arguments.length >= 5 && arguments[4] === true) {
+        return {
+            ruleDetails: ruleDetails
+        };
     }
 
     ////////////////////////RULES ACCORDION//////////////////////////////////

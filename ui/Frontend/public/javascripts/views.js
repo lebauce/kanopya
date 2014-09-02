@@ -90,6 +90,10 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
         return;
     }
 
+    if (typeof details_info === 'function') {
+        details_info = details_info.call(null, elem_id);
+    }
+
     // Details accessible from menu (dynamic loaded menu)
     if (details_info.link_to_menu) {
         var view_link_id = 'link_view_' + row_data[details_info.label_key].replace(/ /g, '_') + '_' + elem_id;
@@ -113,7 +117,7 @@ function display_row_details(elem_id, details_info, row_data, grid_id) {
     var tabs = details_info.tabs;
     if (typeof details_info.tabs === 'function') {
         tabs = details_info.tabs.call(null, elem_id);
-    };
+    }
 
     // modal details
     var id = 'view_detail_' + elem_id;

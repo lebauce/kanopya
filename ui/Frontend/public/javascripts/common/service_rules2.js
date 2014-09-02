@@ -1,5 +1,6 @@
 require('common/grid.js');
 require('common/service_common.js');
+require('common/notification_subscription.js');
 
 function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
 
@@ -34,27 +35,97 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
             .appendTo(container);
     }
 
+    function getValueFromList(rowId, columnName) {
+        return $('#' + gridId).jqGrid('getCell', rowId, columnName);
+    }
+
+    function getLevelById(id) {
+        return (getValueFromList(id, 'aggregate_rule_id')) ? 'service' : 'node';
+    }
+
+    // This function allows to separate the old code
+    function getDetails(wizard) {
+        return function(rowId) {
+
+            var level = getLevelById(rowId);
+            var options = {
+                title: getValueFromList(rowId, 'label'),
+                editDialogFunction: 'openRulesDialog',
+                editDialogParameters: [elem_id, gridId, staticObject],
+                onClose: function() {
+                    $('#' + gridId).trigger('reloadGrid');
+                }
+            };
+
+            switch(level) {
+                case 'node':
+                    return {
+                        onOk: function () {
+                            if (wizard !== null) {
+                                wizard.validateForm();
+                            }
+                        },
+                        tabs: [
+                            {
+                                label: 'Overview',
+                                id: 'overview',
+                                onLoad: function (cid, eid) {
+                                    wizard = ruleDetails(cid, eid, 'nodemetric_rule', options);
+                                }
+                            },
+                            {
+                                label: 'Nodes',
+                                id: 'nodes',
+                                onLoad: function(cid, eid) {
+                                    wizard = null;
+                                    rule_nodes_tab(cid, eid, elem_id);
+                                },
+                                hidden: mode_policy
+                            }
+                        ],
+                        title: {
+                            from_column : 'label'
+                        }
+                    };
+                    break;
+                case 'service':
+                    return {
+                        onSelectRow: function (elem_id, row_data, grid_id) {
+                            ruleDetails(undefined, elem_id, 'aggregate_rule', options);
+                        }
+                    };
+                    break;
+            }
+        };
+    }
+
     function displayList() {
+
+        var wizard;
 
         create_grid({
             caption: '',
             url: '/api/rule?service_provider_id=' + elem_id,
             content_container_id: gridContainer.attr('id'),
             grid_id: gridId,
-            colNames: ['id', 'Name', 'Enabled', 'Description'],
+            colNames: ['id', 'Name', 'Enabled', 'Description', 'aggregate_rule_id', 'Trigger', 'Alert'],
             colModel: [
-                 {name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
-                 {name: 'label', index: 'label', width: 90},
-                 {name: 'state', index: 'state', width: 50,},
-                 {name: 'description', index: 'description', width: 200}
+                {name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
+                {name: 'label', index: 'label', width: 90},
+                {name: 'state', index: 'state', width: 50,},
+                {name: 'description', index: 'description', width: 200},
+                {name: 'aggregate_rule_id', index: 'aggregate_rule_id', hidden: true},
+                { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
+                { name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
             ],
             sortname: 'label',
             rowNum: 100,
-            details: {
-                onSelectRow: function(id) {
-                    openRulesDialog(elem_id, gridId, staticObject, id);
-                }
-            },
+            // details: {
+            //     onSelectRow: function(id) {
+            //         openRulesDialog(elem_id, gridId, staticObject, id);
+            //     }
+            // },
+            details: getDetails(wizard),
             deactivate_details: mode_policy,
             action_delete: {
                 url : '/api/rule'
@@ -68,16 +139,26 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
                     icon        : 'ui-icon-trash',
                     extraParams : { multiselect: true }
                 }
+            },
+            afterInsertRow: function(grid, rowid, rowdata, rowelem) {
+                if (rowdata.workflow_def_id) {
+                    setCellWithRelatedValue('/api/workflowdef/' + rowdata.workflow_def_id, grid, rowid, 'workflow_def_id', 'workflow_def_name', filterNotifyWorkflow);
+                }
+                addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, gridId + '_alert', 'ProcessRule', false);
             }
         });
     }
+
+    // Added to use old functions
+    var serviceRules = loadServicesRules(container_id, elem_id, ext, mode_policy, true);
+    var ruleDetails = serviceRules.ruleDetails;
 
     addButtons();
     createHtmlStructure();
     displayList();
 }
 
-function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
+function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onValidate) {
 
     const dialogContainerId = 'rule-editor';
 
@@ -195,7 +276,7 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
 
     function getRule(ruleId) {
 
-        var ruleObject = {};
+        var rule = {};
 
         $.ajax({
             dataType: 'json',
@@ -206,12 +287,12 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
             async: false,
             success: function(data) {
                 if (data.length > 0) {
-                    ruleObject = data[0];
+                    rule = data[0];
                 }
             }
         });
 
-        return ruleObject;
+        return rule;
     }
 
     function openDialog() {
@@ -253,6 +334,13 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
             }
         });
 
+        $('#rule-state').click(function() {
+            var str = ($('#rule-state').prop('checked') === true) ? 'Enabled' : 'Disabled';
+            $('#rule-state-caption')
+                .toggleClass('enabled disabled')
+                .text(str);
+        });
+
         $('#rule-actions-builder').find('.action-add').click(function() {
             addActionLine();
         });
@@ -288,6 +376,19 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
 
         $('#rule-name').val(rule.rule_name);
         $('#rule-description').val(rule.description);
+        if (rule.state === 'enabled') {
+            $('#rule-state').prop('checked', true);
+            $('#rule-state-caption')
+                .removeClass('disabled')
+                .addClass('enabled')
+                .text('Enabled');
+        } else {
+            $('#rule-state').prop('checked', false);
+            $('#rule-state-caption')
+                .removeClass('enabled')
+                .addClass('disabled')
+                .text('Disabled');
+        }
 
         if (rule.comment) {
             try {
@@ -318,13 +419,17 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
                     'id': ruleId,
                     'name': $('#rule-name').val(),
                     'description': $('#rule-description').val(),
-                    'json': formula.json
+                    'json': formula.json,
+                    'formula': getRuleFormula(formula.json, level)
                 };
-                rule.formula = getRuleFormula(formula.json, level);
+                rule.state = ($('#rule-state').prop('checked') === true) ? 'enabled' : 'disabled';
 
                 var ret = writeRule(rule, level);
                 if (ret === true) {
                     $('#' + gridId).trigger('reloadGrid');
+                    if (onValidate && typeof onValidate === 'function') {
+                        onValidate.call(null);
+                    }
                     closeDialog();
                 } else {
                     var message = 'Unable to save the rule.'
@@ -362,12 +467,11 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId) {
                 'description': rule.description,
                 'formula': rule.formula,
                 'comment': JSON.stringify(rule.json),
-                'state': 'enabled',
+                'state': rule.state,
                 'service_provider_id': serviceProviderId
             },
             async: false,
             success: function(data) {
-                console.debug('success pk', data.pk);
                 ret = true;
             }
         });

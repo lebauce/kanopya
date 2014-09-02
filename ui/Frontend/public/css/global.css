@@ -252,12 +252,24 @@ ul.submenu div.scrollarrowright {
     width: 100px;
 }
 
-#rule-identification input {
+#rule-identification input[type=text] {
     width: 400px;
 }
 
-#rule-identification input.large {
+#rule-identification input[type=text].large {
     width: 800px;
+}
+
+#rule-identification .caption {
+    margin-left: 5px;
+}
+
+#rule-identification .enabled {
+    color: #468847;
+}
+
+#rule-identification .disabled {
+    color: #b94a48;
 }
 
 #rule-conditions-builder {

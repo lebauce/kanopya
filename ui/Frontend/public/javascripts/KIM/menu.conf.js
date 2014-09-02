@@ -85,8 +85,8 @@ var mainmenu_def = {
                 { label : 'Resources',       id : 'service_resources',     onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesResources(cid, eid); }, icon : 'resources' },
                 { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring2.js'); loadServicesMonitoring2(cid, eid); }, icon : 'monitoring' },
                 { label : 'Anomalies',       id : 'service_anomalies',    onLoad : function(cid, eid) { require('common/service_anomalies.js'); loadServicesAnomalies(cid, eid); }, icon : 'alert' },
-                { label : 'Rules',           id : 'service_rules',         onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid); }, icon : 'rules' },
-                { label : 'New Rules',       id : 'service_rules2',        onLoad : function(cid, eid) { require('common/service_rules2.js'); loadServicesRules2(cid, eid); }, icon : 'rules' },
+                // { label : 'Rules',           id : 'service_rules',         onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid); }, icon : 'rules' },
+                { label : 'Rules',       id : 'service_rules2',        onLoad : function(cid, eid) { require('common/service_rules2.js'); require('common/service_rules.js'); loadServicesRules2(cid, eid); }, icon : 'rules' },
                 { label : 'Events & Alerts', id : 'events_alerts',         onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, eid); }, icon : 'alert' },
                 { label : 'Billing',         id : 'billing',               onLoad : function(cid, eid) { require('KIM/billing.js'); billinglist(cid, eid); }, icon : 'metering' },
                 { label : 'Analysis',        id : 'service_analysis',      onLoad : function(cid, eid) { require('common/service_analysis.js'); loadServiceAnalysis(cid, eid); }, icon : 'analysis', info : {img:'images/info/scatter-plots-shape.png'}
@@ -102,8 +102,8 @@ var mainmenu_def = {
             { label : 'Resources',       id : 'service_resources',     onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesResources(cid, kanopya_cluster); }, icon : 'resources' },
             { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring2.js'); loadServicesMonitoring2(cid, kanopya_cluster); }, icon : 'monitoring' },
             { label : 'Anomalies',       id : 'service_anomalies',    onLoad : function(cid, eid) { require('common/service_anomalies.js'); loadServicesAnomalies(cid, kanopya_cluster); }, icon : 'alert' },
-            { label : 'Rules',           id : 'service_rules',        onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, kanopya_cluster); }, icon : 'rules' },
-            { label : 'New Rules',        id : 'service_rules2',      onLoad : function(cid, eid) { require('common/service_rules2.js'); loadServicesRules2(cid, kanopya_cluster); }, icon : 'rules' },
+            // { label : 'Rules',           id : 'service_rules',        onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, kanopya_cluster); }, icon : 'rules' },
+            { label : 'Rules',        id : 'service_rules2',      onLoad : function(cid, eid) { require('common/service_rules2.js'); require('common/service_rules.js'); loadServicesRules2(cid, kanopya_cluster); }, icon : 'rules' },
             { label : 'Events & Alerts', id : 'events_alerts',         onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, kanopya_cluster); }, icon : 'alert' },
         ],
         'Right Management' : [
