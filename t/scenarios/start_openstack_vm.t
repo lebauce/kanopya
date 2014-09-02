@@ -119,7 +119,7 @@ sub main {
                                 manager_id     => $openstack->id,
                                 manager_type   => "NetworkManager",
                                 manager_params => {
-                                    networks  => "dummy"
+                                    subnets => [ "10.0.0.0/24 (DocNetwork)" ]
                                 },
                             },
                         },
