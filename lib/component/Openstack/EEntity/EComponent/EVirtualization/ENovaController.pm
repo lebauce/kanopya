@@ -56,26 +56,10 @@ sub api {
         $api_password = $self->api_password;
     }
 
-    my $credentials = {
-        auth => {
-            passwordCredentials => {
-                username    => $api_user,
-                password    => $api_password,
-            },
-            tenantName      => "openstack"
-        }
-    };
-
-    my $keystone = $self->keystone;
-    my $config = {
-        verify_ssl => 0,
-        identity => {
-            url     => 'http://' . $keystone->getMasterNode->fqdn . ':5000/v2.0'
-        },
-    };
-
-    return OpenStack::API->new(credentials => $credentials,
-                               config      => $config);
+    return OpenStack::API->new(user         => $api_user,
+                               password     => $api_password,
+                               tenant_name  => "openstack",
+                               keystone_url => $self->keystone->getMasterNode->fqdn);
 }
 
 sub postStartNode {

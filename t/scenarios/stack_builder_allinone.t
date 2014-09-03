@@ -236,36 +236,17 @@ sub main {
                                                ' is not correct on /etc/nova/nova.conf');
         }
 
-        # Connect to the OpenStack API and try it
-        my $apicredentials = {
-            auth => {
-                passwordCredentials => {
-                    username    => 'admin',
-                    password    => $apipass,
-                },
-                tenantName      => "openstack"
-            }
-        };
-    
-        my $apiconfig = {
-            verify_ssl => 0,
-            identity => {
-                url     => 'http://'.$fqdn.':5000/v2.0'
-            },
-        };
-    
-        my $api = OpenStack::API->new(credentials => $apicredentials,
-                                      config      => $apiconfig);
+        my $api = OpenStack::API->new(user         => "admin",
+                                      password     => $apipass,
+                                      tenant_name  => "openstack",
+                                      keystone_url => $fqdn);
 
         my $response = $api->endpoints;
-        if( ! exists $response->{api}->{config} ||
-                ! keys $response->{api}->{config} ) {
+        if ( ! exists $response->{api}->{config} || ! keys $response->{api}->{config} ) {
                 throw Kanopya::Exception::Execution::API(
-                        error         => 'Openstack API call returns no endpoints'
-                    )
+                          error => 'Openstack API call returns no endpoints'
+                      )
         }
-
-
     }
 
     my $end_stack;
