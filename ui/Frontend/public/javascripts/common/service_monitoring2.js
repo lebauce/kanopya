@@ -25,7 +25,7 @@ function getIndicators(sp_id) {
 function openCreateDialog(serviceProviderId, gridId) {
 
     var dialogContainerId = 'metric-editor';
-    var metricCatellgoryData, metricData, statisticFunctionData;
+    var metricCategoryData, metricData, statisticFunctionData;
     var isResizing = false;
     var widgetContent = null;
 

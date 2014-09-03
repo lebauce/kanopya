@@ -1,0 +1,120 @@
+<div id="rule-editor" class="dialog-container" title="{{title}}">
+    <div id="rule-identification">
+        <p>
+            <label for="rule-name">Name :</label>
+            <input type="text" name="name" id="rule-name" />
+        </p>
+        <p>
+            <label for="rule-description">Description :</label>
+            <input type="text" name="description" id="rule-description" class="large" />
+        </p>
+    <p>
+        <label for="rule-state">State :</label>
+        <input type="checkbox" name="status" id="rule-state" checked="checked" /><span id="rule-state-caption" class="caption enabled">Enabled</span>
+    </p>
+    </div>
+
+    <div id="rule-conditions">
+        <div class="block-title">Conditions</div>
+        <div class="line"></div>
+        <div id="rule-conditions-builder">
+            <div class="condition-group root">
+                <table>
+                    <tr>
+                        <td>
+                            <select class="logic">
+                                <option value="AND">All</option>
+                                <option value="OR">Any</option>
+                            </select> of the following are true
+                            <button class="condition-add">Add condition</button>
+                            <button class="condition-add-group ">Add group</button>
+                            <button class="condition-remove-group">Remove group</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="condition level-0 backcolor-0">
+                                <div class="condition-line">
+                                    <select class="function1">
+                                        <option value="indicator" selected="selected">indicator</option>
+                                        <option value="metric">metric</option>
+                                        <option disabled="disabled">──────</option>
+                                        {{#statistic-function}}
+                                            <option value="{{code}}">{{label}}</option>
+                                        {{/statistic-function}}
+                                    </select>
+                                    <select class="operand1 condition-content">
+                                        {{#indicator}}
+                                            <option value="{{id}}">{{label}}</option>
+                                        {{/indicator}}
+                                    </select>
+                                    <select class="operator condition-content">
+                                        <option value="==">=</option>
+                                        <option value="!=">not =</option>
+                                        <option value=">">></option>
+                                        <option value=">=">>=</option>
+                                        <option value="<"><</option>
+                                        <option value="<="><=</option>
+                                    </select>
+                                    <select class="function2">
+                                        <option value="value" selected="selected">value</option>
+                                        <option value="indicator">indicator</option>
+                                        <option value="metric">metric</option>
+                                        <option disabled="disabled">──────</option>
+                                        {{#statistic-function}}
+                                            <option value="{{code}}">{{label}}</option>
+                                        {{/statistic-function}}
+                                    </select>
+                                    <input class="condition-value condition-content" type="text"/>
+                                    <select class="operand2 condition-content hidden">
+                                        {{#indicator}}
+                                            <option value="{{id}}">{{label}}</option>
+                                        {{/indicator}}
+                                    </select>
+                                    <button class="condition-remove"></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<!--
+    <div id="rule-actions">
+        <div class="block-title">Actions</div>
+        <div class="line"></div>
+        <div id="rule-actions-builder">
+
+            <div class="action-group">
+                <table>
+                    <tr>
+                        <td>
+                            <button class="action-add">Add action</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="action backcolor-0">
+                                <div class="action-line">
+                                    <select class="action-name">
+                                        <option value="workflow">Associate a workflow</option>
+                                        <option value="email">Send an email</option>
+                                    </select>
+                                    <select class="action-select">
+                                        <option value=""></option>
+                                        <option value="none">None</option>
+                                    </select>
+                                    <input class="action-value hidden" type="text"/>
+                                    <button class="action-remove"></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+-->
+</div>

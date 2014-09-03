@@ -1,34 +1,34 @@
 #header #logo {
-  top: 10px;
-  padding-left: 110px;
-  padding-right: 20px;
-  float: left;
-  padding-top: 10px;
+    top: 10px;
+    padding-left: 110px;
+    padding-right: 20px;
+    float: left;
+    padding-top: 10px;
 }
 
 #header #infologin {
-  float:right;
-  padding-right: 20px;
-  color: #C2C2C2;
-  font-size: 11px;
-  font-weight: bold;
+    float:right;
+    padding-right: 20px;
+    color: #C2C2C2;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 #header #infologin #username {
-  color: #7E388A;
+    color: #7E388A;
 }
 
 #header .logout {
-  float:right;
-  /*padding-top: 10px;*/
-  font-size: 11px;
-  font-weight: bold;
-  /*background: #7E388A;*/
+    float:right;
+    /*padding-top: 10px;*/
+    font-size: 11px;
+    font-weight: bold;
+    /*background: #7E388A;*/
 }
 
 #header .logout a {
-  color: #C2C2C2;
-  text-decoration: none;
+    color: #C2C2C2;
+    text-decoration: none;
 }
 
 #header #product-name {
@@ -74,7 +74,7 @@ a.selected_viewlink {
 }
 
 td {
-  vertical-align: top;
+    vertical-align: top;
 }
 
 td .ui-button {
@@ -82,24 +82,24 @@ td .ui-button {
 }
 
 td.helpCell {
-  text-align      : justify;
-  color           : #828282;
-  font-size       : 11px;
-  padding-bottom  : 10px;
+    text-align      : justify;
+    color           : #828282;
+    font-size       : 11px;
+    padding-bottom  : 10px;
 }
 
 td.table-title {
-  font-size: 14px;
-  font-weight: bold;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 a.linkbutton {
-  cursor: pointer;
-  font-weight: bold;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .master_view {
-    //height : 100%;
+    /*height : 100%;*/
 }
 
 .selectable_rows .jqgrow:hover {
@@ -112,12 +112,12 @@ a.linkbutton {
 }
 
 .operation_type {
-   float: left;
+    float: left;
 }
 
 .operation_state {
-   float: right;
-   padding-right: 20px;
+    float: right;
+    padding-right: 20px;
 }
 
 th {
@@ -171,6 +171,174 @@ ul.submenu div.scrollarrowright {
     border-bottom-left-radius: 0;
 }
 
-#message.error {
+/*
+ * Dialog editor (generic)
+ */
+.dialog-container input,
+.dialog-container select,
+.dialog-container textarea {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.dialog-container .block-title {
+    margin-top: 20px;
+    font-size: 120%;
+    color: #cccccc;
+}
+
+.dialog-container .line {
+    height: 1px;
+    background-color: #cccccc;
+}
+
+.dialog-container button:hover {
+    cursor : pointer;
+}
+
+.dialog-container .error {
     color: #b94a48;
+    margin: 0;
+}
+
+.dialog-container .border-error {
+    border: 1px solid #b94a48 !important;
+}
+
+.dialog-container .background-error {
+    background-color: #F9F2F4 !important;
+}
+
+.dialog-container .field-error {
+    border: 1px solid #b94a48 !important;
+    background-color: #F9F2F4 !important;
+}
+
+/*
+ * Rule editor (rule-editor.tmpl.html)
+ */
+
+#rule-editor .backcolor-0 {
+    background-color: #eeeeee;
+}
+
+#rule-editor .backcolor-1 {
+    background-color: #dddddd;
+}
+
+#rule-editor .backcolor-2 {
+    background-color: #cccccc;
+}
+
+#rule-editor .backcolor-3 {
+    background-color: #bbbbbb;
+}
+
+#rule-editor .condition-remove,
+#rule-editor .action-remove {
+    background: url(/images/remove.png) no-repeat top left;
+    border: none;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+#rule-identification label {
+    display: inline-block;
+    text-align: right;
+    width: 100px;
+}
+
+#rule-identification input[type=text] {
+    width: 400px;
+}
+
+#rule-identification input[type=text].large {
+    width: 800px;
+}
+
+#rule-identification .caption {
+    margin-left: 5px;
+}
+
+#rule-identification .enabled {
+    color: #468847;
+}
+
+#rule-identification .disabled {
+    color: #b94a48;
+}
+
+#rule-conditions-builder {
+    margin-top: 10px;
+}
+
+#rule-conditions-builder .hidden {
+    display: none !important;
+}
+
+#rule-conditions-builder .error {
+    margin-left: 5px;
+}
+
+#rule-conditions-builder .condition-content {
+    border: 1px solid rgba(81, 203, 238, 1);
+    background-color: #ffffff;
+}
+
+#rule-conditions-builder .condition-group {
+    margin-left: 50px;
+    padding: 5px;
+}
+
+#rule-conditions-builder .condition-group.root {
+    margin-left: 0;
+}
+
+#rule-conditions-builder .condition-add {
+    margin-left: 50px;
+}
+
+#rule-conditions-builder .condition {
+    padding: 5px;
+}
+
+#rule-conditions-builder .condition-line {
+    margin-left: 50px;
+    padding: 5px;
+}
+
+#rule-conditions-builder .logic {
+    width: 55px;
+}
+
+#rule-conditions-builder .function1,
+#rule-conditions-builder .function2 {
+    width: 90px;
+}
+
+#rule-conditions-builder .operand1,
+#rule-conditions-builder .operand2,
+#rule-conditions-builder .condition-value {
+    width: 180px;
+}
+
+#rule-actions-builder {
+    margin-top: 10px;
+}
+
+#rule-actions-builder .action {
+    padding: 5px;
+}
+
+#rule-actions-builder .action-line {
+    padding: 5px;
+}
+
+#rule-actions-builder .action-select,
+#rule-actions-builder .action-value {
+    width: 180px;
 }
