@@ -106,7 +106,8 @@ sub cancel {
     my ($self, %args) = @_;
 
     $self->{context}->{deployment_manager}->cancelPrepareNode(
-        node => $self->{context}->{node},
+        node         => $self->{context}->{node},
+        boot_manager => $self->{context}->{boot_manager},
         %{ $self->{params} }
     );
 }
