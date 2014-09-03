@@ -216,8 +216,6 @@ sub getPatternFromParams {
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
-    my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
-
     # HCMNetworkManager specific, should not be in the generic policy code
     if (ref($args{params}->{interfaces}) eq 'ARRAY') {
         my $index = 0;
@@ -233,9 +231,10 @@ sub getPatternFromParams {
             $interfaces->{'interface_' . $interface->{interface_name}} = $interface;
             $index++;
         }
-        $pattern->{interfaces} = $interfaces;
+        $args{params}->{interfaces} = $interfaces;
     }
-    return $pattern;
+
+   return $self->SUPER::getPatternFromParams(params => $args{params});
 }
 
 1;

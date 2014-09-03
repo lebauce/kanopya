@@ -222,13 +222,14 @@ sub getPatternFromParams {
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
-    my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
-
     if (ref($args{params}->{components}) eq 'ARRAY') {
         my %components = map { 'component_' . $_->{component_type} => $_ }
                              @{ delete $args{params}->{components} };
-        $pattern->{components} = \%components;
+        $args{params}->{components} = \%components;
     }
+
+    my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
+
     if (defined $args{params}->{systemimage_size}) {
         $pattern->{managers}->{storage_manager}->{manager_params}->{systemimage_size}
             = delete $args{params}->{systemimage_size};
