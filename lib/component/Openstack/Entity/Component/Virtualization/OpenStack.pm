@@ -139,10 +139,18 @@ sub new {
     return $self;
 }
 
+
 sub hostType {
     my $self = shift;
     return $self->label;
 }
+
+
+sub label {
+    my $self = shift;
+    return $self->SUPER::label . " " . $self->keystone_url  . " (" . $self->tenant_name . ")";
+}
+
 
 =pod
 =begin classdoc
