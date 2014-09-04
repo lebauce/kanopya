@@ -47,7 +47,6 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
     function getDetails(wizard) {
         return function(rowId) {
 
-            var level = getLevelById(rowId);
             var options = {
                 title: getValueFromList(rowId, 'label'),
                 editDialogFunction: 'openRulesDialog',
@@ -57,45 +56,52 @@ function loadServicesRules2(container_id, elem_id, ext, mode_policy) {
                 }
             };
 
-            switch(level) {
+            var ret = {
+                onOk: function () {
+                    if (wizard !== null) {
+                        wizard.validateForm();
+                    }
+                },
+                title: {
+                    from_column : 'label'
+                }
+
+            };
+            switch(getLevelById(rowId)) {
                 case 'node':
-                    return {
-                        onOk: function () {
-                            if (wizard !== null) {
-                                wizard.validateForm();
+                    ret.tabs = [
+                        {
+                            label: 'Overview',
+                            id: 'overview',
+                            onLoad: function (cid, eid) {
+                                wizard = ruleDetails(cid, eid, 'nodemetric_rule', options);
                             }
                         },
-                        tabs: [
-                            {
-                                label: 'Overview',
-                                id: 'overview',
-                                onLoad: function (cid, eid) {
-                                    wizard = ruleDetails(cid, eid, 'nodemetric_rule', options);
-                                }
+                        {
+                            label: 'Nodes',
+                            id: 'nodes',
+                            onLoad: function(cid, eid) {
+                                wizard = null;
+                                rule_nodes_tab(cid, eid, elem_id);
                             },
-                            {
-                                label: 'Nodes',
-                                id: 'nodes',
-                                onLoad: function(cid, eid) {
-                                    wizard = null;
-                                    rule_nodes_tab(cid, eid, elem_id);
-                                },
-                                hidden: mode_policy
-                            }
-                        ],
-                        title: {
-                            from_column : 'label'
+                            hidden: mode_policy
                         }
-                    };
+                    ];
                     break;
                 case 'service':
-                    return {
-                        onSelectRow: function (elem_id, row_data, grid_id) {
-                            ruleDetails(undefined, elem_id, 'aggregate_rule', options);
+                    ret.tabs = [
+                        {
+                            label: 'Overview',
+                            id: 'overview',
+                            onLoad: function (cid, eid) {
+                                wizard = ruleDetails(cid, eid, 'aggregate_rule', options);
+                            }
                         }
-                    };
+                    ];
                     break;
             }
+
+            return ret;
         };
     }
 

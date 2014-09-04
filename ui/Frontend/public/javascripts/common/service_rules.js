@@ -404,12 +404,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             if (cid) {
                 $('#' + cid).parents('.ui-dialog').find('.ui-dialog-title').html($('#rule-name').val());
                 reload_content(cid, eid);
-            } else {
-                var element = $('#form_aggregaterule');
-                if (element.length > 0) {
-                    element.parents('.ui-dialog').find('.ui-dialog-title').html($('#rule-name').val());
-                    reload_content('form_aggregaterule', eid);
-                }
             }
         };
 
