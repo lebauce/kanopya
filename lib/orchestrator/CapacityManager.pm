@@ -1197,6 +1197,8 @@ with minimum space (average btw RAM and CPU)
 
 @param resources values wanted for the vm
 @param hv_selection_ids hypervisor which can be used to perform the migration
+@param cpu_multiplier set between -1 (spread) and 1 (stack) to reflect policy
+@param ram_multiplier set between -1 (spread) and 1 (stack) to reflect policy
 
 @return a hash with keys : hv_id => the hypervisor id, min_size_remaining => the 'score' used to
 compare 2 hypervisors
@@ -1208,20 +1210,33 @@ compare 2 hypervisors
 sub _findMinHVidRespectCapa {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['hv_selection_ids', 'resources']);
+    General::checkParams(
+        args => \%args,
+        required => ['hv_selection_ids', 'resources'],
+        optional => {
+            cpu_multiplier       => 1,
+            ram_multiplier       => 1,
+        }
+    );
+
     General::checkParams(args => $args{resources}, required => ['ram', 'cpu']);
 
+    General::checkParams(args => $args{resources}, required => ['ram', 'cpu']);
+
+    my @hv_selection_ids = @{$args{hv_selection_ids}};
     my $wanted_metrics = $args{resources};
 
     my $result = {};
     $result->{hv_id} = undef;
     $result->{min_size_remaining} = undef;
 
-    for my $hv_id (@{$args{hv_selection_ids}}){
+    for my $hv_id (@hv_selection_ids){
 
         my $size_remaining = $self->_getHvSizeRemaining(hv_id => $hv_id);
 
-        my $total_score = $size_remaining->{cpu_p} + $size_remaining->{ram_p};
+        my $cpu_p = $size_remaining->{cpu_p};
+        my $ram_p = $size_remaining->{ram_p};
+        my $total_score = $cpu_p*$args{cpu_multiplier} + $ram_p*$args{ram_multiplier};
 
         $log->debug('HV <'.$hv_id.'> Wanted RAM <'.($wanted_metrics->{ram})
                     .'> got <'.($size_remaining->{ram}).' ('.(100*$size_remaining->{ram_p})
