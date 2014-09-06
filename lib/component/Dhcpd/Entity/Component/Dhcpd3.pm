@@ -205,11 +205,11 @@ sub getHostsEntries {
     my $entries = {};
     for my $node (Entity::Node->search()) {
         my $adminip = $node->adminIp;
-        my $system = $node->getComponent(category => "System");
         if (! defined $adminip) {
             $log->warn("Skipping node <" .  $node->label . "> as it has not admin ip.");
             next;
         }
+        my $system = $node->getComponent(category => "System");
         $entries->{$adminip} = {
             fqdn    => $node->fqdn,
             # Use a hash to store aliases as Hash::Marge module do not merge arrays
