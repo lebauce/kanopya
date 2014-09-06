@@ -440,6 +440,7 @@ whose database already contains some migrations.
 sub markAsAppliedUntil ($) {
     my ($class, $time) = @_;
     my $i = 0;
+    Kanopya::Database::global_user_check(value => 0);
     my @migrations = @{$class->sortedPending()};
     foreach my $migration (@migrations) {
         if ($migration->time() le $time) {
@@ -447,6 +448,7 @@ sub markAsAppliedUntil ($) {
             $i++;            
         }
     }
+    Kanopya::Database::global_user_check(value => 1);
     return $i;
 }
 
