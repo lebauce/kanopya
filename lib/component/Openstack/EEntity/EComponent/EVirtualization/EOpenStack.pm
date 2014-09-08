@@ -112,5 +112,16 @@ sub releaseHost {
     return $self->_entity->releaseHost(%args);
 }
 
+
+sub getHypervisorVMs {
+    my ($self, %args) = @_;
+    return $self->_entity->getHypervisorVMs(%args);
+}
+
+sub getVMDetails {
+    my ($self, %args) = @_;
+    return $self->_entity->getVMDetails(%args);
+}
+
 1;
 

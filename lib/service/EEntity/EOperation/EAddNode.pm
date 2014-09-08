@@ -178,69 +178,68 @@ the database with the infrastructure if required.
 
 sub prerequisites {
     my ($self, %args) = @_;
+    my $params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'HostManager');
+    my $hypervisor_id = undef;
 
     try {
-#         my $params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'HostManager');
-#         my $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(
-#                                 resources => {ram => $params->{ram}, cpu => $params->{core}}
-#                             );
- 
-#         if (defined $hypervisor_id) {
-#             $log->info("Hypervisor <$hypervisor_id> ready");
-#             my $host = Entity::Host->get(id => $hypervisor_id);
-
-#             my $diff_infra_db = $self->{context}
-#                                      ->{host_manager}
-#                                      ->checkHypervisorVMPlacementIntegrity(host => $host);
-
-#             if (! $self->{context}->{host_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
-
-#                 # Repair infra before retrying AddNode
-#                 $self->workflow->enqueueBefore(
-#                     current_operation => $self,
-#                     operation => {
-#                         priority => 200,
-#                         type     => 'SynchronizeInfrastructure',
-#                         params   => {
-#                             context => {
-#                                 hypervisor => $host
-#                             },
-#                             diff_infra_db => $diff_infra_db,
-#                         }
-#                     }
-#                 );
-#                 return -1;
-#             }
-
-#             $log->info('Hypervisor confirmed, start node');
-#             $self->{context}->{hypervisor} = $host;
-#             return 0;
-#         }
-#         else {
-# #            throw Kanopya::Exception::Internal('Hypervisor cluster is full ! Please start a new hypervisor');
-#             # TODO debug with state management
-
-#             $log->info('Need to start a new hypervisor');
-#             $self->{context}->{vm_cluster} = $self->{context}->{cluster};
-#             my @vmms = $self->{context}->{host_manager}->vmms;
-#             my $host_manager_sp = $vmms[0]->service_provider;
-#             my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
-
-#             $self->workflow->enqueueBefore(
-#                 current_operation => $self,
-#                 workflow          => $workflow_to_enqueue,
-#             );
-
-#             $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
-#             $self->{params}->{needhypervisor} = 1;
-#             return -1;
-#         }
+        $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(
+                            resources => {ram => $params->{ram}, cpu => $params->{core}}
+                         );
     }
     catch (Kanopya::Exception::NotImplemented $err) {
         # Physical
         $log->warn($err);
+        return 0;
     }
 
+    if (defined $hypervisor_id) {
+        my $host = Entity::Host->get(id => $hypervisor_id);
+        $log->info('Hypervisor <' . $host->node->node_hostname
+                   . '> has been selected to boot the virtual machine');
+
+        $self->{context}->{hypervisor} = $host;
+        my $diff_infra_db = $self->{context}
+                                 ->{host_manager}
+                                 ->checkHypervisorVMPlacementIntegrity(host => $host);
+
+        if (! $self->{context}->{host_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
+            # Repair infra before retrying AddNode
+            $self->workflow->enqueueBefore(
+                current_operation => $self,
+                operation => {
+                    priority => 200,
+                    type     => 'SynchronizeInfrastructure',
+                    params   => {
+                        context => {
+                            hypervisor => $host
+                        },
+                        diff_infra_db => $diff_infra_db,
+                    }
+                }
+            );
+            return -1;
+        }
+        return 0;
+    }
+    else {
+#            throw Kanopya::Exception::Internal('Hypervisor cluster is full ! Please start a new hypervisor');
+        # TODO debug with state management
+
+        $log->info('Need to start a new hypervisor');
+        $self->{context}->{vm_cluster} = $self->{context}->{cluster};
+        my @vmms = $self->{context}->{host_manager}->vmms;
+        my $host_manager_sp = $vmms[0]->service_provider;
+        my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
+
+        $self->workflow->enqueueBefore(
+            current_operation => $self,
+            workflow          => $workflow_to_enqueue,
+        );
+
+        $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
+        $self->{params}->{needhypervisor} = 1;
+        return -1;
+    }
     return 0;
 }
 

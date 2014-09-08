@@ -130,8 +130,7 @@ sub repairVMRessourceIntegrity {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     for my $vm ($args{host}->virtual_machines) {
-        my $evm = new EEntity(data => $vm)->getResources(resource => [ 'cpu' , 'ram' ]);
-
+        my $evm = $self->getVMDetails(host => $vm);
         if ($evm->{ram} != $vm->host_ram) {
             $vm->setAttr(name => 'host_ram', value => $evm->{ram});
         }
@@ -262,7 +261,7 @@ sub repairVmInInfraUnkInDB {
                                  vm_uuid        => $vm_uuid,
                                  hypervisor_id  => $hv_id);
 
-        my $evm = new EEntity(data => $host)->getResources(resource => [ 'cpu' , 'ram' ]);
+        my $evm = $self->getVMDetails(host => $host);
         $host->setAttr(name => 'host_ram',  value => $evm->{ram});
         $host->setAttr(name => 'host_core', value => $evm->{cpu});
         $host->save();

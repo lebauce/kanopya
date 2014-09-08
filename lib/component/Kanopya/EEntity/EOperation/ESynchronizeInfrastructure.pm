@@ -80,16 +80,18 @@ sub execute {
         }
     }
 
-    if (defined $self->{context}->{hypervisor}) {
-        $self->{context}->{cloud_manager}->repairVMRessourceIntegrity(
-            host => $self->{context}->{hypervisor}
-        );
-    }
+    $log->info(Dumper $self->{params}->{diff_infra_db});
 
     $self->{context}->{cloud_manager}->repairWrongHypervisor(vm_ids => $self->{params}->{diff_infra_db}->{wrong_hv});
     $self->{context}->{cloud_manager}->repairVmInDBNotInInfra(vm_ids => $self->{params}->{diff_infra_db}->{base_not_hv_infra});
     $self->{context}->{cloud_manager}->repairVmInInfraUnkInDB(vm_uuids => $self->{params}->{diff_infra_db}->{unk_vm_uuids});
     $self->{context}->{cloud_manager}->repairVmInInfraWrongHostManager(vm_ids => $self->{params}->{diff_infra_db}->{infra_not_hostmanager});
+
+    if (defined $self->{context}->{hypervisor}) {
+        $self->{context}->{cloud_manager}->repairVMRessourceIntegrity(
+            host => $self->{context}->{hypervisor}
+        );
+    }
 }
 
 sub finish {

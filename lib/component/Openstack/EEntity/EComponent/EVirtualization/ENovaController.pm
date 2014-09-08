@@ -261,7 +261,6 @@ sub getHypervisorVMs {
 
 
 =pod
-
 =begin classdoc
 
 Get the detail of a vm
@@ -269,26 +268,27 @@ Get the detail of a vm
 @params host vm
 
 =end classdoc
-
 =cut
 
 sub getVMDetails {
     my ($self, %args) = @_;
-
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $host = $args{host};
-    my $uuid = $host->openstack_vm_uuid;
+    my $details = OpenStack::Server->detail(
+                      api => $self->api,
+                      id => $args{host}->openstack_vm_uuid,
+                      flavor_detail => 1,
+                  );
 
-    my $details =  $self->api->compute->servers(id => $uuid)->get;
-
-    if (defined $details->{'itemNotFound'}) {
-        throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure");
+    if (defined $details->{itemNotFound}) {
+        throw Kanopya::Exception(error => $details->{itemNotFound});
     }
 
     return {
-        state      => $details->{server}->{status},
         hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
+        state => $details->{server}->{status},
+        ram => $details->{server}->{flavor}->{ram},
+        cpu => $details->{server}->{flavor}->{vcpus},
     };
 }
 
@@ -321,7 +321,7 @@ sub getVMState {
             'ERROR'     => 'fail',
             'SHUTOFF'   => 'shut'
         };
-    
+
         return {
             state      => $state_map->{$details->{state}} || 'fail',
             hypervisor => $details->{hypervisor},

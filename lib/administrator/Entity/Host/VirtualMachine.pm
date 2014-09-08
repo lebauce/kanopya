@@ -71,11 +71,4 @@ sub migrate {
            );
 }
 
-sub getVmInfo {
-    my ($self, %args) = @_;
-    return {
-        hypervisor_id  => $self->hypervisor_id,
-    };
-}
-
 1;

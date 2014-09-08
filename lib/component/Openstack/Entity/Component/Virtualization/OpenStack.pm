@@ -620,6 +620,7 @@ sub getVMDetails {
     my $details = OpenStack::Server->detail(
                       api => $self->_api,
                       id => $args{host}->openstack_vm_uuid,
+                      flavor_detail => 1,
                   );
 
     if (defined $details->{itemNotFound}) {
@@ -629,6 +630,8 @@ sub getVMDetails {
     return {
         hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
         state => $details->{server}->{status},
+        ram => $details->{server}->{flavor}->{ram} * 1024 * 1024, #MB to B
+        cpu => $details->{server}->{flavor}->{vcpus},
     };
 }
 
@@ -930,6 +933,48 @@ sub releaseHost {
 
     return $args{host}->delete();
 }
+
+=pod
+=begin classdoc
+
+Get all the vms of an hypervisor through Openstack API
+
+@param host hypervisor
+
+=end classdoc
+=cut
+
+sub getHypervisorVMs {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $vms = OpenStack::Hypervisor->servers(
+                  id => $args{host}->node->node_hostname,
+                  api => $self->_api,
+              );
+
+    my @vms = ();
+    my @unk_vm_uuids = ();
+
+    for my $uuid (map {$_->{uuid}} @$vms) {
+        try {
+            my $e = Entity::Host::VirtualMachine::OpenstackVm->find(hash => {
+                        openstack_vm_uuid => $uuid
+                    });
+            push @vms, $e;
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $log->warn('unknown openstack virtual machine <' . $uuid . '>');
+            push @unk_vm_uuids, $uuid;
+        }
+    }
+
+    return {
+        unk_vm_uuids => \@unk_vm_uuids,
+        vms => \@vms,
+    };
+}
+
 
 sub _api {
     my ($self, %args) = @_;
