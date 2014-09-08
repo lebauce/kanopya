@@ -928,4 +928,8 @@ sub isUp {
     return 1;
 }
 
+
+sub isInfrastructureSynchronized {
+    return 1;
+}
 1;
