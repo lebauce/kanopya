@@ -579,12 +579,17 @@ Migrate a host to the destination hypervisor by calling the nova api.
 =end classdoc
 =cut
 
-sub migrate {
+sub migrateHost {
     my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
 
-    General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
+    OpenStack::Server->migrate(
+        api => $self->_api,
+        id => $args{host}->openstack_vm_uuid,
+        hypervisor_hostname => $args{hypervisor}->node->node_hostname,
+    );
 
-    throw Kanopya::Exception::NotImplemented();
+    return;
 }
 
 
@@ -1186,6 +1191,7 @@ sub _load {
                         ip_addr  => $ip_info->{addr},
                         iface_id => $iface->id,
                     );
+                    $node->admin_ip_addr($ip_info->{addr});
                 }
             }
         }

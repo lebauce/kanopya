@@ -234,7 +234,7 @@ sub migrateHost {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'host', 'hypervisor_dst']);
+                         required => [ 'host', 'hypervisor']);
 
     # Get the source hypervisor
     my $src_hypervisor = $args{host}->hypervisor;
@@ -242,7 +242,7 @@ sub migrateHost {
 
     $self->onevm_livemigrate(
         vm_nameorid   => $args{host}->node->node_hostname,
-        host_nameorid => $args{hypervisor_dst}->node->node_hostname,
+        host_nameorid => $args{hypervisor}->node->node_hostname,
     );
 
     return $src_hypervisor;

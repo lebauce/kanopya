@@ -89,6 +89,11 @@ sub checkConfiguration {
 
 sub getEContext {
     my $self = shift;
+    if (! defined $self->adminIp) {
+        throw Kanopya::Exception::Internal::NoValue(
+                  error => 'Node has no <adminIp> cannont get EContext'
+              );
+    }
 
     return $self->SUPER::getEContext(dst_ip => $self->adminIp);
 }

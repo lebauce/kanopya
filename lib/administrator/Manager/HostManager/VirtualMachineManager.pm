@@ -201,37 +201,6 @@ sub migrate {
 }
 
 
-=pod
-
-=begin classdoc
-
-Update hypervisor of vm in DB
-
-=end classdoc
-
-=cut
-
-sub migrateHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
-
-    try {
-        $log->info('Migrating host <' . $args{host}->id . '> to hypervisor ' . $args{hypervisor_dst}->id);
-
-        $args{host}->hypervisor_id($args{hypervisor_dst}->id);
-    }
-    catch (Kanopya::Exception $err) {
-        $err->rethrow();
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Internal(error => "Unable to associate vm <$args{host}> " .
-                                                    "to hypervisor <$args{hypervisor_dst}>, $err");
-    }
-}
-
-
 sub hostType {
     return "Virtual Machine";
 }

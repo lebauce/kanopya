@@ -132,6 +132,23 @@ sub create {
     return $args{api}->compute->$route->post(content => $params);
 }
 
+
+sub migrate {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'api', 'id', 'hypervisor_hostname' ]);
+
+    return $args{api}->compute->servers(id => $args{id})->action->post(
+               content => {
+                   'os-migrateLive'  => {
+                       disk_over_commit => 'false',
+                       block_migration  => 'false',
+                       host             => $args{hypervisor_hostname},
+                    }
+                }
+           );
+}
+
+
 sub stop {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api', 'id' ]);

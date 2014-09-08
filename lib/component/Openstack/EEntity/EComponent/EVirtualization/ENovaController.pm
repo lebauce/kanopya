@@ -64,7 +64,7 @@ sub api {
 
 sub postStartNode {
     my ($self, %args) = @_;
-    
+
     General::checkParams(args => \%args, required => [ 'node' ]);
 
     try {
@@ -174,7 +174,7 @@ sub unregisterHypervisor {
 Migrate an openstack vm from one hypervisor to another
 
 @params host the vm to migrate
-@params hypervisor_dst the destination hypervisor
+@params hypervisor the destination hypervisor
 
 =end classdoc
 
@@ -183,10 +183,10 @@ Migrate an openstack vm from one hypervisor to another
 sub migrateHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
 
     my $host = $args{host};
-    my $hv   = $args{hypervisor_dst};
+    my $hv   = $args{hypervisor};
     my $uuid = $host->openstack_vm_uuid;
     my $api  = $self->api;
 

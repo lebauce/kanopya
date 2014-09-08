@@ -35,6 +35,7 @@ use Kanopya::Exceptions;
 use Entity::Host;
 use EntityState;
 use CapacityManagement;
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -186,22 +187,12 @@ sub execute {
         throw Kanopya::Exception::Internal(error => 'hypervisor is not active');
     }
 
-    # check if host is up
-    if (not $self->{context}->{host}->checkUp()) {
-        throw Kanopya::Exception::Internal(error => 'hypervisor is not up');
-    }
-
-    # check if VM is up
-    if (not $self->{context}->{vm}->checkUp()) {
-        throw Kanopya::Exception::Internal(error => 'VM is not up');
-    }
-
     # Check if the destination differs from the source
     my $vm_state = $self->{context}->{cloudmanager_comp}->getVMState(
         host => $self->{context}->{vm},
     );
 
-    $log->info('Destination hv <' . $self->{context}->{host}->node->node_hostname .
+    $log->debug('Destination hv <' . $self->{context}->{host}->node->node_hostname .
                '> vs cloud manager hv <' . $vm_state->{hypervisor} . '>');
 
     if ($self->{context}->{host}->node->node_hostname eq $vm_state->{hypervisor}) {
@@ -227,13 +218,16 @@ sub execute {
         delete $self->{params}->{no_migration};
     }
     else {
-        $self->{context}->{cloudmanager_comp}->migrateHost(
-            host               => $self->{context}->{vm},
-            hypervisor_dst     => $self->{context}->{host},
-        );
 
-        $log->info("VM <" . $self->{context}->{vm}->id .
-                   "> is migrating to <" . $self->{context}->{host}->id . ">");
+        $log->info('Virtual machine <'
+                   . $self->{context}->{vm}->node->node_hostname
+                   . '> is migrating to hypervisor <'
+                   . $self->{context}->{host}->node->node_hostname . '>');
+
+        $self->{context}->{cloudmanager_comp}->migrateHost(
+            host => $self->{context}->{vm},
+            hypervisor => $self->{context}->{host},
+        );
     }
 }
 
@@ -296,24 +290,23 @@ sub postrequisites {
                          host => $self->{context}->{vm},
                      );
 
-    $log->info('Virtual machine <' . $self->{context}->{vm}->id . '> state: <'. $migr_state->{state} .
-               '>, current hypervisor: <' . $migr_state->{hypervisor} .
-               '>, dest hypervisor: <' . $self->{context}->{host}->node->node_hostname . '>');
+    $log->info('Virtual machine <' . $self->{context}->{vm}->node->node_hostname
+               . '> state: <'. $migr_state->{state} . '>, current hypervisor: <'
+               . $migr_state->{hypervisor} . '>, destination hypervisor: <'
+               . $self->{context}->{host}->node->node_hostname . '>');
 
     if ($migr_state->{state} eq 'runn') {
-        # On the targeted hv
+
         if ($migr_state->{hypervisor} eq $self->{context}->{host}->node->node_hostname) {
 
             # After checking migration -> store migration in DB
-            $self->{context}->{cloudmanager_comp}->_entity->migrateHost(
-                host               => $self->{context}->{vm},
-                hypervisor_dst     => $self->{context}->{host},
-            );
+            $self->{context}->{vm}->hypervisor_id($self->{context}->{host}->id);
             return 0;
         }
         else {
             # Vm is running but not on its hypervisor
-            my $error = 'Migration of vm <' . $self->{context}->{vm}->id . '> failed, but still running...';
+            my $error = 'Migration of vm <' . $self->{context}->{vm}->node->node_hostname
+                        . '> failed, but vm is still running...';
             $log->warn($error);
             Message->send(
                 from    => 'EMigrateHost',

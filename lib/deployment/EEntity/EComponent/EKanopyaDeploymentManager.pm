@@ -346,6 +346,9 @@ sub checkNodeDown {
     catch (Kanopya::Exception::Network $err) {
         $log->info("Node " . $args{node}->label . " do not repond to ssh any more");
     }
+    catch (Kanopya::Exception::Internal::NoValue $err) {
+        $log->warn('Node has no adminIp');
+    }
     catch (Kanopya::Exception $err) {
         $err->rethrow();
     }
