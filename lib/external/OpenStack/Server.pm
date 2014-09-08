@@ -92,7 +92,8 @@ sub create {
         optional => {
             port_ids => [],
             volume_id => undef,
-            image_id => undef
+            image_id => undef,
+            availability_zone => undef,
         },
     );
 
@@ -116,6 +117,7 @@ sub create {
             imageRef => $args{image_id} || "",
             flavorRef => $args{flavor_id},
             networks => $networks,
+            (defined $args{availability_zone}) ? ('availability_zone' , $args{availability_zone}) : (),
         }
     };
 

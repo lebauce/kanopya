@@ -293,6 +293,7 @@ sub deployNode {
                        network_manager    => delete $args{network_manager},
                        node               => delete $args{node},
                        systemimage        => delete $args{systemimage},
+                       hypervisor         => delete $args{hypervisor},
                    },
                    %args,
                }

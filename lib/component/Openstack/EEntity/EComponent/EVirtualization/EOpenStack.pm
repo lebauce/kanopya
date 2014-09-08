@@ -112,6 +112,10 @@ sub releaseHost {
     return $self->_entity->releaseHost(%args);
 }
 
+sub postStart {
+    my ($self, %args) = @_;
+    return $self->_entity->postStart(%args);
+}
 
 sub getHypervisorVMs {
     my ($self, %args) = @_;

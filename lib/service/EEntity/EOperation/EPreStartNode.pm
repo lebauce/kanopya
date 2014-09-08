@@ -105,7 +105,7 @@ sub postrequisites {
 
     # Ask to all cluster component if they are ready for node addition.
     if (! $self->{context}->{cluster}->readyNodeAddition(node => $self->{context}->{node})) {
-        $log->debug("Cluster <" . $self->{context}->{cluster}->label . 
+        $log->debug("Cluster <" . $self->{context}->{cluster}->label .
                     "> not ready for node addition, retrying in $delay seconds");
         return $delay;
     }
@@ -137,6 +137,7 @@ sub finish {
         systemimage     => $self->{context}->{systemimage},
         kernel_id       => $self->{context}->{cluster}->kernel_id,
         workflow        => $self->workflow,
+        hypervisor      => $self->{context}->{hypervisor},
         %{ $managers_params }
     );
 }

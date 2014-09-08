@@ -435,7 +435,6 @@ sub getFreeHost {
     General::checkParams(args => \%args,
                          required => [ 'subnets', 'flavor', 'availability_zone', 'tenant' ]);
 
-    $log->info("Looking for a virtual host");
     try {
         return $self->createVirtualHost(ifaces => scalar(@{ [ $args{subnets} ] }), %args);
     }
@@ -479,7 +478,9 @@ Create and start a virtual machine from the given parameters by calling the nova
 sub startHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args  => \%args, required => [ 'host', 'flavor' ]);
+    General::checkParams(args  => \%args,
+                         required => [ 'host', 'flavor', 'hypervisor' ],
+                         optional => {hypervisor => undef});
 
     my $flavor_id = undef;
     my %flavors = %{$self->param_preset->load->{flavors}};
@@ -502,6 +503,7 @@ sub startHost {
                      flavor_id => $flavor_id,
                      port_ids => \@ports_ids,
                      instance_name => $args{host}->node->node_hostname,
+                     availability_zone => 'zone:' . $args{hypervisor}->node->node_hostname,
                  );
 
     $self->promoteVm(host    => $args{host}->_entity,
@@ -1028,6 +1030,34 @@ sub getHypervisorVMs {
     };
 }
 
+
+sub postStart {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $detail = OpenStack::Server->detail(
+                     api => $self->_api,
+                     id => $args{host}->openstack_vm_uuid
+                 );
+
+    $log->debug(Dumper $detail);
+
+    my $hypervisor_id;
+    my $hypervisor_name = $detail->{server}->{'OS-EXT-SRV-ATTR:hypervisor_hostname'};
+    try {
+        $hypervisor_id = $self->findRelated(
+                             filters => ['hypervisors'],
+                             hash => {
+                                 'node.node_hostname' => $hypervisor_name,
+                             }
+                         )->id;
+    }
+    catch ($err) {
+        $log->warn("No hypervisor with name $hypervisor_name is linked to this HostManager");
+    }
+
+    $args{host}->hypervisor_id($hypervisor_id);
+}
 
 sub _api {
     my ($self, %args) = @_;
