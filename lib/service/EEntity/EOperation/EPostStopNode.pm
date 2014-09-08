@@ -87,32 +87,40 @@ sub execute {
     $log->info('Processing cluster components configuration for this node');
     $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
 
+    my $image;
+    my $systemimage_name;
     # Handle the remaning system image of the node
     try {
         # NOTE: Can not use the relation node->systemimage any more
         # TODO: Keep the id of the system image to get it from deployment manager
-        my $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
-                               $self->{context}->{host}->node->node_number;
+        $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
+                            $self->{context}->{host}->node->node_number;
 
         my $image = EEntity->new(data => Entity::Systemimage->find(hash => {
                         systemimage_name => $systemimage_name
                     }));
-
-        # Delete the image if persistent policy not set
-        if ($self->{context}->{cluster}->cluster_si_persistent eq '0') {
-            $image->remove(erollback => $self->{erollback});
-
-        } else {
-            $log->info("Cluster image persistence is set, keeping image " . $image->label);
-        }
     }
     catch (Kanopya::Exception::Internal::NotFound $err) {
-        $log->warn("Could not find systemimage from node " . $self->{context}->{host}->label .
-                   " for removal.");
+        $log->warn("Can not find a systemimage labeled $systemimage_name for node "
+                   . $self->{context}->{host}->label );
     }
-    catch (Kanopya::Exception::Execution $err) {
-        $log->warn("Unable to remove system image for node ". $self->{context}->{host}->label);
-        $log->error("$err");
+
+    if (defined $image) {
+        try {
+            # Delete the image if persistent policy not set
+            if ($self->{context}->{cluster}->cluster_si_persistent eq '0') {
+                $image->remove(erollback => $self->{erollback});
+
+            } else {
+                $log->info("Cluster image persistence is set, keeping image "
+                           . $image->label);
+            }
+        }
+        catch (Kanopya::Exception::Execution $err) {
+            $log->warn("Unable to remove system image for node "
+                       . $self->{context}->{host}->label);
+            $log->error("$err");
+        }
     }
 
     $log->info('Unregister the node');

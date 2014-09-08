@@ -224,11 +224,14 @@ sub checkNetworkManagerParams {
     General::checkParams(args => \%args, required => [ "interfaces" ]);
 }
 
+sub  unconfigureNetworkInterface {
+    my ($self, %args) = @_;
+}
 
 =pod
 =begin classdoc
 
-@return the network manager parameters as an attribute definition. 
+@return the network manager parameters as an attribute definition.
 
 =end classdoc
 =cut

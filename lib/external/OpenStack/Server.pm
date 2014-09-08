@@ -143,7 +143,31 @@ sub stop {
 
 sub delete {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'api', 'id' ]);
-    return $args{api}->compute->servers(id => $args{id})->delete;
+    General::checkParams(args => \%args, required => [ 'api' ]);
+
+    if (defined $args{id}) {
+        return $args{api}->compute->servers(id => $args{id})->delete;
+    }
+
+    if (defined $args{name}) {
+        return $args{api}->compute->servers(id => $self->id(%args))->delete;
+    }
+
+    throw Kanopya::Exception::Internal::MissingParam(
+              "Either param id or name must be defined"
+          );
 }
+
+sub id {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'api' , 'name' ]);
+    my $vms = OpenStack::Server->list(api => $args{api});
+    for my $vm (@$vms) {
+        if ($vm->{name} eq $args{name}) {
+            return $vm->{id};
+        }
+    }
+    return undef;
+}
+
 1;

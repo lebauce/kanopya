@@ -525,7 +525,24 @@ sub stopHost {
     my ($self, %args) = @_;
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return OpenStack::Server->delete(api => $self->_api, id => $args{host}->openstack_vm_uuid);
+    try {
+        OpenStack::Server->delete(
+            api => $self->_api,
+            id => $args{host}->openstack_vm_uuid,
+        );
+    }
+    catch (Kanopya::Exception::Internal::UnknownAttribute $err) {
+        # When an Exception happens during the DeployNode transaction,
+        # the openstack_vm_uuid is not registered.
+        # Try to find the vm with the node hostname
+        $log->info('Try to delete the vm by its name');
+        OpenStack::Server->delete(
+            api => $self->_api,
+            name => $args{host}->node->node_hostname,
+        );
+    }
+
+    return;
 }
 
 
@@ -602,7 +619,6 @@ sub promoteVm {
 
 
 =pod
-
 =begin classdoc
 
 Get the detail of a vm
@@ -610,7 +626,6 @@ Get the detail of a vm
 @params host vm
 
 =end classdoc
-
 =cut
 
 sub getVMDetails {
@@ -740,6 +755,17 @@ sub removeSystemImage {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "systemimage" ]);
+
+
+    my $detail;
+    my $time_out = time + 60;
+    do {
+        $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->systemimage_desc);
+
+        $log->info("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
+
+        sleep 10;
+    } while ($detail->{status} =~ m/in-use/ && time < $time_out);
 
     my $volume = OpenStack::Volume->delete(
                      api => $self->_api,
@@ -884,6 +910,28 @@ sub configureNetworkInterfaces {
     return;
 }
 
+sub unconfigureNetworkInterface {
+    my ($self, %args) = @_;
+    my @mac_addresses = map {$_->reload->iface_mac_addr} $args{node}->host->getIfaces;
+
+    my $params = $self->param_preset->load;
+
+    for my $addr (@mac_addresses) {
+        if (! defined $params->{port_macs}->{$addr}) {
+            $log->warn('Cannot find port_uuid and delete OpenStack Port. '
+                       . ' this can happened when the port creation and the '
+                       . ' exception occurs during the same transaction');
+        }
+        else {
+            OpenStack::Port->delete(
+                api => $self->_api,
+                id => $params->{port_macs}->{$addr}
+            );
+            delete $params->{port_macs}->{$addr};
+        }
+    }
+    $self->param_preset->update(params => $params, override => 1);
+}
 
 =pod
 =begin classdoc

@@ -137,6 +137,7 @@ sub deployNode {
 
     # Finally we start the node
     # Implicitly ask to the host manager to start the host, forward all the managers params
+
     EEntity->new(entity => $args{node}->host)->start(%args);
 
     $args{node}->setState(state => "goingin");
@@ -270,6 +271,7 @@ sub unconfigureNode {
 
     # Ask to the boot manager to remove the node from the boot system
     $args{boot_manager}->configureBoot(node => $args{node}, remove => 1);
+    $args{boot_manager}->unconfigureNetworkInterface(node => $args{node});
 }
 
 
