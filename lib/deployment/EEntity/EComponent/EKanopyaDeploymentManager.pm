@@ -127,8 +127,7 @@ sub deployNode {
 
     General::checkParams(args => \%args,
                          required => [ 'node', 'boot_manager' ],
-                         optional => { 'hypervisor'   => undef,
-                                       'erollback'    => undef });
+                         optional => { 'erollback'    => undef });
 
     $log->info("Applying boot configuration via boot manager " . $args{boot_manager}->label);
 

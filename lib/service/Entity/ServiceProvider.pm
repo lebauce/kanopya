@@ -236,7 +236,6 @@ sub unregisterNode {
         for my $collector_indicator (@collector_indicators) {
             my $indicator = $collector_indicator->indicator;
             my $rrd_name = $indicator->id . '_' . $args{node}->node_hostname;
-            $log->info('Deleting RRD file ' . $rrd_name);
             TimeData::RRDTimeData->deleteTimeDataStore(name => $rrd_name);
         }
     }

@@ -866,7 +866,7 @@ to the node from the network manager params.
 sub configureNetworkInterfaces {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'subnets' ]);
+    General::checkParams(args => \%args, required => [ 'subnets', 'node' ]);
 
     my $pp = $self->param_preset->load;
     my @ifaces = $args{node}->host->getIfaces;
@@ -889,7 +889,7 @@ sub configureNetworkInterfaces {
                   );
         }
 
-        $log->info("Found network id $network_id and subnet id $subnet_id for $subnet.");
+        $log->info("Found network $network_id and subnet $subnet_id for $subnet.");
         my $port = OpenStack::Port->create(api        => $self->_api,
                                            network_id => $network_id,
                                            subnet_id  =>  $subnet_id);
@@ -898,9 +898,9 @@ sub configureNetworkInterfaces {
 
         # Assign the resulting ip the the next iface
         my $iface = shift(@ifaces);
-        $log->info("Assign iface " . $iface->iface_name . " with ip addr " .
-                   $port->{port}->{fixed_ips}->[0]->{ip_address} . " and mac addr " .
-                   $port->{port}->{mac_address});
+        $log->info('Assign iface ' . $iface->iface_name . ' with ip <' .
+                   $port->{port}->{fixed_ips}->[0]->{ip_address} . '> and mac <' .
+                   $port->{port}->{mac_address}) . '>';
 
         $iface->assignIp(ip_addr => $port->{port}->{fixed_ips}->[0]->{ip_address});
         $iface->iface_mac_addr($port->{port}->{mac_address});

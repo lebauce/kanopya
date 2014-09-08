@@ -397,7 +397,6 @@ sub finish {
 
     # Add state to hypervisor if defined
     if (defined $self->{context}->{hypervisor}) {
-        $self->{context}->{host_manager_sp}->setConsumerState(state => 'scaleout', consumer => $self->workflow);
         $self->{context}->{hypervisor}->setConsumerState(state => 'scaleout', consumer => $self->workflow);
     }
 
