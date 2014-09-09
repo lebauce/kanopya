@@ -85,6 +85,8 @@ sub main {
     test_scale_cpu();
     test_optimiaas_stack();
     test_optimiaas_spread();
+    test_strict_affinity();
+    test_affinity_weights();
     test_flushhypervisor();
     test_resubmit();
     test_flushhypervisor_need_csp();
@@ -585,6 +587,25 @@ sub _getTestInfraForOptimiaasSpread {
     return  $infra;
 }
 
+sub _getTestInfraForAffinity {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 1},
+            $vms[1]->id => {resources => {cpu => 2, ram => 2*$coef}, hv_id => 2},
+        },
+
+        hvs => {
+            1 => {resources => {cpu => 10,ram => 4.0*$coef}},
+            2 => {resources => {cpu => 10,ram => 4.0*$coef}},
+        },
+    };
+
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
+    return  $infra;
+}
+
 sub getTestInfraForScaling {
 
     my $infra = {
@@ -702,6 +723,86 @@ sub test_optimiaas_spread {
         }
 
     } 'Optimiaas (spread)';
+}
+
+sub test_strict_affinity {
+
+    my %waited_migrations;
+    my $infra;
+    my $cm;
+
+    lives_ok {
+        $infra = _getTestInfraForAffinity();
+        $cm    = $cm_class->new(infra=>$infra);
+
+        my @hv_ids;
+        for my $hv_index (keys %{$infra->{hvs}}) {
+            push @hv_ids, $hv_index;
+        }
+
+        my @strict_affinity = ($vms[0]->id);
+        my $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids => \@hv_ids,
+                            resources        => {cpu => 1, ram => 1*$coef},
+                            strict_affinity  => \@strict_affinity,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under strict affinity constraint'
+        }
+
+        my @strict_anti_affinity = ($vms[1]->id);
+        $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids     => \@hv_ids,
+                            resources            => {cpu => 1, ram => 1*$coef},
+                            strict_anti_affinity => \@strict_anti_affinity,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under strict anti-affinity constraint'
+        }
+
+    } 'Strict affinity/anti-affinity';
+}
+
+sub test_affinity_weights {
+
+    my %waited_migrations;
+    my $infra;
+    my $cm;
+
+    lives_ok {
+        $infra = _getTestInfraForAffinity();
+        $cm    = $cm_class->new(infra=>$infra);
+
+        my @hv_ids;
+        for my $hv_index (keys %{$infra->{hvs}}) {
+            push @hv_ids, $hv_index;
+        }
+
+        my %affinity_weights = ($vms[0]->id => -1);
+        my $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids => \@hv_ids,
+                            resources        => {cpu => 1, ram => 1*$coef},
+                            affinity_weights => \%affinity_weights,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under soft affinity constraint'
+        }
+
+        %affinity_weights = ($vms[1]->id => 1);
+        $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids => \@hv_ids,
+                            resources        => {cpu => 1, ram => 1*$coef},
+                            affinity_weights => \%affinity_weights,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under soft anti-affinity constraint'
+        }
+
+    } 'Affinity weights';
 }
 
 sub test_scale_memory {

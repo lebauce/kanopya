@@ -225,6 +225,9 @@ sub getHypervisorIdForVM {
         optional => {
             cpu_multiplier       => 1,
             ram_multiplier       => 1,
+            strict_affinity      => [],
+            strict_anti_affinity => [],
+            affinity_weights     => {},
         }
     );
 
@@ -259,6 +262,9 @@ sub getHypervisorIdForVM {
         resources            => $args{resources},
         cpu_multiplier       => $args{cpu_multiplier},
         ram_multiplier       => $args{ram_multiplier},
+        strict_affinity      => $args{strict_affinity},
+        strict_anti_affinity => $args{strict_anti_affinity},
+        affinity_weights     => $args{affinity_weights},
     );
 
     if (defined $hv->{hv_id}) {
