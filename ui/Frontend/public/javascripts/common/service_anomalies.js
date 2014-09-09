@@ -155,9 +155,25 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
         var templateFile = '/templates/anomaly-editor.tmpl.html';
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
-            $('body').append(template({metric: metricData}));
+            $('body').append(template({
+                metric: metricData,
+                periodUnit: getPeriodUnitData()
+            }));
             openDialog();
         });
+    }
+
+    function getPeriodUnitData() {
+        return [
+            {
+                id: 'd',
+                label: 'day(s)'
+            },
+            {
+                id: 'w',
+                label: 'week(s)'
+            }
+        ];
     }
 
     function openDialog() {
@@ -167,9 +183,9 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
             modal: true,
             dialogClass: "no-close",
             closeOnEscape: false,
-            width: 400,
-            minwidth: 400,
-            height: 230,
+            width: 600,
+            // minwidth: 600,
+            height: 400,
             buttons : [
                 {
                     id: dialogContainerId + '-cancel-button',
@@ -197,8 +213,9 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
         });
 
         $('#metric').change(function() {
-            $('#message').removeClass();
-            $('#message').text('');
+            $('#anomaly-editor').find('.message')
+                .removeClass()
+                .text('');
         });
     }
 
@@ -209,8 +226,9 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
             {'related_metric_id': $('#metric').val()},
             function(data) {
                 if (data.length > 0) {
-                    $('#message').addClass('error');
-                    $('#message').text('This service metric is already used.');
+                    $('#anomaly-editor').find('.message')
+                        .addClass('error')
+                        .text('This service metric is already used.');
                 } else {
                     createMetric();
                 }
@@ -219,14 +237,43 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
     }
 
     function createMetric() {
+        var period = $('#period').val();
+        if (period) {
+            switch ($('#period-unit').val()) {
+                case 'd':
+                    period *= 60 * 60 * 24;
+                    break;
+                case 'w':
+                    period *= 60 * 60 * 24 * 7;
+                    break;
+            }
+        }
+
         var fields = {
             metric: $('#metric').val(),
+            params: {
+                'window': $('#window').val(),
+                'period': period,
+                'num_periods': $('#num-period').val()
+            }
         }
+
+        // var data = {
+        //     'related_metric_id': fields.metric,
+        //     'window': $('#window').val(),
+        //     'period': period,
+        //     'num_periods': $('#num-period').val()
+        //     };
+
         $.ajax({
             url: '/api/anomaly',
             type: 'POST',
             data: {
-                'related_metric_id': fields.metric
+                'related_metric_id': fields.metric,
+                // 'params': JSON.stringify(fields.params)
+                'window': $('#window').val(),
+                'period': period,
+                'num_periods': $('#num-period').val()
             },
             success: function() {
                 $('#' + gridId).trigger('reloadGrid');

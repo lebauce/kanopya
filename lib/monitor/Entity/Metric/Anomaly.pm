@@ -62,6 +62,21 @@ The (key,value) (store,'rrd') is added to the args
 sub new {
     my ($class, %args) = @_;
     $args{store} = 'rrd';
+    my @managed_params = ('period', 'window', 'num_periods' );
+
+    use Data::Dumper;
+    $log->info(Dumper \%args);
+    for my $managed_param (@managed_params) {
+        if (defined $args{$managed_param}) {
+
+            $log->info($managed_param . ' is defined');
+            $args{params}->{$managed_param} = $args{$managed_param};
+	    delete $args{$managed_param};
+            $log->info('deleted ' . $managed_param);
+        }
+    }
+
+    $log->info(Dumper \%args);
     return $class->SUPER::new(%args);
 }
 

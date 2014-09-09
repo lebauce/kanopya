@@ -49,6 +49,7 @@ sub new {
     my ($class, %args) = @_;
     
     my $params = $args{params} || {};
+    $log->info($params);
     delete $args{params};
 
     if (defined $args{store}) {

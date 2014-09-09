@@ -1,5 +1,5 @@
 @errorColor: #b94a48;
-@errorBackgroundColorr: #F9F2F4;
+@errorBackgroundColor: #F9F2F4;
 
 @lineColor: #cccccc;
 
@@ -22,7 +22,7 @@
 
 .dialog-container .line {
     height: 1px;
-    background-color: #cccccc;
+    background-color: @lineColor;
 }
 
 .dialog-container button:hover {
@@ -39,12 +39,12 @@
 }
 
 .dialog-container .background-error {
-    background-color: @errorBackgroundColorr !important;
+    background-color: @errorBackgroundColor !important;
 }
 
 .dialog-container .field-error {
     border: 1px solid @errorColor !important;
-    background-color: @errorBackgroundColorr !important;
+    background-color: @errorBackgroundColor !important;
 }
 
 /*
@@ -179,7 +179,7 @@
  * Anomaly detector editor (anomaly-editor.tmpl.html)
  */
 
-@anomalyInputWidth: 150px;
+@anomalyInputWidth: 140px;
 @anomalyOptionsPadding: 10px;
 
 #anomaly-identity {
@@ -188,16 +188,31 @@
         text-align: right;
         width: @anomalyInputWidth + @anomalyOptionsPadding;
     }
-
-    input[type=text] {
-        width: 40px;
-    }
 }
 
 #anomaly-options {
     border: 1px solid @lineColor;
     padding: @anomalyOptionsPadding;
+
     label {
         width: @anomalyInputWidth;
     }
+
+    input[type=text] {
+        width: 40px;
+        text-align: right;
+    }
+}
+
+#anomaly-options .title {
+    font-size: 120%;
+    color: #cccccc;
+}
+
+#anomaly-editor .error {
+    margin: 3px 0 0 145px;
+}
+
+#metric-error {
+    margin: 3px 0 0 155px !important;
 }
