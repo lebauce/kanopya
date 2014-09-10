@@ -235,8 +235,14 @@ sub getManagerParamsDef {
             pattern      => '^.*$',
             is_mandatory => 1
         },
-        tenant => {
-            label        => 'Tenant',
+        hosting_tenant => {
+            label        => 'Project',
+            type         => 'enum',
+            pattern      => '^.*$',
+            is_mandatory => 1
+        },
+        network_tenant => {
+            label        => 'Project',
             type         => 'enum',
             pattern      => '^.*$',
             is_mandatory => 1
@@ -246,7 +252,7 @@ sub getManagerParamsDef {
             type         => 'enum',
             is_mandatory => 1,
             # TODO:  Get the enum options from the available synchronized backend
-            options      => [ 'NFS', 'iSCSI', 'RADOS' ]
+            options      => [ 'NFS' ]
         },
         repository   => {
             is_mandatory => 1,
@@ -292,13 +298,13 @@ sub getHostManagerParams {
     $zones->{options} = \@zone_names;
 
     my @tenant_names = keys %{$pp->{tenants_name_id}};
-    my $tenants = $params->{tenant};
+    my $tenants = $params->{hosting_tenant};
     $tenants->{options} = \@tenant_names;
 
     my $hash = {
         flavor => $flavors,
         availability_zone => $zones,
-        tenant => $tenants,
+        hosting_tenant => $tenants,
     };
 
     return $hash;
@@ -318,7 +324,7 @@ Check parameters that will be given to the VirtualMachineManager api methods.
 sub checkHostManagerParams {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'flavor', 'availability_zone', 'tenant' ]);
+    General::checkParams(args => \%args, required => [ 'flavor', 'availability_zone', 'hosting_tenant' ]);
 }
 
 
@@ -373,13 +379,13 @@ sub getNetworkManagerParams {
     my $pp = $self->param_preset->load;
 
     my @tenant_names = keys %{$pp->{tenants_name_id}};
-    my $tenants = $params->{tenant};
+    my $tenants = $params->{network_tenant};
     $tenants->{options} = \@tenant_names;
     $tenants->{reload} = 1;
 
-    my $hash = { tenant => $tenants };
-    if (defined $args{params}->{tenant}) {
-        my $tenant_id = $pp->{tenants_name_id}->{$args{params}->{tenant}};
+    my $hash = { network_tenant => $tenants };
+    if (defined $args{params}->{network_tenant}) {
+        my $tenant_id = $pp->{tenants_name_id}->{$args{params}->{network_tenant}};
 
         my $subnets = $self->getManagerParamsDef->{subnets};
         for my $network_id (@{ $pp->{tenants}->{$tenant_id}->{networks} }) {
