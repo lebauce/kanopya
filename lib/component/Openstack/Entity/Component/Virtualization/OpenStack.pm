@@ -359,6 +359,14 @@ sub checkStorageManagerParams {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'volume_type' ]);
+
+    # Workaround: Add a dummy boot_policy to fix missing boot_policy when
+    #             when storage manager is not the HCMStorageManager.
+    # TODO: Make the param boot_policy required for the HCMDeploymenytManager boot manager params
+    $args{boot_policy} = 'Boot from Glance Image';
+
+    return \%args;
+
 }
 
 
