@@ -136,6 +136,17 @@ sub new {
     # Initialize the param preset entry used to store available configuration
     $self->param_preset(ParamPreset->new());
 
+    # Try to connect to the api to do not register the componnet if connexion infos are eroneous
+    try {
+        $self->_api;
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Unable to connect to the OpenStack keystone service, " .
+                           "please check your connexion informations."
+              );
+    }
+
     return $self;
 }
 
