@@ -212,68 +212,100 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
             }
         });
 
-        $('#metric').change(function() {
-            $('#anomaly-editor').find('.message')
-                .removeClass()
-                .text('');
+        $('#anomaly-editor').find('input, select').change(function() {
+            var element = $('#' + $(this).attr('id') + '-error');
+            element.remove();
         });
     }
 
-    // Check if the new anomaly already exists
     function validateMetric() {
-        $.getJSON(
-            '/api/anomaly',
-            {'related_metric_id': $('#metric').val()},
-            function(data) {
+
+        var errorCount = 0;
+
+        $.ajax({
+            url: '/api/anomaly',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                'related_metric_id': $('#metric').val()
+            },
+            async: false,
+            success: function(data) {
                 if (data.length > 0) {
-                    $('#anomaly-editor').find('.message')
-                        .addClass('error')
-                        .text('This service metric is already used.');
-                } else {
-                    createMetric();
+                    errorCount += 1;
+                    displayError('metric', 'This service metric is already used.');
                 }
             }
-        );
+        });
+
+        var fieldIdList = [
+            'window',
+            'period',
+            'period-count'
+        ];
+        var re = /^\d+$/;
+        var value;
+        for (var i = 0; i < fieldIdList.length; i++) {
+            value = $('#' + fieldIdList[i]).val();
+            if (value !== '' && re.test(value) === false) {
+                errorCount += 1;
+                displayError(fieldIdList[i], 'This value must be an integer.');
+            }
+        }
+
+        if (errorCount === 0) {
+            createMetric();
+        }
+    }
+
+    function displayError(fieldId, errorMessage) {
+        var element = $('#' + fieldId + '-error');
+        if (element.length === 0) {
+            var html = '<div id="' + fieldId + '-error" class="error">' + errorMessage + '</div>';
+            $('#' + fieldId).parent().append(html);
+        }
     }
 
     function createMetric() {
-        var period = $('#period').val();
-        if (period) {
+
+        var value, list;
+        var field = {
+            'metric': $('#metric').val(),
+        };
+
+        value = $('#period').val();
+        if (value) {
             switch ($('#period-unit').val()) {
                 case 'd':
-                    period *= 60 * 60 * 24;
+                    value *= 60 * 60 * 24;
                     break;
                 case 'w':
-                    period *= 60 * 60 * 24 * 7;
+                    value *= 60 * 60 * 24 * 7;
                     break;
             }
         }
+        field.period = value;
 
-        var fields = {
-            metric: $('#metric').val(),
-            params: {
-                'window': $('#window').val(),
-                'period': period,
-                'num_periods': $('#num-period').val()
-            }
+        value = $('#window').val();
+        if (value) {
+            value = parseInt(value, 10);
         }
+        field.window = value;
 
-        // var data = {
-        //     'related_metric_id': fields.metric,
-        //     'window': $('#window').val(),
-        //     'period': period,
-        //     'num_periods': $('#num-period').val()
-        //     };
+        value = $('#period-count').val();
+        if (value) {
+            value = parseInt(value, 10);
+        }
+        field.periodCount = value;
 
         $.ajax({
             url: '/api/anomaly',
             type: 'POST',
             data: {
-                'related_metric_id': fields.metric,
-                // 'params': JSON.stringify(fields.params)
-                'window': $('#window').val(),
-                'period': period,
-                'num_periods': $('#num-period').val()
+                'related_metric_id': field.metric,
+                'window': field.window,
+                'period': field.period,
+                'num_periods': field.periodCount
             },
             success: function() {
                 $('#' + gridId).trigger('reloadGrid');
