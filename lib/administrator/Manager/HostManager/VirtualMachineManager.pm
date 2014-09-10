@@ -284,10 +284,10 @@ sub promoteVm {
 
 sub selectHypervisor {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'resources' ]);
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
 
     my $cm = CapacityManagement->new(cloud_manager => $self);
-    return $cm->getHypervisorIdForVM(%args);
+    return $cm->getHypervisorIdForVM(resources => {ram => $args{ram}, cpu => $args{core}});
 }
 
 

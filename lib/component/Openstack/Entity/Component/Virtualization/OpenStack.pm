@@ -433,10 +433,24 @@ sub getFreeHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args,
-                         required => [ 'subnets', 'flavor', 'availability_zone', 'tenant' ]);
+                         required => [ 'subnets', 'flavor' ]);
 
     try {
-        return $self->createVirtualHost(ifaces => scalar(@{ [ $args{subnets} ] }), %args);
+        my $flavors = $self->param_preset->load->{flavors};
+        my $ram;
+        my $core;
+        while (my ($flavor_id, $flavor) = each(%$flavors)) {
+            if ($flavor->{name} eq $args{flavor}) {
+                $ram = $flavor->{ram} * 1024 * 1024;
+                $core = $flavor->{vcpus};
+            }
+        }
+
+        return $self->createVirtualHost(
+                   ifaces => scalar(@{ [ $args{subnets} ] }),
+                   ram => $ram,
+                   core => $core,
+               );
     }
     catch ($err) {
         # We can't create virtual host for some reasons (e.g can't meet constraints)
@@ -1030,6 +1044,22 @@ sub getHypervisorVMs {
     };
 }
 
+
+sub selectHypervisor {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'flavor' ]);
+    my $flavors = $self->param_preset->load->{flavors};
+    my $ram;
+    my $core;
+    while (my ($flavor_id, $flavor) = each(%$flavors)) {
+        if ($flavor->{name} eq $args{flavor}) {
+            $ram = $flavor->{ram} * 1024 * 1024;
+            $core = $flavor->{vcpus};
+        }
+    }
+    my $cm = CapacityManagement->new(cloud_manager => $self);
+    return $cm->getHypervisorIdForVM(resources => {ram => $ram, cpu => $core});
+}
 
 sub postStart {
     my ($self, %args) = @_;
