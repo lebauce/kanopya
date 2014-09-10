@@ -182,9 +182,7 @@ sub prerequisites {
     my $hypervisor_id = undef;
 
     try {
-        $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(
-                            resources => {ram => $params->{ram}, cpu => $params->{core}}
-                         );
+        $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(%{ $params })
     }
     catch (Kanopya::Exception::NotImplemented $err) {
         # Physical
