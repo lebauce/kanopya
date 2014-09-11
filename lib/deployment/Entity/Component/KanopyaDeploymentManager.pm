@@ -319,7 +319,7 @@ sub releaseNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'boot_manager_id' ],
+                         required => [ 'node', 'boot_manager_id', 'network_manager' ],
                          optional => { 'workflow' => undef });
 
     return $self->executor_component->run(
@@ -329,6 +329,7 @@ sub releaseNode {
                    context => {
                        deployment_manager => $self,
                        boot_manager       => Entity::Component->get(id => delete $args{boot_manager_id}),
+                       network_manager    => delete $args{network_manager},
                        node               => delete $args{node},
                    },
                },
