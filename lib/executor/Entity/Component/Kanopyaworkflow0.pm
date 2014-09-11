@@ -33,15 +33,17 @@ use base 'Manager::WorkflowManager';
 
 use strict;
 use warnings;
+
 use General;
 use Kanopya::Exceptions;
 use Entity::Host;
+use WorkflowStep;
 
+use TryCatch;
 use Hash::Merge qw( merge);
 use Log::Log4perl 'get_logger';
-use WorkflowStep;
+
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {};
 
@@ -103,11 +105,20 @@ sub _getAutomaticValues{
 
         # Workaround: We asume that the workflow is a AddNode
         $automatic_params->{context}->{service_manager} = $service_provider->service_manager;
-        $automatic_params->{context}->{storage_manager}
-            = $service_provider->getManager(manager_type => 'StorageManager');
-        $automatic_params->{context}->{host_manager}
-            = $service_provider->getManager(manager_type => 'HostManager');
-
+        try {
+            $automatic_params->{context}->{storage_manager}
+                = $service_provider->getManager(manager_type => 'StorageManager');
+        }
+        catch {
+            # No manager of type StorageManager
+        }
+        try {
+            $automatic_params->{context}->{host_manager}
+                = $service_provider->getManager(manager_type => 'HostManager');
+        }
+        catch ($err) {
+            # No manager of type HostManager
+        }
     }
 
     return $automatic_params;

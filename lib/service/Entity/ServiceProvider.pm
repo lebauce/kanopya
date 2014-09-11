@@ -361,15 +361,21 @@ sub getState {
 }
 
 sub getManager {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = $self->findRelated(filters => [ 'service_provider_managers' ],
-                                             custom  => { category => $args{manager_type} });
-
-    return $cluster_manager->manager;
+    try {
+        my $cluster_manager = $self->find(related => 'service_provider_managers',
+                                          custom  => { category => $args{manager_type} });
+        return $cluster_manager->manager;
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Service provider <" . $self->label .
+                           "> do not have manager of type $args{manager_type}."
+              );
+    }
 }
 
 sub getNodes {
