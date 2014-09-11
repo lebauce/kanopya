@@ -933,7 +933,7 @@ sub configureNetworkInterfaces {
         my $iface = shift(@ifaces);
         $log->info('Assign iface ' . $iface->iface_name . ' with ip <' .
                    $port->{port}->{fixed_ips}->[0]->{ip_address} . '> and mac <' .
-                   $port->{port}->{mac_address}) . '>';
+                   $port->{port}->{mac_address} . '>');
 
         $iface->assignIp(ip_addr => $port->{port}->{fixed_ips}->[0]->{ip_address});
         $iface->iface_mac_addr($port->{port}->{mac_address});
