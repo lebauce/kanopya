@@ -261,8 +261,9 @@ sub finish {
     # Merge all manager parameters for the deployment manager
     my $managers_params = $self->{context}->{cluster}->getManagerParameters();
     $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager')->releaseNode(
-        node         => $self->{context}->{host}->node,
-        workflow     => $self->workflow,
+        node            => $self->{context}->{host}->node,
+        workflow        => $self->workflow,
+        network_manager => $self->{context}->{cluster}->getManager(manager_type => 'NetworkManager'),
         %{ $managers_params }
     );
 

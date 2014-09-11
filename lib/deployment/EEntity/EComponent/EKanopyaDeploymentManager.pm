@@ -266,11 +266,11 @@ sub unconfigureNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'boot_manager' ]);
+                         required => [ 'node', 'boot_manager', 'network_manager' ]);
 
     # Ask to the boot manager to remove the node from the boot system
     $args{boot_manager}->configureBoot(node => $args{node}, remove => 1);
-    $args{boot_manager}->unconfigureNetworkInterface(node => $args{node});
+    $args{network_manager}->unconfigureNetworkInterface(node => $args{node});
 }
 
 
