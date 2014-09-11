@@ -742,6 +742,15 @@ sub getParams {
 }
 
 
+sub getParamsFromPattern {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'pattern' ] );
+
+    return $args{pattern};
+}
+
+
 =pod
 =begin classdoc
 
