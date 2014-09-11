@@ -100,6 +100,14 @@ sub _getAutomaticValues{
     if (exists $automatic_params->{context}->{cluster}) {
         my $service_provider = Entity->get(id => $args{service_provider_id});
         $automatic_params->{context}->{cluster} = $service_provider;
+
+        # Workaround: We asume that the workflow is a AddNode
+        $automatic_params->{context}->{service_manager} = $service_provider->service_manager;
+        $automatic_params->{context}->{storage_manager}
+            = $service_provider->getManager(manager_type => 'StorageManager');
+        $automatic_params->{context}->{host_manager}
+            = $service_provider->getManager(manager_type => 'HostManager');
+
     }
 
     return $automatic_params;
