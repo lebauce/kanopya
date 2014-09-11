@@ -101,7 +101,7 @@ sub prerequisites {
 
     my $cm  = CapacityManagement->new(cloud_manager => $self->{context}->{cloudmanager_comp});
 
-    my $operation_plan = $cm->optimIaas();
+    my $operation_plan = $cm->optimIaas(policy => $self->{params}->{policy});
 
     my $num_op = 0;
     for my $operation (@$operation_plan){

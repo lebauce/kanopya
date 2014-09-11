@@ -83,7 +83,10 @@ sub main {
     test_migration_authorization();
     test_scale_memory();
     test_scale_cpu();
-    test_optimiaas();
+    test_optimiaas_stack();
+    test_optimiaas_spread();
+    test_strict_affinity();
+    test_affinity_weights();
     test_flushhypervisor();
     test_resubmit();
     test_flushhypervisor_need_csp();
@@ -376,12 +379,6 @@ sub test_hypervisor_selection {
             die 'wrong vm placement';
         }
 
-        %wanted_values = (cpu => 1, ram => 1*$coef);
-
-        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 1) {
-            die 'wrong vm placement';
-        }
-
         %wanted_values = (cpu => 1, ram => 8*$coef);
         if (defined $cm->getHypervisorIdForVM(resources => \%wanted_values)) {
             die 'wrong vm placement';
@@ -558,6 +555,57 @@ sub _getTestInfraForOptimiaas {
     return  $infra;
 }
 
+sub _getTestInfraForOptimiaasSpread {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 1},
+            $vms[1]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 1},
+            $vms[2]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 1},
+            $vms[3]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 4},
+            $vms[4]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 4},
+            $vms[5]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 4},
+            $vms[6]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 6},
+            $vms[7]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 7},
+            $vms[8]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 2},
+            $vms[9]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 2},
+        },
+
+        hvs => {
+            1 => {resources => {cpu => 10,ram => 4.0*$coef}},
+            2 => {resources => {cpu => 10,ram => 4.0*$coef}},
+            3 => {resources => {cpu => 10,ram => 4.0*$coef}},
+            4 => {resources => {cpu => 10,ram => 4.0*$coef}},
+            5 => {resources => {cpu => 20,ram => 8.0*$coef}},
+            6 => {resources => {cpu => 20,ram => 8.0*$coef}},
+            7 => {resources => {cpu => 20,ram => 8.0*$coef}},
+        },
+    };
+
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
+    return  $infra;
+}
+
+sub _getTestInfraForAffinity {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 1},
+            $vms[1]->id => {resources => {cpu => 2, ram => 2*$coef}, hv_id => 2},
+        },
+
+        hvs => {
+            1 => {resources => {cpu => 10,ram => 4.0*$coef}},
+            2 => {resources => {cpu => 10,ram => 4.0*$coef}},
+        },
+    };
+
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
+    return  $infra;
+}
+
 sub getTestInfraForScaling {
 
     my $infra = {
@@ -628,7 +676,7 @@ sub test_scale_cpu {
     } 'Scale cpu algorithms'
 }
 
-sub test_optimiaas {
+sub test_optimiaas_stack {
 
     my %waited_migrations;
     my $cm;
@@ -644,7 +692,6 @@ sub test_optimiaas {
             die 'Wrong operation number after optimiaas'
         }
 
-
         for my $operation (@{$operations}) {
             if ( not (
                 $operation->{type} eq 'MigrateHost'
@@ -653,7 +700,109 @@ sub test_optimiaas {
                 die 'Error in optimiaas - Check migration '.($vm_index{$operation->{params}->{context}->{vm}->id});
             }
         }
-    } 'Optimiaas';
+    } 'Optimiaas (stack)';
+}
+
+sub test_optimiaas_spread {
+
+    my %waited_migrations;
+    my $infra;
+    my $cm;
+
+    lives_ok {
+        $infra = _getTestInfraForOptimiaasSpread();
+        $cm    = $cm_class->new(infra=>$infra);
+
+        my $operations = $cm->optimIaas(policy => "spread");
+
+        my $hv_selected_ids = $cm->_separateEmptyHvIds()->{hv_ids};
+        for my $hv_index_s (@{$hv_selected_ids}) {
+            if ($cm->_getOccupancyRate(hv_index => $hv_index_s) != 0.25) {
+                die 'Wrong occupation ratio after optimiaas (spread)'
+            }
+        }
+
+    } 'Optimiaas (spread)';
+}
+
+sub test_strict_affinity {
+
+    my %waited_migrations;
+    my $infra;
+    my $cm;
+
+    lives_ok {
+        $infra = _getTestInfraForAffinity();
+        $cm    = $cm_class->new(infra=>$infra);
+
+        my @hv_ids;
+        for my $hv_index (keys %{$infra->{hvs}}) {
+            push @hv_ids, $hv_index;
+        }
+
+        my @strict_affinity = ($vms[0]->id);
+        my $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids => \@hv_ids,
+                            resources        => {cpu => 1, ram => 1*$coef},
+                            strict_affinity  => \@strict_affinity,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under strict affinity constraint'
+        }
+
+        my @strict_anti_affinity = ($vms[1]->id);
+        $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids     => \@hv_ids,
+                            resources            => {cpu => 1, ram => 1*$coef},
+                            strict_anti_affinity => \@strict_anti_affinity,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under strict anti-affinity constraint'
+        }
+
+    } 'Strict affinity/anti-affinity';
+}
+
+sub test_affinity_weights {
+
+    my %waited_migrations;
+    my $infra;
+    my $cm;
+
+    lives_ok {
+        $infra = _getTestInfraForAffinity();
+        $cm    = $cm_class->new(infra=>$infra);
+
+        my @hv_ids;
+        for my $hv_index (keys %{$infra->{hvs}}) {
+            push @hv_ids, $hv_index;
+        }
+
+        my %affinity_weights = ($vms[0]->id => -1);
+        my $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids => \@hv_ids,
+                            resources        => {cpu => 1, ram => 1*$coef},
+                            affinity_weights => \%affinity_weights,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under soft affinity constraint'
+        }
+
+        %affinity_weights = ($vms[1]->id => 1);
+        $result = $cm->_findMinHVidRespectCapa(
+                            hv_selection_ids => \@hv_ids,
+                            resources        => {cpu => 1, ram => 1*$coef},
+                            affinity_weights => \%affinity_weights,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'Wrong placement under soft anti-affinity constraint'
+        }
+
+    } 'Affinity weights';
 }
 
 sub test_scale_memory {

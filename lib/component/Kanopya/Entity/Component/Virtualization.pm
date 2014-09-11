@@ -69,14 +69,21 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF };
 
 sub optimiaas {
-    my $self = shift;
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        optional => {
+            policy => 'stack',
+        }
+    );
 
     $self->executor_component->run(
         name   => 'OptimiaasWorkflow',
         params => {
             context => {
                 cloudmanager_comp => $self,
-            }
+            },
+            policy => $args{policy},
         }
     );
 
