@@ -99,9 +99,9 @@ sub remove {
                          optional => { 'keep_systemimages' => 0, 'erollback' => undef });
 
     # Check if cluster is active
-    if ($self->active) {
-        throw Kanopya::Exception::Internal(error => "Cluster <" . $self->label . "> is active");
-    }
+    # if ($self->active) {
+    #     throw Kanopya::Exception::Internal(error => "Cluster <" . $self->label . "> is active");
+    # }
 
     # Delete the cluster remaning systemimages
     try {
