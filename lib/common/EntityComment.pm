@@ -46,9 +46,8 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     entity_comment => {
-        pattern => '^.{0,255}$',
+        pattern => '.*',
         is_mandatory => 1,
-        is_extended => 0
     },
 };
 

@@ -49,7 +49,7 @@ CREATE TABLE `class_type` (
 
 CREATE TABLE `entity_comment` (
   `entity_comment_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `entity_comment` char(255) DEFAULT NULL,
+  `entity_comment` TEXT DEFAULT NULL,
   PRIMARY KEY (`entity_comment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
