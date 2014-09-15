@@ -84,63 +84,7 @@ Check if the cluster is stable.
 
 sub prepare {
     my ($self, %args) = @_;
-
-    # Check cluster states
-    my @entity_states = $self->{context}->{cluster}->entity_states;
-
-    for my $entity_state (@entity_states) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The cluster <"
-                           .$self->{context}->{cluster}->cluster_name
-                           .'> is <'.$entity_state->state
-                           .'> which is not a correct state to accept stopNode'
-              );
-    }
-
-    # Check host manager sp states
-    @entity_states = (defined $self->{context}->{host_manager_sp}) ?
-                         $self->{context}->{host_manager_sp}->entity_states :
-                         ();
-
-    for my $entity_state (@entity_states) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The host manager cluster <"
-                           .$self->{context}->{host_manager_sp}->cluster_name
-                           .'> is <'.$entity_state->state
-                           .'> which is not a correct state to accept stopNode'
-              );
-    }
-
-
-    # Check the cluster state
-    $self->{context}->{cluster} = $self->{context}->{cluster}->reload;
-    my ($state, $timestamp) = $self->{context}->{cluster}->getState;
-    $log->debug("Cluster state <$state>");
-
-    if (not (($state eq 'up') || ($state eq 'down') || ($state eq 'stopping'))) {
-        $log->debug("State is <$state> which is an invalid state");
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The cluster <" . $self->{context}->{cluster} .
-                           "> has to be <starting|down|stopping>, not <$state>"
-              );
-    }
-    $self->{context}->{cluster}->setState(state => 'updating');
-
-    # Check the openstack state
-
-    if (defined $self->{context}->{host_manager_sp}) {
-        my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
-        if (not ($hv_state eq 'up')) {
-            throw Kanopya::Exception::Execution::InvalidState(
-                      error => "The hypervisor cluster <" . $self->{context}->{host_manager_sp}->cluster_name .
-                               "> has to be <up>, not <$hv_state>"
-                  );
-        }
-        $self->{context}->{host_manager_sp}->setState(state => 'updating');
-        $self->{context}->{host_manager_sp}->setConsumerState(state => 'stopping', consumer => $self->workflow);
-    }
-
-    $self->{context}->{cluster}->setConsumerState(state => 'stopping', consumer => $self->workflow);
+    $self->{context}->{host_manager}->increaseConsumers(operation => $self);
 }
 
 
@@ -255,8 +199,6 @@ Set host state
 sub finish {
     my ($self, %args) = @_;
 
-    $self->{context}->{host}->setConsumerState(state => 'stopping', consumer => $self->workflow);
-
     # Ask to the deployment manager t release the node
     # Merge all manager parameters for the deployment manager
     my $managers_params = $self->{context}->{cluster}->getManagerParameters();
@@ -266,7 +208,7 @@ sub finish {
         network_manager => $self->{context}->{cluster}->getManager(manager_type => 'NetworkManager'),
         %{ $managers_params }
     );
-
+    $self->{context}->{host_manager}->decreaseConsumers(operation => $self);
     return 0;
 }
 
@@ -287,15 +229,7 @@ sub cancel {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
     }
 
-    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
-
-    if (defined $self->{context}->{host_manager_sp}) {
-        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
-    }
-
-    if (defined $self->{context}->{host}) {
-        $self->{context}->{host}->removeState(consumer => $self->workflow);
-    }
+    $self->{context}->{host_manager}->decreaseConsumers(operation => $self);
 }
 
 1;

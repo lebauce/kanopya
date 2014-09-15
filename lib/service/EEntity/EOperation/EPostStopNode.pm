@@ -170,13 +170,7 @@ sub finish {
 
     if (defined $self->{context}->{host_manager_sp}) {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
-        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
         delete $self->{context}->{host_manager_sp};
-    }
-
-    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
-    if (! $self->{context}->{host}->isa("EEntity::EHost::EVirtualMachine")) {
-        $self->{context}->{host}->removeState(consumer => $self->workflow);
     }
 }
 
