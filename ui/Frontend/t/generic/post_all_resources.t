@@ -162,7 +162,8 @@ my @skip_resources = (
     'netappaggregate',
     'netapplun',
     'netappvolume',
-    'unifiedcomputingsystem'
+    'unifiedcomputingsystem',
+    'openstack' # Need an existing openstack instalation and proper credentials
 );
 
 # Some regexp can not be correctly parsed and bad value are generated, so we fix it
