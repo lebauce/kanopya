@@ -128,6 +128,8 @@ sub finish {
         return 0;
     }
 
+    $self->{context}->{host_manager}->removeState(consumer => $self->workflow);
+
     # Add another node in a embedded workflow if required
     my @nodes = $self->{context}->{cluster}->nodes;
     if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
@@ -143,21 +145,14 @@ sub finish {
     # Set the cluster up instead
     else {
         $self->{context}->{cluster}->setState(state => "up");
-        $self->{context}->{cluster}->removeState(consumer => $self->workflow);
     }
 
     if (defined $self->{context}->{host_manager_sp}) {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
-        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
         delete $self->{context}->{host_manager_sp};
     }
 
-    $self->{context}->{node}->host->removeState(consumer => $self->workflow);
 
-    # Add state to hypervisor if defined
-    if (defined $self->{context}->{hypervisor}) {
-        $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
-    }
 
     # WARNING: Do NOT delete $self->{context}->{host}, required in workflow addNode + VM migration
 }

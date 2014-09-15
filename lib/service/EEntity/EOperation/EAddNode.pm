@@ -96,8 +96,8 @@ sub prepare {
     my ($self, %args) = @_;
 
     # Ask to the manager if we can use them
-    $self->{context}->{host_manager}->increaseConsumers();
-    $self->{context}->{storage_manager}->increaseConsumers();
+    $self->{context}->{host_manager}->increaseConsumers(operation => $self);
+    $self->{context}->{storage_manager}->increaseConsumers(operation => $self);
 
     # $self->{params}->{needhypervisor} comes from the case of automatic hypervisor scaleout when
     # infrastructure needs more space
@@ -107,63 +107,15 @@ sub prepare {
         return 0;
     }
 
-    # Check cluster states
-    # TODO: Definitely clean the entity states mechanism
-    my $updating_in_workflow;
-    my @entity_states = $self->{context}->{cluster}->entity_states;
-    for my $entity_state (@entity_states) {
-        # The only authorized state is 'updating' by the current workflow, that correspond to
-        # a multi node StartCluster workflow.
-        if ($entity_state->consumer->id == $self->workflow->id && $entity_state->state eq 'updating') {
-            $updating_in_workflow = 1;
-        }
-        else {
-            throw Kanopya::Exception::Execution::InvalidState(
-                      error => "The cluster <"
-                               .$self->{context}->{host_manager}->service_provider->cluster_name
-                               .'> is <'.$entity_state->state
-                               .'> which is not a correct state to accept addnode'
-                  );
-        }
-    }
-
     # Check the cluster state
     my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
-    if (! ($state eq 'up' || $state eq 'down' || ($state eq 'updating' && $updating_in_workflow))) {
+    if (! ($state eq 'up' || $state eq 'down' )) {
         $log->debug("State is <$state> which is an invalid state");
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster}->cluster_name .
-                           "> has to be <up|down|updating (by current workflow only)> not <$state>"
+                           "> has to be <up|down> not <$state>"
               );
     }
-
-    if (defined $self->{context}->{host_manager_sp}) {
-        # Check cluster states
-        my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
-
-        for my $entity_state (@entity_states) {
-            throw Kanopya::Exception::Execution::InvalidState(
-                      error => "The iaas cluster <"
-                               .$self->{context}->{host_manager_sp}->cluster_name
-                               .'> is <'.$entity_state->state
-                               .'> which is not a correct state to accept addnode'
-                  );
-        }
-
-        my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
-        if (not ($hv_state eq 'up')) {
-            $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
-            throw Kanopya::Exception::Execution::InvalidState(
-                      error => "The hypervisor cluster <" . $self->{context}->{host_manager_sp}->cluster_name .
-                               "> has to be <up>, not <$hv_state>"
-                  );
-        }
-        $self->{context}->{host_manager_sp}->setState(state => 'updating');
-        $self->{context}->{host_manager_sp}->setConsumerState(state => 'updating', consumer => $self->workflow);
-    }
-
-    $self->{context}->{cluster}->setState(state => 'updating');
-    $self->{context}->{cluster}->setConsumerState(state => 'updating', consumer => $self->workflow);
 }
 
 
@@ -408,16 +360,10 @@ sub finish {
     my ($self, %args) = @_;
 
     $self->{context}->{host}->setState(state => "locked");
-    $self->{context}->{host}->setConsumerState(state => 'adding', consumer => $self->workflow);
-
-    # Add state to hypervisor if defined
-    if (defined $self->{context}->{hypervisor}) {
-        $self->{context}->{hypervisor}->setConsumerState(state => 'scaleout', consumer => $self->workflow);
-    }
 
     # Release managers
-    $self->{context}->{host_manager}->decreaseConsumers();
-    $self->{context}->{storage_manager}->decreaseConsumers();
+    $self->{context}->{host_manager}->decreaseConsumers(operation => $self);
+    $self->{context}->{storage_manager}->decreaseConsumers(operation => $self);
 }
 
 
@@ -434,8 +380,8 @@ sub cancel {
 
     # If the managers has not been released at finish, decrease at cancel
     if ($self->state ne 'succeeded') {
-        $self->{context}->{host_manager}->decreaseConsumers();
-        $self->{context}->{storage_manager}->decreaseConsumers();
+        $self->{context}->{host_manager}->decreaseConsumers(operation => $self);
+        $self->{context}->{storage_manager}->decreaseConsumers(operation => $self);
     }
 
     if (defined $self->{params}->{needhypervisor}) {
@@ -445,29 +391,25 @@ sub cancel {
         $self->{context}->{cluster}->restoreState();
     }
 
-    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
+    $self->{context}->{host_manager}->removeState(consumer => $self->workflow);
 
     if (defined $self->{context}->{host_manager_sp}) {
         $log->debug('Remove host_manager sp <'.$self->{context}->{host_manager_sp}->id.'> state');
         $self->{context}->{host_manager_sp}->setState(state => 'up');
-        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
     }
 
     if (defined $self->{context}->{host}) {
         $log->debug('Remove host <'.$self->{context}->{host}->id.'> state');
         $self->{context}->{host}->setState(state => 'down');
-        $self->{context}->{host}->removeState(consumer => $self->workflow);
     }
 
     if (defined $self->{context}->{hypervisor}) {
         $log->debug('Remove hypervisor <'.$self->{context}->{hypervisor}->id.'> state');
-        $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
     }
 
     if (defined $self->{context}->{vm_cluster}) {
         $log->debug('Remove vm_cluster <'.$self->{context}->{vm_cluster}->id.'> state');
         $self->{context}->{vm_cluster}->setState(state => 'up');
-        $self->{context}->{vm_cluster}->removeState(consumer => $self->workflow);
     }
 
     if (defined $self->{context}->{host}->node) {
