@@ -673,6 +673,8 @@ sub getParams {
     my $presets = $self->param_preset;
     my $pattern = $presets ? $presets->load() : {};
 
+    $pattern = $self->getParamsFromPattern(pattern => $pattern);
+
     # Transform the policy configuration pattern to a flat hash
     ATTRIBUTE:
     for my $name (keys %$pattern) {
