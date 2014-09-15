@@ -33,39 +33,12 @@ my $errmsg;
 sub check {
     my ($self, %args) = @_;
     General::checkParams(args => $self->{context}, required => [ "cloudmanager_comp" ]);
-
-    # put hypervisor clusters in context in order to lock them in the prepare
-    $self->{context}->{host_manager_sp} = $self->{context}->{cloudmanager_comp}->service_provider;
 }
 
 
 sub prepare {
     my $self = shift;
-
-    # Check the IAAS cluster state
-    my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
-
-    for my $entity_state (@entity_states) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The iaas cluster <"
-                           .$self->{context}->{host_manager_sp}->cluster_name
-                           .'> is <'.$entity_state->state
-                           .'> which is not a correct state to launch optimiaas'
-              );
-    }
-
-
-    my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
-    if (not ($hv_state eq 'up')) {
-        $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The hypervisor cluster <" . $self->{context}->{host_manager_sp} .
-                           "> has to be <up>, not <$hv_state>"
-              );
-    }
-
-    $self->{context}->{host_manager_sp}->setState(state => 'optimizing');
-    $self->{context}->{host_manager_sp}->setConsumerState(state => 'optimizing', consumer => $self->workflow);
+    $self->{context}->{cloudmanager_comp}->increaseConsumers(operation => $self);
 }
 
 sub prerequisites {
@@ -127,17 +100,12 @@ sub prerequisites {
 sub finish {
     my $self = shift;
 
-    $self->{context}->{host_manager_sp}->setState(state => 'up');
-    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
-
-    delete $self->{context}->{host_manager_sp};
+    $self->{context}->{cloudmanager_comp}->decreaseConsumers(operation => $self);
     delete $self->{context}->{cloudmanager_comp};
 }
 
 sub cancel {
     my $self = shift;
-
-    $self->{context}->{host_manager_sp}->setState(state => 'up');
-    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
+    $self->finish;
 }
 1;

@@ -194,8 +194,8 @@ wrong_hv              : vms which are in the infrastructure and in the Kanopya D
 
 sub checkAllInfrastructureIntegrity {
     my $self = shift;
-    my $hypervisors = $self->hypervisors;
-    return $self->checkHypervisorsVMPlacementIntegrity(hypervisors => $hypervisors);
+    my @hypervisors = $self->hypervisors;
+    return $self->checkHypervisorsVMPlacementIntegrity(hypervisors => \@hypervisors);
 }
 
 
