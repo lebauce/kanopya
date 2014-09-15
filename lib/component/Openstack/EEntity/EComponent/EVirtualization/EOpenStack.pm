@@ -127,5 +127,15 @@ sub getVMDetails {
     return $self->_entity->getVMDetails(%args);
 }
 
+sub increaseConsumers {
+    my ($self, %args) = @_;
+    return $self->_entity->increaseConsumers(%args);
+}
+
+sub decreaseConsumers {
+    my ($self, %args) = @_;
+    return $self->_entity->decreaseConsumers(%args);
+}
+
 1;
 

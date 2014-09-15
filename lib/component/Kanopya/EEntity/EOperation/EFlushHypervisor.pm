@@ -40,46 +40,34 @@ my $errmsg;
 
 sub check {
     my $self = shift;
-    General::checkParams(args => $self->{context}, required => [ "flushed_hypervisor" ]);
+    General::checkParams(args => $self->{context}, required => [ "host" ]);
 
-    if (not $self->{context}->{flushed_hypervisor}->isa('EEntity::EHost::EHypervisor')) {
+    if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
         throw Kanopya::Exception(error => $error);
     }
 
-    $self->{context}->{cloud_manager}
-        = EEntity->new(data => $self->{context}->{flushed_hypervisor}->iaas);
-
-    $self->{context}->{cloud_manager_sp} = $self->{context}->{cloud_manager}->service_provider;
-
+    $self->{context}->{cloud_manager} = EEntity->new(
+                                            data => $self->{context}->{host}->iaas
+                                        );
 }
 
 
 sub prepare {
     my $self = shift;
-
-    my ($hv_state, $hv_timestamp) = $self->{context}->{cloud_manager_sp}->reload->getState;
-    if (not ($hv_state eq 'up')) {
-        $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The hypervisor cluster <" . $self->{context}->{cloud_manager_sp}->cluster_name .
-                           "> has to be <up>, not <$hv_state>"
-              );
-    }
-    $self->{context}->{cloud_manager_sp}->setState(state => 'flushing');
+    $self->{context}->{cloud_manager}->increaseConsumers(operation => $self);
 }
 
 
 sub prerequisites {
     my $self = shift;
 
-    # variable used in maintenance workflows
-    $self->{context}->{host_to_deactivate} = $self->{context}->{flushed_hypervisor};
-
     # First check of the hypervisor to flush
     my $diff_infra_db = $self->{context}
                              ->{cloud_manager}
-                             ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{flushed_hypervisor});
+                             ->checkHypervisorVMPlacementIntegrity(
+                                   host => $self->{context}->{host}
+                               );
 
     if (! $self->{context}->{cloud_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
 
@@ -103,7 +91,7 @@ sub prerequisites {
                  cloud_manager => $self->{context}->{cloud_manager},
              );
 
-    my $flushRes = $cm->flushHypervisor(hv_id => $self->{context}->{flushed_hypervisor}->id);
+    my $flushRes = $cm->flushHypervisor(hv_id => $self->{context}->{host}->id);
 
     my $hypervisors = {};
     for my $operation (@{$flushRes->{ operation_plan }}) {
@@ -136,7 +124,10 @@ sub prerequisites {
     }
 
     if ($flushRes->{num_failed} > 0) {
-        throw Kanopya::Exception(error => "The hypervisor ".$self->{context}->{flushed_hypervisor}->node->node_hostname." can't be flushed");
+        throw Kanopya::Exception(
+                  error => 'The hypervisor '
+                           . $self->{context}->{host}->node->node_hostname
+                           . ' can not be flushed');
     }
 
     my $num_op = 0;
@@ -149,42 +140,18 @@ sub prerequisites {
         );
     }
     return $num_op ? -1 : 0;
-
-#        $operation->{params}->{context}->{host_id} = $operation->{params}->{context}->{host}->id,
-#        $operation->{params}->{context}->{vm_id}  = $operation->{params}->{context}->{vm}->id,
-#    $self->{params}->{flushRes} = $flushRes->{operation_plan};
-
 }
 
 sub execute {
     my $self = shift;
-
-#    $log->info('Flush hypervisor '.$self->{context}->{flushed_hypervisor}->node->node_hostname);
-#
-#    for my $operation (@{$self->{params}->{flushRes}}) {
-#        $operation->{params}->{context}->{host} = Entity->get(id => $operation->{params}->{context}->{host_id}),
-#        delete $operation->{params}->{context}->{host_id};
-#
-#        $operation->{params}->{context}->{vm}  = Entity->get(id => $operation->{params}->{context}->{vm_id}),
-#        delete $operation->{params}->{context}->{vm_id};
-#
-#        $log->debug('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
-#        $self->workflow->enqueueNow(operation => $operation);
-#    }
 }
 
 sub finish {
     my $self = shift;
 
-    my ($hv_state, $hv_timestamp) = $self->{context}->{cloud_manager_sp}->reload->getState;
-
-    if ($hv_state eq 'flushing') {
-        $self->{context}->{cloud_manager_sp}->setState(state => 'up');
-    }
-
-    delete $self->{params}->{flushRes};
-    delete $self->{context}->{flushed_hypervisor};
-    delete $self->{context}->{host_manager_sp};
+    $self->{context}->{cloud_manager}->decreaseConsumers(operation => $self);
+    delete $self->{context}->{host};
+    delete $self->{context}->{cloud_manager};
 }
 
 
@@ -198,12 +165,7 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-
-    my ($hv_state, $hv_timestamp) = $self->{context}->{cloud_manager_sp}->reload->getState;
-
-    if ($hv_state eq 'flushing') {
-        $self->{context}->{cloud_manager_sp}->setState(state => 'up');
-    }
+    $self->finish(%args);
 }
 
 1;

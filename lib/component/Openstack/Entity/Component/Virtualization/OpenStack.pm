@@ -1148,6 +1148,44 @@ sub postStart {
 }
 
 
+sub increaseConsumers {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'operation' ]);
+
+    my @states = $self->entity_states;
+
+    for my $state (@states) {
+        if ($state->consumer_id eq $args{operation}->workflow_id) {
+            next;
+        }
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "Entity state <" . $state->state
+                           . "> already set by consumer <"
+                           . $state->consumer->label . ">"
+              );
+    }
+
+    $self->setConsumerState(
+        state => $args{operation}->operationtype->operationtype_name,
+        consumer => $args{operation}->workflow,
+    );
+}
+
+=pod
+=begin classdoc
+
+Decrease the number of current consumers of the manager.
+
+=end classdoc
+=cut
+
+sub decreaseConsumers {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'operation' ]);
+    $self->removeState(consumer => $args{operation}->workflow);
+}
+
+
 =pod
 =begin classdoc
 
