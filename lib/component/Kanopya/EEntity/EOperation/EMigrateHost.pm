@@ -48,78 +48,12 @@ sub check {
     if (not defined $self->{context}->{cloudmanager_comp}) {
         $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
     }
-
-    $self->{context}->{hv_cluster} = $self->{context}->{host}->node->service_provider;
-    $self->{context}->{host_manager_sp} = $self->{context}->{cloudmanager_comp}->service_provider;
 }
 
 
 sub prepare {
     my ($self, %args) = @_;
-
-    # Check the hostmanager service provider state
-    my ($host_manager_sp_state, $host_manager_sp_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
-
-    # Check the IAAS cluster state
-    my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
-
-    for my $entity_state (@entity_states) {
-        $log->debug('Analysing entity state <'.$entity_state->id.'> state <'.$entity_state->state.'>');
-        if (! (($entity_state->state eq 'migrating') || ($entity_state->state eq 'scaleout') || ($entity_state->state eq 'optimizing'))) {
-            throw Kanopya::Exception::Execution::InvalidState(
-                      error => "The iaas cluster <"
-                               .$self->{context}->{host_manager_sp}->cluster_name
-                               .'> is <'.$entity_state->state
-                               .'> which is not a correct state to accept migration'
-                  );
-        }
-    }
-
-    # Check the hypervisor cluster state
-    @entity_states = $self->{context}->{hv_cluster}->entity_states;
-
-    for my $entity_state (@entity_states) {
-        if (! ($entity_state->state eq 'migrating')) {
-            throw Kanopya::Exception::Execution::InvalidState(
-                      error => "The hypervisor cluster <"
-                               .$self->{context}->{hv_cluster}->cluster_name
-                               .'> is <'.$entity_state->state
-                               .'> which is not a correct state to accept migration'
-                  );
-        }
-    }
-
-    my @es_vm_mig = $self->{context}->{vm}->searchRelated(filters => ['entity_states'],
-                                                          hash    => {state => 'migrating'});
-
-    my @es_hv_mig = $self->{context}->{host}->searchRelated(filters => ['entity_states'],
-                                                          hash    => {state => 'migrating'});
-
-    if (scalar (@es_vm_mig) > 0 || scalar (@es_hv_mig) > 0) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                   error => "The hypervisor <" .$self->{context}->{host}->node->node_hostname
-                       .'> or the VM <'.$self->{context}->{vm}->node->node_hostname
-                       .'> is already a migration operation'
-              );
-    }
-
-    my @es_hv_sco = $self->{context}->{host}->searchRelated(filters => ['entity_states'],
-                                                            hash    => {state => 'scaleout'});
-
-    if (scalar (@es_hv_sco) > 0) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                   error => "The hypervisor <" .$self->{context}->{host}->node->node_hostname
-                       .'> is already in a scaleout operation'
-              );
-    }
-
-    $self->{context}->{host_manager_sp}->setConsumerState(state => 'migrating', consumer => $self->workflow);
-    $self->{context}->{vm}->setConsumerState(state => 'migrating', consumer => $self->workflow);
-    $self->{context}->{host}->setConsumerState(state => 'migrating', consumer => $self->workflow);
-    $self->{context}->{hv_cluster}->setConsumerState(state => 'migrating', consumer => $self->workflow);
-
-    $self->{context}->{hv_cluster}->setState(state => 'migrating');
-    $self->{context}->{host_manager_sp}->setState(state => 'migrating');
+    $self->{context}->{cloudmanager_comp}->increaseConsumers(operation => $self);
 }
 
 sub prerequisites {
@@ -234,53 +168,9 @@ sub execute {
 sub finish {
     my ($self, %args) = @_;
 
-    my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
-    my ($host_manager_sp_state, $timestamp2) = $self->{context}->{host_manager_sp}->reload->getState;
-
-    my $state;
-    eval {
-        $state = $self->{context}
-                 ->{host_manager_sp}
-                 ->findRelated(filters => ['entity_states'],
-                               hash    => {consumer_id => $self->workflow->id})->state;
-    };
-
-
-    if (defined $state && $state eq 'migrating') {
-        # Do not remove state during optimiaas
-        $self->{context}->{vm}->removeState(consumer => $self->workflow);
-        $self->{context}->{host}->removeState(consumer => $self->workflow);
-        $self->{context}->{hv_cluster}->removeState(consumer => $self->workflow);
-        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
-
-        eval {
-            # Check if there is no migration anymore
-            $self->{context}->{hv_cluster}->findRelated(filters => ['entity_states'],
-                                                        hash    => {state => 'migrating'});
-        };
-        if ($@) {
-            $self->{context}->{hv_cluster}->setState(state => 'up');
-        }
-        else {
-            $log->debug('Still one migration is present, cluster state stay in migration')
-        }
-        eval {
-            # Check if there is no migration anymore
-            $self->{context}->{host_manager_sp}->findRelated(filters => ['entity_states'],
-                                                        hash    => {state => 'migrating'});
-        };
-        if ($@) {
-            $self->{context}->{host_manager_sp}->setState(state => 'up');
-        }
-        else {
-            $log->debug('Still one migration is present, cluster state stay in migration')
-        }
-    }
-
-    delete $self->{context}->{host_manager_sp};
+    $self->{context}->{cloudmanager_comp}->decreaseConsumers(operation => $self);
     delete $self->{context}->{vm};
     delete $self->{context}->{host};
-    delete $self->{context}->{hv_cluster};
 }
 
 sub postrequisites {
@@ -334,50 +224,7 @@ Restore
 
 sub cancel {
     my ($self, %args) = @_;
-
-    my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
-    my ($host_manager_sp_state, $timestamp2) = $self->{context}->{host_manager_sp}->reload->getState;
-
-    my $state = $self->{context}
-                     ->{host_manager_sp}
-                     ->findRelated(filters => ['entity_states'],
-                                   hash    => {consumer_id => $self->workflow->id})->state;
-
-    if ($state eq 'migrating') {
-        # Do not remove state during optimiaas
-        $self->{context}->{vm}->removeState(consumer => $self->workflow);
-        $self->{context}->{host}->removeState(consumer => $self->workflow);
-        $self->{context}->{hv_cluster}->removeState(consumer => $self->workflow);
-        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
-
-        eval {
-            # Check if there is no migration anymore
-            $self->{context}->{hv_cluster}->findRelated(filters => ['entity_states'],
-                                                        hash    => {state => 'migrating'});
-        };
-        if ($@) {
-            $self->{context}->{hv_cluster}->setState(state => 'up');
-        }
-        else {
-            $log->debug('Still one migration is present, cluster state stay in migration')
-        }
-        eval {
-            # Check if there is no migration anymore
-            $self->{context}->{host_manager_sp}->findRelated(filters => ['entity_states'],
-                                                        hash    => {state => 'migrating'});
-        };
-        if ($@) {
-            $self->{context}->{host_manager_sp}->setState(state => 'up');
-        }
-        else {
-            $log->debug('Still one migration is present, cluster state stay in migration')
-        }
-    }
-
-    delete $self->{context}->{host_manager_sp};
-    delete $self->{context}->{vm};
-    delete $self->{context}->{host};
-    delete $self->{context}->{hv_cluster};
+    $self->finish(%args);
 }
 
 1;
