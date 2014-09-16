@@ -225,7 +225,7 @@ function load_iaas_content (container_id) {
             { name : 'service_provider_id', index : 'service_provider_id', width : 60, sorttype : 'int', hidden : true },
             { name : 'label', index : 'label', width : 200 },
             { name : 'service_provider.cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
-            { name : 'active', index: 'active', hidden : true}
+            { name : 'active', index: 'active', hidden : true},
             { name : 'synchronize', index : 'synchronize', width : 40, align : 'center', nodetails : true }
         ],
         details : {
