@@ -219,13 +219,14 @@ function load_iaas_content (container_id) {
         url : url,
         content_container_id    : container_id,
         grid_id                 : 'iaas_list',
-        colNames                : [ 'ID', 'ServiceProvider', 'Name', 'State', 'Active' ],
+        colNames                : [ 'ID', 'ServiceProvider', 'Name', 'State', 'Active', 'Synchronize' ],
         colModel                : [
             { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
             { name : 'service_provider_id', index : 'service_provider_id', width : 60, sorttype : 'int', hidden : true },
             { name : 'label', index : 'label', width : 200 },
             { name : 'service_provider.cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
             { name : 'active', index: 'active', hidden : true}
+            { name : 'synchronize', index : 'synchronize', width : 40, align : 'center', nodetails : true }
         ],
         details : {
             onSelectRow : function(elem_id, row_data, grid_id) {
@@ -243,6 +244,19 @@ function load_iaas_content (container_id) {
 
                 display_row_details(elem_id, details, row_data, grid_id);
             },
+        },
+        afterInsertRow : function(grid, rowid, rowdata, rowelem) {
+            var cell    = $(grid).find('tr#' + rowid).find('td[aria-describedby="iaas_list_synchronize"]');
+            var button  = $('<button>', { text : 'Sync', id : 'sync-iaas' })
+                              .button({ icons : { primary : 'ui-icon-refresh' } })
+                              .attr('style', 'margin-top:0;')
+                              .click(function() {
+                              $.ajax({
+                                  url  : '/api/component/' + rowid + '/synchronize',
+                                  type : 'POST'
+                               });
+                          });
+            $(cell).append(button);
         },
         deactivate  : true,
     });
