@@ -78,7 +78,7 @@ __PACKAGE__->table("host");
 
   data_type: 'char'
   is_nullable: 0
-  size: 64
+  size: 255
 
 =head2 host_desc
 
@@ -162,7 +162,7 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "host_serial_number",
-  { data_type => "char", is_nullable => 0, size => 64 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "host_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "active",

@@ -471,7 +471,7 @@ CREATE TABLE `host` (
   `hostmodel_id` int(8) unsigned NULL DEFAULT NULL,
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
-  `host_serial_number` char(64) NOT NULL,
+  `host_serial_number` char(255) NOT NULL,
   `host_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `host_initiatorname` char(64) DEFAULT NULL,
