@@ -841,7 +841,7 @@ sub findOrCreate {
         return $class->find(hash => \%args);
     }
     catch ($err) {
-        return $class->create(%args);
+        return $class->new(%args);
     }
 }
 
