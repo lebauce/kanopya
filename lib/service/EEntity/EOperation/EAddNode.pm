@@ -220,14 +220,31 @@ sub prerequisites {
         return 0;
     }
     else {
-#            throw Kanopya::Exception::Internal('Hypervisor cluster is full ! Please start a new hypervisor');
-        # TODO debug with state management
-
         $log->info('Need to start a new hypervisor');
         $self->{context}->{vm_cluster} = $self->{context}->{cluster};
-        my @vmms = $self->{context}->{host_manager}->vmms;
+
+        my @vmms;
+        try {
+            @vmms = $self->{context}->{host_manager}->vmms;
+        }
+        catch {
+            throw Kanopya::Exception::Execution::ResourceNotFound(
+                      error => "The hypervisor cluster is full, please start a new hypervisor."
+                  );
+        }
+
         my $host_manager_sp = $vmms[0]->service_provider;
-        my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
+        my $workflow_to_enqueue = {
+            name => 'AddNode',
+            params => {
+                context => {
+                    cluster         => $host_manager_sp,
+                    service_manager => $host_manager_sp->service_manager,
+                    host_manager    => $host_manager_sp->getManager(manager_type => 'HostManager'),
+                    storage_manager => $host_manager_sp->getManager(manager_type => 'StorageManager')
+                }
+            }
+        };
 
         $self->workflow->enqueueBefore(
             current_operation => $self,

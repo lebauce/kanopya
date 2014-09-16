@@ -1089,8 +1089,6 @@ sub postStart {
                      id => $args{host}->openstack_vm_uuid
                  );
 
-    $log->debug(Dumper $detail);
-
     my $hypervisor_id;
     my $hypervisor_name = $detail->{server}->{'OS-EXT-SRV-ATTR:hypervisor_hostname'};
     try {
@@ -1107,6 +1105,22 @@ sub postStart {
 
     $args{host}->hypervisor_id($hypervisor_id);
 }
+
+
+=pod
+=begin classdoc
+
+Ovveride the vmms relation to raise an execption as the OpenStack iaas do not manage the hypervisors.
+
+=end classdoc
+=cut
+
+sub vmms {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::Internal(error => "Hypervisors not managerd by iaas " . $self->label);
+}
+
 
 sub _api {
     my ($self, %args) = @_;
