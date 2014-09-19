@@ -96,9 +96,9 @@ sub execute {
         $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
                             $self->{context}->{host}->node->node_number;
 
-        my $image = EEntity->new(data => Entity::Systemimage->find(hash => {
-                        systemimage_name => $systemimage_name
-                    }));
+        $image = EEntity->new(data => Entity::Systemimage->find(hash => {
+                     systemimage_name => $systemimage_name
+                 }));
     }
     catch (Kanopya::Exception::Internal::NotFound $err) {
         $log->warn("Can not find a systemimage labeled $systemimage_name for node "
