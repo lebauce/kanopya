@@ -60,15 +60,17 @@ sub createVirtualHost {
 
     General::checkParams(args     => \%args,
                          required => [ 'ram', 'core' ],
-                         optional => { 'ifaces' => 0, 'hypervisor_id' => undef });
+                         optional => { 'ifaces'        => 0,
+                                       'hypervisor_id' => undef,
+                                       'serial_number' => "Virtual Host managed by component " . $self->id });
 
     # Use the first kernel found...
     my $kernel = Entity::Kernel->find(hash => {});
 
     my $vm = Entity::Host::VirtualMachine->new(
                  host_manager_id    => $self->id,
-                 hypervisor_id       => $args{hypervisor_id},
-                 host_serial_number => "Virtual Host managed by component " . $self->id,
+                 hypervisor_id      => $args{hypervisor_id},
+                 host_serial_number => $args{serial_number},
                  kernel_id          => $kernel->id,
                  host_ram           => $args{ram},
                  host_core          => $args{core},

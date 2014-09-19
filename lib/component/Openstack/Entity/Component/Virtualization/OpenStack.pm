@@ -1198,7 +1198,8 @@ sub _load {
             # TODO Remove following and find better method
             networks_name_id => $networks_name_id,
             tenants_name_id => $tenants_name_id,
-        }
+        },
+        override => 1,
     );
 
     # Manage images
@@ -1207,7 +1208,7 @@ sub _load {
                        );
 
     for my $image_info (@{$args{infra}->{images}}) {
-        Entity::Masterimage::GlanceMasterimage->new(
+        Entity::Masterimage::GlanceMasterimage->findOrCreate(
             masterimage_name => $image_info->{name},
             masterimage_file => $image_info->{file},
             masterimage_size => $image_info->{size},
@@ -1219,56 +1220,84 @@ sub _load {
     my $count = 0;
     my $hv_count = 0;
     for my $hypervisor_info (@{$args{infra}->{hypervisors}}) {
-        my $hypervisor = Entity::Host->new(
-            active => 1,
-            host_ram => $hypervisor_info->{memory_mb} * (1024 ** 2), # MB to B
-            host_core => $hypervisor_info->{vcpus},
-            host_state => 'up:' . time(),
-            host_desc => 'Registered OpenStack Hypervisor - '
-                         . $hypervisor_info->{hypervisor_hostname},
-            host_serial_number => 'Registered OpenStack Hypervisor - '
-                                  . $hypervisor_info->{hypervisor_hostname},
-        );
+        my $hypervisor = Entity::Host->findOrCreate(
+                             active => 1,
+                             host_ram   => $hypervisor_info->{memory_mb} * (1024 ** 2), # MB to B
+                             host_core  => $hypervisor_info->{vcpus},
+                             host_desc  => 'Registered OpenStack Hypervisor - '
+                                           . $hypervisor_info->{hypervisor_hostname},
+                             host_serial_number => 'Registered OpenStack Hypervisor - '
+                                                   . $hypervisor_info->{hypervisor_hostname},
+                         );
         $hv_count++;
 
-        $self->addHypervisor(host => $hypervisor);
+        $hypervisor->setState(state => 'up');
+        if (! $hypervisor->isa("Entity::Host::Hypervisor")) {
+            $self->addHypervisor(host => $hypervisor);
+        }
 
-        Entity::Node->new(
-            node_hostname       => $hypervisor_info->{hypervisor_hostname},
-            host_id             => $hypervisor->id,
-            node_state          => 'in:' . time(),
-            node_number         => $hv_count,
-        );
+        # Create the corresponding node if not exist
+        # Can not use findOrCreate here as the node number should differs
+        try {
+            Entity::Node->find(hash => {
+                node_hostname => $hypervisor_info->{hypervisor_hostname},
+                host_id       => $hypervisor->id,
+            })
+        }
+        catch {
+            Entity::Node->new(
+                node_hostname => $hypervisor_info->{hypervisor_hostname},
+                host_id       => $hypervisor->id,
+                node_state    => 'in:' . time(),
+                node_number   => $hv_count,
+            );
+        }
 
         for my $vm_info (@{$hypervisor_info->{servers}}) {
             $count++;
 
             my $network_info = $vm_info->{addresses};
 
-            my $vm = $self->createVirtualHost(
-                           ram => $vm_info->{flavor}->{ram} * (1024 ** 2), # MB to B
-                           core => $vm_info->{flavor}->{vcpus},
-                           ifaces => scalar (keys %$network_info),
-                        );
+            my $vm;
+            try {
+                $vm = Entity::Host::VirtualMachine->find(serial_number => $vm_info->{name});
+            }
+            catch {
+                $vm = $self->createVirtualHost(
+                          ram  => $vm_info->{flavor}->{ram} * (1024 ** 2), # MB to B
+                          core => $vm_info->{flavor}->{vcpus},
+                          serial_number => $vm_info->{name},
+                          ifaces => scalar (keys %$network_info),
+                      );
 
-            $vm = $self->promoteVm(
-                      host => $vm,
-                      vm_uuid => $vm_info->{id},
-                      hypervisor_id => $hypervisor->id,
-                  );
+                $vm = $self->promoteVm(
+                          host => $vm,
+                          vm_uuid => $vm_info->{id},
+                          hypervisor_id => $hypervisor->id,
+                      );
+            }
 
-            my $vm_state = $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time();
-
-            my $node = Entity::Node->new(
+            # Create the corresponding node if not exist
+            # Can not use findOrCreate here as the node number should differs
+            my $node;
+            try {
+                $node = Entity::Node->find(hash => {
+                            node_hostname => $vm_info->{name},
+                            host_id       => $vm->id,
+                        });
+            }
+            catch {
+                $node = Entity::Node->new(
                            node_hostname       => $vm_info->{name},
                            host_id             => $vm->id,
-                           node_state          => $vm_state,
                            node_number         => $count,
                            systemimage_id      => undef, # Manage
-                          );
+                        );
+            }
+
+            $node->setState(state => $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time());
 
             my @ifaces = $vm->ifaces;
-
             while(my ($name, $ip_infos) = each(%$network_info)) {
 
                 # TODO Manage floating ips
