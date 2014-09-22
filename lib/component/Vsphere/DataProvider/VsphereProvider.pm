@@ -206,7 +206,7 @@ See http://pubs.vmware.com/vsphere-55/topic/com.vmware.wssdk.apiref.doc/vim.Host
 sub _getHypervisorView {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['oid_list','vsphere']);
+    General::checkParams(args => \%args, required => ['vsphere']);
 
     #get hypervisor datacenter
     my $datacenter = Vsphere5Datacenter->find(hash => {
