@@ -837,8 +837,9 @@ or creates it if it doesn't exist
 sub findOrCreate {
     my ($class, %args) = @_;
 
+    my $orig = clone(\%args);
     try {
-        return $class->find(hash => \%args);
+        return $class->find(hash => $orig);
     }
     catch ($err) {
         return $class->new(%args);
