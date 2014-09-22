@@ -89,7 +89,7 @@ sub storageType {
 sub getManagerParamsDef {
     my ($self, %args) = @_;
 
-    my @boot_policies = values(Manager::HostManager->BOOT_POLICIES);
+    my @boot_policies = values(%{ Manager::HostManager->BOOT_POLICIES });
     return {
         # TODO: call super on all Manager supers
         %{ $self->SUPER::getManagerParamsDef },
