@@ -1,6 +1,6 @@
 class kanopya::lvm(
-  $pvs = [],
-  $vgs = []
+  $pvs = {},
+  $vgs = {}
 ) {
   tag('kanopya::lvm')
 
