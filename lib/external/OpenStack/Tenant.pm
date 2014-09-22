@@ -29,7 +29,8 @@ use warnings;
 sub list {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ], optional => {all_tenants => 0});
-    return $args{api}->identity->tenants->get(admin => $args{all_tenants})->{tenants};
+    my $output = $args{api}->identity->tenants->get(admin => $args{all_tenants});
+    return OpenStack::API->handleOutput(output => $output)->{tenants};
 }
 
 sub detail {
@@ -37,6 +38,7 @@ sub detail {
     General::checkParams(args => \%args, required => [ 'api', 'id' ]);
     my $route = 'os-simple-tenant-usage';
     my $id = $args{id};
-    return $args{api}->compute->$route->$id->get->{tenant_usage};
+    my $output = $args{api}->compute->$route->$id->get;
+    return OpenStack::API->handleOutput(output => $output)->{tenant_usage};
 }
 1;

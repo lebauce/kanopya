@@ -40,7 +40,10 @@ Lists all available images
 sub list {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ]);
-    my $images_and_snap = $args{api}->image->images->get->{images};
+
+    my $output = $args{api}->image->images->get;
+    my $images_and_snap = OpenStack::API->handleOutput(output => $output)->{images};
+
     my @images = ();
     my @snaps = ();
 

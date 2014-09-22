@@ -117,4 +117,27 @@ sub AUTOLOAD {
 sub DESTROY {
 }
 
+sub faults {
+    my ($self, %args) = @_;
+    return ('badRequest', 'itemNotFound', 'unauthorized', 'forbidden',
+            'badMethod', 'overLimit', 'badMediaType', 'unprocessableEntity',
+            'instanceFault', 'notImplemented');
+}
+
+
+sub handleOutput {
+    my ($self, %args) = @_;
+    # sometime api call return nothing (e.g. delete)
+    if (! defined $args{output}) {
+        return;
+    }
+
+    for my $f (OpenStack::API->faults) {
+        if (defined $args{output}->{$f}) {
+            die($args{output}->{$f}->{message});
+        }
+    }
+
+    return $args{output};
+}
 1;
