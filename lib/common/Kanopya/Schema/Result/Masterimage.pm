@@ -138,12 +138,33 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("masterimage_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<masterimage_file>
+
+=over 4
+
+=item * L</masterimage_file>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("masterimage_file", ["masterimage_file"]);
+
+=head2 C<masterimage_name>
+
+=over 4
+
+=item * L</masterimage_name>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("masterimage_name", ["masterimage_name"]);
+
 =head1 RELATIONS
-
-=cut 
-
-__PACKAGE__->add_unique_constraint("imasterimage_name", ["masterimage_name"]);
-__PACKAGE__->add_unique_constraint("imasterimage_file", ["masterimage_file"]);
 
 =head2 clusters
 
@@ -236,8 +257,8 @@ Composing rels: L</components_provided> -> component_type
 __PACKAGE__->many_to_many("component_types", "components_provided", "component_type");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Q000fTtKn0j9mkDw050yJA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bqO8gkxPnxIKlQIL5fzq+Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

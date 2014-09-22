@@ -9,6 +9,7 @@ CREATE TABLE `open_stack` (
   `keystone_url` varchar(255) NOT NULL,
   `tenant_name` varchar(255) NOT NULL,
   PRIMARY KEY (`open_stack_id`),
+  UNIQUE KEY (`keystone_url`, `tenant_name`),
   FOREIGN KEY (`open_stack_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

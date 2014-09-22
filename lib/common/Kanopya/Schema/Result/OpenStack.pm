@@ -102,6 +102,22 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("open_stack_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<keystone_url>
+
+=over 4
+
+=item * L</keystone_url>
+
+=item * L</tenant_name>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("keystone_url", ["keystone_url", "tenant_name"]);
+
 =head1 RELATIONS
 
 =head2 open_stack
@@ -120,8 +136,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:13
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ua95HkTmapf2fYkWwiyfGw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:v0VYcqu+A8lAdWapKcIs+A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -57,7 +57,7 @@ __PACKAGE__->table("systemimage");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
 =head2 systemimage_desc
 
@@ -89,7 +89,7 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "systemimage_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "systemimage_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "active",
@@ -229,8 +229,8 @@ __PACKAGE__->many_to_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-07-30 17:09:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LPfN7wiZcptOP6rLh6+bwA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Wv/sT46LFoiRhxfSCGqMBQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

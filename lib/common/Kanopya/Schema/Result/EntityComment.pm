@@ -48,9 +48,8 @@ __PACKAGE__->table("entity_comment");
 
 =head2 entity_comment
 
-  data_type: 'char'
+  data_type: 'text'
   is_nullable: 1
-  size: 255
 
 =cut
 
@@ -63,7 +62,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "entity_comment",
-  { data_type => "char", is_nullable => 1, size => 255 },
+  { data_type => "text", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -96,8 +95,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UG8gSuERQjx30H5WgcB5OQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CKdfO3OptxGdIGHIxxAi3w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
