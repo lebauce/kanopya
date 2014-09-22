@@ -592,15 +592,20 @@ sub stopHost {
             id => $args{host}->openstack_vm_uuid,
         );
     }
-    catch (Kanopya::Exception::Internal::UnknownAttribute $err) {
+    catch ($err) {
         # When an Exception happens during the DeployNode transaction,
         # the openstack_vm_uuid is not registered.
         # Try to find the vm with the node hostname
         $log->info('Try to delete the vm by its name');
-        OpenStack::Server->delete(
-            api => $self->_api,
-            name => $args{host}->node->node_hostname,
-        );
+        try {
+            OpenStack::Server->delete(
+                api => $self->_api,
+                name => $args{host}->node->node_hostname,
+            );
+        }
+        catch ($err) {
+            $log->warn('Error when deleting Openstack server:' . $err);
+        }
     }
 
     return;
@@ -837,22 +842,31 @@ sub removeSystemImage {
 
     General::checkParams(args => \%args, required => [ "systemimage" ]);
 
+    if (defined $args{systemimage}->volume_uuid) {
+        my $detail;
+        my $time_out = time + 60;
+        do {
+            $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->volume_uuid);
 
-    my $detail;
-    my $time_out = time + 60;
-    do {
-        $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->systemimage_desc);
+            $log->debug("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
 
-        $log->info("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
+            sleep 3;
+        } while ($detail->{status} =~ m/in-use/ && time < $time_out);
 
-        sleep 10;
-    } while ($detail->{status} =~ m/in-use/ && time < $time_out);
-
-    my $volume = OpenStack::Volume->delete(
-                     api => $self->_api,
-                     id => $args{systemimage}->systemimage_desc,
-                 );
-
+        try {
+            my $volume = OpenStack::Volume->delete(
+                             api => $self->_api,
+                             id => $args{systemimage}->volume_uuid,
+                         );
+            $log->debug(Dumper $volume);
+        }
+        catch ($err) {
+            $log->warn->('Error when deleting volume: ' . $err);
+        }
+    }
+    else {
+        $log->warn('No volume to delete');
+    }
     $args{systemimage}->delete;
 }
 
@@ -1004,10 +1018,15 @@ sub unconfigureNetworkInterface {
                        . ' exception occurs during the same transaction');
         }
         else {
-            OpenStack::Port->delete(
-                api => $self->_api,
-                id => $params->{port_macs}->{$addr}
-            );
+            try {
+                OpenStack::Port->delete(
+                    api => $self->_api,
+                    id => $params->{port_macs}->{$addr}
+                );
+            }
+            catch($err) {
+                $log->warn('Error when deleting port:' . $err);
+            }
             delete $params->{port_macs}->{$addr};
         }
     }
@@ -1052,8 +1071,12 @@ Terminate a host
 sub halt {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
-
-    return OpenStack::Server->stop(api => $self->_api, id => $args{host}->openstack_vm_uuid);
+    try {
+        OpenStack::Server->stop(api => $self->_api, id => $args{host}->openstack_vm_uuid);
+    }
+    catch($err) {
+        $log->warn('Error during openstack node halt ' . $err);
+    }
 }
 
 sub releaseHost {
