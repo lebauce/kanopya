@@ -214,7 +214,7 @@ Remove the deployment manager params entry from a hash ref.
 =end classdoc
 =cut
 
-sub releaseDeploymentkManagerParams {
+sub releaseDeploymentManagerParams {
     my ($self, %args) = @_;
 
     # NOTE: Do nothing for instance
