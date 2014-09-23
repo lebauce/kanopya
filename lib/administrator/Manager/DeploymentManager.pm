@@ -106,6 +106,21 @@ sub checkDeploymentkManagerParams {
 =pod
 =begin classdoc
 
+Remove the deployment manager params entry from a hash ref.
+
+=end classdoc
+=cut
+
+sub releaseDeploymentkManagerParams {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+=begin classdoc
+
 @return the deployment manager parameters as an attribute definition.
 
 =end classdoc

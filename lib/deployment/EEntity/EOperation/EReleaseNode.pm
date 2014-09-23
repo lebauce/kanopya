@@ -56,7 +56,7 @@ sub check {
     my %args = @_;
 
     General::checkParams(args     => $self->{context},
-                         required => [ "deployment_manager", "node", "boot_manager" ]);
+                         required => [ "deployment_manager", "node", "boot_manager", "network_manager" ]);
 }
 
 
@@ -108,7 +108,12 @@ Removing objects from the context
 sub finish {
     my ($self, %args) = @_;
 
+    # Let the managers release their own params
+    $self->{context}->{deployment_manager}->releaseDeploymentManagerParams(params => $self->{params});
+    $self->{context}->{network_manager}->releaseNetworkManagerParams(params => $self->{params});
+
     delete $self->{context}->{deployment_manager};
+    delete $self->{context}->{network_manager};
     delete $self->{context}->{boot_manager};
     delete $self->{context}->{node};
 }

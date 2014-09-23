@@ -207,6 +207,25 @@ sub checkDeploymentManagerParams {
 =pod
 =begin classdoc
 
+Remove the deployment manager params entry from a hash ref.
+
+@see <package>Manager::DeploymentManager</package>
+
+=end classdoc
+=cut
+
+sub releaseDeploymentkManagerParams {
+    my ($self, %args) = @_;
+
+    # NOTE: Do nothing for instance
+    # TODO: Ensure the deployment manager params described at getDeploymentManagerParams
+    #       are use by the HCMDeploymentManager only in the AddNode workflow.
+}
+
+
+=pod
+=begin classdoc
+
 @return the network manager parameters as an attribute definition. 
 
 @see <package>Manager::DeploymentManager</package>

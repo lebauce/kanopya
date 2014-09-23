@@ -437,6 +437,25 @@ sub checkNetworkManagerParams {
 }
 
 
+=pod
+=begin classdoc
+
+Remove the network manager params entry from a hash ref.
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub releaseNetworkManagerParams {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "params" ]);
+
+    delete $args{params}->{network_tenant};
+    delete $args{params}->{subnets};
+}
+
 
 =pod
 =begin classdoc

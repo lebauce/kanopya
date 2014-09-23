@@ -224,7 +224,25 @@ sub checkNetworkManagerParams {
     General::checkParams(args => \%args, required => [ "interfaces" ]);
 }
 
-sub  unconfigureNetworkInterface {
+
+=pod
+=begin classdoc
+
+Remove the network manager params entry from a hash ref.
+
+=end classdoc
+=cut
+
+sub releaseNetworkManagerParams {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "params" ]);
+
+    delete $args{params}->{interfaces};
+}
+
+
+sub unconfigureNetworkInterface {
     my ($self, %args) = @_;
 }
 
