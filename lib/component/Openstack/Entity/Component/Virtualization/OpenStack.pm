@@ -112,6 +112,7 @@ my $vm_states = { active       => 'in',
                   suspended    => 'out' };
 
 
+
 =pod
 =begin classdoc
 
@@ -151,6 +152,46 @@ sub new {
     return $self;
 }
 
+sub remove {
+    my ($self, %args) = @_;
+    $self->unregister();
+    $self->SUPER::remove();
+}
+
+sub unregister {
+    my ($self, %args) = @_;
+    my @spms = $self->service_provider_managers;
+    if (@spms) {
+        my $error = 'Cannot unregister OpenStack: Still used as "'
+                    . $spms[0]->manager_category->category_name
+                    . '" by cluster "'
+                    . $spms[0]->service_provider->label . '"';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    my @sis = $self->systemimages;
+    if (@sis) {
+        my $error = 'Cannot unregister OpenStack: Still linked to a systemimage "'
+                    . $sis[0]->label . '"';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    for my $vm ($self->hosts) {
+        if (defined $vm->node) {
+            $vm->node->delete;
+        }
+        $vm->delete;
+    }
+
+    for my $host ($self->hypervisors) {
+        if (defined $host->node) {
+            $host->node->delete;
+        }
+        $host->delete;
+    }
+
+    $self->removeMasterimages();
+}
 
 sub hostType {
     my $self = shift;
@@ -1210,6 +1251,33 @@ sub decreaseConsumers {
     $self->removeState(consumer => $args{operation}->workflow);
 }
 
+
+=pod
+=begin classdoc
+
+Remove related master images
+
+=end classdoc
+=cut
+
+sub removeMasterimages {
+    my ($self, %args) = @_;
+    my $images = $self->param_preset->load->{images};
+    for my $image (values %$images) {
+        try {
+            Entity::Masterimage::GlanceMasterimage->find(hash => {
+                masterimage_name => $image->{name},
+                masterimage_file => $image->{file},
+            })->delete();
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $log->warn('Systeimage <' . $image->{name} . '> seems to have been already deleted');
+        }
+        catch ($err) {
+            $err->rethrow;
+        }
+    }
+}
 
 =pod
 =begin classdoc

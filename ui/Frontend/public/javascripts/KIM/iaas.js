@@ -283,7 +283,12 @@ function load_iaas_content (container_id) {
                           });
             $(cell).append(button);
         },
-        deactivate  : true,
+        action_delete: {
+            callback: function (id) {
+                var url = '/api/openstack/';
+                confirmDelete(url, id, ['iaas_list']);
+            }
+        },
     });
 
     var registerButton  = $('<a>', { text : 'Register an existing OpenStack' })
