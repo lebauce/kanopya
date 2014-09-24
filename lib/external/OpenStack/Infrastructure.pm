@@ -31,6 +31,7 @@ use OpenStack::Flavor;
 use OpenStack::Tenant;
 use OpenStack::Network;
 use OpenStack::Zone;
+use OpenStack::VolumeType;
 
 sub load {
     my ($class, %args) = @_;
@@ -51,6 +52,7 @@ sub load {
         'hypervisors' => $hypervisors,
         'images' => OpenStack::Image->list(%args)->{images},
         'volumes' => OpenStack::Volume->list(%args, all_tenants => 1),
+        'volume_types' => OpenStack::VolumeType->list(%args),
         'tenants' => OpenStack::Tenant->list(%args, all_tenants => 1),
         'flavors' => OpenStack::Flavor->list(%args),
         'networks' => OpenStack::Network->list(%args),

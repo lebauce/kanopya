@@ -259,11 +259,11 @@ sub getManagerParamsDef {
             is_mandatory => 1
         },
         volume_type => {
-            label        => 'Storage backend',
+            label        => 'Volume type',
             type         => 'enum',
             is_mandatory => 1,
             # TODO:  Get the enum options from the available synchronized backend
-            options      => [ 'NFS' ]
+            options      => []
         },
         repository   => {
             is_mandatory => 1,
@@ -352,7 +352,14 @@ Return the parameters definition available for the DiskManager api.
 sub getStorageManagerParams {
     my ($self, %args) = @_;
 
-    return { volume_type => $self->getManagerParamsDef->{volume_type} };
+    my $pp = $self->param_preset->load;
+    my $params = { volume_type => $self->getManagerParamsDef->{volume_type} };
+
+    for my $type_id (keys %{ $pp->{volume_types} }) {
+        push @{ $params->{volume_type}->{options} }, $pp->{volume_types}->{$type_id}->{name};
+    }
+
+    return $params;
 }
 
 
@@ -762,11 +769,14 @@ sub createSystemImage {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "systemimage_name", "masterimage", "systemimage_size" ],);
+                         required => [ "systemimage_name", "masterimage", "systemimage_size" ],
+                         optional => { "volume_type" => undef });
+
+    my $pp = $self->param_preset->load;
 
     # Create Glance Volume
     my $image_id = undef;
-    my %images = %{$self->param_preset->load->{images}};
+    my %images = %{ $pp->{images} };
     while (my ($id, $image) = each (%images)) {
         if ($image->{name} eq $args{masterimage}->masterimage_name) {
             $image_id = $id;
@@ -774,10 +784,22 @@ sub createSystemImage {
         }
     }
 
+    my $volume_type_id;
+    if (defined $args{volume_type}) {
+        my %types = %{ $pp->{volume_types} };
+        while (my ($id, $type) = each (%types)) {
+            if ($type->{name} eq $args{volume_type}) {
+                $volume_type_id = $id;
+                last;
+            }
+        }
+    }
+
     #TODO destroy volume during rollback
     my $volume = OpenStack::Volume->create(api => $self->_api,
                                            image_id => $image_id,
-                                           size => $args{systemimage_size} / (1024 ** 3));
+                                           size => $args{systemimage_size} / (1024 ** 3),
+                                           volume_type => $volume_type_id);
 
     my $detail;
     my $time_out = time + 3600;
@@ -1192,6 +1214,11 @@ sub _load {
         $subnets->{$subnet->{id}} = $subnet;
     }
 
+    my $volume_types = {};
+    for my $volume_type (@{ $args{infra}->{volume_types} }) {
+        $volume_types->{delete $volume_type->{id}} = $volume_type;
+    }
+
     my $images = {};
     for my $image (@{$args{infra}->{images}}) {
         $images->{$image->{id}} = $image;
@@ -1211,6 +1238,7 @@ sub _load {
             tenants => $tenants,
             networks => $networks,
             subnets => $subnets,
+            volume_types => $volume_types,
             flavors => $flavors,
             zones => $zones,
             images => $images,

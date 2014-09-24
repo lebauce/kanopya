@@ -58,10 +58,10 @@ sub detail {
 
 sub create {
     my ($class, %args) = @_;
-    General::checkParams(
-        args => \%args,
-        required => [ 'api', 'image_id' ],
-        optional => {size => 5, display_name => undef} );
+
+    General::checkParams(args => \%args,
+                         required => [ 'api', 'image_id' ],
+                         optional => { size => 5, display_name => undef, volume_type => undef } );
 
     my $params = {
         volume => {
@@ -69,11 +69,14 @@ sub create {
             size => $args{size},
             display_name => $args{display_name},
             # availability_zone => undef,
-            # volume_type => undef,
             # display_description => undef,
             # snapshot_id => undef,
         }
     };
+
+    if (defined $args{volume_type}) {
+        $params->{volume}->{volume_type} = $args{volume_type};
+    }
 
     return $args{api}->volume->volumes->post(content => $params);
 }
