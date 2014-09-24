@@ -97,5 +97,13 @@ CREATE TABLE `openstack_repository` (
   FOREIGN KEY (`openstack_repository_id`) REFERENCES `repository` (`repository_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cinder_systemimage` (
+  `cinder_systemimage_id` int(8) unsigned NOT NULL,
+  `image_uuid` char(64) NULL DEFAULT NULL,
+  `volume_uuid` char(64) NULL DEFAULT NULL,
+  PRIMARY KEY (`cinder_systemimage_id`),
+  FOREIGN KEY (`cinder_systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;
 

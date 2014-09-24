@@ -124,6 +124,21 @@ __PACKAGE__->add_unique_constraint("systemimage_name", ["systemimage_name"]);
 
 =head1 RELATIONS
 
+=head2 cinder_systemimage
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::CinderSystemimage>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cinder_systemimage",
+  "Kanopya::Schema::Result::CinderSystemimage",
+  { "foreign.cinder_systemimage_id" => "self.systemimage_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 components_installed
 
 Type: has_many

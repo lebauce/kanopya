@@ -41,6 +41,7 @@ use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
 use Entity::Masterimage::GlanceMasterimage;
 use ClassType::ServiceProviderType::ClusterType;
+use Entity::Systemimage::CinderSystemimage;
 use Entity::Node;
 use Kanopya::Exceptions;
 use ParamPreset;
@@ -558,7 +559,7 @@ sub startHost {
     #TODO use an other field to store volume_id
     my $server = OpenStack::Server->create(
                      api => $self->_api,
-                     volume_id => $args{host}->node->systemimage->systemimage_desc,
+                     volume_id => $args{host}->node->systemimage->volume_uuid,
                      flavor_id => $flavor_id,
                      port_ids => \@ports_ids,
                      instance_name => $args{host}->node->node_hostname,
@@ -819,9 +820,10 @@ sub createSystemImage {
         sleep 10;
     } while ($detail->{status} =~ m/downloading|creating/ && time < $time_out);
 
-    return Entity::Systemimage->new(
+    return Entity::Systemimage::CinderSystemimage->new(
                systemimage_name => $args{systemimage_name},
-               systemimage_desc => $volume->{volume}->{id},
+               volume_uuid => $volume->{volume}->{id},
+               image_uuid => $image_id,
                storage_manager_id => $self->id,
            );
 }

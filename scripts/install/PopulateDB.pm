@@ -62,6 +62,7 @@ my @classes = (
     'Entity::Kernel',
     'Entity::Processormodel',
     'Entity::Systemimage',
+    'Entity::Systemimage::CinderSystemimage',
     'Entity::User',
     'Entity::User::Customer',
     'Entity::User::Customer::StackBuilderCustomer',
