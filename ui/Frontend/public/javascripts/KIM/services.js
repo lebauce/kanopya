@@ -473,12 +473,11 @@ function migrate(spid, eid) {
     var sel     = $('<select>').appendTo(cont);
     $.ajax({
         async       : false,
-        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
-                      'custom.category=HostManager',
+        url         : '/api/host/' + eid + '/host_manager',
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/virtualization/' + hmgr[0].manager_id + '/hypervisors?expand=node',
+                url     : '/api/virtualization/' + hmgr.entity_id + '/hypervisors?expand=node',
                 type    : 'GET',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
@@ -493,7 +492,7 @@ function migrate(spid, eid) {
                                 var hyp = $(sel).val();
                                 if (hyp != null && hyp != "") {
                                     $.ajax({
-                                        url         : '/api/virtualization/' + hmgr[0].manager_id + '/migrate',
+                                        url         : '/api/virtualization/' + hmgr.entity_id + '/migrate',
                                         type        : 'POST',
                                         contentType : 'application/json',
                                         data        : JSON.stringify({
