@@ -237,17 +237,4 @@ sub getPatternFromParams {
    return $self->SUPER::getPatternFromParams(params => $args{params});
 }
 
-sub getParamsFromPattern {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'pattern' ] );
-
-    if (defined $args{pattern}->{managers}->{network_manager}->{manager_params}->{interfaces}) {
-        $args{pattern}->{interfaces} = delete $args{pattern}->{managers}->{network_manager}->{manager_params}->{interfaces};
-    }
-
-    return $args{pattern};
-}
-
-
 1;
