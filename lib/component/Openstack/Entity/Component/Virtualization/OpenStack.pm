@@ -904,7 +904,7 @@ sub removeSystemImage {
             $log->debug(Dumper $volume);
         }
         catch ($err) {
-            $log->warn->('Error when deleting volume: ' . $err);
+            $log->warn('Error when deleting volume: ' . $err);
         }
     }
     else {
