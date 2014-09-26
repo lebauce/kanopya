@@ -163,6 +163,7 @@ sub getManagerParamsDef {
             label        => 'Components',
             type         => 'relation',
             relation     => 'single_multi',
+            is_editable => 1,
             is_mandatory => 1,
             attributes   => {
                 attributes => {

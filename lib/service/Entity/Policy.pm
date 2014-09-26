@@ -666,90 +666,84 @@ the policy pattern.
 sub getParams {
     my $self = shift;
     my %args = @_;
+    my $class = ref($self) || $self;
 
     General::checkParams(args => \%args, optional => { 'noarrays' => 0, 'exclude' => [] });
 
-    my $flat_hash = {};
     my $presets = $self->param_preset;
     my $pattern = $presets ? $presets->load() : {};
 
-    $pattern = $self->getParamsFromPattern(pattern => $pattern);
+    # Process the multi level hash pattern to build to key/value hash
 
-    # Transform the policy configuration pattern to a flat hash
-    ATTRIBUTE:
-    for my $name (keys %$pattern) {
-        # Handle managers
-        if ($name eq 'managers') {
-            for my $manager (keys %{$pattern->{$name}}) {
-                my $manager_type = $pattern->{$name}->{$manager}->{manager_type};
+    # Firstly move the manager params from the manager level to the root level
+    if (defined $pattern->{managers}) {
+        my $managers = delete $pattern->{managers};
+
+        # Browse all the managers to get thier respective params
+        for my $manager (keys %{ $managers }) {
+                my $manager_type = $managers->{$manager}->{manager_type};
                 if (defined $manager_type) {
                     $manager_type =~ s/Manager$//g;
                     $manager_type = lcfirst($manager_type) . '_manager';
 
                     # Set the manager id
-                    $flat_hash->{$manager_type . '_id'} = $pattern->{$name}->{$manager}->{manager_id};
+                    $pattern->{$manager_type . '_id'} = $managers->{$manager}->{manager_id};
                 }
 
                 # Set the manager parameters
-                for my $manager_param (keys %{ $pattern->{$name}->{$manager}->{manager_params} }) {
-                    $flat_hash->{$manager_param} = $pattern->{$name}->{$manager}->{manager_params}->{$manager_param};
+                for my $manager_param (keys %{ $managers->{$manager}->{manager_params} }) {
+                    $pattern->{$manager_param}
+                        = delete $managers->{$manager}->{manager_params}->{$manager_param};
                 }
-            }
-        }
-        # Handle components
-        elsif ($name eq 'components') {
-            if ($args{noarrays}) { next ATTRIBUTE; }
-
-            for my $component (values %{ $pattern->{$name} }) {
-                if (not defined $flat_hash->{'components'}) {
-                    $flat_hash->{'components'} = [];
-                }
-                push @{ $flat_hash->{'components'} }, { component_type => $component->{component_type} };
-            }
-        }
-        # Handle network interfaces
-        elsif ($name eq 'interfaces') {
-            if ($args{noarrays}) { next ATTRIBUTE; }
-
-            for my $interface (values %{ $pattern->{$name} }) {
-                if (not defined $flat_hash->{'interfaces'}) {
-                    $flat_hash->{'interfaces'} = [];
-                }
-
-                if (defined $interface->{netconfs} and ref($interface->{netconfs}) eq 'HASH') {
-                    my @netconfs = values %{ $interface->{netconfs} };
-                    $interface->{netconfs} = \@netconfs;
-                }
-                push @{ $flat_hash->{'interfaces'} }, $interface;
-            }
-        }
-        # Handle billing limits
-        elsif ($name eq 'billing_limits') {
-            if ($args{noarrays}) { next ATTRIBUTE; }
-
-            for my $billing (values %{ $pattern->{$name} }) {
-                if (not defined $flat_hash->{'billing_limits'}) {
-                    $flat_hash->{'billing_limits'} = [];
-                }
-                push @{ $flat_hash->{'billing_limits'} }, $billing;
-            }
-        }
-        else {
-            $flat_hash->{$name} = $pattern->{$name};
         }
     }
 
-    #$log->debug("Returning flattened policy hash:\n" . Dumper($flat_hash));
-    return $flat_hash;
+    # List params values are stored as hashes because they need to be merged
+    # So keep the the values of the hash as value for the param.
+    return $self->relationsHashToList(params  => $pattern,
+                                      attrdef => $class->toJSON(params => $pattern)->{attributes});
 }
 
 
-sub getParamsFromPattern {
-    my ($self, %args) = @_;
+=pod
+=begin classdoc
 
-    General::checkParams(args => \%args, required => [ 'pattern' ] );
+Check if the given attr trigger the reload ofattr def
+by setting it to an undef value.
 
-    return $args{pattern};
+=end classdoc
+=cut
+
+sub relationsHashToList {
+    my $self = shift;
+    my %args = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'params', 'attrdef' ]);
+
+    for my $name (keys %{ $args{params} }) {
+        # If the param is a multi relation, make the value as a list
+        if (defined $args{attrdef}->{$name} &&
+            $args{attrdef}->{$name}->{type} eq 'relation' &&
+            $args{attrdef}->{$name}->{relation} =~ m/^(single_multi|multi)$/) {
+            my $value_type = ref($args{params}->{$name});
+
+            # The stored value should be a hash
+            if ($value_type ne "HASH") {
+                throw Kanopya::Exception::Internal::Inconsistency(
+                          error => "Value for param \"$name\" should be a HASH, not " .
+                                   (defined $value_type ? $value_type : "SCALAR")
+                      );
+            }
+            my @values = values %{ delete $args{params}->{$name} };
+            my $rel_attrdef = $args{attrdef}->{$name}->{attributes}->{attributes};
+            if (defined $rel_attrdef) {
+                @values = map { $self->relationsHashToList(params => $_, attrdef => $rel_attrdef) } @values;
+            }
+            $args{params}->{$name} = \@values;
+        }
+    }
+    return $args{params};
 }
 
 

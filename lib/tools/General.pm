@@ -190,6 +190,7 @@ sub getAsHashRef {
     return \%res;
 }
 
+
 =pod
 
 =begin classdoc
