@@ -39,13 +39,15 @@ Lists all available subnets
 sub list {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ], );
-    return $args{api}->network->subnets->get->{subnets};
+    my $output =  $args{api}->network->subnets->get;
+    return OpenStack::API->handleOutput(output => $output)->{subnets};
 }
 
 sub detail {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api', 'id' ]);
-    return $args{api}->network->subnets(id => $args{id})->get->{subnet};
+    my $output = $args{api}->network->subnets(id => $args{id})->get;
+    return OpenStack::API->handleOutput(output => $output)->{subnet};
 }
 
 1;

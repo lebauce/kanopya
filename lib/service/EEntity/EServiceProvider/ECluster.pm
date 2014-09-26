@@ -103,6 +103,15 @@ sub remove {
     #     throw Kanopya::Exception::Internal(error => "Cluster <" . $self->label . "> is active");
     # }
 
+    # Check if cluster has nodes
+    if ($self->nodes > 1) {
+        map {$log->info($_->id)} $self->nodes;
+        throw Kanopya::Exception::Internal(
+                  error => 'Cluster <' . $self->label . '> still has nodes. '
+                           . 'Please stop them before removing it'
+              );
+    }
+
     # Delete the cluster remaning systemimages
     try {
         # TODO: Ensure we are not retrieving systemimage of oather clusters

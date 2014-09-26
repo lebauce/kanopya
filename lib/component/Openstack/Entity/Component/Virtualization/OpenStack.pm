@@ -41,6 +41,7 @@ use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
 use Entity::Masterimage::GlanceMasterimage;
 use ClassType::ServiceProviderType::ClusterType;
+use Entity::Systemimage::CinderSystemimage;
 use Entity::Node;
 use Kanopya::Exceptions;
 use ParamPreset;
@@ -111,6 +112,7 @@ my $vm_states = { active       => 'in',
                   suspended    => 'out' };
 
 
+
 =pod
 =begin classdoc
 
@@ -150,6 +152,46 @@ sub new {
     return $self;
 }
 
+sub remove {
+    my ($self, %args) = @_;
+    $self->unregister();
+    $self->SUPER::remove();
+}
+
+sub unregister {
+    my ($self, %args) = @_;
+    my @spms = $self->service_provider_managers;
+    if (@spms) {
+        my $error = 'Cannot unregister OpenStack: Still used as "'
+                    . $spms[0]->manager_category->category_name
+                    . '" by cluster "'
+                    . $spms[0]->service_provider->label . '"';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    my @sis = $self->systemimages;
+    if (@sis) {
+        my $error = 'Cannot unregister OpenStack: Still linked to a systemimage "'
+                    . $sis[0]->label . '"';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    for my $vm ($self->hosts) {
+        if (defined $vm->node) {
+            $vm->node->delete;
+        }
+        $vm->delete;
+    }
+
+    for my $host ($self->hypervisors) {
+        if (defined $host->node) {
+            $host->node->delete;
+        }
+        $host->delete;
+    }
+
+    $self->removeMasterimages();
+}
 
 sub hostType {
     my $self = shift;
@@ -558,7 +600,7 @@ sub startHost {
     #TODO use an other field to store volume_id
     my $server = OpenStack::Server->create(
                      api => $self->_api,
-                     volume_id => $args{host}->node->systemimage->systemimage_desc,
+                     volume_id => $args{host}->node->systemimage->volume_uuid,
                      flavor_id => $flavor_id,
                      port_ids => \@ports_ids,
                      instance_name => $args{host}->node->node_hostname,
@@ -592,15 +634,20 @@ sub stopHost {
             id => $args{host}->openstack_vm_uuid,
         );
     }
-    catch (Kanopya::Exception::Internal::UnknownAttribute $err) {
+    catch ($err) {
         # When an Exception happens during the DeployNode transaction,
         # the openstack_vm_uuid is not registered.
         # Try to find the vm with the node hostname
         $log->info('Try to delete the vm by its name');
-        OpenStack::Server->delete(
-            api => $self->_api,
-            name => $args{host}->node->node_hostname,
-        );
+        try {
+            OpenStack::Server->delete(
+                api => $self->_api,
+                name => $args{host}->node->node_hostname,
+            );
+        }
+        catch ($err) {
+            $log->warn('Error when deleting Openstack server:' . $err);
+        }
     }
 
     return;
@@ -814,9 +861,10 @@ sub createSystemImage {
         sleep 10;
     } while ($detail->{status} =~ m/downloading|creating/ && time < $time_out);
 
-    return Entity::Systemimage->new(
+    return Entity::Systemimage::CinderSystemimage->new(
                systemimage_name => $args{systemimage_name},
-               systemimage_desc => $volume->{volume}->{id},
+               volume_uuid => $volume->{volume}->{id},
+               image_uuid => $image_id,
                storage_manager_id => $self->id,
            );
 }
@@ -837,22 +885,31 @@ sub removeSystemImage {
 
     General::checkParams(args => \%args, required => [ "systemimage" ]);
 
+    if (defined $args{systemimage}->volume_uuid) {
+        my $detail;
+        my $time_out = time + 60;
+        do {
+            $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->volume_uuid);
 
-    my $detail;
-    my $time_out = time + 60;
-    do {
-        $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->systemimage_desc);
+            $log->debug("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
 
-        $log->info("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
+            sleep 3;
+        } while ($detail->{status} =~ m/in-use/ && time < $time_out);
 
-        sleep 10;
-    } while ($detail->{status} =~ m/in-use/ && time < $time_out);
-
-    my $volume = OpenStack::Volume->delete(
-                     api => $self->_api,
-                     id => $args{systemimage}->systemimage_desc,
-                 );
-
+        try {
+            my $volume = OpenStack::Volume->delete(
+                             api => $self->_api,
+                             id => $args{systemimage}->volume_uuid,
+                         );
+            $log->debug(Dumper $volume);
+        }
+        catch ($err) {
+            $log->warn('Error when deleting volume: ' . $err);
+        }
+    }
+    else {
+        $log->warn('No volume to delete');
+    }
     $args{systemimage}->delete;
 }
 
@@ -1004,10 +1061,15 @@ sub unconfigureNetworkInterface {
                        . ' exception occurs during the same transaction');
         }
         else {
-            OpenStack::Port->delete(
-                api => $self->_api,
-                id => $params->{port_macs}->{$addr}
-            );
+            try {
+                OpenStack::Port->delete(
+                    api => $self->_api,
+                    id => $params->{port_macs}->{$addr}
+                );
+            }
+            catch($err) {
+                $log->warn('Error when deleting port:' . $err);
+            }
             delete $params->{port_macs}->{$addr};
         }
     }
@@ -1052,8 +1114,12 @@ Terminate a host
 sub halt {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
-
-    return OpenStack::Server->stop(api => $self->_api, id => $args{host}->openstack_vm_uuid);
+    try {
+        OpenStack::Server->stop(api => $self->_api, id => $args{host}->openstack_vm_uuid);
+    }
+    catch($err) {
+        $log->warn('Error during openstack node halt ' . $err);
+    }
 }
 
 sub releaseHost {
@@ -1147,6 +1213,71 @@ sub postStart {
     $args{host}->hypervisor_id($hypervisor_id);
 }
 
+
+sub increaseConsumers {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'operation' ]);
+
+    my @states = $self->entity_states;
+
+    for my $state (@states) {
+        if ($state->consumer_id eq $args{operation}->workflow_id) {
+            next;
+        }
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "Entity state <" . $state->state
+                           . "> already set by consumer <"
+                           . $state->consumer->label . ">"
+              );
+    }
+
+    $self->setConsumerState(
+        state => $args{operation}->operationtype->operationtype_name,
+        consumer => $args{operation}->workflow,
+    );
+}
+
+=pod
+=begin classdoc
+
+Decrease the number of current consumers of the manager.
+
+=end classdoc
+=cut
+
+sub decreaseConsumers {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'operation' ]);
+    $self->removeState(consumer => $args{operation}->workflow);
+}
+
+
+=pod
+=begin classdoc
+
+Remove related master images
+
+=end classdoc
+=cut
+
+sub removeMasterimages {
+    my ($self, %args) = @_;
+    my $images = $self->param_preset->load->{images};
+    for my $image (values %$images) {
+        try {
+            Entity::Masterimage::GlanceMasterimage->find(hash => {
+                masterimage_name => $image->{name},
+                masterimage_file => $image->{file},
+            })->delete();
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $log->warn('Systeimage <' . $image->{name} . '> seems to have been already deleted');
+        }
+        catch ($err) {
+            $err->rethrow;
+        }
+    }
+}
 
 =pod
 =begin classdoc

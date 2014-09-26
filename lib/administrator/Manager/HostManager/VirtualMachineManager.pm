@@ -293,4 +293,24 @@ sub selectHypervisor {
 }
 
 
+sub optimiaas {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        optional => {
+            policy => 'stack',
+        }
+    );
+
+    $self->executor_component->run(
+        name   => 'OptimiaasWorkflow',
+        params => {
+            context => {
+                cloudmanager_comp => $self,
+            },
+            policy => $args{policy},
+        }
+    );
+}
+
 1;

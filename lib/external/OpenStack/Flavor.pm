@@ -40,7 +40,8 @@ Lists all available flavors.
 sub list {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ]);
-    return $args{api}->compute->flavors->detail->get->{flavors};
+     my $output = $args{api}->compute->flavors->detail->get;
+     return OpenStack::API->handleOutput(output => $output)->{flavors};
 }
 
 
@@ -55,7 +56,8 @@ Gets details for a specified flavor.
 sub detail {
     my ($class, %args) = @_;
 	General::checkParams(args => \%args, required => [ 'api', 'id' ]);
-    return $args{api}->compute->flavors(id => $args{id})->get->{flavor};
+    my $output = $args{api}->compute->flavors(id => $args{id})->get;
+    return OpenStack::API->handleOutput(output => $output)->{flavor};
 }
 
 

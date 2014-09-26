@@ -62,6 +62,7 @@ my @classes = (
     'Entity::Kernel',
     'Entity::Processormodel',
     'Entity::Systemimage',
+    'Entity::Systemimage::CinderSystemimage',
     'Entity::User',
     'Entity::User::Customer',
     'Entity::User::Customer::StackBuilderCustomer',
@@ -2180,7 +2181,7 @@ sub populate_workflow_def {
             }
         },
         steps => [ $flush_hypervisor_op_id ],
-        description => "Putting hypervisor \"[% flushed_hypervisor %]\" in maintenance."
+        description => "Putting hypervisor \"[% host %]\" in maintenance."
     );
 
     # Hypervisor resubmit workflow def

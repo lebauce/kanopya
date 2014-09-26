@@ -46,14 +46,15 @@ sub list {
         return $args{api}->volume->$option->get->{volumes};
     }
 
-    return $args{api}->volume->volumes->detail->get->{volumes};
+    my $output = $args{api}->volume->volumes->detail->get;
+    return OpenStack::API->handleOutput(output => $output)->{volumes};
 }
 
 sub detail {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' , 'id' ]);
-
-    return $args{api}->volume->volumes(id => $args{id})->get->{volume};
+    my $output = $args{api}->volume->volumes(id => $args{id})->get;
+    return OpenStack::API->handleOutput(output => $output)->{volume};
 }
 
 sub create {
@@ -78,14 +79,15 @@ sub create {
         $params->{volume}->{volume_type} = $args{volume_type};
     }
 
-    return $args{api}->volume->volumes->post(content => $params);
+    my $output = $args{api}->volume->volumes->post(content => $params);
+    return OpenStack::API->handleOutput(output => $output);
 }
 
 
 sub delete {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' , 'id' ]);
-
-    return $args{api}->volume->volumes(id => $args{id})->delete;
+    my $output = $args{api}->volume->volumes(id => $args{id})->delete;
+    return OpenStack::API->handleOutput(output => $output);
 }
 1;

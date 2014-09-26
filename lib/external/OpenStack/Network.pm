@@ -42,7 +42,8 @@ sub list {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ], optional => {subnets => 0});
 
-    my $list = $args{api}->network->networks->get->{networks};
+    my $output = $args{api}->network->networks->get;
+    my $list = OpenStack::API->handleOutput(output => $output)->{networks};
 
     # for $i (@$l) { for my $ip (@{$i->{subnets}}) { print $ip} }
     if ($args{subnets} eq 1) {
@@ -62,7 +63,8 @@ sub list {
 sub detail {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api', 'id' ]);
-    return $args{api}->network->networks(id => $args{id})->get->{network};
+    my $output = $args{api}->network->networks(id => $args{id})->get;
+    return OpenStack::API->handleOutput(output => $output)->{network};
 }
 
 1;

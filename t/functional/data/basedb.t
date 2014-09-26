@@ -33,10 +33,12 @@ use Lvm2Vg;
 use Kanopya::Database;
 use Entity::Component::Physicalhoster0;
 use ClassType;
+use ClassType::ServiceProviderType::ClusterType;
 use Entity::Component::KanopyaAggregator;
 use Entity::Component::KanopyaExecutor;
 use Entity::Node;
-
+use Entity::Masterimage::GlanceMasterimage;
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -368,6 +370,45 @@ sub test_concrete_class_without_table {
             }
         }
     } 'Search on concrete classes without tables';
+
+    lives_ok {
+        my $type_id = ClassType::ServiceProviderType::ClusterType->find()->id;
+        expectedException {
+            Entity::Masterimage::GlanceMasterimage->find(hash => {
+                masterimage_name => 'basedb_test',
+                masterimage_file => 'basedb_test',
+                masterimage_size => '1',
+                masterimage_cluster_type_id => $type_id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound', 'GlanceMasterimage test already exists';
+
+        my $create = Entity::Masterimage::GlanceMasterimage->findOrCreate(
+                         masterimage_name => 'basedb_test',
+                         masterimage_file => 'basedb_test',
+                         masterimage_size => '1',
+                         masterimage_cluster_type_id => $type_id,
+                     );
+
+        Entity::Masterimage::GlanceMasterimage->find(hash => {
+            masterimage_name => 'basedb_test',
+            masterimage_file => 'basedb_test',
+            masterimage_size => '1',
+            masterimage_cluster_type_id => $type_id,
+        });
+
+        my $find = Entity::Masterimage::GlanceMasterimage->findOrCreate(
+                       masterimage_name => 'basedb_test',
+                       masterimage_file => 'basedb_test',
+                       masterimage_size => '1',
+                       masterimage_cluster_type_id => $type_id,
+                   );
+
+        if ($create->id ne $find->id) {
+            die "create and find ids must match";
+        }
+
+    } 'Find or create on concrete classes without tables';
+
 }
 
 sub test_get_many_to_many {

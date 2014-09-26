@@ -43,7 +43,8 @@ the hypervisor-specific API, such as libvirt or XenAPI.
 sub list {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ]);
-    return $args{api}->compute->$os_hypervisors->get->{hypervisors};
+    my $output = $args{api}->compute->$os_hypervisors->get;
+    return OpenStack::API->handleOutput(output => $output)->{hypervisors};
 }
 
 
@@ -59,7 +60,8 @@ as an admin-only extension by using policy.json settings.
 sub detailList {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ]);
-    return $args{api}->compute->$os_hypervisors->detail->get->{hypervisors};
+    my $output = $args{api}->compute->$os_hypervisors->detail->get;
+    return OpenStack::API->handleOutput(output => $output)->{hypervisors};
 }
 
 
@@ -75,7 +77,8 @@ sub detail {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api', 'id']);
     my $id = $args{id};
-    return $args{api}->compute->$os_hypervisors->$id->get->{hypervisor};
+    my $output = $args{api}->compute->$os_hypervisors->$id->get;
+    return OpenStack::API->handleOutput(output => $output)->{hypervisor};
 }
 
 
@@ -92,7 +95,8 @@ sub servers {
     General::checkParams(args => \%args, required => [ 'api', 'id']);
     my $id = $args{id};
     # TODO Check if ok in infra with 2 HV
-    return $args{api}->compute->$os_hypervisors->$id->servers->get->{hypervisors}->[0]->{servers};
+    my $output = $args{api}->compute->$os_hypervisors->$id->servers->get;
+    return OpenStack::API->handleOutput(output => $output)->{hypervisors}->[0]->{servers};
 }
 
 1;

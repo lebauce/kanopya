@@ -43,10 +43,12 @@ sub list {
 
     if ($args{all_tenants} eq 1) {
         my $option = 'detail?all_tenants=True';
-        return $args{api}->compute->servers->$option->get->{servers};
+        my $output = $args{api}->compute->servers->$option->get;
+        return OpenStack::API->handleOutput(output => $output)->{servers};
     }
 
-    return $args{api}->compute->servers->get->{servers};
+    my $output = $args{api}->compute->servers->get;
+    return OpenStack::API->handleOutput(output => $output)->{servers};
 }
 
 
@@ -67,6 +69,8 @@ sub detail {
     );
 
     my $response = $args{api}->compute->servers(id => $args{id})->get;
+
+    $response = OpenStack::API->handleOutput(output => $response);
 
     if (! defined $response->{server}) {
         return $response;
@@ -131,7 +135,8 @@ sub create {
         }];
     }
 
-    return $args{api}->compute->$route->post(content => $params);
+    my $output = $args{api}->compute->$route->post(content => $params);
+    return OpenStack::API->handleOutput(output => $output);
 }
 
 
@@ -139,7 +144,7 @@ sub migrate {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api', 'id', 'hypervisor_hostname' ]);
 
-    return $args{api}->compute->servers(id => $args{id})->action->post(
+    my $output = $args{api}->compute->servers(id => $args{id})->action->post(
                content => {
                    'os-migrateLive'  => {
                        disk_over_commit => 'false',
@@ -148,6 +153,7 @@ sub migrate {
                     }
                 }
            );
+    return OpenStack::API->handleOutput(output => $output);
 }
 
 
@@ -155,9 +161,10 @@ sub stop {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api', 'id' ]);
 
-    return $args{api}->compute->servers(id => $args{id})->action->post(
-               content => { 'os-stop' => undef }
-           );
+    my $output = $args{api}->compute->servers(id => $args{id})->action->post(
+                     content => { 'os-stop' => undef }
+                 );
+    return OpenStack::API->handleOutput(output => $output);
 }
 
 sub delete {
@@ -165,11 +172,13 @@ sub delete {
     General::checkParams(args => \%args, required => [ 'api' ]);
 
     if (defined $args{id}) {
-        return $args{api}->compute->servers(id => $args{id})->delete;
+        my $output = $args{api}->compute->servers(id => $args{id})->delete;
+        return OpenStack::API->handleOutput(output => $output);
     }
 
     if (defined $args{name}) {
-        return $args{api}->compute->servers(id => $self->id(%args))->delete;
+        my $output = $args{api}->compute->servers(id => $self->id(%args))->delete;
+        return OpenStack::API->handleOutput(output => $output);
     }
 
     throw Kanopya::Exception::Internal::MissingParam(

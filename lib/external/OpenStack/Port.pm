@@ -39,7 +39,8 @@ Lists all available ports (i.e. vms)
 sub list {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api' ]);
-    return $args{api}->network->ports->get->{ports};
+    my $output = $args{api}->network->ports->get;
+    return OpenStack::API->handleOutput(output => $output)->{ports};
 }
 
 
@@ -80,11 +81,11 @@ sub create {
         $params->{port}->{fixed_ips}->[0]->{ip_address} = $args{ip_address},
     }
 
-    my $response = $args{api}->network->ports->post(
-        content => $params
-    );
+    my $output = $args{api}->network->ports->post(
+                     content => $params
+                 );
 
-    return $response;
+    return OpenStack::API->handleOutput(output => $output);
 }
 
 =pod
@@ -98,6 +99,7 @@ Delete a port
 sub delete {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'api', 'id' ]);
-    return $args{api}->network->ports(id => $args{id})->delete;
+    my $output = $args{api}->network->ports(id => $args{id})->delete;
+    return OpenStack::API->handleOutput(output => $output);
 }
 1;
