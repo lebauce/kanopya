@@ -1093,20 +1093,21 @@ sub update {
     my $require_op = 0;
 
     if (defined ($args{components})) {
-        for my $component (@{$args{components}}) {
-            $self->addComponent(component_type_id => $component->{component_type_id});
+        for my $component (@{ delete $args{components} }) {
+            $self->addComponent(component_type_id => delete $component->{component_type_id},
+                                component_configuration => $component);
         }
-        delete $args{components};
 
         $require_op = 1;
     }
 
     if (defined ($args{node})) {
         $log->info("Updating node $args{node} of cluster");
-        $context->{host} = (delete $args{node})->host;
+        $context->{host} = ($args{node})->host;
 
         $require_op = 1;
     }
+    delete $args{node};
 
     # Build the configuration pattern from args and
     # update the cluster attributes and manager params.
