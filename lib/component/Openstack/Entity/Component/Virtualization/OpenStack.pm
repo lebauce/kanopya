@@ -1438,7 +1438,9 @@ sub _load {
 
             my $vm;
             try {
-                $vm = Entity::Host::VirtualMachine->find(serial_number => $vm_info->{name});
+                $vm = Entity::Host::VirtualMachine->find(
+                          hash => {serial_number => $vm_info->{name}}
+                      );
             }
             catch {
                 $vm = $self->createVirtualHost(
