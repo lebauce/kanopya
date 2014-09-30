@@ -2,7 +2,7 @@ require('KIM/services.js');
 
 function iaas_registerbutton_action(e, grid) {
     (new KanopyaFormWizard({
-        title      : 'Register an existing OpenStack',
+        title      : 'Register an OpenStack',
         type       : 'openstack',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ],
@@ -291,12 +291,26 @@ function load_iaas_content (container_id) {
         },
     });
 
-    var registerButton  = $('<a>', { text : 'Register an existing OpenStack' })
-                              .button({ icons : { primary : 'ui-icon-plusthick' } });
-
-    var action_div = $('#' + container_id).prevAll('.action_buttons');
-    action_div.append(registerButton);
-    $(registerButton).bind('click', function (e) {
-        iaas_registerbutton_action(e, grid);
-    });
+    $('<div>', {class: 'top-action-block'})
+        .append($('<a>', {
+            text: 'Register an OpenStack',
+            class: 'top-action openstack',
+            click: function(e) {
+                iaas_registerbutton_action(e, grid);
+            }
+        }))
+        .append($('<a>', {
+            text: 'Register a vCenter',
+            class: 'top-action vcenter',
+            click: function(e) {
+                // iaas_registerbutton_action(e, grid);
+            }
+        }))
+        .append($('<div>', {
+            text: 'Register an AWS',
+            class: 'top-action aws disabled',
+            click: function(e) {
+            }
+        }))
+        .appendTo($('#' + container_id).prev('.action_buttons'));
 }
