@@ -100,6 +100,21 @@ __PACKAGE__->set_primary_key("virtualization_id");
 
 =head1 RELATIONS
 
+=head2 aws_account
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::AwsAccount>
+
+=cut
+
+__PACKAGE__->might_have(
+  "aws_account",
+  "Kanopya::Schema::Result::AwsAccount",
+  { "foreign.aws_account_id" => "self.virtualization_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 hypervisors
 
 Type: has_many
@@ -187,7 +202,7 @@ __PACKAGE__->belongs_to(
   "virtualization",
   "Kanopya::Schema::Result::Component",
   { component_id => "virtualization_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 vmms
@@ -221,8 +236,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:14
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uuVwguoxw1ePFU6nzaVzRQ
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2014-10-01 12:42:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NtHv1kIjSHmq92WeDso/zg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
