@@ -91,6 +91,10 @@ sub _login {
 
         $self->{config}->{$name}->{adminURL} = $service->{endpoints}->[0]->{adminURL};
 
+        if ($name eq 'identity') {
+            my @endpoint_ids = map {$_->{id}} @{$service->{endpoints}};
+            $self->{config}->{$name}->{endpoint_ids} = \@endpoint_ids;
+        }
         $log->debug('Openstack::API login. Service name ' . $name . ' URL returned : '. $self->{config}->{$name}->{url});
     }
 

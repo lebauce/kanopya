@@ -5,7 +5,7 @@ function iaas_registerbutton_action(e, grid) {
         title      : 'Register an existing OpenStack',
         type       : 'openstack',
         id         : (!(e instanceof Object)) ? e : undefined,
-        displayed  : [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ],
+        displayed  : [ 'api_username', 'api_password', 'keystone_url', 'tenant_name', 'executor_component_id' ],
         callback   : function (iaas) {
             handleCreate(grid);
 
