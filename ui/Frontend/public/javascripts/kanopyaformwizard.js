@@ -1281,7 +1281,7 @@ var KanopyaFormWizard = (function() {
             modal           : true,
             resizable       : false,
             dialogClass     : 'no-close',
-            position        : 'top',
+            position        : 'center',
             width           : 'auto',
             minWidth        : 800,
 //            maxHeight       : 550,
@@ -1381,7 +1381,7 @@ var KanopyaFormWizard = (function() {
         if ($(this.content).width() > $(window).innerWidth() - 50) {
             $(this.content).css('width', $(this.content).innerWidth() - 50);
         }
-        $(this.content).dialog('option', 'position', 'top');
+        $(this.content).dialog('option', 'position', 'center');
     }
 
     KanopyaFormWizard.prototype.validateForm = function () {
