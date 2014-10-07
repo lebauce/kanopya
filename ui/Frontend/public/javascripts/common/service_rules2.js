@@ -407,9 +407,364 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onVali
                 $('#rule-conditions-builder').append('<p class="error">' + message + '</p>');
             }
         } else {
-            var message = 'Unable to build this rule (missing JSON format).'
-            $('#rule-conditions-builder').append('<p class="error">' + message + '</p>');
+            var level = 'node';
+            if (rule.hasOwnProperty('aggregate_rule_id')) {
+                level = 'service';
+            }
+            var jsonFormula = buildJsonFormula(rule.formula, level);
+            if (jsonFormula === '#error') {
+                var message = 'Missing JSON format: Unable to build automatically the rule.'
+                $('#rule-conditions-builder').append('<p class="error">' + message + '</p>');
+            } else {
+                var element = $('#rule-conditions-builder').children('.condition-group');
+                buildConditionGroup(element, 0, jsonFormula);
+                var message = 'Missing JSON format: the rule has been builded automatically.'
+                $('#rule-conditions-builder').append('<p class="info">' + message + '</p>');
+            }
         }
+    }
+
+    function buildJsonFormula(formula, level, count) {
+
+        count = count || 0;
+
+        var text = removeBrackets(formula);
+        var logic = 'AND';
+        if (text.indexOf('||') > -1) {
+            logic = 'OR';
+        }
+        if (text.indexOf('&&') > -1 && logic === 'OR') {
+            return '#error';
+        }
+        var sourceLogic = (logic === 'AND') ? '&&' : '||';
+
+        var jsonFormula = {
+            'type': 'group',
+            'logic': logic,
+            'data': []
+        };
+
+        var lineList = [];
+        var i, endIndex, str, line;
+
+        text = formula;
+        i = 0;
+        while (i < text.length) {
+            if (text.substr(i, 2) === 'id') {
+                endIndex = text.indexOf(sourceLogic, i + 2);
+                if (endIndex === -1) {
+                    endIndex = text.length;
+                }
+                str = text.substring(i, endIndex);
+                str = str.replace(/^\s+|\s+$/g, ''); // trim
+                lineList.push(str);
+                i = endIndex + 2;
+
+            } else if (text.charAt(i) === '(') {
+                str = extractBetweenBrackets(text.substr(i));
+                if (str === '#error') {
+                    return '#error';
+                }
+                lineList.push(str);
+                i += str.length;
+            } else if (text.substr(i, 2) === sourceLogic) {
+                i += 2;
+            } else if (text.charAt(i) === ' ') {
+                i++;
+            } else {
+                return '#error';
+            }
+        }
+
+        for (i = 0; i < lineList.length; i++) {
+            count++;
+            if (lineList[i].substr(0, 2) === 'id') {
+                line = buildJsonLine(lineList[i], level, count);
+            } else {
+                line = buildJsonFormula(lineList[i], level, count);
+            }
+            if (line === '#error') {
+                return '#error';
+            }
+            jsonFormula.data.push(line);
+        }
+
+        return jsonFormula;
+    }
+
+    function buildJsonLine(conditionId, level, count) {
+
+        conditionId = conditionId.substr(2);
+        var line = {
+            'type': 'line',
+            'id': 'condition-line' + count
+        };
+        var data;
+
+        if (level === 'service') {
+            data = buildServiceJsonLineData(conditionId);
+        } else {
+            data = buildNodeJsonLineData(conditionId);
+        }
+        if (data === '#error') {
+            return '#error';
+        }
+        line.data = data;
+
+        return line;
+    }
+
+    function buildServiceJsonLineData(conditionId) {
+
+        var re, metricId, operandType;
+        var lineData = {};
+        var ret = true;
+
+        $.ajax({
+            url: '/api/aggregatecondition/' + conditionId,
+            dataType: 'json',
+            async: false,
+            success: function(data) {
+                lineData.id1 = data.left_combination_id;
+                lineData.id2 = data.right_combination_id;
+                lineData.operator = data.comparator;
+            },
+            error: function() {
+                ret = false;
+            }
+        });
+        if (ret === false) {
+            return '#error';
+        }
+
+        for (var i = 1; i <= 2; i++) {
+            if (i === 1) {
+                operandType = 'metric';
+            } else {
+                $.ajax({
+                    url: '/api/entity/' + lineData['id' + i],
+                    dataType: 'json',
+                    async: false,
+                    success: function(data) {
+                        if (data.hasOwnProperty('aggregate_combination_id')) {
+                            operandType = 'metric';
+                        } else if (data.hasOwnProperty('constant_combination_id')) {
+                            operandType = 'constant';
+                            lineData.id2 = data.constant_combination_id;
+                            lineData.function2 = 'value';
+                            lineData.operand2 = data.value;
+                        } else {
+                            ret = false;
+                        }
+                    },
+                    error: function() {
+                        ret = false;
+                    }
+                });
+                if (ret === false) {
+                    return '#error';
+                }
+            }
+
+            if (operandType === 'metric') {
+                $.ajax({
+                    url: '/api/aggregatecombination/' + lineData['id' + i],
+                    dataType: 'json',
+                    async: false,
+                    success: function(data) {
+                        re = /^id\d+$/;
+                        if (re.test(data.aggregate_combination_formula) === true) {
+                            metricId = data.aggregate_combination_formula.substr(2);
+                        } else {
+                            metricId = null;
+                            lineData['level' + i] = 'service';
+                            lineData['function' + i] = 'metric';
+                            lineData['operand' + i] = lineData['id' + i];
+                        }
+                    },
+                    error: function() {
+                        ret = false;
+                    }
+                });
+                if (ret === false) {
+                    return '#error';
+                }
+
+                if (metricId !== null) {
+                    $.ajax({
+                        url: '/api/clustermetric/' + metricId,
+                        dataType: 'json',
+                        async: false,
+                        success: function(data) {
+                            lineData['id' + i] = metricId;
+                            lineData['level' + i] = 'service';
+                            lineData['function' + i] = data.clustermetric_statistics_function_name;
+                            lineData['operand' + i] = data.clustermetric_indicator_id;
+                        },
+                        error: function() {
+                            ret = false;
+                        }
+                    });
+                    if (ret === false) {
+                        return '#error';
+                    }
+                }
+            }
+        }
+
+        return lineData;
+    }
+
+    function buildNodeJsonLineData(conditionId) {
+
+        var re, metricId, operandType;
+        var lineData = {};
+        var ret = true;
+
+        $.ajax({
+            url: '/api/nodemetriccondition/' + conditionId,
+            dataType: 'json',
+            async: false,
+            success: function(data) {
+                lineData.id1 = data.left_combination_id;
+                lineData.id2 = data.right_combination_id;
+                lineData.operator = data.nodemetric_condition_comparator;
+            },
+            error: function() {
+                ret = false;
+            }
+        });
+        if (ret === false) {
+            return '#error';
+        }
+
+        for (var i = 1; i <= 2; i++) {
+            if (i === 1) {
+                operandType = 'metric';
+            } else {
+                $.ajax({
+                    url: '/api/entity/' + lineData['id' + i],
+                    dataType: 'json',
+                    async: false,
+                    success: function(data) {
+                        if (data.hasOwnProperty('nodemetric_combination_id')) {
+                            operandType = 'metric';
+                        } else if (data.hasOwnProperty('constant_combination_id')) {
+                            operandType = 'constant';
+                            lineData.id2 = data.constant_combination_id;
+                            lineData.function2 = 'value';
+                            lineData.operand2 = data.value;
+                        } else {
+                            ret = false;
+                        }
+                    },
+                    error: function() {
+                        ret = false;
+                    }
+                });
+                if (ret === false) {
+                    return '#error';
+                }
+            }
+
+            if (operandType === 'metric') {
+                $.ajax({
+                    url: '/api/nodemetriccombination/' + lineData['id' + i],
+                    dataType: 'json',
+                    async: false,
+                    success: function(data) {
+                        re = /^id\d+$/;
+                        if (re.test(data.nodemetric_combination_formula) === true) {
+                            metricId = data.nodemetric_combination_formula.substr(2);
+                        } else {
+                            metricId = null;
+                            lineData['level' + i] = 'node';
+                            lineData['function' + i] = 'metric';
+                            lineData['operand' + i] = lineData['id' + i];
+                        }
+                    },
+                    error: function() {
+                        ret = false;
+                    }
+                });
+                if (ret === false) {
+                    return '#error';
+                }
+
+                if (metricId !== null) {
+                    $.ajax({
+                        url: '/api/collectorindicator/' + metricId,
+                        dataType: 'json',
+                        async: false,
+                        success: function(data) {
+                            lineData['level' + i] = 'node';
+                            lineData['function' + i] = 'indicator';
+                            lineData['operand' + i] = metricId;
+                        },
+                        error: function() {
+                            ret = false;
+                        }
+                    });
+                    if (ret === false) {
+                        return '#error';
+                    }
+                }
+            }
+        }
+
+        return lineData;
+    }
+
+    function removeBrackets(text) {
+
+        var open = 0, closed = 0;
+        var changed = true;
+        var startIndex = 0;
+        var openIndex, i;
+
+        while (changed) {
+            changed = false;
+            for (i = startIndex; i < text.length; i++) {
+                if (text.charAt(i) === '(') {
+                    open++;
+                    if (open === 1) {
+                        openIndex = i;
+                    }
+                } else if (text.charAt(i) === ')') {
+                    closed++;
+                    if (open === closed) {
+                        text = text.substring(0, openIndex) + text.substring(i + 1);
+                        changed = true;
+                        startIndex = openIndex + 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return text;
+    }
+
+    function extractBetweenBrackets(text) {
+
+        var open = 1, closed = 0;
+
+        for (i = 1; i < text.length; i++) {
+            if (text.charAt(i) === '(') {
+                open++;
+            } else if (text.charAt(i) === ')') {
+                closed++;
+                if (open === closed) {
+                    text = text.substring(0, i + 1);
+                    break;
+                }
+            }
+        }
+        if (i === text.length) {
+            return '#error';
+        }
+
+        return text;
     }
 
     function saveRule() {
@@ -437,9 +792,9 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onVali
                         onValidate.call(null);
                     }
                     closeDialog();
-                } else {
+                } else if ($('#error3').length === 0) {
                     var message = 'Unable to save the rule.'
-                    $('#rule-conditions-builder').append('<p class="error">' + message + '</p>');
+                    $('#rule-conditions-builder').append('<p id="error3" class="error">' + message + '</p>');
                 }
             }
             $('*').removeClass('cursor-wait');
@@ -526,8 +881,10 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onVali
         });
 
         groupElement.find('td').first().children().focus(function() {
-            $('#rule-conditions-builder').children('.error').remove();
-            $('#rule-conditions-builder').find('select.field-error').removeClass('field-error');
+            var element = $('#rule-conditions-builder');
+            element.children('.error').remove();
+            element.children('.info').remove();
+            element.find('select.field-error').removeClass('field-error');
         });
 
         addConditionLine(element, (level > 0));
@@ -545,8 +902,10 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onVali
         element.children('.operand2').addClass('hidden');
 
         element.children().focus(function() {
-            $('#rule-conditions-builder').children('.error').remove();
-            $('#rule-conditions-builder').find('select.field-error').removeClass('field-error');
+            var element = $('#rule-conditions-builder');
+            element.children('.error').remove();
+            element.children('.info').remove();
+            element.find('select.field-error').removeClass('field-error');
         });
 
         element.children('.function1')
@@ -560,11 +919,11 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onVali
                     var data = ($(this).val() === 'metric') ? metricData : indicatorData;
                     if ($(this).val() === 'metric') {
                         $.each(data, function(index, obj) {
-                            element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + ' - ' + obj.id + '</option>');
+                            element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + '</option>');
                         });
                     } else {
                         $.each(data, function(index, obj) {
-                            element.append('<option value="' + obj.id + '">' + obj.label + ' - ' + obj.id + '</option>');
+                            element.append('<option value="' + obj.id + '">' + obj.label + '</option>');
                         });
                     }
                 }
@@ -598,7 +957,7 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onVali
                         var data = ($(this).val() === 'metric') ? metricData : indicatorData;
                         if ($(this).val() === 'metric') {
                             $.each(data, function(index, obj) {
-                                element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + ' - ' + obj.id + '</option>');
+                                element.append('<option value="' + obj.id + '" data-level="' + obj.level + '">' + obj.label + '</option>');
                             });
                         } else {
                             $.each(data, function(index, obj) {
@@ -935,7 +1294,15 @@ function openRulesDialog(serviceProviderId, gridId, staticObject, ruleId, onVali
 
         var i, conditionId;
         var formula = '';
-        var operator = groupObject.logic;
+        var operator;
+        switch (groupObject.logic) {
+            case 'AND':
+                operator = '&&'
+                break;
+            case 'OR':
+                operator = '||'
+                break;
+        }
 
         isRoot = (isRoot === 'undefined') ? true : isRoot;
 
