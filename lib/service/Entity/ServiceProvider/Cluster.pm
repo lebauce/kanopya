@@ -549,8 +549,8 @@ sub addManagerParameters {
                 $component->{component_configuration}->{default_gateway_id} = $self->default_gateway_id;
             }
             # Give ref to the executor user by the service manager itself
-            $component->{component_configuration}->{executor_component}
-                = $self->service_manager->executor_component;
+            $component->{component_configuration}->{executor_component_id}
+                = $self->service_manager->executor_component->id;
 
             # TODO: Check if the component is already installed
             $self->addComponent(

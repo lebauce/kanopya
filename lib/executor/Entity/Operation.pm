@@ -272,12 +272,17 @@ sub serializeParams {
         }
     }
 
-    # Update the existing presets, create its instead
-    if (defined $self->param_preset) {
-        $self->param_preset->update(params => $args{params}, override => 1);
+    try {
+        # Update the existing presets, create its instead
+        if (defined $self->param_preset) {
+            $self->param_preset->update(params => $args{params}, override => 1);
+        }
+        else {
+            $self->param_preset_id(ParamPreset->new(params => $args{params})->id);
+        }
     }
-    else {
-        $self->param_preset_id(ParamPreset->new(params => $args{params})->id);
+    catch ($err) {
+        $log->error("Unable to serialize params for operation " . $self->label . " : $err");
     }
 }
 
