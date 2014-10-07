@@ -45,10 +45,23 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-use constant POLICY_ATTR_DEF => {};
+use constant POLICY_ATTR_DEF => {
+    collector_manager_id => {
+        label        => "Collector Manager",
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
+        is_mandatory => 1,
+    },
+};
+
+use constant POLICY_SELECTOR_ATTR_DEF => {};
+use constant POLICY_SELECTOR_MAP => {};
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
-
+sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
+sub getPolicySelectorMap { return POLICY_SELECTOR_MAP; }
 
 =pod
 
@@ -78,5 +91,27 @@ sub getPatternFromParams {
     return $pattern;
 }
 
+sub getPolicyDef {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+    General::checkParams(args     => \%args,
+                         required => [ 'attributes' ],
+                         optional => { 'params' => {}, 'trigger' => undef });
+
+    # Add the dynamic attributes to displayed
+    push @{ $args{attributes}->{displayed} }, 'collector_manager_id';
+
+    # Build the list of collector managers
+    my $manager_options = {};
+    for my $component (Entity::Component->search(custom => { category => 'CollectorManager' })) {
+        $manager_options->{$component->id} = $component->toJSON;
+        $manager_options->{$component->id}->{label} = $component->label;
+    }
+    my @manageroptions = values %{$manager_options};
+    $args{attributes}->{attributes}->{collector_manager_id}->{options} = \@manageroptions;
+
+    return $args{attributes};
+}
 1;
 

@@ -205,15 +205,11 @@ var KanopyaFormWizard = (function() {
         for (var step in this.steps) {
             $(this.steps[step].div).attr('id', this.name + '_step_' + step);
 
-            var div = $(this.form).find('#' + this.name + '_step_' + step).get(0);
-            if (div === undefined) {
-                $(this.steps[step].div).appendTo(this.form);
-
-            } else {
-                var old = $(div).replaceWith($(this.steps[step].div));
-                $(old).find('tr').remove();
-                $(old).remove();
+            var div = $(this.form).find('#' + this.name + '_step_' + step);
+            if (div.length) {
+                div.remove();
             }
+            $(this.steps[step].div).appendTo(this.form);
             delete this.steps[step].div;
         }
 
@@ -223,6 +219,12 @@ var KanopyaFormWizard = (function() {
         $(this.form).formwizard("update_steps");
 
         this.resizeDialog();
+
+        // Raise loaded event
+        $.event.trigger({
+            type: 'kanopiaformwizardLoaded',
+            collectorManagerId: this.data.collector_manager_id
+        });
 
         return values;
     }
