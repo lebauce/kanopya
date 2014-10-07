@@ -153,23 +153,13 @@
 	<td></td>
 </tr>
 <tr>
-	<td>click</td>
-	<td>css=#content_service_monitoring_static a:contains('Node')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>pause</td>
-	<td>1000</td>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a metric')</td>
 	<td></td>
 </tr>
 <tr>
 	<td>verifyVisible</td>
-	<td>css=span:contains('Add a combination')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Delete node combination(s)')</td>
+	<td>css=span:contains('Delete metric(s)')</td>
 	<td></td>
 </tr>
 <tr>
@@ -177,85 +167,26 @@
 	<td>css=span:contains('Import combinations')</td>
 	<td></td>
 </tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=table[id^=service_resources_nodemetric_combination]</td>
-	<td></td>
-</tr>
+<!--Anomalies-->
 <tr>
 	<td>click</td>
-	<td>css=#content_service_monitoring_static a:contains('Service')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>pause</td>
-	<td>1000</td>
-	<td></td>
-</tr>
-<tr>
-	<td>waitForVisible</td>
-	<td>css=span:contains('Add a service metric')</td>
+	<td>//a[@href = &quot;#content_service_anomalies_static&quot;]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>verifyVisible</td>
-	<td>css=span:contains('Delete service metric(s)')</td>
+	<td>css=span:contains('Add an anomalies detector')</td>
 	<td></td>
 </tr>
 <tr>
 	<td>verifyVisible</td>
-	<td>css=table[id^=service_resources_clustermetrics]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=#service_metric_comb_action_buttons span:contains('Add a combination')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Delete service combination(s)')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=#service_metric_comb_action_buttons span:contains('Import combinations')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=table[id^=service_resources_aggregate_combinations]</td>
+	<td>css=span:contains('Delete anomalies detector')</td>
 	<td></td>
 </tr>
 <!--Rules-->
 <tr>
 	<td>click</td>
-	<td>//a[@href = &quot;#content_service_rules_static&quot;]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>css=#content_service_rules_static a:contains('Node')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>pause</td>
-	<td>1000</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Add condition')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Delete node condition(s)')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=table[id^=service_resources_nodemetric_conditions]</td>
+	<td>//a[@href = &quot;#content_service_rules2_static&quot;]</td>
 	<td></td>
 </tr>
 <tr>
@@ -265,72 +196,7 @@
 </tr>
 <tr>
 	<td>verifyVisible</td>
-	<td>css=span:contains('Delete node rule(s)')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Associate time periods')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Import node rules')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=table[id^=service_resources_nodemetric_rules]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>css=#content_service_rules_static a:contains('Service')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>pause</td>
-	<td>1000</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Add a Service Condition')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Delete service condition(s)')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=table[id^=service_resources_aggregate_conditions]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=#service_accordion_container span:contains('Add a rule')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Delete service rule(s)')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=#service_accordion_container span:contains('Associate time periods')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=span:contains('Import service rules')</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyVisible</td>
-	<td>css=table[id^=service_resources_aggregate_rules]</td>
+	<td>css=span:contains('Delete rule(s)')</td>
 	<td></td>
 </tr>
 <!--Events and Alerts-->
