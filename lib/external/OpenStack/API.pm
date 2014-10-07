@@ -73,7 +73,7 @@ sub _login {
     $log->debug('Service Catalog ' . Dumper($response->{access}->{serviceCatalog}));
 
     if( ! exists $response->{access}->{serviceCatalog} ||
-        ! keys $response->{access}->{serviceCatalog} ) {
+        ! keys (%{ $response->{access}->{serviceCatalog} })) {
         throw Kanopya::Exception::Execution::API(
                   error => 'Openstack API call returns no service catalog'
 	          )

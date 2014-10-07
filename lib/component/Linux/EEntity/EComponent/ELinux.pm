@@ -259,7 +259,7 @@ sub _generateHosts {
     for my $ip (keys %{ $entries }) {
         push @hosts, { ip      => $ip,
                        fqdn    => $entries->{$ip}->{fqdn},
-                       aliases => [ values $entries->{$ip}->{aliases} ] };
+                       aliases => [ values %{ $entries->{$ip}->{aliases} } ] };
     }
 
     my $file = $self->generateNodeFile(host          => $args{host},

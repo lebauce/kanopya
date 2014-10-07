@@ -1820,7 +1820,7 @@ sub registerKanopyaMaster {
 
         my $conf = $component->{conf};
         if (defined $component->{require}) {
-            for my $relation (keys $component->{require}) {
+            for my $relation (keys %{ $component->{require} }) {
                 my $required = $components->{$component->{require}->{$relation}};
                 if (defined $required->{instance}) {
                     $conf->{$relation} = $required->{instance};
