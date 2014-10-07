@@ -52,6 +52,7 @@ use OpenStack::Volume;
 use OpenStack::Server;
 use OpenStack::Infrastructure;
 
+use KeystoneEndpoint;
 use Hash::Merge;
 use Data::Dumper;
 use TryCatch;
@@ -133,6 +134,7 @@ sub new {
     General::checkParams(args     => \%args,
                          required => [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ]);
 
+    Kanopya::Database::beginTransaction();
     my $self = $class->SUPER::new(%args);
 
     # Initialize the param preset entry used to store available configuration
@@ -143,12 +145,34 @@ sub new {
         $self->_api;
     }
     catch ($err) {
+        Kanopya::Database::rollbackTransaction();
         throw Kanopya::Exception::Internal::WrongValue(
                   error => "Unable to connect to the OpenStack keystone service, " .
                            "please check your connexion informations."
               );
     }
 
+    for my $id (@{$self->_api->{config}->{identity}->{endpoint_ids}}) {
+        try {
+            KeystoneEndpoint->new(open_stack_id => $self->id, keystone_uuid => $id);
+        }
+        catch (Kanopya::Exception::DB::DuplicateEntry $err) {
+            Kanopya::Database::rollbackTransaction();
+            my $label = KeystoneEndpoint->find(hash => {keystone_uuid => $id})->open_stack->label;
+            my $error = 'The component you try to register has already been '
+                        . 'registered under the label "'
+                        . $label
+                        . '"';
+
+            throw Kanopya::Exception::Internal(error => $error);
+        }
+        catch ($err) {
+            Kanopya::Database::rollbackTransaction();
+            $err->rethrow;
+        }
+    }
+
+    Kanopya::Database::commitTransaction();
     return $self;
 }
 

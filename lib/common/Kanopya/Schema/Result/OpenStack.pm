@@ -120,6 +120,21 @@ __PACKAGE__->add_unique_constraint("keystone_url", ["keystone_url", "tenant_name
 
 =head1 RELATIONS
 
+=head2 keystone_endpoints
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KeystoneEndpoint>
+
+=cut
+
+__PACKAGE__->has_many(
+  "keystone_endpoints",
+  "Kanopya::Schema::Result::KeystoneEndpoint",
+  { "foreign.open_stack_id" => "self.open_stack_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 open_stack
 
 Type: belongs_to
