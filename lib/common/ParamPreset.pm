@@ -65,6 +65,7 @@ sub new {
 sub load {
     my $self = shift;
     my %args = @_;
+    return {} unless defined $self->params;
 
     my $result;
     eval {

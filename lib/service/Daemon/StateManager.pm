@@ -58,8 +58,8 @@ sub oneRun {
 
     CLUSTER:
     foreach my $cluster (@clusters) {
-        my @nodes = $cluster->getHosts();
-
+        my @nodes = $cluster->nodes;
+        
         my $services_available = 1;
         if (! scalar(@nodes)) {
             # we deactive all alerts for this cluster
@@ -73,13 +73,14 @@ sub oneRun {
         $log->info('---------------------------------------------');
         $log->info('***** Check ['.$cluster->cluster_name.'] service availability on ' . scalar(@nodes) . ' nodes *****');
         foreach my $node (@nodes) {
-            my $ehost = EEntity->new(data => $node);
+            my $host  = $node->host;
+            my $ehost = EEntity->new(data => $host);
 
             Kanopya::Database::beginTransaction;
 
             # Firstly try to ping the node
             my $pingable;
-            my $hostname = $ehost->node->node_hostname;
+            my $hostname = $node->node_hostname;
             my $hostmsg  = "Host $hostname not reachable";
 
             eval {
@@ -91,14 +92,14 @@ sub oneRun {
             $log->debug("Host pingable status <$pingable>, state <$hoststate>");
 
             if ((! $pingable) and $hoststate eq 'up') {
-                my $msg = "Node " . $node->node->node_hostname . " unreachable in cluster :" . $cluster->cluster_name;
+                my $msg = "Node " . $node->node_hostname . " unreachable in cluster :" . $cluster->cluster_name;
                 $log->warn($msg);
                 Message->send(from => 'StateManager', level => 'info', content => $msg);
 
                 # create an alert if not already created
                 Alert->throw(entity_id      => $cluster->id,
                              alert_message  => $hostmsg,
-                             trigger_entity => $node);
+                             trigger_entity => $host);
 
                 # Set the host and node states to broken
                 $ehost->setState(state => 'broken');
@@ -117,7 +118,7 @@ sub oneRun {
                 # disable the alert if it exists
                 Alert->resolve(entity_id      => $cluster->id,
                                alert_message  => $hostmsg,
-                               trigger_entity => $node);
+                               trigger_entity => $host);
             }
 
             # Then check the node component availability
@@ -133,12 +134,12 @@ sub oneRun {
 
                 if (! $ecomponent->isUp(node => EEntity->new(entity => $node))) {
                     my $msg = $component_name .
-                              " not available on node (" . $node->node->node_hostname .
+                              " not available on node (" . $node->node_hostname .
                               ") in cluster (" . $cluster->cluster_name . ")";
 
                     Alert->throw(entity_id      => $cluster->id,
                                  alert_message  => $compmsg,
-                                 trigger_entity => $node);
+                                 trigger_entity => $host);
 
                     $log->warn($msg);
 
@@ -151,7 +152,7 @@ sub oneRun {
                     # disable the alert if it exists
                     Alert->resolve(entity_id      => $cluster->id,
                                    alert_message  => $compmsg,
-                                   trigger_entity => $node);
+                                   trigger_entity => $host);
                 }
             }
             my ($nodestate, $nodetimestamp) = $ehost->getNodeState;
