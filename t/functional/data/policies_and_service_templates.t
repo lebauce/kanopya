@@ -22,18 +22,22 @@ my $testing = 1;
 use Kanopya::Database;
 use ClassType;
 use Entity::User;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
 use Entity::Policy;
 use Entity::Policy::StoragePolicy;
 use Lvm2Vg;
 use Entity::Policy::HostingPolicy;
+use Entity::Policy::OrchestrationPolicy;
 use Entity::Component::Physicalhoster0;
 use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::HCMStorageManager;
 use Entity::Component::HCMNetworkManager;
 use Entity::Component::KanopyaDeploymentManager;
+use Entity::Component::Kanopyacollector1;
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -52,6 +56,7 @@ sub main {
     test_service_template_json();
     test_service_template_creation();
     test_service_creation_from_service_template();
+    test_orchestration_policy();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
@@ -325,4 +330,25 @@ sub test_service_creation_from_service_template {
             %$additional_policy_aprams
         );
     } "Create service from service template.";
+}
+
+sub test_orchestration_policy {
+
+    my $sp = Entity::ServiceProvider->new();
+    my $collector_manager = Entity::Component::Kanopyacollector1->find();
+    $sp->addManager(manager_id => $collector_manager->id, manager_type => 'CollectorManager');
+
+    my $orchestration_policy = Entity::Policy::OrchestrationPolicy->create(
+                                   collector_manager_id => $collector_manager->id,
+                                   policy_name => 'Test orchestration',
+                                   policy_type => 'orchestration',
+                                   orchestration => {service_provider_id => $sp->id},
+                               );
+    $orchestration_policy->remove();
+    lives_ok {
+        expectedException { Entity->get(id => $sp->id) }
+            'Kanopya::Exception::Internal::NotFound',
+            'Service Provider has to be deleted';
+
+    } 'Remove orchestration policy service provider with policy deletion'
 }

@@ -38,6 +38,8 @@ use warnings;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
+use Entity::ServiceProvider;
+use TryCatch;
 
 my $log = get_logger("");
 
@@ -62,6 +64,23 @@ use constant POLICY_SELECTOR_MAP => {};
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
 sub getPolicySelectorMap { return POLICY_SELECTOR_MAP; }
+
+sub remove {
+    my $self = shift;
+    my $params = $self->getParams;
+    if (defined $params->{orchestration}->{service_provider_id}) {
+        try {
+            Entity::ServiceProvider->get(id => $params->{orchestration}->{service_provider_id})->remove;
+        }
+        catch(Kanopya::Exception $err) {
+            $log->warn('Error during service provider deletion : ' . $err->user_message);
+        }
+        catch($err) {
+            $log->warn($err);
+        }
+    }
+    return $self->SUPER::remove();
+}
 
 =pod
 
