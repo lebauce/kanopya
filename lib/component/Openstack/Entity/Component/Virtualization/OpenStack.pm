@@ -804,26 +804,30 @@ sub getVMState {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $details;
     try {
-        my $details =  $self->getVMDetails(%args);
-
-        my $state_map = {
-            'MIGRATING' => 'migr',
-            'BUILD'     => 'pend',
-            'REBUILD'   => 'pend',
-            'ACTIVE'    => 'runn',
-            'ERROR'     => 'fail',
-            'SHUTOFF'   => 'shut'
-        };
-
-        return {
-            state      => $state_map->{$details->{state}} || 'fail',
-            hypervisor => $details->{hypervisor},
-        };
+        $details =  $self->getVMDetails(%args);
     }
     catch ($err) {
         $log->warn($err);
+        return {state => 'fail'};
     }
+
+    my $state_map = {
+        'MIGRATING' => 'migr',
+        'BUILD'     => 'pend',
+        'REBUILD'   => 'pend',
+        'ACTIVE'    => 'runn',
+        'ERROR'     => 'fail',
+        'SHUTOFF'   => 'shut'
+    };
+
+    return {
+        state      => $state_map->{$details->{state}} || 'fail',
+        hypervisor => $details->{hypervisor},
+    };
+
+
 }
 
 =pod
@@ -913,8 +917,13 @@ sub removeSystemImage {
         my $detail;
         my $time_out = time + 60;
         do {
-            $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->volume_uuid);
-
+            try {
+                $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->volume_uuid);
+            }
+            catch ($err) {
+                $log->warn('Error when getting volume detail: ' . $err);
+                return $args{systemimage}->delete;
+            }
             $log->debug("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
 
             sleep 3;
