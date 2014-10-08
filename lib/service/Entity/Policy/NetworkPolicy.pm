@@ -218,7 +218,6 @@ sub getPatternFromParams {
 
     # HCMNetworkManager specific, should not be in the generic policy code
     if (ref($args{params}->{interfaces}) eq 'ARRAY') {
-        my $index = 0;
         my $interfaces = {};
         for my $interface (@{ delete $args{params}->{interfaces} }) {
             if (ref($interface->{netconfs}) ne 'ARRAY') {
@@ -229,12 +228,17 @@ sub getPatternFromParams {
             $interface->{netconfs} = \%netconfs;
 
             $interfaces->{'interface_' . $interface->{interface_name}} = $interface;
-            $index++;
         }
         $args{params}->{interfaces} = $interfaces;
     }
 
-   return $self->SUPER::getPatternFromParams(params => $args{params});
+    # OpenStack specific, should not be in the generic policy code
+    if (ref($args{params}->{subnets}) eq 'ARRAY') {
+        my %subnets = map { $_ => $_ } @{ delete $args{params}->{subnets} };
+        $args{params}->{subnets} = \%subnets;
+    }
+
+    return $self->SUPER::getPatternFromParams(params => $args{params});
 }
 
 1;
