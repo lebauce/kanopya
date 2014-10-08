@@ -138,7 +138,8 @@ sub prerequisites {
     }
     catch (Kanopya::Exception::NotImplemented $err) {
         # Physical
-        $log->warn($err);
+        $log->warn('Method <selectHypervisor> is not implemented by the host manager'
+                   . '. This may be normal for a physical deployment');
         return 0;
     }
 
