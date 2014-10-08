@@ -119,6 +119,10 @@
                     "class_type" : "Entity::ServiceProvider",
                     "service_provider_type_id" : null
                 }
+            },
+            "collector_manager_id" : {
+                "class_type" : "Entity::Component::Kanopyacollector1",
+                "service_provider.cluster.cluster_name" : "Kanopya"
             }
         },
         "Empty orchestration configuration" : {
