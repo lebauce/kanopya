@@ -95,6 +95,11 @@ sub test_policies_merge {
                      iscsi_portals      => [ 1 ]
                  );
 
+    lives_ok {
+        # Check if the jysonification is working
+        $policy->toJSON();
+    } "Check if the jysonification is working";
+
     my $params = Entity::ServiceProvider::Cluster->buildConfigurationPattern(
                      policies           => ($policy),
                      policy_type        => "storage",
@@ -136,6 +141,12 @@ sub test_policies_hash_to_list {
                             netconfs => [ 123, 5678 ]
                          } ],
                      );
+
+    lives_ok {
+        # Check if the jysonification is working
+        $net_policy->toJSON();
+    } "Check if the jysonification is working";
+
     my $sys_policy = Entity::Policy::SystemPolicy->new(
                          policy_name        => "sys_policy_tests_hash_to_list",
                          policy_type        => "storage",
@@ -151,6 +162,11 @@ sub test_policies_hash_to_list {
                             component_type => 31
                          } ]
                      );
+
+    lives_ok {
+        # Check if the jysonification is working
+        $sys_policy->toJSON();
+    } "Check if the jysonification is working";
 
     lives_ok {
         my $net_pattern = $net_policy->param_preset->load;
