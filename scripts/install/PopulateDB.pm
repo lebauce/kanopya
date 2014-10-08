@@ -2492,7 +2492,7 @@ sub populateDB {
     print "\t- Registering workflow definitions...\n";
     populate_workflow_def(kanopya_master => $kanopya_master);
 
-    print "\t- Create default orchestration policy...\n";
+    print "\t- Create default orchestration policies...\n";
     populate_policies(kanopya_master => $kanopya_master);
 
     print "\t- Populating DB done.\n";

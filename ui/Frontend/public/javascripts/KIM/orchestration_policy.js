@@ -5,7 +5,9 @@ require('common/service_common.js');
 function orchestrationPolicyForm(sp_id, policy, grid) {
 
     $(document).on("kanopiaformwizardLoaded", function(event) {
-        associateManager(sp_id, event.collectorManagerId, 'CollectorManager');
+        if (event.collectorManagerId != undefined) {
+            associateManager(sp_id, event.collectorManagerId, 'CollectorManager');
+        }
 
         $('#form_orchestrationpolicy_step_Monitoring').empty();
         $('#form_orchestrationpolicy_step_Rules').empty();
@@ -54,7 +56,7 @@ function orchestrationPolicyForm(sp_id, policy, grid) {
         },
         callback : function () {
             grid.trigger("reloadGrid");
-        }
+        },
     });
 
     form.start();

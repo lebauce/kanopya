@@ -51,6 +51,11 @@ sub methods {
     },
 }
 
+sub getCollectorManagerParams {
+    my ($self, %args) = @_;
+    return {};
+}
+
 sub createCollectorIndicators {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['indicator_sets']);

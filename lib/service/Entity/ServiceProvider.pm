@@ -428,6 +428,26 @@ sub addManager {
                        category_name => $args{manager_type}
                    });
 
+    try {
+        my $spm = ServiceProviderManager->find(
+                      hash => {
+                          service_provider_id => $self->id,
+                          manager_category_id => $category->id,
+                      }
+                  );
+
+        $log->debug('Service provider is already associated to a <'
+                    . $args{manager_type} . '>. Removing it first.');
+
+        $spm->delete();
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # Service provider is not yet associated, continue
+    }
+    catch($err) {
+        $err->rethrow;
+    }
+
     my $manager = ServiceProviderManager->new(
                       service_provider_id => $self->id,
                       manager_category_id => $category->id,
