@@ -42,35 +42,6 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("");
-my $errmsg;
-
-
-sub createHost {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "host_core", "host_serial_number", "host_ram" ]);
-
-    if (defined $args{erollback}) { delete $args{erollback}; }
-
-    my $host = $self->_entity->addHost(%args);
-
-    #TODO: insert erollback ?
-    return $host;
-}
-
-
-sub removeHost {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ "host" ]);
-
-    my $host = $self->_entity->delHost(host => $args{host}->_entity);
-
-    #TODO: insert erollback ?
-}
 
 
 =pod
@@ -89,6 +60,26 @@ sub startHost {
     General::checkParams(args => \%args, required => [ "host" ]);
 
     throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+=begin classdoc
+
+This function halt a host by execution poweroff command.
+
+@param host the host to stop
+
+=end classdoc
+=cut
+
+sub haltHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+   return $args{host}->getEContext->execute(command => 'poweroff')->{exitcode};
 }
 
 
@@ -152,45 +143,44 @@ sub scaleHost {
     $log->debug("Scaling is not implemented by this host manager, doing nothing");
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return one free host that match the criterias
-@param ram required ram amount
-@param cpu required cores number
-@optional ram_unit
 
-@return Entity::Host
+@param interfaces the network interfaces constraints
+@param core the core number constraints
+@param ram the ram amount constraint
+
+@optional deploy_on_disk the on disk deployable constraints
+@optional tags the tag list constraints
+@optional no_tags the no_tag list constraints
+
+@return the found free host
 
 =end classdoc
-
 =cut
 
 sub getFreeHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster" ]);
+    General::checkParams(args     => \%args,
+                         required => [ "interfaces", "ram" ],
+                         optional => { "deploy_on_disk" => 0, "tags" => [], "no_tags" => [],
+                                       "core" => undef, "cpu" => undef });
 
-    return DecisionMaker::HostSelector->getHost(%args);
+    # We are not consistent yet for the arg "core"
+    if (! (defined($args{core}) || defined($args{cpu}))) {
+        General::checkParams(args => \%args, required => [ "core" ]);
+    }
+    elsif (defined($args{cpu})) {
+        $args{core} = delete $args{cpu};
+    }
+
+    return DecisionMaker::HostSelector->getHost(host_manager => $self, %args);
 }
-
-=pod
-=begin classdoc
-
-Apply a VLAN on an interface of a host
-
-@param vlan
-@param iface
-
-=end classdoc
-=cut
-
-sub applyVLAN {
-    $log->debug("VLAN are not supported by this host manager, doing nothing");
-}
-
 
 sub getHypervisorVMs {
     my ($self, %args) = @_;
@@ -203,4 +193,5 @@ sub resubmitHost {
     General::checkParams(args => \%args, required => [ "host" ]);
     throw Kanopya::Exception::NotImplemented();
 }
+
 1;

@@ -76,7 +76,7 @@ sub getBaseConfiguration {
 sub getExecToTest {
     my $self = shift;
 
-    my $status = scalar ($self->getActiveNodes) >= 1 ? 'wsrep_connected' : 'wsrep_ready';
+    my $status = scalar (@{ $self->getActiveNodes }) >= 1 ? 'wsrep_connected' : 'wsrep_ready';
 
     return {
         mysql => {
@@ -95,11 +95,11 @@ sub getExecToTest {
 sub getPuppetDefinition {
     my ($self, %args)   = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     my $cluster_address = 'gcomm://';
-    my @fqdns           = map { $_->fqdn } (grep { $_->node_id != $args{host}->node->node_id } $self->getActiveNodes);
-    $cluster_address   .= join ',', @fqdns;
+    my @fqdns = map { $_->fqdn } (grep { $_->id != $args{node}->id } @{ $self->getActiveNodes });
+    $cluster_address .= join ',', @fqdns;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         mysql => {
@@ -111,7 +111,7 @@ sub getPuppetDefinition {
                     },
                     galera => {
                         address => $cluster_address,
-                        name => $self->service_provider->cluster_name
+                        name => $self->getMasterNode->node_hostname
                     }
                 }
             }

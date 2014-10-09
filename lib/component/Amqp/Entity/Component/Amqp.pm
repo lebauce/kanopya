@@ -64,10 +64,8 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my @nodes = $self->getActiveNodes;
-    my @nodes_hostnames = map {$_->node_hostname} @nodes;
+    my @nodes_hostnames = map { $_->node_hostname } @{ $self->getActiveNodes };
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         amqp => {
@@ -84,13 +82,13 @@ sub getPuppetDefinition {
 sub getExecToTest {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     return {
         rabbitmq => {
             cmd         => 'rabbitmqctl cluster_status',
             answer      => 'running_nodes,\[.*,?rabbit@' .
-                           $args{host}->node->node_hostname .
+                           $args{node}->node_hostname .
                            ',?.*\]}',
             return_code => 0
         }

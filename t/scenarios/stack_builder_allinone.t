@@ -25,8 +25,8 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Network;
@@ -42,7 +42,7 @@ use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level  => 'INFO',
     file   => 'stack_builder_allinone.t.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 
@@ -64,7 +64,7 @@ sub main {
     `ip addr add $ip/24 dev eth1`;
 
     lives_ok {
-        my $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        my $masterimage = Kanopya::Test::Execution::registerMasterImage();
     } 'Register master image';
 
     my $builder;
@@ -158,7 +158,7 @@ sub main {
     my $build_stack;
     lives_ok {
        $build_stack = $builder->buildStack(stack => $stack, owner_id => $customer->id);
-       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+       Kanopya::Test::Execution->executeOne(entity => $build_stack);
     } 'Run workflow BuildStack';
 
     lives_ok {
@@ -217,8 +217,8 @@ sub main {
         my $controllerhost = EEntity->new(data =>  @{$controller->getHosts()}[0]);
 
         ## Needed for build a context out of Executor
-        my $context = EContext->new(src_host => $kanopyahost,
-                                    dst_host => $controllerhost,
+        my $context = EContext->new(src_ip => $kanopyahost->adminIp,
+                                    dst_ip => $controllerhost->adminIp,
                                     key      => '/var/lib/kanopya/private/kanopya_rsa' );
 
         my $command = 'grep OS_PASSWORD /root/openrc.sh';
@@ -236,42 +236,23 @@ sub main {
                                                ' is not correct on /etc/nova/nova.conf');
         }
 
-        # Connect to the OpenStack API and try it
-        my $apicredentials = {
-            auth => {
-                passwordCredentials => {
-                    username    => 'admin',
-                    password    => $apipass,
-                },
-                tenantName      => "openstack"
-            }
-        };
-    
-        my $apiconfig = {
-            verify_ssl => 0,
-            identity => {
-                url     => 'http://'.$fqdn.':5000/v2.0'
-            },
-        };
-    
-        my $api = OpenStack::API->new(credentials => $apicredentials,
-                                      config      => $apiconfig);
+        my $api = OpenStack::API->new(user         => "admin",
+                                      password     => $apipass,
+                                      tenant_name  => "openstack",
+                                      keystone_url => $fqdn);
 
         my $response = $api->endpoints;
-        if( ! exists $response->{api}->{config} ||
-                ! keys $response->{api}->{config} ) {
+        if ( ! exists $response->{api}->{config} || ! keys $response->{api}->{config} ) {
                 throw Kanopya::Exception::Execution::API(
-                        error         => 'Openstack API call returns no endpoints'
-                    )
+                          error => 'Openstack API call returns no endpoints'
+                      )
         }
-
-
     }
 
     my $end_stack;
     lives_ok {
        $end_stack = $builder->endStack(stack_id => 123, owner_id => $customer->id);
-       Kanopya::Tools::Execution->executeOne(entity => $end_stack);
+       Kanopya::Test::Execution->executeOne(entity => $end_stack);
     } 'Run workflow EndStack';
 
     if ($testing == 1) {

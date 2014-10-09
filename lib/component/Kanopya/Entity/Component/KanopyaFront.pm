@@ -62,8 +62,8 @@ sub getPuppetDefinition {
                     logdir => $config->{logdir}
                 }
             },
-            dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
-                              $self->service_provider->getComponent(name => "Mysql") ]
+            dependencies => [ $self->getMasterNode->getComponent(name => "Amqp"),
+                              $self->getMasterNode->getComponent(name => "Mysql") ]
         }
     } );
 }

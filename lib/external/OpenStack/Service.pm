@@ -58,6 +58,11 @@ sub getEndpoint {
     return $self->{api}->{config}->{$self->{name}}->{url};
 }
 
+sub adminURL {
+    my $self = shift;
+    return $self->{api}->{config}->{$self->{name}}->{adminURL};
+}
+
 sub DESTROY {
 }
 

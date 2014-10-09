@@ -56,16 +56,17 @@ sub test2d {
         }
     };
     # Create Cluster and add network interfaces to it
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
         cluster_conf => $host_manager_conf,
     );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     for my $interface ($cluster->interfaces) {
         $interface->delete();
     }
-    $cluster->configureInterfaces(
+
+    my $network_manager_params = {
         interfaces => {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
@@ -78,7 +79,8 @@ sub test2d {
                 interface_name => "eth1",
             },
         }
-    );
+    };
+    $cluster->configureInterfaces(%{ $network_manager_params });
 
     ######################
     #### Create Hosts ####
@@ -86,7 +88,7 @@ sub test2d {
 
     # Create Host 1
     my $master_iface_name1 = "eth2";
-    my $host1 = Kanopya::Tools::Register->registerHost(
+    my $host1 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 1,
             core          => 1,
@@ -114,7 +116,7 @@ sub test2d {
     );
     # Create Host 2
     my $master_iface_name2 = "eth0";
-    my $host2 = Kanopya::Tools::Register->registerHost(
+    my $host2 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 2,
             core          => 2,
@@ -139,7 +141,7 @@ sub test2d {
     );
     # Create Host 3
     my $master_iface_name3 = "eth0";
-    my $host3 = Kanopya::Tools::Register->registerHost(
+    my $host3 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 3,
             core          => 4,
@@ -172,7 +174,13 @@ sub test2d {
     ##########################
 
     throws_ok {
-        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
+        my $selected_host = DecisionMaker::HostSelector->getHost(
+                                host_manager => Entity::Component::Physicalhoster0->find(),
+                                %{ $network_manager_params },
+                                %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                            );
+
+
     } 'Kanopya::Exception',
       'Test 2.d : None of the hosts match the minimum bonds number constraint';
 }

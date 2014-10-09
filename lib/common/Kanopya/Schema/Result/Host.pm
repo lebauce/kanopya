@@ -51,7 +51,7 @@ __PACKAGE__->table("host");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 hostmodel_id
 
@@ -78,7 +78,7 @@ __PACKAGE__->table("host");
 
   data_type: 'char'
   is_nullable: 0
-  size: 64
+  size: 255
 
 =head2 host_desc
 
@@ -138,7 +138,7 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "hostmodel_id",
   {
@@ -162,7 +162,7 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "host_serial_number",
-  { data_type => "char", is_nullable => 0, size => 64 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "host_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "active",
@@ -240,7 +240,12 @@ __PACKAGE__->belongs_to(
   "host_manager",
   "Kanopya::Schema::Result::Component",
   { component_id => "host_manager_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 hostmodel
@@ -379,8 +384,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-17 12:00:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9VnbwtjJl4zalAJmGugQwg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:r2nR32YUQMALXefNUeS86w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

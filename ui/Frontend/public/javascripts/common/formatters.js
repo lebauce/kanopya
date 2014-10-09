@@ -34,11 +34,13 @@ function StateFormatter(cell, options, row) {
             'down'      : 'down',
     };
 
-    var curr_state = cell.split(':')[0];
+    if (cell != null) {
+        var curr_state = cell.split(':')[0];
 
-    for (var state in state_map) {
-        if (curr_state === state) {
-            return "<img src='/images/icons/" + state_map[state] + ".png' title='" + curr_state + "' />";
+        for (var state in state_map) {
+            if (curr_state === state) {
+                return "<img src='/images/icons/" + state_map[state] + ".png' title='" + curr_state + "' />";
+            }
         }
     }
     return "<img src='/images/icons/down.png' title='" + curr_state + "' />";

@@ -20,17 +20,16 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
     file=>'live_migration.log',
-    layout=>'%F %L %p %m%n'
+    layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
-use Aggregator;
 use Entity;
 use Entity::Component::Virtualization::Opennebula3;
 use VerifiedNoderule;
 use Kanopya::Config;
 
-use Kanopya::Tools::Execution;
+use Kanopya::Test::Execution;
 
 my $testing = 0;
 
@@ -87,7 +86,7 @@ sub lm_normal {
     my @hv1_vms = $hv1->virtual_machines;
     my $vm1_hv1 = $hv1_vms[0];
     $vm1_hv1->migrate(hypervisor => $hv2);
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     is ($vm1_hv1->reload->hypervisor->id, $hv2->id, 'Live migration of 1 VM (basic case)');
 }
@@ -111,15 +110,15 @@ sub lm_limit {
         diag('#Live migrations');
         # 1st migration
         $vm1_hv1->migrate(hypervisor => $hv2);
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
         die '## VM1 has not migrated' if ( $vm1_hv1->reload->hypervisor->id != $hv2->id );
         # 2nd migration
         $vm2_hv1->migrate(hypervisor => $hv2);
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
         die '## VM2 has not migrated' if ( $vm2_hv1->reload->hypervisor->id != $hv2->id );
         # 3rd migration
         $vm3_hv1->migrate(hypervisor => $hv2);
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
         die '## VM3 has not migrated' if ( $vm3_hv1->reload->hypervisor->id != $hv2->id );
 
         # hv1 host is returned to it's initial state
@@ -149,12 +148,12 @@ sub lm_sequential_no_place_kanopya {
         my $vm2_hv2 = $hv2_vms[1];
         # 1st migration : VM should migrate
         $vm1_hv2->migrate(hypervisor => $hv1);
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
         die '## VM1 has not migrated' if ( $vm1_hv2->reload->hypervisor->id != $hv1->id );
         # 2nd migration : VM should not migrate
         $vm2_hv2->migrate(hypervisor => $hv1);
         die '## VM2 has migrated' if( $vm2_hv2->reload->hypervisor->id != $hv2->id );
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         # hv1 host is returned to it's initial state
         $hv1->setAttr(
@@ -183,7 +182,7 @@ sub lm_successive_no_place_kanopya {
         my $vm2_hv2 = $hv2_vms[1];
         $vm1_hv2->migrate(hypervisor => $hv1);
         $vm2_hv2->migrate(hypervisor => $hv1);
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         # one of the VMs should migrate and another not (we don't know which VM will migrate or not)
         my $ok1 = ($vm1_hv2->reload->hypervisor->id == $hv1->id);# 1st VM has migrated on hv1
@@ -222,7 +221,7 @@ sub lm_hypervisor_deactivated {
     my @hv1_vms = $hv1->virtual_machines;
     my $vm1_hv1 = $hv1_vms[0];
     $vm1_hv1->migrate(hypervisor => $hv2);
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     # VM1 should not migrate on hv2 (it should stay on hv1)
     my $vm1_hv1_hyp = $vm1_hv1->reload->hypervisor->id;
@@ -255,7 +254,7 @@ sub lm_vm_down {
     # migration
     diag('#Live migration');
     $vm1_hv1->migrate(hypervisor => $hv2);
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     # VM1 should not migrate on hv2 (it should stay on hv1)
     my $vm1_hv1_hyp = $vm1_hv1->reload->hypervisor->id;
@@ -275,7 +274,7 @@ sub lm_hypervisor_down {
     my @hv1_vms = $hv1->virtual_machines;
     my $vm2_hv1 = $hv1_vms[1];
     $vm2_hv1->migrate(hypervisor => $hv2);
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     # VM2 should not migrate on hv2 (it should stay on hv1)
     my $vm2_hv1_hyp = $vm2_hv1->reload->hypervisor->id;

@@ -36,9 +36,14 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Nodemetric;
 use Entity::Metric::Combination::AggregateCombination;
 
-use DescriptiveStatisticsFunction;
-use TryCatch;
+eval {
+    require DescriptiveStatisticsFunction;;
+};
+if ($@) {
+    warn("Can locate Statistics::R, descriptive statistics will be unavailable...");
+}
 
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");

@@ -15,17 +15,18 @@ use warnings;
 use Test::More 'no_plan';
 use Test::Exception;
 
+use File::Basename;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
-    level=>'DEBUG',
-    file=>__FILE__.'.log',
-    layout=>'%F %L %p %m%n'
+    level  => 'DEBUG',
+    file   => basename(__FILE__).'.log',
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 my $log = get_logger("");
 
 use Kanopya::Database;
-use RulesEngine;
-use Aggregator;
+use Daemon::RulesEngine;
+use Daemon::Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::NodemetricCondition;
@@ -34,8 +35,14 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 use VerifiedNoderule;
+use Entity::Node;
 
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
+
+use String::Random;
+my $random = String::Random->new;
+
+my $postfix = $random->randpattern("nnCccCCnnncCCnncnCCn");
 
 my $testing = 1;
 my $acomb1;
@@ -67,13 +74,13 @@ sub main {
 }
 
 sub node_disabling {
-    $aggregator = Aggregator->new();
-    my $rulesengine = RulesEngine->new();
+    $aggregator = Daemon::Aggregator->new();
+    my $rulesengine = Daemon::RulesEngine->new();
     $rulesengine->{config}->{time_step} = 0;
 
     # Create externalcluster with a mock monitor
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
-        externalcluster_name => 'Test Monitor',
+        externalcluster_name => 'Test Monitor ' . $postfix,
     );
 
     $mock_monitor = Entity::Component::MockMonitor->new(
@@ -81,7 +88,7 @@ sub node_disabling {
     );
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
-        externalcluster_name => 'Test Service Provider',
+        externalcluster_name => 'Test Service Provider ' . $postfix,
     );
 
     $service_provider->addManager(
@@ -90,23 +97,23 @@ sub node_disabling {
     );
 
     # Create three nodes
-    my $node1 = Node->new(
+    my $node1 = Entity::Node->new(
         node_hostname => 'test_node_1',
         service_provider_id   => $service_provider->id,
-        monitoring_state    => 'up',
     );
+    $service_provider->enableNode(node_id => $node1->id);
 
-    my $node2 = Node->new(
+    my $node2 = Entity::Node->new(
         node_hostname => 'test_node_2',
         service_provider_id   => $service_provider->id,
-        monitoring_state    => 'up',
     );
+    $service_provider->enableNode(node_id => $node2->id);
 
-    my $node3 = Node->new(
+    my $node3 = Entity::Node->new(
         node_hostname => 'test_node_3',
         service_provider_id   => $service_provider->id,
-        monitoring_state    => 'up',
     );
+    $service_provider->enableNode(node_id => $node3->id);
 
     my $agg_rule_ids  = _service_rule_objects_creation();
     my $node_rule_ids = _node_rule_objects_creation();
@@ -132,13 +139,13 @@ sub node_disabling {
             die 'Not 3 nodes in aggregator (got <'.$node_num.'> instead)';
         }
 
-        $node3->disable();
+        $service_provider->disableNode(node_id => $node3->id);
 
         sleep(5);
         $aggregator->update();
 
         # Reload object to get changes
-        $node3 = Node->get(id => $node3->id);
+        $node3 = Entity::Node->get(id => $node3->id);
         diag('Check disabling node 3');
         if ( $node3->monitoring_state eq 'disabled' ) {
             diag('## disabled');
@@ -155,8 +162,8 @@ sub node_disabling {
             die 'Not 2 nodes in aggregator';
         }
 
-        $node3->enable();
-        $node3 = Node->get(id => $node3->id);
+        $service_provider->enableNode(node_id => $node3->id);
+        $node3 = Entity::Node->get(id => $node3->id);
         diag('Check enabling node 3');
         if ( $node3->monitoring_state ne 'disabled' ) {
             diag('## enabled');
@@ -191,7 +198,7 @@ sub node_disabling {
             node3_id  => $node3->id
         );
 
-        $node3->disable();
+        $service_provider->disableNode(node_id => $node3->id);
 
         expectedException {
             VerifiedNoderule->find(hash => {
@@ -278,7 +285,7 @@ sub test_rrd_remove {
 
         my @nodes = $service_provider->nodes;
         my @node_names = map {$_->node_hostname} @nodes;
-        while (@nodes) { (pop @nodes)->remove(); }
+        while (@nodes) { $service_provider->unregisterNode(node => pop (@nodes)) };
 
         my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
                                                               include_nodemetric   => 1);
@@ -301,7 +308,7 @@ sub test_rrd_remove {
 
 sub _service_rule_objects_creation {
     my $service_provider = Entity::ServiceProvider::Externalcluster->find(
-        hash => {externalcluster_name => 'Test Service Provider'}
+        hash => { externalcluster_name => 'Test Service Provider ' . $postfix }
     );
 
     my $indicator = Entity::Indicator->find(hash => {indicator_oid => $ind_oid});
@@ -325,7 +332,7 @@ sub _service_rule_objects_creation {
 
 sub _node_rule_objects_creation {
     my $service_provider = Entity::ServiceProvider::Externalcluster->find(
-        hash => {externalcluster_name => 'Test Service Provider'}
+        hash => {externalcluster_name => 'Test Service Provider ' . $postfix}
     );
 
     my $indicator = Entity::Indicator->find(hash => {indicator_oid => $ind_oid});

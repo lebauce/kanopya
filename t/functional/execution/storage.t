@@ -18,7 +18,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => '01storage.t.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Cwd qw(abs_path);
@@ -259,7 +259,7 @@ eval {
         for my $export (reverse @exports) {
             if (not $handlefilecontainer or $export->isa('EEntity::EContainerAccess::EFileContainerAccess')) {
                 lives_ok {
-                    my $eexport_manager = EEntity->new(data => $export->getExportManager);
+                    my $eexport_manager = EEntity->new(data => $export->export_manager);
                     $eexport_manager->removeExport(container_access => $export, econtext => $econtext);
                 } "Remove export $export";
             }

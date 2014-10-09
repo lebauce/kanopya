@@ -24,13 +24,14 @@ OpenStack component, used as host manager by Kanopya
 =cut
 
 package  Entity::Component::Virtualization::NovaController;
-
-use base "Entity::Component::Virtualization";
-use base "Manager::HostManager::VirtualMachineManager";
+use parent Entity::Component::Virtualization;
+use parent Manager::HostManager::VirtualMachineManager;
+use parent Manager::NetworkManager;
 
 use strict;
 use warnings;
 
+use Kanopya::Exceptions;
 use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
 
@@ -41,6 +42,14 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     repositories => {
         label       => 'Virtual machine images repositories',
         type        => 'relation',
@@ -185,10 +194,6 @@ sub getBootPolicies {
             Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
-sub supportHotConfiguration {
-    return 0;
-}
-
 
 =pod
 =begin classdoc
@@ -221,7 +226,7 @@ sub getPuppetDefinition {
             classes => {
                 "kanopya::openstack::nova::controller" => {
                     admin_password => 'nova',
-                    email => $self->service_provider->owner->user_email,
+                    email => $self->getMasterNode->owner->user_email,
                     database_user => $name,
                     database_name => $name,
                     rabbit_user => $name,
@@ -234,80 +239,45 @@ sub getPuppetDefinition {
     } );
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries;
+=pod
+=begin classdoc
 
+NovaController depend on its keystone, amqp, mysql, computes, glances and neutrons if exists.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    my @entries = ($self->vmms, $self->glances, $self->neutrons);
     if ($self->keystone) {
-        push @entries, $self->keystone->service_provider->getHostEntries();
+        push @entries, $self->keystone;
     }
     if ($self->amqp) {
-        push @entries,$self->amqp->service_provider->getHostEntries();
+        push @entries, $self->amqp;
     }
     if ($self->mysql5) {
-        push @entries, $self->mysql5->service_provider->getHostEntries();
+        push @entries, $self->mysql5;
     }
-        
-    for my $component (($self->vmms, $self->glances, $self->neutrons)) {
-        @entries = (@entries, $component->service_provider->getHostEntries());
-    }
-
     return \@entries;
 }
 
+
 sub checkConfiguration {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
     for my $attr ("mysql5", "amqp", "keystone") {
         $self->checkAttribute(attribute => $attr);
     }
 
-    my @glances = $self->glances;
-    for my $component ($self->mysql5, $self->amqp, $self->keystone, @glances) {
-        $self->checkDependency(component => $component);
-    }
-}
-
-
-=pod
-=begin classdoc
-
-Return a list of hypervisors under the rule of this instance of manager
-
-@return opnestack_hypervisors
-
-=end classdoc
-=cut
-
-sub hypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(filters  => [ 'openstack_hypervisors' ],
-                                           prefetch => [ 'node' ]);
-    return \@hypervisors;
-}
-
-
-=pod
-=begin classdoc
-
-Return a list of active hypervisors ruled by this manager
-
-@return active_hypervisors
-
-=end classdoc
-=cut
-
-sub activeHypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(
-                          filters => [ 'openstack_hypervisors' ],
-                          hash    => { active => 1 }
-                      );
-
-    return wantarray ? @hypervisors : \@hypervisors;
+    # Do not check configuration on vmms
+    my @vmms = $self->vmms;
+    my @ignore = (@vmms, @{ $args{ignore} });
+    $self->SUPER::checkConfiguration(ignore => \@ignore);
 }
 
 
@@ -328,8 +298,7 @@ sub addHypervisor {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     return Entity::Host::Hypervisor::OpenstackHypervisor->promote(
-               promoted                  => $args{host},
-               nova_controller_id        => $self->id,
+               promoted => $self->SUPER::addHypervisor(host => $args{host}),
            );
 }
 
@@ -417,11 +386,17 @@ sub setConf {
     }
 
     for my $vmm ($self->vmms) {
-        my $linux = $vmm->service_provider->getComponent(category => "System");
-        my $oldconf = $linux->getConf();
-        my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
-        $linux->setConf(conf => { linuxes_mount => \@mounts });
-        $vmm->service_provider->update();
+        try {
+            my $linux = $vmm->getMasterNode->getComponent(category => "System");
+            my $oldconf = $linux->getConf();
+            my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
+            $linux->setConf(conf => { linuxes_mount => \@mounts });
+            $vmm->service_provider->update();
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            # Component <NovaCompute> has no master node yet
+            $log->warn("Unable to configure linux mounts, $err");
+        }
     }
 }
 
@@ -491,6 +466,27 @@ sub unregisterFromOpenstackSync {
     catch ($err) {
         $log->warn("Unable to unregister NovaController from the OpenstackSync daemon:\n$err");
     }
+}
+
+sub createVirtualHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'openstack_vm_uuid' => undef });
+
+    return Entity::Host::VirtualMachine::OpenstackVm->promote(
+               promoted           => $self->SUPER::createVirtualHost(%args),
+               nova_controller_id => $self->id,
+               openstack_vm_uuid  => $args{openstack_vm_uuid},
+           );
+}
+
+sub applyVLAN {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'iface', 'vlan' ]
+    );
 }
 
 1;

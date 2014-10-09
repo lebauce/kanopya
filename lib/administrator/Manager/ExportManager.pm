@@ -85,7 +85,7 @@ sub createExport {
                          required => [ "container" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    return $self->executor_component->execute(
         type     => 'CreateExport',
         params   => {
             context => {
@@ -117,7 +117,7 @@ sub removeExport {
     General::checkParams(args => \%args, required => [ "container_access" ]);
 
     $log->debug("New Operation RemoveExport with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    return $self->executor_component->enqueue(
         type     => 'RemoveExport',
         params   => {
             context => {

@@ -32,36 +32,30 @@ use warnings;
 use Entity;
 use Entity::ContainerAccess;
 use EEntity;
+use Entity::Repository::Opennebula3Repository;
 use General;
 use CapacityManagement;
+
+use TryCatch;
 use XML::Simple;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
 use File::Copy;
-use Entity::Repository::Opennebula3Repository;
 
 my $log = get_logger("");
 my $errmsg;
 
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    $self->configureNode(%args);
-}
-
 sub configureNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
-    my $masternode = $self->getMasterNode;
-    my $hypervisor_type = $self->getHypervisorType();
-
-    if (not $masternode) {
-        # we start the first node so we start opennebula services
+    try {
+        $self->getMasterNode;
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # No maste rnode yet, we are starting the first node so we start opennebula services
         $log->debug('opennebula frontend configuration');
         $log->debug('generate /etc/one/oned.conf');
 
@@ -77,8 +71,10 @@ sub configureNode {
             scriptname => 'nfs-kernel-server',
         );
     }
+    catch ($err) { $err->rethrow() }
 
     # configure kvm hypervisor
+    my $hypervisor_type = $self->getHypervisorType();
     if ($hypervisor_type eq 'kvm') {
         $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
         $self->_generateQemuKvmUdev(%args);
@@ -121,13 +117,13 @@ sub configureNode {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     # if the host is the opennebula master, we register datastores
-    if ($self->getMasterNode->adminIp() eq $args{host}->adminIp()) {
+    if ($self->getMasterNode->adminIp() eq $args{node}->adminIp()) {
         my $conf = $self->getConf();
         my $comp = $self->_entity;
-        my $linux = $args{cluster}->getComponent(category => "System");
+        my $linux = $self->getMasterNode->getComponent(category => "System");
         my $oldconf = $linux->getConf();
         my @mountentries;
         my @mounts;
@@ -178,7 +174,7 @@ sub postStartNode {
         $linux->setConf(conf => { linuxes_mount => \@mounts });
 
         for my $vmm ($self->vmms) {
-            $linux = $vmm->service_provider->getComponent(category => "System");
+            $linux = $vmm->getMasterNode->getComponent(category => "System");
             $oldconf = $linux->getConf();
             @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
             $linux->setConf(conf => { linuxes_mount => \@mounts });
@@ -189,20 +185,13 @@ sub postStartNode {
 sub registerHypervisor {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => [ 'host' ]
-    );
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $system = $self->service_provider->getComponent(category => "System");
-    my $esystem = EEntity->new(data => $system);
-    $esystem->postStartNode(cluster => $self->service_provider,
-                            host    => $args{host});
+    my $system = $self->getMasterNode->getComponent(category => "System");
+    EEntity->new(data => $system)->postStartNode(host => $args{host});
 
-    my $agent = $self->service_provider->getComponent(category => "Configurationagent");
-    my $eagent = EEntity->new(data => $agent);
-    $eagent->postStartNode(cluster => $self->service_provider,
-                           host    => $args{host});
+    my $agent = $self->getMasterNode->getComponent(category => "Configurationagent");
+    EEntity->new(data => $agent)->postStartNode(host => $args{host});
 
     # hypervisor declaration
     my $hostname = $args{host}->node->node_hostname;
@@ -245,19 +234,15 @@ sub migrateHost {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'host', 'hypervisor_dst']);
+                         required => [ 'host', 'hypervisor']);
 
     # Get the source hypervisor
     my $src_hypervisor = $args{host}->hypervisor;
     $log->debug("The VM <" . $args{host}->id . "> is on the <" . $src_hypervisor->id . "> host");
 
-    # $log->debug("Apply VLAN on the destination hypervisor");
-    # $self->propagateVLAN(host       => $args{host},
-    #                      hypervisor => $args{hypervisor_dst});
-
     $self->onevm_livemigrate(
         vm_nameorid   => $args{host}->node->node_hostname,
-        host_nameorid => $args{hypervisor_dst}->node->node_hostname,
+        host_nameorid => $args{hypervisor}->node->node_hostname,
     );
 
     return $src_hypervisor;
@@ -439,9 +424,9 @@ sub halt {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    my $hostip = $args{host}->adminIp;
+    my $hostip = $args{node}->adminIp;
     my $masternodeip = $self->getMasterNode->adminIp;
 
     if ((defined $masternodeip) && ($masternodeip eq $hostip)) {
@@ -469,7 +454,7 @@ sub startHost {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     if( !defined $args{hypervisor}){
-        my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", no hypervisor available";
+        my $errmsg = "Cannot start the host, no hypervisor specified";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -479,8 +464,8 @@ sub startHost {
     $log->info("Picked up hypervisor " . $hypervisor->id());
 
     # generate image template for the vm and register it
-    my $cluster = Entity->get(id => $args{host}->getClusterId());
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $cluster = $args{host}->node->service_provider;
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $image = $args{host}->node->systemimage;
     my $image_name = $image->systemimage_name;
 
@@ -528,7 +513,7 @@ sub startHost {
        throw Kanopya::Exception::Execution(error => $result->{stdout});
     }
 
-    $self->_entity->addVM(
+    $self->addVM(
         host       => $args{host}->_entity,
         id         => $vmid,
         hypervisor => $hypervisor
@@ -598,38 +583,6 @@ sub postStart {
     }
 }
 
-sub applyVLAN {
-    my ($self, %args) = @_;
-    General::checkParams(
-        args     => \%args,
-        required => [ 'iface', 'vlan' ]
-    );
-
-    # In the case of OpenNebula, we need to apply the VLAN on the
-    # bridge interface of the hypervisor the VM is running on.
-}
-
-# Apply the VLAN's on the hypervisor interface dedicated to virtual machines
-
-sub propagateVLAN {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'hypervisor', 'host' ]);
-
-    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
-    for my $iface (@{$args{host}->getIfaces}) {
-        for my $network ($iface->getInterface->getNetworks) {
-            if ($network->isa("Entity::Network::Vlan")) {
-                $log->info("Applying vlan " . $network->getAttr(name => "network_name") .
-                           " on the bridge interface " . $iface->getAttr(name => "iface_name"));
-                my $ehost_manager = EEntity->new(data => $args{hypervisor}->getHostManager);
-                $ehost_manager->applyVLAN(iface => $bridge,
-                                          vlan  => $network,
-                                          delete => (defined ($args{delete}) && $args{delete}) ? 1 : 0);
-            }
-        }
-    }
-}
 
 =pod
 
@@ -680,10 +633,8 @@ sub _generateOnedConf {
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
-    my $cluster = $self->service_provider;
-    my $data = $self->_entity->getTemplateDataOned();
+    my $data = $self->getTemplateDataOned();
     my $file = $self->generateNodeFile(
-        cluster       => $cluster,
         host          => $args{host},
         file          => '/etc/one/oned.conf',
         template_dir  => 'components/opennebula',
@@ -696,7 +647,7 @@ sub _generateOnedConf {
 sub _generateQemuKvmUdev {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
     my $command = "echo 'KERNEL==\"kvm\", OWNER==\"oneadmin\", GROUP==\"kvm\", MODE==\"0660\"' > $args{mount_point}/lib/udev/rules.d/60-qemu-kvm.rules";
     $self->_host->getEContext->execute(command => $command);
@@ -707,7 +658,7 @@ sub _generateQemuKvmUdev {
 sub _generateXenconf {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
     # TODO: Remove me
     my $data = {
@@ -716,7 +667,6 @@ sub _generateXenconf {
     };
 
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/xen/xend-config.sxp',
         template_dir  => 'components/opennebula',
@@ -740,7 +690,6 @@ sub generateDatastoreTemplate {
 
     my $template_file = '/tmp/datastore-' . $args{ds_name} . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->service_provider,
         host          => $self->getMasterNode->host,
         file          => $template_file,
         template_dir  => 'components/opennebula',
@@ -781,7 +730,6 @@ sub generateImageTemplate {
 
     my $template_file = '/tmp/image-' . $args{image_name} . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->service_provider,
         host          => $self->getMasterNode->host,
         file          => $template_file,
         template_dir  => 'components/opennebula',
@@ -815,7 +763,6 @@ sub generateVnetTemplate {
 
     my $template_file = '/tmp/vnet-' . $args{vnet_name} . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->service_provider,
         host          => $self->getMasterNode->host,
         file          => $template_file,
         template_dir  => 'components/opennebula',
@@ -840,12 +787,12 @@ sub generateXenVmTemplate {
               );
 
     my $tftp_conf = $self->service_provider->getKanopyaCluster->getComponent(category => 'Tftpserver');
-    my $cluster = Entity->get(id => $args{host}->getClusterId());
+    my $cluster = $args{host}->node->service_provider;
 
     my $kernel = Entity->get(id => $cluster->getAttr(name => "kernel_id"));
     my $kernel_version = $kernel->kernel_version;
 
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $image = $args{host}->node->systemimage;
     my $image_name = $image->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
@@ -896,7 +843,6 @@ sub generateXenVmTemplate {
 
     my $template_file = '/tmp/vm-' . $hostname . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->service_provider,
         host          => $args{hypervisor},
         file          => $template_file,
         template_dir  => 'components/opennebula',
@@ -946,7 +892,7 @@ sub generateKvmVmTemplate {
                   units => 'M'
               );
 
-    my $cluster = Entity->get(id => $args{host}->getClusterId());
+    my $cluster = $args{host}->node->service_provider;
 
     # get the maximum memory from the hosting policy
     my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
@@ -956,7 +902,7 @@ sub generateKvmVmTemplate {
                      units => 'M'
                  );
 
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $image_name = $args{host}->node->systemimage->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
 
@@ -1041,7 +987,6 @@ sub generateKvmVmTemplate {
 
     my $template_file = '/tmp/vm-' . $hostname . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->service_provider,
         host          => $args{hypervisor},
         file          => $template_file,
         template_dir  => 'components/opennebula',

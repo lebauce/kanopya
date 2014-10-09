@@ -27,20 +27,43 @@ my $log = get_logger("");
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'credentials', 'config' ]);
+    General::checkParams(args => \%args, required => [ 'user', 'password', 'tenant_name', 'keystone_url' ]);
 
     my $self = {};
     bless $self , $class;
 
-    $self->{config} = $args{config};
+    my $config = {
+        verify_ssl => 0,
+        identity => {
+            url => 'http://' . $args{keystone_url} . ':5000/v2.0'
+        },
+    };
+
+    my $credentials = {
+        auth => {
+            passwordCredentials => {
+                username => $args{user},
+                password => $args{password},
+            },
+            tenantName => $args{tenant_name},
+        }
+    };
+
+    $self->{config} = $config;
     $log->debug('Openstack::API config ' . (Dumper $self->{config}));
 
-    $self->login(credentials => $args{credentials});
+    $self->_login(credentials => $credentials);
 
     return $self;
 }
 
-sub login {
+my $api_version = {
+    network => 'v2.0',
+    image => 'v2.0',
+    metering => 'v2',
+};
+
+sub _login {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'credentials' ]);
@@ -49,17 +72,29 @@ sub login {
 
     $log->debug('Service Catalog ' . Dumper($response->{access}->{serviceCatalog}));
 
-    if( ! exists $response->{access}->{serviceCatalog} ||
-        ! keys $response->{access}->{serviceCatalog} ) {
+    if ((! exists $response->{access}->{serviceCatalog}) ||
+        (scalar(@{ $response->{access}->{serviceCatalog} }) eq 0)) {
         throw Kanopya::Exception::Execution::API(
-                  error         => 'Openstack API call returns no service catalog'
-	      )
+                  error => 'Openstack API call returns no service catalog'
+	          )
     }
 
-    for my $service (@{$response->{access}->{serviceCatalog}}) {
-        my $name = $service->{name};
-        $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL} .
-                                              ($name eq "neutron" ? "/v2.0" : "");
+    for my $service (@{ $response->{access}->{serviceCatalog} }) {
+        my $name = $service->{type};
+
+        $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL};
+
+        if (! ($self->{config}->{$name}->{url} =~ /^http:\/\/.*\/v\d(\.\d)?(\/.*)?$/)) {
+            $self->{config}->{$name}->{url} .= ((defined $api_version->{$name}) ? '/' . $api_version->{$name}
+                                                                                : '/v1');
+        }
+
+        $self->{config}->{$name}->{adminURL} = $service->{endpoints}->[0]->{adminURL};
+
+        if ($name eq 'identity') {
+            my @endpoint_ids = map {$_->{id}} @{$service->{endpoints}};
+            $self->{config}->{$name}->{endpoint_ids} = \@endpoint_ids;
+        }
         $log->debug('Openstack::API login. Service name ' . $name . ' URL returned : '. $self->{config}->{$name}->{url});
     }
 
@@ -86,4 +121,27 @@ sub AUTOLOAD {
 sub DESTROY {
 }
 
+sub faults {
+    my ($self, %args) = @_;
+    return ('badRequest', 'itemNotFound', 'unauthorized', 'forbidden',
+            'badMethod', 'overLimit', 'badMediaType', 'unprocessableEntity',
+            'instanceFault', 'notImplemented');
+}
+
+
+sub handleOutput {
+    my ($self, %args) = @_;
+    # sometime api call return nothing (e.g. delete)
+    if (! defined $args{output}) {
+        return;
+    }
+
+    for my $f (OpenStack::API->faults) {
+        if (defined $args{output}->{$f}) {
+            die($args{output}->{$f}->{message});
+        }
+    }
+
+    return $args{output};
+}
 1;

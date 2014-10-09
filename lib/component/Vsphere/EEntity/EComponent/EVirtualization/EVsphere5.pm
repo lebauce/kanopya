@@ -120,7 +120,7 @@ Create and start a vphere vm
 sub startHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['hypervisor', 'host']);
+    General::checkParams(args => \%args, required => [ 'hypervisor', 'host', 'boot_policy' ]);
 
     $log->info('Calling startHost on EVSphere '. ref($self));
 
@@ -133,14 +133,13 @@ sub startHost {
     $log->info('Start host on < hypervisor '. $hypervisor->id.' >');
 
     if (not defined $hypervisor) {
-        my $errmsg = "Cannot add node in cluster ".$host->getClusterId().", no hypervisor available";
+        my $errmsg = "Cannot add node " . $args{host}->label . ", no hypervisor available";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    my $cluster     = Entity->get(id => $host->getClusterId());
-    my $diskless    = $cluster->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
-    my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
+    my $cluster     = $host->node->service_provider;
+    my $diskless    = $args{boot_policy} ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
     my $datacenter  = Vsphere5Datacenter->get(
                           id => $hypervisor->vsphere5_datacenter_id
                       );
@@ -187,8 +186,8 @@ sub startHost {
         img_name   => $host->node->systemimage->systemimage_name,
         img_size   => $host->node->systemimage->getContainer->container_size,
         diskless   => $diskless,
-        memory     => $host_params->{ram},
-        cores      => $host_params->{core},
+        memory     => $host->host_ram,
+        cores      => $host->host_core,
         network    => 'VM Network',
     );
 
@@ -588,8 +587,8 @@ sub dissociateDisk {
         if ($args{rename_disk}) {
             # Work around to rename systemimage disk file because vmware rename disk file to descriptor file
             my $systemimage_name = $host->node->systemimage->systemimage_name;
-            my $cluster     = Entity->get(id => $host->getClusterId());
-            my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+            my $cluster     = $host->node->service_provider;
+            my $disk_params = $cluster->getManagerParameters(manager_type => 'StorageManager');
             my $container_access = Entity::ContainerAccess->get(id => $disk_params->{container_access_id});
             my $image_type = $disk_params->{image_type};
 
@@ -924,12 +923,13 @@ Determine whether a host is up or down
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     return 1;
 }
 
+
+sub isInfrastructureSynchronized {
+    return 1;
+}
 1;

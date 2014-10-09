@@ -10,7 +10,7 @@ use Dancer::Test;
 use REST::api;
 
 use Log::Log4perl;
-Log::Log4perl->easy_init({ level => 'DEBUG', file => '003_policies.log', layout => '%F %L %p %m%n' });
+Log::Log4perl->easy_init({ level => 'DEBUG', file => '003_policies.log', layout => '%d [ %H - %P ] %p -> %M - %m%n' });
 
 
 APITestLib::login();

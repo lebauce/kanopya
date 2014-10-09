@@ -29,42 +29,29 @@ my $log = get_logger("");
 my $errmsg;
 
 # generate configuration files on node
-
 sub configureNode {
-    my ($self, %args) = @_;
-    my $data;
+    my $self = shift;
+    my %args = @_;
 
-    my $conf = $self->_entity->getConf();
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
 
     # Generation of /etc/default/puppetmaster
-    $data = { 
+    my $conf = $self->getConf();
+    my $data = {
         puppetmaster2_options   => $conf->{puppetmaster2_options},
     };
-    
+
     $self->generateFile(
         file          => $args{mount_point} . '/etc/default/puppetmaster',
         template_dir  => "components/puppetmaster",
         template_file => "default_puppetmaster.tt",
         data          => $data
     );
-}
-
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
-  
-    $self->configureNode(
-        mount_point => $args{mount_point}.'/etc',
-        host        => $args{host}
-    );
 
     $self->addInitScripts(    
         mountpoint => $args{mount_point}, 
         scriptname => 'puppet', 
     );
-    
 }
 
 sub updateSite {
@@ -155,14 +142,10 @@ sub createHostManifest {
                          optional => { configuration => {} });
 
     my $fqdn = $args{node}->fqdn;
-    my $cluster = $args{node}->service_provider->cluster_name;
-    my $sourcepath = $cluster . '/' . $args{node}->node_hostname;
-
     my $data = {
         host_fqdn          => $fqdn,
-        cluster            => $cluster,
         puppet_definitions => $args{puppet_definitions},
-        sourcepath         => $sourcepath
+        sourcepath         => $args{node}->node_hostname
     };
 
     $self->generateFile(
@@ -180,7 +163,7 @@ sub createHostManifest {
     close $fh;
 
     my $path = $self->_executor->getConf->{clusters_directory} . '/' .
-               $sourcepath . '/' .
+               $args{node}->node_hostname . '/' .
                $fqdn . ".yaml";
 
     $self->getEContext->send(src   => $filename,

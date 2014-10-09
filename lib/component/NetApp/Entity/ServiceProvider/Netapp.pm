@@ -75,13 +75,26 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, required => [ 'executor_component_id' ]);
+
+    my $executor_id = delete $args{executor_component_id};
     my $self = $class->SUPER::new(%args);
 
     my $lunmanager = ClassType::ComponentType->find(hash => { component_name => 'NetappLunManager' });
-    $self->addComponent(component_type_id => $lunmanager->id);
+    $self->addComponent(
+        component_type_id => $lunmanager->id,
+        component_configuration => {
+            executor_component_id => $executor_id
+        }
+    );
 
     my $volmanager = ClassType::ComponentType->find(hash => { component_name => 'NetappVolumeManager' });
-    $self->addComponent(component_type_id => $volmanager->id);
+    $self->addComponent(
+        component_type_id => $volmanager->id,
+        component_configuration => {
+            executor_component_id => $executor_id
+        }
+    );
 
     return $self;
 }

@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'basedb.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 my $log = get_logger("");
 
@@ -31,6 +31,14 @@ use Entity::User;
 use General;
 use Lvm2Vg;
 use Kanopya::Database;
+use Entity::Component::Physicalhoster0;
+use ClassType;
+use ClassType::ServiceProviderType::ClusterType;
+use Entity::Component::KanopyaAggregator;
+use Entity::Component::KanopyaExecutor;
+use Entity::Node;
+use Entity::Masterimage::GlanceMasterimage;
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -111,7 +119,7 @@ sub test_promote_demote {
         }
     } 'Promote ClassType to ClassType::ServiceProviderType';
 
-    my $host = Node->find()->host;
+    my $host = Entity::Node->find()->host;
     my $sp   = Entity::ServiceProvider::Cluster->find();
 
     throws_ok {
@@ -276,7 +284,7 @@ sub test_new_and_update {
     } 'Update Entity::Host attributes from diferent hierarchy levels';
 
     throws_ok {
-        $host->update(host_manager_id => undef);
+        $host->update(host_serial_number => undef);
     } 'Kanopya::Exception::Internal::WrongValue', 'Update Entity::Host with undefined mandatory attr';
 
     lives_ok {
@@ -312,6 +320,7 @@ sub test_process_attributes {
         $class->checkAttributes(attrs => $attrs);
     } 'Kanopya::Exception::Internal::WrongValue', 'Process wrong value in attributes for Entity::Host';
 
+    $attrs->{host_ram} = 1024;
     $attrs->{test} = 'test';
     throws_ok {
         $class->checkAttributes(attrs => $attrs);
@@ -361,6 +370,45 @@ sub test_concrete_class_without_table {
             }
         }
     } 'Search on concrete classes without tables';
+
+    lives_ok {
+        my $type_id = ClassType::ServiceProviderType::ClusterType->find()->id;
+        expectedException {
+            Entity::Masterimage::GlanceMasterimage->find(hash => {
+                masterimage_name => 'basedb_test',
+                masterimage_file => 'basedb_test',
+                masterimage_size => '1',
+                masterimage_cluster_type_id => $type_id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound', 'GlanceMasterimage test already exists';
+
+        my $create = Entity::Masterimage::GlanceMasterimage->findOrCreate(
+                         masterimage_name => 'basedb_test',
+                         masterimage_file => 'basedb_test',
+                         masterimage_size => '1',
+                         masterimage_cluster_type_id => $type_id,
+                     );
+
+        Entity::Masterimage::GlanceMasterimage->find(hash => {
+            masterimage_name => 'basedb_test',
+            masterimage_file => 'basedb_test',
+            masterimage_size => '1',
+            masterimage_cluster_type_id => $type_id,
+        });
+
+        my $find = Entity::Masterimage::GlanceMasterimage->findOrCreate(
+                       masterimage_name => 'basedb_test',
+                       masterimage_file => 'basedb_test',
+                       masterimage_size => '1',
+                       masterimage_cluster_type_id => $type_id,
+                   );
+
+        if ($create->id ne $find->id) {
+            die "create and find ids must match";
+        }
+
+    } 'Find or create on concrete classes without tables';
+
 }
 
 sub test_get_many_to_many {
@@ -522,8 +570,9 @@ sub test_search_on_virtual_attributes {
 
 sub test_specific_relations {
     # Test comparison operators for strings
-    my $sp = Entity::ServiceProvider->find();
-    my $nova_controller = $sp->addComponent(component_type_id => ClassType::ComponentType->find(hash => { component_name => 'NovaController' })->id);
+    my $sp = Entity::ServiceProvider->find(hash => { 'service_provider_type_id' => undef });
+    my $nova_controller = $sp->addComponent(component_type_id => ClassType::ComponentType->find(hash => { component_name => 'NovaController' })->id,
+                                            component_configuration => { executor_component_id => Entity::Component::KanopyaExecutor->find()->id });
     lives_ok {
         my @repos = $nova_controller->repositories;
     } 'Get values for relation repositories on NovaController';

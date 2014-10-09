@@ -3,14 +3,6 @@
         {
             "id": -1,
             "label": "None"
-        },
-        {
-            "id": 1,
-            "label": "Memory"
-        },
-        {
-            "id": 2,
-            "label": "CPU"
         }
     ]
 }

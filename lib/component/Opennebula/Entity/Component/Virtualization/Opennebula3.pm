@@ -24,8 +24,9 @@ TODO
 =cut
 
 package Entity::Component::Virtualization::Opennebula3;
-use base "Entity::Component::Virtualization";
-use base "Manager::HostManager::VirtualMachineManager";
+use parent Entity::Component::Virtualization;
+use parent Manager::HostManager::VirtualMachineManager;
+use parent Manager::NetworkManager;
 
 use strict;
 use warnings;
@@ -51,6 +52,14 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     install_dir => {
         label        => 'Installation directory',
         type         => 'string',
@@ -155,24 +164,6 @@ sub getBaseConfiguration {
     };
 }
 
-sub hypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->opennebula3_hypervisors;
-    return \@hypervisors;
-}
-
-sub activeHypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(
-                          filters => ['opennebula3_hypervisors'],
-                          hash    => { active => 1 }
-                      );
-
-    return wantarray ? @hypervisors : \@hypervisors;
-}
-
 
 sub getHypervisorType {
     my ($self) = @_;
@@ -185,18 +176,23 @@ sub checkScaleMemory {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $node = $args{host}->node;
+    # NOTE: We can not use the monitoring library it require the service api
+    # TODO: Remove dependency of the monitoring api on the service api
 
-    my $indicator_oid = 'XenTotalMemory'; # Memory Total
-    my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->id();
+    throw Kanopya::Exception::NotImplemented();
 
-    my $raw_data = $node->getMonitoringData(raw => 1, time_span => 600, indicator_ids => [$indicator_id]);
+    # my $node = $args{host}->node;
 
-    $log->info(Dumper $raw_data);
-    my $ram_current = pop @{$raw_data->{$indicator_oid}};
-    my $ram_before  = pop @{$raw_data->{$indicator_oid}};
+    # my $indicator_oid = 'XenTotalMemory'; # Memory Total
+    # my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->id();
 
-    return { ram_current => $ram_current, ram_before => $ram_before };
+    # my $raw_data = $node->getMonitoringData(raw => 1, time_span => 600, indicator_ids => [$indicator_id]);
+
+    # $log->info(Dumper $raw_data);
+    # my $ram_current = pop @{$raw_data->{$indicator_oid}};
+    # my $ram_before  = pop @{$raw_data->{$indicator_oid}};
+
+    # return { ram_current => $ram_current, ram_before => $ram_before };
 }
 
 
@@ -335,21 +331,20 @@ sub needBridge {
     return 1;
 }
 
-sub getHostsEntries {
-    my $self = shift;
-    my @hosts_entries = ();
 
-    for my $vmm ($self->vmms) {
-        foreach my $host ($vmm->service_provider->getHosts()) {
-            push @hosts_entries, {
-                fqdn    => $host->node->fqdn,
-                aliases => [ $host->node->node_hostname ],
-                ip      => $host->adminIp
-            };
-        }
-    }
+=pod
+=begin classdoc
 
-    return \@hosts_entries;
+Opennebula depends on its virtual machines managers.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    my @vmms = $self->vmms;
+    return \@vmms;
 }
 
 sub getTemplateDataOned {
@@ -399,8 +394,7 @@ sub addHypervisor {
     General::checkParams(args => \%args, required => [ 'host', 'onehost_id' ]);
 
     return Entity::Host::Hypervisor::Opennebula3Hypervisor->promote(
-               promoted       => $args{host},
-               opennebula3_id => $self->id,
+               promoted       => $self->SUPER::addHypervisor(host => $args{host}),
                onehost_id     => $args{onehost_id}
            );
 }
@@ -420,7 +414,9 @@ sub addVM {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'hypervisor', 'host', 'id' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'hypervisor', 'host', 'id' ],
+                         optional => { 'max_core' => undef });
 
     my $vmtype  = 'Entity::Host::VirtualMachine::Opennebula3Vm';
     if ($self->hypervisor eq 'kvm') {
@@ -434,17 +430,26 @@ sub addVM {
                        );
 
     if ($self->hypervisor eq 'kvm') {
-        my $cluster = Entity->get(id => $args{host}->getClusterId());
-        my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
-
         $opennebulavm->setAttr(name => 'opennebula3_kvm_vm_cores',
-                               value => $host_params->{max_core} || $args{host}->host_core);
+                               value => $args{max_core} || $args{host}->host_core);
 
     }
     $opennebulavm->setAttr(name => 'hypervisor_id', value => $args{hypervisor}->id);
     $opennebulavm->save();
 
     return $opennebulavm;
+}
+
+sub createVirtualHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'onevm_id' => undef });
+
+    return Entity::Host::VirtualMachine::Opennebula3Vm->promote(
+               promoted       => $self->SUPER::createVirtualHost(%args),
+               opennebula3_id => $self->id,
+               onevm_id       => $args{onevm_id},
+           );
 }
 
 sub getImageRepository {
@@ -456,17 +461,26 @@ sub getImageRepository {
     });
 }
 
-sub supportHotConfiguration {
-    return 1;
-}
-
 sub getRemoteSessionURL {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    return "vnc://" . $args{host}->hypervisor->adminIp . ":" . $args{host}->vnc_port;
+    if (defined $args{host}->hypervisor) {
+        return "vnc://" . $args{host}->hypervisor->adminIp . ":" . $args{host}->vnc_port;
+    }
+}
+
+sub applyVLAN {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => [ 'iface', 'vlan' ]
+    );
+
+    # In the case of OpenNebula, we need to apply the VLAN on the
+    # bridge interface of the hypervisor the VM is running on.
 }
 
 1;

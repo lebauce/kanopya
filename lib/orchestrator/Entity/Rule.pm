@@ -33,12 +33,11 @@ use strict;
 use warnings;
 
 use Entity::WorkflowDef;
+use Entity::Operationtype;
 use WorkflowDefRule;
+
 use Hash::Merge;
-
 use TryCatch;
-my $err;
-
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -107,10 +106,15 @@ sub methods {
         },
         deassociateWorkflow => {
             description => 'deassociate a workflow definition to the rule.',
-        }
+        },
+        subscribe => {
+            description => 'subscribe to notification about <object>',
+        },
+        unsubscribe => {
+            description => 'unsubscribe to notification about <object>',
+        },
     };
 }
-
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
@@ -364,17 +368,6 @@ sub triggerWorkflow {
 
     General::checkParams(args => \%args, optional => { host_name => undef });
 
-    my $execution_manager;
-    try {
-        $execution_manager = $self->service_provider->getManager(manager_type => 'ExecutionManager');
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Internal(
-                  error => "Service provider <" . $self->service_provider->label .
-                           "> has no Execution Manager. Cannot trigger workflow"
-              );
-    }
-
     my $association;
     try {
         $association = $self->find(related => "workflow_def_rules");
@@ -413,9 +406,8 @@ sub triggerWorkflow {
                           );
 
     #run the workflow with the fully defined params
-    return $execution_manager->run(
+    return $wf_manager->executor_component->run(
                name       => $association->workflow_def->workflow_def_name,
-               related_id => $self->service_provider_id,
                params     => $workflow_params,
                rule       => $self,
            );
@@ -437,8 +429,13 @@ sub subscribe {
     my $self        = shift;
     my %args        = @_;
 
-    my $result  = $self->SUPER::subscribe(%args);
+    General::checkParams(args => \%args, required => [ 'operationtype', 'subscriber_id' ]);
 
+    my $operationtype = Entity::Operationtype->find(hash => {
+                            operationtype_name => delete $args{operationtype}
+                        });
+
+    my $result = $operationtype->subscribe(entity_id => $self->id, %args);
     if (not defined $self->workflow_def) {
         try {
             $self->associateWithNotifyWorkflow();
@@ -469,7 +466,7 @@ sub unsubscribe {
 
     General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
 
-    $self->SUPER::unsubscribe(%args);
+    Entity::Operationtype->unsubscribe(%args);
 
     if ($self->workflow_def->workflow_def_name eq $self->notifyWorkflowName) {
         if ($self->notification_subscription_entities == 0) {
@@ -567,6 +564,40 @@ sub isActive {
     }
 
     return $active;
+}
+
+
+=pod
+
+Utility method used to clone a formula
+Clone all objects used in formula and translate formula to use cloned object ids
+
+@param dest_sp_id id of the service provider where to import all cloned objects
+@param formula string representing a formula (i.e operators and object ids in the format "idXXX")
+@param formula_class class of object used in formula
+
+@return the cloned object
+
+=end classdoc
+=cut
+
+sub _cloneFormula {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_sp_id', 'formula', 'formula_class']);
+
+    my $formula = $args{formula};
+    # Get ids in formula
+    my %ids = map { $_ => undef } ($formula =~ m/id(\d+)/g);
+    # Clone objects used in formula
+    %ids = map {
+        $_ => $args{formula_class}->get(id => $_)->clone(dest_service_provider_id => $args{dest_sp_id})->id
+    } keys %ids;
+
+    # Replace ids in formula with cloned objects ids
+    $formula =~ s/id(\d+)/id$ids{$1}/g;
+
+    return $formula;
 }
 
 1;

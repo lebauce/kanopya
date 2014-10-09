@@ -6,9 +6,9 @@
   - common
   - "override/%{clientcert}"
   - "kanopya/%{clientcert}"
-  - "%{cluster}/globals"
-  - "%{cluster}/%{hostname}/%{clientcert}.override"
-  - "%{cluster}/%{hostname}/%{clientcert}"
+  - "globals"
+  - "%{hostname}/%{clientcert}.override"
+  - "%{hostname}/%{clientcert}"
   - default
 :yaml:
   :datadir: [% clusters_directory %]

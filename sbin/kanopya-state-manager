@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use StateManager;
+use Daemon::StateManager;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -38,7 +38,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $state_manager = StateManager->new();
+my $state_manager = Daemon::StateManager->new();
 $state_manager->run(name       => "kanopya-state-manager",
                     daemonize  => $opts{b},
                     pidfile    => $opts{p});

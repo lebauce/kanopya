@@ -473,13 +473,12 @@ function migrate(spid, eid) {
     var sel     = $('<select>').appendTo(cont);
     $.ajax({
         async       : false,
-        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
-                      'custom.category=HostManager',
+        url         : '/api/host/' + eid + '/host_manager',
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/virtualization/' + hmgr[0].manager_id + '/hypervisors?expand=node',
-                type    : 'POST',
+                url     : '/api/virtualization/' + hmgr.entity_id + '/hypervisors?expand=node',
+                type    : 'GET',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
                         $(sel).append($('<option>', { text : data[i].node.node_hostname, value : data[i].pk }));
@@ -493,7 +492,7 @@ function migrate(spid, eid) {
                                 var hyp = $(sel).val();
                                 if (hyp != null && hyp != "") {
                                     $.ajax({
-                                        url         : '/api/virtualization/' + hmgr[0].manager_id + '/migrate',
+                                        url         : '/api/virtualization/' + hmgr.entity_id + '/migrate',
                                         type        : 'POST',
                                         contentType : 'application/json',
                                         data        : JSON.stringify({
@@ -535,12 +534,18 @@ function nodedetailsaction(cid, eid, host_id) {
             var isActive    = data.host.active;
             var isUp        = (/^up:/).test(data.host.host_state);
             var isVirtual   = false;
-            $.ajax({    
-                url     : '/api/component/' + data.host.host_manager_id,
+            $.ajax({
+                url     : '/api/component/' + data.host.host_manager_id +
+                          '?expand=component_type.component_type_categories.component_category',
                 type    : 'GET',
                 async   : false,
-                success : function(ret) {
-                    if (ret.host_type === 'Virtual Machine') isVirtual = true;
+                success : function(manager) {
+                    for (var index in manager.component_type.component_type_categories) {
+                        var manager_category = manager.component_type.component_type_categories[index];
+                        if (manager_category.component_category.category_name === 'VirtualMachineManager') {
+                            isVirtual = true;
+                        }
+                    }
                 }
             });
             var buttons   = [

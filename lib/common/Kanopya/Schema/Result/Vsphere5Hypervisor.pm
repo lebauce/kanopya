@@ -46,13 +46,6 @@ __PACKAGE__->table("vsphere5_hypervisor");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 vsphere5_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 vsphere5_datacenter_id
 
   data_type: 'integer'
@@ -70,13 +63,6 @@ __PACKAGE__->table("vsphere5_hypervisor");
 
 __PACKAGE__->add_columns(
   "vsphere5_hypervisor_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "vsphere5_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -107,21 +93,6 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("vsphere5_hypervisor_id");
 
 =head1 RELATIONS
-
-=head2 vsphere5
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::Vsphere5>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "vsphere5",
-  "Kanopya::Schema::Result::Vsphere5",
-  { vsphere5_id => "vsphere5_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
-);
 
 =head2 vsphere5_datacenter
 
@@ -154,8 +125,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d1poZER4kByJHcBuQ1SDtA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x/nyQz1v9ehHFvRbNHB0vg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

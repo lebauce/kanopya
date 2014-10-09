@@ -9,7 +9,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'delete_rules_on_cascade.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'delete_rules_on_cascade.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
 use Kanopya::Database;
@@ -18,7 +18,7 @@ use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
-use Node;
+use Entity::Node;
 use Entity::Metric::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
@@ -27,9 +27,9 @@ use WorkflowNoderule;
 use Entity::Metric::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Metric::Combination::AggregateCombination;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use TryCatch;
-use Aggregator;
+use Daemon::Aggregator;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -110,7 +110,7 @@ sub main {
     push @entities, $manager;
 
     # Create one node
-    $node = Node->new(
+    $node = Entity::Node->new(
         node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
@@ -143,13 +143,13 @@ sub main {
 
     push @entities, $m2;
 
-    Node->new(
+    Entity::Node->new(
         node_hostname => 'test_node2_sp1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
-    Node->new(
+    Entity::Node->new(
         node_hostname => 'test_node1_sp2',
         service_provider_id   => $service_provider2->id,
         monitoring_state    => 'up',
@@ -160,7 +160,7 @@ sub main {
     rrd_creation();
     indicator_deletion();
     rrd_deletion();
-    delete_node();
+    unregister_node();
     clean_test();
 
     if ($testing == 1) {
@@ -168,11 +168,12 @@ sub main {
     }
 }
 
-sub delete_node {
+sub unregister_node {
     lives_ok {
         diag('Deleting node...');
         my $node_hostname = $node->node_hostname;
-        $node->remove();
+        $service_provider->unregisterNode(node => $node);
+
         my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
                                                               include_nodemetric   => 1);
 
@@ -188,7 +189,7 @@ sub delete_node {
 
 sub rrd_creation {
     diag('Launch aggregator to create RRD');
-    $aggregator = Aggregator->new();
+    $aggregator = Daemon::Aggregator->new();
     $aggregator->update();
 
     lives_ok {

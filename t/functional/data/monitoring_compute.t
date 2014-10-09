@@ -17,20 +17,21 @@ use DataCache;
 DataCache::cacheActive(0);
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__ . '.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__ . '.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
 
 use Kanopya::Database;
-use Aggregator;
+use Daemon::Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
+use Entity::Node;
 
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4');
 
@@ -41,7 +42,7 @@ my ($node_1, $node_2, $node_3);
 my $service_provider;
 my $aggregator;
 eval{
-    $aggregator = Aggregator->new();
+    $aggregator = Daemon::Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider'.time(),
@@ -65,11 +66,13 @@ eval{
     $node_1 = $service_provider->registerNode(hostname         => 'node_1',
                                               monitoring_state => 'up',
                                               number           => 1);
+    $service_provider->enableNode(node_id => $node_1->id);
 
     # Create node 2
     $node_2 = $service_provider->registerNode(hostname         => 'node_2',
                                               monitoring_state => 'up',
                                               number           => 1);
+    $service_provider->enableNode(node_id => $node_2->id);
 
     # Get indicators
     $indic1 = Entity::CollectorIndicator->find (
@@ -415,7 +418,7 @@ sub testAggregateCombination {
     } 'Aggregate combination computing';
 
     lives_ok {
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
         my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
         $ts->generatemetric(metric => $cm1, %fonction_conf);
 
@@ -499,7 +502,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
-
+        sleep(10);
         $evaluation = $ncomb_ident->evaluate(node => $node_1);
         if (! (defined $evaluation && $evaluation == 42)) {
             die 'Identity combination as same value than indicator';
@@ -513,6 +516,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
+        sleep(10);
 
         if (defined $ncomb2->evaluate(node => $node_2)) {
             die 'Combination defined while one indicator value is undef'
@@ -528,6 +532,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
+        sleep(10);
 
         if (! ($ncomb2->evaluate(node => $node_1) == (42 + 5)*12)) {
             die 'Combination correctly computed';
@@ -541,6 +546,7 @@ sub testNodemetricCombination {
         );
 
         $aggregator->update();
+        sleep(10);
 
         if ($ncomb2->evaluate(node => $node_1) - (1.2 + 5)*42.42 > 10**-8) {
             die 'Combination correctly computed with float values';
@@ -548,7 +554,7 @@ sub testNodemetricCombination {
     } 'Nodemetric combination computing';
 
     lives_ok {
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
 
         # Generate first metric data for both nodes
         my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
@@ -611,7 +617,7 @@ sub testNodemetricCombination {
     } 'Evaluate time serie nodemetrics';
 
     lives_ok {
-        my $ts = Kanopya::Tools::TimeSerie->new();
+        my $ts = Kanopya::Test::TimeSerie->new();
 
         my %fonction_conf = (rows => 3000, step => 300, time => time() + 300*10, func => '5');
         for my $nodemetric ($indic1->nodemetrics) {
@@ -656,13 +662,14 @@ sub testBigAggregation {
         my $aggregator          = $args{aggregator};
 
         # Delete all nodes
-        map {$_->delete()} Node->search(hash => {node_hostname => {-like => 'node_%'}});
+        map {$_->delete()} Entity::Node->search(hash => {node_hostname => {-like => 'node_%'}});
 
         # Create nodes
         for my $i (1..$nodes_count) {
-            $service_provider->registerNode(hostname         => 'node_' . $i,
-                                            monitoring_state => 'up',
-                                            number           => $i);
+            my $node = $service_provider->registerNode(hostname         => 'node_' . $i,
+                                                       monitoring_state => 'up',
+                                                       number           => $i);
+            $service_provider->enableNode(node_id => $node->id);
         }
 
         my $cm = Entity::Metric::Clustermetric->new(
@@ -711,13 +718,14 @@ sub testStatisticFunctions {
 
     lives_ok {
         # Delete all nodes
-        map {$_->delete()} Node->search(hash => {node_hostname => {-like => 'node_%'}});
+        map {$_->delete()} Entity::Node->search(hash => {node_hostname => {-like => 'node_%'}});
 
         # Create nodes
         for my $i (0..9) {
-            $service_provider->registerNode(hostname         => 'node_' . $i,
-                                            monitoring_state => 'up',
-                                            number           => $i);
+            my $node = $service_provider->registerNode(hostname         => 'node_' . $i,
+                                                       monitoring_state => 'up',
+                                                       number           => $i);
+            $service_provider->enableNode(node_id => $node->id);
         }
 
         my $mock_conf  = "{'default':{'const':null},"

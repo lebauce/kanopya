@@ -9,16 +9,17 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'alert_on_undef_values.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'alert_on_undef_values.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
 use Kanopya::Database;
-use Aggregator;
-use RulesEngine;
+use Daemon::Aggregator;
+use Daemon::RulesEngine;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::NodemetricCombination;
+use Entity::Node;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -30,10 +31,10 @@ my $aggregator;
 my $rulesengine;
 
 eval{
-    $aggregator  = Aggregator->new();
-    $rulesengine = RulesEngine->new();
+    $aggregator  = Daemon::Aggregator->new();
+    $rulesengine = Daemon::RulesEngine->new();
     $rulesengine->_component->time_step(2);
-    $rulesengine  = RulesEngine->new();
+    $rulesengine  = Daemon::RulesEngine->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
@@ -54,14 +55,14 @@ eval{
     );
 
     # Create node 1
-    Node->new(
+    Entity::Node->new(
         node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
     # Create node 2
-    Node->new(
+    Entity::Node->new(
         node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

@@ -56,10 +56,7 @@ switch ($control) {
         $workflow->interrupt();
     }
     case 'resume' {
-        my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-        $kanopya->getManager(manager_type => 'ExecutionManager')->resume(
-            workflow_id => $workflow->id
-        );
+        $workflow->resume();
     }
     else {
         throw Kanopya::Exception::Execution(

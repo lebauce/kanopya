@@ -8,6 +8,25 @@
                 {{/metric}}
             </select>
         </p>
+        <div id="anomaly-options">
+            <div class="title">Options</div>
+            <p>
+                <label for="window">Window :</label>
+                <input type="text" id="window" value="{{window}}" />
+            </p>
+            <p>
+                <label for="period">Period :</label>
+                <input type="text" id="period" value="{{period}}" />
+                <select id="period-unit">
+                    {{#periodUnit}}
+                        <option value="{{id}}">{{label}}</option>
+                    {{/periodUnit}}
+                </select>
+            </p>
+            <p>
+                <label for="num-period">Number of periods :</label>
+                <input type="text" id="period-count" value="{{periodCount}}" />
+            </p>
+        </div>
     </div>
-    <div id="message"></div>
 </div>

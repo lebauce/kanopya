@@ -6,27 +6,30 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 use Data::Compare;
 
+use File::Basename;
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__.'.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>basename(__FILE__).'.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
-    use Kanopya::Database;
-    use Aggregator;
-    use RulesEngine;
-    use Entity::ServiceProvider::Externalcluster;
-    use Entity::Component::MockMonitor;
-    use Entity::Metric::Clustermetric;
-    use Entity::AggregateCondition;
-    use Entity::Rule::AggregateRule;
-    use Entity::Metric::Combination::AggregateCombination;
-    use Entity::Metric::Combination::NodemetricCombination;
-    use Entity::Metric::Nodemetric;
-    use Entity::NodemetricCondition;
-    use Entity::Rule::NodemetricRule;
-    use VerifiedNoderule;
+
+use Kanopya::Database;
+use Daemon::Aggregator;
+use Daemon::RulesEngine;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Nodemetric;
+use Entity::AggregateCondition;
+use Entity::Rule::AggregateRule;
+use Entity::Metric::Combination::AggregateCombination;
+use Entity::Metric::Combination::NodemetricCombination;
+use Entity::NodemetricCondition;
+use Entity::Rule::NodemetricRule;
+use VerifiedNoderule;
+use Entity::Node;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -43,10 +46,10 @@ my $rulesengine;
 
 eval{
 
-    $aggregator   = Aggregator->new();
-    $rulesengine  = RulesEngine->new();
+    $aggregator   = Daemon::Aggregator->new();
+    $rulesengine  = Daemon::RulesEngine->new();
     $rulesengine->_component->time_step(2);
-    $rulesengine  = RulesEngine->new();
+    $rulesengine  = Daemon::RulesEngine->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider'.time(),
@@ -68,14 +71,14 @@ eval{
     );
 
     # Create node
-    $node = Node->new(
+    $node = Entity::Node->new(
         node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
     # Create node
-    $node2 = Node->new(
+    $node2 = Entity::Node->new(
         node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

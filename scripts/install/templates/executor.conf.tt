@@ -1,4 +1,4 @@
-<conf logdir="[% logdir %]">
+<conf logdir="[% logdir %]" onerror="cancel">
     <user name="executor" password="[% admin_password %]" />
     <amqp user="executor" password="[% admin_password %]" />
 </conf>

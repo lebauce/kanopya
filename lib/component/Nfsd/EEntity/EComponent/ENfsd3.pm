@@ -69,7 +69,7 @@ sub createExport {
 
         # Update the configuration of the component Mounttable of the cluster,
         # to automatically mount the images repositories.
-        my $system = $self->service_provider->getComponent(category => "System");
+        my $system = $self->getMasterNode->getComponent(category => "System");
         my $esystem = EEntity->new(entity => $system);
 
         $esystem->addMount(
@@ -81,8 +81,7 @@ sub createExport {
             passnum    => 0,
         );
 
-        $esystem->generateConfiguration(cluster => $self->service_provider,
-                                        host => $self->getMasterNode->host);
+        $esystem->generateConfiguration(host => $self->getMasterNode->host);
 
         $self->applyConfiguration(tags => [ 'mount' ]);
     }
@@ -102,7 +101,7 @@ sub createExport {
                                         options => $args{client_options});
 
     $self->generateExports(data => $self->getTemplateDataExports());
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('generateExports'),
             parameters => [ $self, "data", $old_data ]
@@ -114,7 +113,7 @@ sub createExport {
 
     $log->info("Added NFS Export <" . $container_access->container_access_export . ">");
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('removeExport'),
             parameters => [ $self, "container_access", $container_access ]
@@ -164,7 +163,7 @@ sub removeExport {
 
         # Update the configuration of the component Mounttable of the cluster,
         # to automatically mount the images repositories.
-        my $system = $self->service_provider->getComponent(category => "System");
+        my $system = $self->getMasterNode->getComponent(category => "System");
         $system->removeMount(mountpoint => $mountdir);
         $self->applyConfiguration(tags => [ 'mount' ]);
     }

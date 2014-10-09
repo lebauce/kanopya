@@ -13,11 +13,12 @@ use warnings;
 use Test::More 'no_plan';
 use Test::Exception;
 
+use File::Basename;
 use Log::Log4perl qw(:easy);
 Log::Log4perl -> easy_init({
     level => 'DEBUG',
-    file => __FILE__.'.log',
-    layout => '%F %L %p %m%n'
+    file => basename(__FILE__).'.log',
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
@@ -25,6 +26,7 @@ use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use DataModelSelector;
 use Utils::TimeSerieAnalysis;
+use Entity::Node;
 
 my $testing = 1;
 my $service_provider;
@@ -289,7 +291,7 @@ sub setup {
     );
 
     # Create node 1
-    $node_1 = Node->new(
+    $node_1 = Entity::Node->new(
                   node_hostname         => 'node_1',
                   service_provider_id   => $service_provider->id,
                   monitoring_state      => 'up',

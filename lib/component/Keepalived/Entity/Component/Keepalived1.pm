@@ -103,10 +103,13 @@ sub setConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
     my $manifest = "";
     my $state;
     # first we check if we need to deploy a new keepalived 
-    my $node_number = $args{host}->node->node_number;
+    my $node_number = $args{node}->node_number;
     if($node_number == 1) {
         $state = 'MASTER';
     } elsif($node_number == 2) {
@@ -122,10 +125,10 @@ sub getPuppetDefinition {
     # vrrp instances
     for my $instance (@vrrp_instances) {
         # we find host iface associated with cluster interface
-        my $iface_name = $self->getHostIface(host => $args{host}, 
+        my $iface_name = $self->getHostIface(host => $args{node}->host,
                                              interface => $instance->interface);
 
-        my $viface_name = $self->getHostIface(host => $args{host},
+        my $viface_name = $self->getHostIface(host => $args{node}->host,
                                               interface => $instance->virtualip_interface);
 
         # ip must have format: 192.168.222.100/24 dev eth0

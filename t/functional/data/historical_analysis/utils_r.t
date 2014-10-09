@@ -11,11 +11,12 @@ use warnings;
 use Test::More 'no_plan';
 use Test::Exception;
 
+use File::Basename;
 use Log::Log4perl qw(:easy);
 Log::Log4perl -> easy_init({
     level => 'DEBUG',
-    file => __FILE__.'.log',
-    layout => '%F %L %p %m%n'
+    file => basename(__FILE__).'.log',
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Utils::R;

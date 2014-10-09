@@ -39,14 +39,15 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
 
-    my $path;
+    my $path = (defined $self->{path}) ? $self->{path} . '/' : '';
+
     # $args{id} is used to avoid methods starting with digit
     # abc->images(id => '022efa')->members <---> abc/images/022efa/members
     if ( defined $args{id} || defined $args{varchar} ) {
-        $path = $self->{path} . '/' . $method . '/' . $args{id};
+        $path .= $method . '/' . $args{id};
     }
     else {
-        $path = $self->{path} . '/' . $method;
+        $path .= $method;
     }
 
     $path .= '?' . $args{filter} if ( defined $args{filter} );
@@ -108,7 +109,15 @@ sub request {
     my $content = $parameters->{content};
     my $content_type = $parameters->{content_type};
     my $headers = $parameters->{headers};
-    my $url = $self->{service}->getEndpoint . '/' . $self->{path};
+
+    my $url = '';
+    if (defined $parameters->{admin} && $parameters->{admin} eq 1) {
+        $url = $self->{service}->adminURL;
+    }
+    else {
+        $url = $self->{service}->getEndpoint;
+    }
+    $url .= '/' . $self->{path};
 
     my $request = '-H "Accept: application/json" -H "Expect: "';
     if (defined $content) {

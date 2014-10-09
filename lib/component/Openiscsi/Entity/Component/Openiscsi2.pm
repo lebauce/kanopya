@@ -36,15 +36,15 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, require => [ 'host' ]);
+    General::checkParams(args => \%args, require => [ 'node' ]);
 
-    my $host_params   = $args{host}->node->service_provider->getManagerParameters(
+    my $host_params   = $args{node}->service_provider->getManagerParameters(
         manager_type => 'HostManager'
     );
 
     my $initiatorname = '';
     if ($host_params->{deploy_on_disk}) {
-        $initiatorname    = $args{host}->host_initiatorname;
+        $initiatorname    = $args{node}->host->host_initiatorname;
     }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {

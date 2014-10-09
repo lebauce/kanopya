@@ -74,6 +74,13 @@ __PACKAGE__->table("component");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 executor_component_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -112,6 +119,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "executor_component_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -125,25 +139,6 @@ __PACKAGE__->add_columns(
 =cut
 
 __PACKAGE__->set_primary_key("component_id");
-
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<service_provider_id>
-
-=over 4
-
-=item * L</service_provider_id>
-
-=item * L</component_type_id>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint(
-  "service_provider_id",
-  ["service_provider_id", "component_type_id"],
-);
 
 =head1 RELATIONS
 
@@ -377,6 +372,26 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 executor_component
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "executor_component",
+  "Kanopya::Schema::Result::KanopyaExecutor",
+  { kanopya_executor_id => "executor_component_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
+);
+
 =head2 fileimagemanager0
 
 Type: might_have
@@ -512,7 +527,67 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 kanopya_executor
+=head2 kanopya_deployment_manager_dhcp_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_deployment_manager_dhcp_components",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.dhcp_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_deployment_manager_kanopya_deployment_manager
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_deployment_manager_kanopya_deployment_manager",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.kanopya_deployment_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_deployment_manager_system_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_deployment_manager_system_components",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.system_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_deployment_manager_tftp_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_deployment_manager_tftp_components",
+  "Kanopya::Schema::Result::KanopyaDeploymentManager",
+  { "foreign.tftp_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_executor_kanopya_executor
 
 Type: might_have
 
@@ -521,9 +596,24 @@ Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
 =cut
 
 __PACKAGE__->might_have(
-  "kanopya_executor",
+  "kanopya_executor_kanopya_executor",
   "Kanopya::Schema::Result::KanopyaExecutor",
   { "foreign.kanopya_executor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_executor_notifier_components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_executor_notifier_components",
+  "Kanopya::Schema::Result::KanopyaExecutor",
+  { "foreign.notifier_component_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -584,6 +674,21 @@ __PACKAGE__->might_have(
   "kanopya_rules_engine",
   "Kanopya::Schema::Result::KanopyaRulesEngine",
   { "foreign.kanopya_rules_engine_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_service_manager
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaServiceManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_service_manager",
+  "Kanopya::Schema::Result::KanopyaServiceManager",
+  { "foreign.kanopya_service_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -827,6 +932,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 openstack_vms
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::OpenstackVm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "openstack_vms",
+  "Kanopya::Schema::Result::OpenstackVm",
+  { "foreign.nova_controller_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 param_preset
 
 Type: belongs_to
@@ -972,6 +1092,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_providers
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_providers",
+  "Kanopya::Schema::Result::ServiceProvider",
+  { "foreign.service_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 snmpd5
 
 Type: might_have
@@ -1044,6 +1179,21 @@ __PACKAGE__->might_have(
   "syslogng3",
   "Kanopya::Schema::Result::Syslogng3",
   { "foreign.syslogng3_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 systemimages
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Systemimage>
+
+=cut
+
+__PACKAGE__->has_many(
+  "systemimages",
+  "Kanopya::Schema::Result::Systemimage",
+  { "foreign.storage_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -1133,8 +1283,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-10 17:45:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Wmh5geO6AHIQBi7BoqsZSw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bdrDExDBzTez7ox+DDGvVg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

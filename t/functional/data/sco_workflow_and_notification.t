@@ -10,7 +10,7 @@ use DataCache;
 DataCache::cacheActive(0);
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'sco_workflow_and_notification.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'sco_workflow_and_notification.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
 
@@ -22,12 +22,15 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 use Entity::Component::Sco;
+use Entity::Component::KanopyaExecutor;
 use Entity::Component::KanopyaMailNotifier;
 use Entity::User;
 use Entity::WorkflowDef;
-
+use Entity::Node;
 use NotificationSubscription;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
+use String::Random;
+my $random = String::Random->new;
 
 my $nc1;
 my $rule1;
@@ -363,11 +366,11 @@ sub _rule_objects_creation {
 
 sub _create_infra {
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
-                            externalcluster_name => 'Test Service Provider',
+                            externalcluster_name => 'Test Service Provider ' . $random->randpattern("nnCccCCnnncCCnncnCCn"),
                         );
 
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
-                                           externalcluster_name => 'Test Monitor',
+                                           externalcluster_name => 'Test Monitor ' . $random->randpattern("nnCccCCnnncCCnncnCCn"),
                                        );
 
     $mock_monitor = Entity::Component::MockMonitor->new(
@@ -382,11 +385,12 @@ sub _create_infra {
 
     #Create a SCO workflow
     my $external_cluster_sco = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test SCO Workflow Manager',
+            externalcluster_name => 'Test SCO Workflow Manager ' . $random->randpattern("nnCccCCnnncCCnncnCCn"),
     );
 
     $sco = Entity::Component::Sco->new(
             service_provider_id => $external_cluster_sco->id,
+            executor_component_id => Entity::Component::KanopyaExecutor->find->id
     );
 
     $service_provider->addManager(
@@ -426,7 +430,7 @@ sub _create_infra {
                                   manager_id   => $mailNotifier->id);
 
     # Create one node
-    my $node = Node->new(
+    my $node = Entity::Node->new(
         node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

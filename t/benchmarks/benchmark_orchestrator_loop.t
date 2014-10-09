@@ -9,19 +9,19 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({ level=>'DEBUG', file=>'/tmp/benchmark_orchestrator_loop.log', layout=>'%F %L %p %m%n' });
+Log::Log4perl->easy_init({ level=>'DEBUG', file=>'/tmp/benchmark_orchestrator_loop.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n' });
 my $log = get_logger("");
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::Profiler;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
+use Kanopya::Test::Profiler;
 
 lives_ok {
     use Kanopya::Database;
-    use Aggregator;
-    use RulesEngine;
+    use Daemon::Aggregator;
+    use Daemon::RulesEngine;
 
     use Entity::ServiceProvider::Cluster;
     use Entity::Component::MockMonitor;
@@ -33,9 +33,9 @@ lives_ok {
 
 } 'All uses';
 
-my $aggregator   = Aggregator->new();
-my $rulesengine  = RulesEngine->new();
-my $profiler     = Kanopya::Tools::Profiler->new(schema => Kanopya::Database::schema);
+my $aggregator   = Daemon::Aggregator->new();
+my $rulesengine  = Daemon::RulesEngine->new();
+my $profiler     = Kanopya::Test::Profiler->new(schema => Kanopya::Database::schema);
 
 Kanopya::Database::beginTransaction;
 
@@ -55,7 +55,7 @@ my $indic1 = Entity::CollectorIndicator->find (hash => {});
 sub registerCluster {
     my ($self, %args) = @_;
 
-    my $cluster = Kanopya::Tools::Create->createCluster(cluster_conf => {
+    my $cluster = Kanopya::Test::Create->createCluster(cluster_conf => {
                       cluster_name         => "Cluster" . $serviceload,
                       cluster_basehostname => "default" . $serviceload
                   });
@@ -75,7 +75,7 @@ sub addNode {
     my (%args) = @_;
 
     # Register a host for the new service
-    my $host = Kanopya::Tools::Register->registerHost(board => {
+    my $host = Kanopya::Test::Register->registerHost(board => {
                    ram  => 1073741824,
                    core => 4,
                });

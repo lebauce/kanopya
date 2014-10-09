@@ -31,29 +31,35 @@ use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
-use File::Basename;
-use String::Random;
-use POSIX "floor";
+
 use Kanopya::Config;
-use Log::Log4perl 'get_logger';
-use Data::Dumper;
 use Message;
 use EEntity;
 use Entity::ServiceProvider::Cluster;
 
+use File::Basename;
+use String::Random;
+use Hash::Merge;
+use POSIX "floor";
+use Data::Dumper;
+use Log::Log4perl 'get_logger';
+
 my $log = get_logger("");
-my $errmsg;
+
+my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+
 
 sub getPriority {
     return 20;
 }
 
 # generate configuration files on node
-sub addNode {
+sub configureNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['cluster','host','mount_point']);
+                         required => [ 'host','mount_point' ],
+                         optional => { 'boot_policy' => undef, 'deploy_on_disk' => undef });
 
     $log->debug("Configuration files generation");
     my $files = $self->generateConfiguration(%args);
@@ -65,94 +71,21 @@ sub addNode {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
-    for my $ehost (@ehosts) {
-        $self->generateConfiguration(
-            cluster => $args{cluster},
-            host    => $ehost
-        );
+    for my $ehost (map { EEntity->new(entity => $_->host) } @{ $self->getActiveNodes() }) {
+        $self->generateConfiguration(host => $ehost);
     }
 }
 
 sub postStopNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
-    for my $ehost (@ehosts) {
-        $self->generateConfiguration(
-            cluster => $args{cluster},
-            host    => $ehost
-        );
+    for my $ehost (map { EEntity->new(entity => $_->host) } @{ $self->getActiveNodes() }) {
+        $self->generateConfiguration(host => $ehost);
     }
-}
-
-sub isUp {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-
-    my $params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
-    if ($params->{deploy_on_disk}) {
-        # Check if the host has already been deployed
-        my $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
-                                                order_by => 'harddisk_device');
-        return 1 if defined $harddisk->service_provider_id && $harddisk->service_provider_id == $args{cluster}->id;
-
-        # Try connecting to the host, return 0 if it fails
-        eval { $args{host}->getEContext->execute(command => "true"); };
-        return 0 if $@;
-
-        # Verify hostname
-        my $theoricalhostname = $args{host}->node->node_hostname;
-        my $realhostname = $args{host}->getEContext->execute(command => 'hostname -s');
-        chomp($realhostname->{stdout});
-
-        if ($theoricalhostname ne $realhostname->{stdout}) {
-            throw Kanopya::Exception::Execution::OperationInterrupted(
-                error => 'System hostname "' . $realhostname->{stdout} . '" is different than Kanopya Hostname for host "' .
-                          $theoricalhostname . '". Is PXE boot working properly ?'
-            );
-        }
-
-        # Disable PXE boot but keep the host entry
-        eval {
-            $harddisk->service_provider_id($args{cluster}->id);
-            my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-            my $dhcp    = EEntity->new(data => $kanopya->getComponent(name => "Dhcpd"));
-            eval {
-                $dhcp->removeHost(host => $args{host});
-                $dhcp->addHost(host => $args{host},
-                               pxe  => 0);
-                $dhcp->applyConfiguration();
-            };
-            if ($@) {
-                throw Kanopya::Exception::Internal::NotFound(
-                    error => "No PXE Iface was found"
-                );
-            }
-
-            # Now reboot the host
-            eval {
-                $args{host}->getEContext->execute(command => "sync;" .
-                                                             "echo 1 > /proc/sys/kernel/sysrq;" .
-                                                             "echo b > /proc/sysrq-trigger");
-            };
-        };
-        if ($@) {
-            throw Kanopya::Exception::Internal::NotFound(
-                error => "No hard disk to deploy the system on was found"
-            );
-        }
-        return 0;
-    }
-
-    return 1;
 }
 
 
@@ -221,24 +154,17 @@ sub getTotalCpu {
     return scalar @lines;
 }
 
-# generate all component files for a host
 
 sub generateConfiguration {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     my $generated_files = [];
-    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-
     push @$generated_files, $self->_generateHostname(%args);
     push @$generated_files, $self->_generateResolvconf(%args);
     push @$generated_files, $self->_generateUdevPersistentNetRules(%args);
-    push @$generated_files, $self->_generateHosts(
-                                kanopya_domainname => $kanopya->cluster_domainname,
-                                %args
-                            );
+    push @$generated_files, $self->_generateHosts(%args);
 
     return $generated_files;
 }
@@ -248,7 +174,8 @@ sub generateConfiguration {
 sub preconfigureSystemimage {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
-                         required => [ 'files', 'cluster', 'host', 'mount_point' ]);
+                         required => [ 'files', 'host', 'mount_point' ],
+                         optional => { 'boot_policy' => undef, 'deploy_on_disk' => undef });
 
     my $econtext = $self->_host->getEContext;
 
@@ -271,30 +198,25 @@ sub preconfigureSystemimage {
     );
 }
 
-# individual file generation
 
 =pod
-
 =begin classdoc
 
 Generate the hostname configuration file
 
-@param host Entity::Host instance
-@param cluster Entity::ServiceProvider::Cluster instance
+@param host the host on which generate the /etc/hostname
 @return hashref with src as full path of the generated file, dest as the full path destination
 
 =end classdoc
-
 =cut
 
 sub _generateHostname {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'cluster' ],
+    General::checkParams(args => \%args, required => [ 'host' ],
                                          optional => { 'path' => '/etc/hostname' });
 
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/hostname',
         template_dir  => 'components/linux',
@@ -305,63 +227,67 @@ sub _generateHostname {
     return { src  => $file, dest => $args{path} };
 }
 
+
+=pod
+=begin classdoc
+
+Generate the /etc/hosts of the host.
+Add the host entries required for all component installed on this host
+
+@param host the host on which generate the /etc/host
+@return hashref with src as full path of the generated file, dest as the full path destination
+
+=end classdoc
+=cut
+
 sub _generateHosts {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'kanopya_domainname' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my @hosts_entries = $args{cluster}->getHostEntries(components => 1);
 
-    my $hosts_tmp = {};
-    for my $entry (@hosts_entries) {
-        for my $alias (@{$entry->{aliases}}) {
-            $hosts_tmp->{$entry->{ip}}->{alias}->{$alias} = 1;
-        }
-        undef $hosts_tmp->{$entry->{ip}}->{alias}->{$entry->{fqdn}};
-        $hosts_tmp->{$entry->{ip}}->{fqdn} = $entry->{fqdn};
+    # For the given node, get the hosts entries required by all component installed on this node
+    my $entries = {};
+    for my $component ($args{host}->node->components) {
+        $entries = $merge->merge($entries, $component->getHostsEntries(dependencies => 1));
     }
+
+    $log->debug('Generate /etc/hosts file on node ' . $args{host}->label .
+                ', hosts entries: ' . Dumper($entries));
 
     my @hosts;
-    for my $ip (keys %$hosts_tmp) {
-        push @hosts, {
-            ip      => $ip,
-            fqdn    => $hosts_tmp->{$ip}->{fqdn},
-            aliases => [keys %{$hosts_tmp->{$ip}->{alias}}]
-        }
+    for my $ip (keys %{ $entries }) {
+        push @hosts, { ip      => $ip,
+                       fqdn    => $entries->{$ip}->{fqdn},
+                       aliases => [ values %{ $entries->{$ip}->{aliases} } ] };
     }
 
-    $log->debug('Generate /etc/hosts file');
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/hosts',
-        template_dir  => 'components/linux',
-        template_file => 'hosts.tt',
-        data          => { hosts => \@hosts }
-    );
+    my $file = $self->generateNodeFile(host          => $args{host},
+                                       file          => '/etc/hosts',
+                                       template_dir  => 'components/linux',
+                                       template_file => 'hosts.tt',
+                                       data          => { hosts => \@hosts });
 
     return { src  => $file, dest => '/etc/hosts' };
 }
 
 sub _generateResolvconf {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['cluster','host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     my @nameservers = ();
-
-    for my $attr ('cluster_nameserver1','cluster_nameserver2') {
+    for my $attr ('nameserver1','nameserver2') {
         push @nameservers, {
-            ipaddress => $args{cluster}->getAttr(name => $attr)
+            ipaddress => $self->$attr
         };
     }
 
     my $data = {
-        domainname => $args{cluster}->getAttr(name => 'cluster_domainname'),
+        domainname  => $self->domainname,
         nameservers => \@nameservers,
     };
 
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/resolv.conf',
         template_dir  => 'components/linux',
@@ -375,7 +301,7 @@ sub _generateResolvconf {
 sub _generateUdevPersistentNetRules {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host','cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     my @interfaces = ();
 
@@ -388,7 +314,6 @@ sub _generateUdevPersistentNetRules {
     }
 
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/udev/rules.d/70-persistent-net.rules',
         template_dir  => 'components/linux',
@@ -401,10 +326,10 @@ sub _generateUdevPersistentNetRules {
 
 sub _generateUserAccount {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'econtext' ]);
 
     my $econtext = $args{econtext};
-    my $user = $args{cluster}->owner;
+    my $user = $self->owner;
     my $login = $user->user_login;
     my $password = $user->user_password;
 
@@ -453,7 +378,7 @@ sub _shell {
 
 sub _disableRootPassword {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'econtext' ]);
    
     # Disable root password
     my $cmd = 'grep "^root:" ' . $args{mount_point} . '/etc/shadow';
@@ -481,12 +406,11 @@ sub _generateNtpdateConf {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
+                         required => [ 'host', 'mount_point', 'econtext' ]);
 
     # TODO: Implement the ntp component. Use the system component for instance.
-    my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
+    my $ntp = Entity::ServiceProvider::Cluster->getKanopyaCluster->getComponent(category => 'System');
     my $file = $self->generateNodeFile(
-                   cluster       => $args{cluster},
                    host          => $args{host},
                    file          => '/etc/default/ntpdate',
                    template_dir  => 'components/linux',
@@ -501,7 +425,6 @@ sub _generateNtpdateConf {
 
     # send ntpdate init script
     $file = $self->generateNodeFile(
-                cluster       => $args{cluster},
                 host          => $args{host},
                 file          => '/etc/init.d/ntpdate',
                 template_dir  => 'components/linux',
@@ -525,12 +448,14 @@ sub _generateNetConf {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'host', 'mount_point', 'econtext' ],
+                         optional => { 'boot_policy' => undef, 'deploy_on_disk' => undef });
 
-    # search for an potential 'loadbalanced' component
-    my $cluster_components = $args{cluster}->getComponents(category => "all");
-    my $is_masternode = $args{cluster}->getCurrentNodesCount == 1;
-    my $is_loadbalanced = $args{cluster}->isLoadBalanced;
+    # Search for any load balanced component on the node
+    my $is_loadbalanced = $args{host}->node->isLoadBalanced;
+    # Search for any component master node
+    my $is_masternode = scalar(grep { $_->master_node } $args{host}->node->component_nodes) > 0;
 
     # Pop an IP adress for all host iface,
     my @net_ifaces;
@@ -542,9 +467,7 @@ sub _generateNetConf {
         }
 
         my ($gateway, $netmask, $ip, $method);
-
-        my $params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
-        if ($params->{deploy_on_disk} && $iface->hasIp) {
+        if ($args{deploy_on_disk} && $iface->hasIp) {
             $method = "dhcp";
         }
         elsif ($iface->hasIp) {
@@ -553,10 +476,10 @@ sub _generateNetConf {
             $ip         = $iface->getIPAddr;
 
             if ($is_loadbalanced and not $is_masternode) {
-                $gateway = $args{cluster}->getComponent(category => 'LoadBalancer')->getMasterNode->adminIp;
+                $gateway = $args{host}->node->getComponent(category => 'LoadBalancer')->getMasterNode->adminIp;
             }
             else {
-                $gateway = ($network->id == $args{cluster}->default_gateway_id) ? $network->network_gateway : undef;
+                $gateway = ($network->id == $self->default_gateway_id) ? $network->network_gateway : undef;
             }
 
             $method = "static";
@@ -571,7 +494,7 @@ sub _generateNetConf {
             address   => $ip,
             netmask   => $netmask,
             gateway   => $gateway,
-            iface_pxe => $args{cluster}->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk} ?
+            iface_pxe => $args{boot_policy} ne Manager::HostManager->BOOT_POLICIES->{virtual_disk} ?
                          $iface->iface_pxe : 0
         };
 
@@ -665,7 +588,6 @@ update initrd directory content
 
 @param initrd_dir directory path
 @param host Entity::Host instance
-@param cluster Entity::ServiceProvider::Cluster instance
 
 =end classdoc
 
@@ -675,14 +597,15 @@ sub customizeInitramfs {
     my ($self, %args) = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+                         required => [ 'initrd_dir', 'host' ],
+                         optional => { 'deploy_on_disk' => undef });
 
     my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
     my $ifaces = $args{host}->getIfaces;
     my $hostname = $args{host}->node->node_hostname;
 
-    my $file = $self->_generateUdevPersistentNetRules(host => $args{host}, cluster => $args{cluster});
+    my $file = $self->_generateUdevPersistentNetRules(host => $args{host});
     my $udev_rules_dir = dirname($initrddir.$file->{dest});
     my $cmd = 'mkdir -p '.$udev_rules_dir;
     $cmd .= ' && cp '.$file->{src}.' '.$initrddir.$file->{dest};
@@ -707,8 +630,7 @@ sub customizeInitramfs {
                   );
 
     # TODO: Check host harddisks for a harddisk_device called 'autodetect'
-    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
-    if ($host_params->{deploy_on_disk}) {
+    if ($args{deploy_on_disk}) {
         my $harddisk;
         eval {
             $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
@@ -972,9 +894,10 @@ sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster' ]);
+                         required => [ 'host' ]);
 
-    $log->info("Skipping configuration of network for cluster " . $args{cluster}->cluster_name);
+    $log->info("Skipping configuration of network for node " .
+               $args{host}->node->node_hostname);
 }
 
 1;

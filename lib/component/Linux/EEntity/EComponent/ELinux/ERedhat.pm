@@ -46,7 +46,7 @@ sub customizeInitramfs {
     my ($self, %args) = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+                         required => [ 'initrd_dir', 'host' ]);
 
     $self->SUPER::customizeInitramfs(%args);
 
@@ -60,12 +60,11 @@ sub _writeNetConf {
 
     General::checkParams(
         args     => \%args,
-        required => [ 'cluster', 'host', 'mount_point', 'ifaces', 'econtext' ]
+        required => [ 'host', 'mount_point', 'ifaces', 'econtext' ]
     );
 
     for my $iface (@{ $args{ifaces} }) {
         my $file = $self->generateNodeFile(
-            cluster       => $args{cluster},
             host          => $args{host},
             file          => '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name},
             template_dir  => 'components/redhat',
@@ -75,7 +74,6 @@ sub _writeNetConf {
         );
 
         $file = $self->generateNodeFile(
-            cluster       => $args{cluster},
             host          => $args{host},
             file          => '/etc/sysconfig/network',
             template_dir  => 'components/redhat',
@@ -92,7 +90,6 @@ sub _writeNetConf {
                 $vlan_infos{iface_name} = $iface->{name};
 
                 my $file = $self->generateNodeFile(
-                    cluster       => $args{cluster},
                     host          => $args{host},
                     file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
                     template_dir  => 'components/redhat',

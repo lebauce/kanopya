@@ -29,13 +29,18 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>10000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <!--Click on the first host (admin host)-->
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <!--1023 MB -> 1023.0 MB-->
@@ -56,17 +61,17 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>1000</td>
+	<td>2000</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>pause</td>
-	<td>2000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <tr>
@@ -97,17 +102,17 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>1000</td>
+	<td>2000</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>pause</td>
-	<td>2000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <tr>
@@ -138,17 +143,17 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>1000</td>
+	<td>2000</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>pause</td>
-	<td>2000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <tr>
@@ -179,17 +184,17 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>1000</td>
+	<td>2000</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>pause</td>
-	<td>2000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <tr>
@@ -220,17 +225,17 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>1000</td>
+	<td>2000</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>pause</td>
-	<td>2000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <tr>
@@ -261,17 +266,17 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>1000</td>
+	<td>2000</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>pause</td>
-	<td>2000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <tr>
@@ -302,17 +307,17 @@
 </tr>
 <tr>
 	<td>pause</td>
-	<td>1000</td>
+	<td>2000</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td>//table[@id=&quot;hosts_list&quot;]/tbody/tr[2]/td[1]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>pause</td>
-	<td>2000</td>
+	<td>5000</td>
 	<td></td>
 </tr>
 <tr>
@@ -324,68 +329,6 @@
 	<td>verifySelectedLabel</td>
 	<td>id=unit_input_host_ram</td>
 	<td>MB</td>
-</tr>
-<!--1024 GB -> alert-->
-<tr>
-	<td>type</td>
-	<td>id=input_host_ram</td>
-	<td>1024</td>
-</tr>
-<tr>
-	<td>select</td>
-	<td>id=unit_input_host_ram</td>
-	<td>GB</td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=button-ok</td>
-	<td></td>
-</tr>
-<tr>
-	<td>pause</td>
-	<td>1000</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyAlert</td>
-	<td>regexp:Unit conversion error.*'TB'.*</td>
-	<td></td>
-</tr>
-<!--0.5 MB -> alert-->
-<tr>
-	<td>type</td>
-	<td>id=input_host_ram</td>
-	<td>0.5</td>
-</tr>
-<tr>
-	<td>select</td>
-	<td>id=unit_input_host_ram</td>
-	<td>MB</td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=button-ok</td>
-	<td></td>
-</tr>
-<tr>
-	<td>pause</td>
-	<td>1000</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>css=#hosts_list tbody .jqgrow td</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyAlert</td>
-	<td>regexp:Unit conversion error.*'KB'.*</td>
-	<td></td>
 </tr>
 <!--End - avoid futur alert-->
 <tr>

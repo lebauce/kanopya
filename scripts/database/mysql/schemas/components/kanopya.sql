@@ -19,12 +19,14 @@ CREATE TABLE `kanopya_front` (
 CREATE TABLE `kanopya_executor` (
     `kanopya_executor_id` int(8) unsigned NOT NULL,
     `control_queue` char(255) DEFAULT NULL,
+    `notifier_component_id` int(8) unsigned DEFAULT NULL,
     `time_step` int(8) unsigned NOT NULL,
     `masterimages_directory` char(255) NOT NULL,
     `clusters_directory` char(255) NOT NULL,
     `private_directory` char(255) NOT NULL,
     PRIMARY KEY (`kanopya_executor_id`),
-    FOREIGN KEY (`kanopya_executor_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY (`kanopya_executor_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (`notifier_component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -74,6 +76,17 @@ CREATE TABLE `kanopya_openstack_sync` (
     `control_queue` char(255) DEFAULT NULL,
     PRIMARY KEY (`kanopya_openstack_sync_id`),
     FOREIGN KEY (`kanopya_openstack_sync_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+)   ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `kanopya_service_manager`
+--
+
+CREATE TABLE `kanopya_service_manager` (
+    `kanopya_service_manager_id` int(8) unsigned NOT NULL,
+    PRIMARY KEY (`kanopya_service_manager_id`),
+    FOREIGN KEY (`kanopya_service_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

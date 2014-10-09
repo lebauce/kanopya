@@ -45,24 +45,11 @@ my $errmsg;
 my $resources_keys = { ram => { name => 'currentMemory/0/content', factor => 1024 },
                        cpu => { name => 'vcpu/0/content', factor => 1 } };
 
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'host', 'mount_point', 'cluster' ]
-    );
-
-    $self->configureNode(%args);
-}
-
 sub configureNode {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => ['cluster', 'host', 'mount_point']
-    );
+    General::checkParams(args     => \%args,
+                         required => [ 'host', 'mount_point' ]);
 
     $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
     $self->_generateQemuKvmUdev(%args);
@@ -78,8 +65,7 @@ sub configureNode {
     );
 
     # create directories for registered datastores
-    my $conf = $self->iaas->getConf();
-    for my $repo (@{$conf->{opennebula3_repositories}}) {
+    for my $repo (@{ $self->iaas->getConf()->{opennebula3_repositories} }) {
         if (defined $repo->{datastore_id}) {
             my $dir = $args{mount_point} . '/var/lib/one/datastores/' . $repo->{datastore_id};
             my $cmd = "mkdir -p $dir";
@@ -91,10 +77,7 @@ sub configureNode {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     return 1;
 }
@@ -102,7 +85,7 @@ sub isUp {
 sub _generateQemuKvmUdev {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
     my $command = "echo 'KERNEL==\"kvm\", OWNER==\"oneadmin\", GROUP==\"kvm\", " .
                   "MODE==\"0660\"' > $args{mount_point}/lib/udev/rules.d/60-qemu-kvm.rules";

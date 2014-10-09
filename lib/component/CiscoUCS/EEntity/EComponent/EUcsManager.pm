@@ -192,34 +192,4 @@ sub getFreeHost {
 }
 
 
-=pod
-=begin classdoc
-
-Apply a VLAN on an interface of a host
-
-=end classdoc
-=cut
-
-sub applyVLAN {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'iface', 'vlan' ]);
-
-    my $host = Entity->get(id => $args{iface}->getAttr(name => "host_id"));
-    my $api = $self->_entity->init();
-    my $blade = $api->get(dn => $host->getAttr(name => "host_serial_number"));
-    my $sp = $api->get(dn => $blade->{assignedToDn});
-
-    my @ethernets = $sp->children("vnicEther");
-    for my $ethernet (@ethernets) {
-        if ($ethernet->{name} eq 'v' . $args{iface}->getAttr(name => "iface_name")) {
-            $log->info("Applying vlan " . $args{vlan}->vlan_name .
-                       " on " . $ethernet->{name} . " interface of " . $host->getAttr(name => "host_serial_number"));
-            $ethernet->applyVLAN(name   => $args{vlan}->vlan_name,
-                                 delete => (defined ($args{delete}) and $args{delete}) ? 1 : 0);
-        }
-    }
-}
-
 1;

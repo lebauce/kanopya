@@ -15,6 +15,8 @@ use Kanopya::Config;
 my $kanopya = Kanopya::Config::getKanopyaDir;
 
 my @kanopyalibs = ($kanopya . '/lib/administrator',
+                   $kanopya . '/lib/service',
+                   $kanopya . '/lib/deployment',
                    $kanopya . '/lib/common',
                    $kanopya . '/lib/executor',
                    $kanopya . '/lib/external',
@@ -34,9 +36,19 @@ for my $lib (@kanopyalibs) {
     @perlmodules = map { $_ =~ s/\.pm//g; $_ } @perlmodules;
 }
 
-# begin the test                
-                
-use lib @kanopyalibs;
+# begin the test
+
+# The following line seemd to not work....
+# use lib @kanopyalibs;
+
+use lib qw(/opt//kanopya/lib/common/
+           /opt//kanopya/lib/administrator/
+           /opt//kanopya/lib/deployment/
+           /opt//kanopya/lib/service/
+           /opt//kanopya/lib/executor/
+           /opt//kanopya/lib/monitor/
+           /opt//kanopya/lib/orchestrator/
+           /opt//kanopya/lib/external);
 
 use Test::More;
 plan tests => scalar(@perlmodules); 

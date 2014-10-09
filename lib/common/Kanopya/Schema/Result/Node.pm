@@ -43,7 +43,7 @@ __PACKAGE__->table("node");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 service_provider_id
@@ -51,7 +51,7 @@ __PACKAGE__->table("node");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 host_id
 
@@ -98,6 +98,12 @@ __PACKAGE__->table("node");
   is_nullable: 0
   size: 32
 
+=head2 admin_ip_addr
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 15
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -105,7 +111,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "service_provider_id",
@@ -113,7 +119,7 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "host_id",
   {
@@ -144,6 +150,8 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
     size => 32,
   },
+  "admin_ip_addr",
+  { data_type => "char", is_nullable => 1, size => 15 },
 );
 
 =head1 PRIMARY KEY
@@ -203,6 +211,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 harddisks
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Harddisk>
+
+=cut
+
+__PACKAGE__->has_many(
+  "harddisks",
+  "Kanopya::Schema::Result::Harddisk",
+  { "foreign.deployed_on_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 host
 
 Type: belongs_to
@@ -221,6 +244,21 @@ __PACKAGE__->belongs_to(
     on_delete     => "NO ACTION",
     on_update     => "NO ACTION",
   },
+);
+
+=head2 node
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "node",
+  "Kanopya::Schema::Result::Entity",
+  { entity_id => "node_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 nodemetrics
@@ -250,7 +288,12 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "Kanopya::Schema::Result::ServiceProvider",
   { service_provider_id => "service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 systemimage
@@ -268,7 +311,7 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "NO ACTION",
+    on_delete     => "SET NULL",
     on_update     => "NO ACTION",
   },
 );
@@ -304,8 +347,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-30 11:56:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:26njX/CXJ6NoA0wl7Q/Rjw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vr3AKpz55xUXfcLyMyNxOQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

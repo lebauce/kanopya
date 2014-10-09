@@ -29,6 +29,8 @@ use base ClassType;
 use strict;
 use warnings;
 
+use TryCatch;
+
 use constant ATTR_DEF => {
     component_name => {
         pattern      => '^.*$',
@@ -50,13 +52,6 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'multi',
         link_to      => 'component_category',
-        is_mandatory => 0,
-        is_editable  => 1,
-    },
-    service_provider_type_component_types => {
-        type         => 'relation',
-        relation     => 'multi',
-        link_to      => 'service_provider_type',
         is_mandatory => 0,
         is_editable  => 1,
     },
@@ -93,6 +88,33 @@ sub search {
 
     return $class->SUPER::search(%args);
 }
+
+
+=pod
+=begin classdoc
+
+Search for the given category.
+
+@return 1 if the component type has the given category, 0 instead
+
+=end classdoc
+=cut
+
+sub hasCategory {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'category' ]);
+
+    try {
+        $self->find(related => 'component_categories', hash => { 'category_name' => $args{category} });
+        return 1
+    }
+    catch ($err) {
+        return 0;
+    }
+
+}
+
 
 =pod
 =begin classdoc

@@ -20,6 +20,14 @@ use base "Manager::HostManager";
 use warnings;
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     virtualconnect_ip   => {
         label        => 'VirtualConnect IP',
         type         => 'string',

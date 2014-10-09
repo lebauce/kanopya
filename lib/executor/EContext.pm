@@ -47,8 +47,8 @@ Create an EContext object to execute local/remote commands on hosts.
 The constructir a the base class is a factory that instanciate the
 proper type in function of sourec host ans dest host paramaters.
 
-@param src_host the source host that from which commands are executed
-@param dst_host the destination host that on which commands are executed
+@param src_ip the source host ip that from which commands are executed
+@param dst_ip the destination host ip that on which commands are executed
 
 @return a class instance
 
@@ -59,13 +59,13 @@ proper type in function of sourec host ans dest host paramaters.
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'src_host', 'dst_host' ],
+    General::checkParams(args => \%args, required => [ 'src_ip', 'dst_ip' ],
                                          optional => { key => undef, timeout => 30 });
 
     # If the destination host is different then the source one,
     # use a SSH econtext to excecute remote commands.
-    if ($args{src_host}->id != $args{dst_host}->id) {
-        return EContext::SSH->new(ip      => $args{dst_host}->adminIp,
+    if ($args{src_ip} ne $args{dst_ip}) {
+        return EContext::SSH->new(ip      => $args{dst_ip},
                                   key     => $args{key},
                                   timeout => $args{timeout});
     }

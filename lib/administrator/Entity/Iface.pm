@@ -25,6 +25,7 @@ use Ip;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -76,43 +77,62 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub toString {
-    my $self = shift;
-
-    return "Iface: " . $self->iface_name . " - " . $self->iface_mac_addr;
-}
 
 sub assignIp {
     my $self = shift;
     my %args = @_;
 
-    # Loop over all network configurations, and assign ip to ifaces
-    # for each network.
-    NETCONFS:
-    for my $netconf ($self->netconfs) {
-        if (scalar $netconf->poolips) {
-            POOLIPS:
-            for my $poolip ($netconf->poolips) {
-                # Try to pop an ip from the current pool
-                my $ip;
-                eval { $ip = $poolip->popIp(); };
-                if ($@) {
-                    $log->info("Cannot pop IP from pool <" . $poolip->poolip_name . ">\n$@");
-                    next POOLIPS;
+    General::checkParams(args => \%args, optonal => { 'ip_addr' => undef });
+
+    my $ip;
+    if (! defined $args{ip_addr}) {
+        my @netconfs = $self->netconfs;
+        $log->debug("Browse " . scalar(@netconfs) . " netconfs to search poolips");
+
+        # Loop over all network configurations, and assign ip to ifaces
+        # for each network.
+        NETCONFS:
+        for my $netconf (@netconfs) {
+            my @poolips = $netconf->poolips;
+            $log->debug("Netconf " . $netconf->label . ", try to pop an ip from " .
+                        scalar(@poolips) . " poolip");
+
+            if (scalar(@poolips)) {
+                POOLIPS:
+                for my $poolip (@poolips) {
+                    # Try to pop an ip from the current pool
+                    try {
+                        $ip = $poolip->popIp();
+                    }
+                    catch ($err) {
+                        $log->error("Cannot pop IP from pool <" . $poolip->poolip_name . ">\n$err");
+                        next POOLIPS;
+                    }
+
+                    # Assign the ip to the iface
+                    $ip->iface_id($self->id);
+
+                    $log->info("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
+
+                    # TODO: handle multiple ip on one iface.
+                    last NETCONFS;
                 }
-                $ip->setAttr(name  => 'iface_id', value => $self->id, save => 1);
-
-                $log->debug("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
-
-                # TODO: handle multiple ip on one iface.
-                last NETCONFS;
+                # No free ip found
+                throw Kanopya::Exception::Internal::NotFound(
+                          error => "Unable to assign ip to iface <" . $self->iface_name . ">"
+                      );
             }
-            # No free ip found
-            throw Kanopya::Exception::Internal::NotFound(
-                      error => "Unable to assign ip to iface <" . $self->iface_name . ">"
-                  );
+            else {
+                $log->warn("No poolip found, skipping netconf <" . $netconf->label . ">");
+            }
         }
     }
+    else {
+        $log->info("Creating ip from fixed address <$args{ip_addr}>");
+        $ip = Ip->new(ip_addr => $args{ip_addr}, iface_id => $self->id);
+    }
+
+    return $ip;
 }
 
 sub hasIp {
@@ -123,15 +143,14 @@ sub hasIp {
 }
 
 sub getIPAddr {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $ip;
-    eval {
+    try {
         # TODO: handle multiple IP by Iface.
         $ip = Ip->find(hash => { iface_id => $self->id });
-    };
-    if ($@) {
+    }
+    catch {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Iface " . $self->iface_name . " not associated to any IP."
               );
@@ -140,15 +159,14 @@ sub getIPAddr {
 }
 
 sub getPoolip {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $ip;
-    eval {
+    try {
         # TODO: handle multiple IP by Iface.
         $ip = Ip->find(hash => { iface_id => $self->id });
-    };
-    if ($@) {
+    }
+    catch {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Iface " . $self->iface_name . " not associated to any IP."
               );
@@ -158,8 +176,7 @@ sub getPoolip {
 
 
 sub hasRole {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'role' ]);
 
@@ -169,8 +186,7 @@ sub hasRole {
 }
 
 sub getVlans {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my @vlans;
     for my $netconf ($self->netconfs) {
@@ -192,8 +208,7 @@ sub networks {
 }
 
 sub slaves {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my @slaves = grep { $_->master eq $self->iface_name } $self->host->ifaces;
 

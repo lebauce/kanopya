@@ -9,6 +9,7 @@ use Dancer::Test;
 use Frontend;
 use REST::api;
 use APITestLib;
+use Kanopya::Database;
 
 use Test::Exception;
 
@@ -16,7 +17,7 @@ use Data::Dumper;
 $DB::deep = 500;
 
 use Log::Log4perl;
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 
 # Firstly login to the api
 APITestLib::login();
@@ -60,6 +61,20 @@ lives_ok {
 
 
 lives_ok {
+    my $response = dancer_response GET => '/api/operationtype';
+    my $operationtype = pop Dancer::from_json($response->{content});
+    $response = dancer_response GET => '/api/kanopyaexecutor';
+    my $executor = pop Dancer::from_json($response->{content});
+    my $operation_creation = dancer_response POST => '/api/operation', {
+        params => {
+            operationtype    => $operationtype,
+            workflow_manager => $executor,
+            priority         => 200
+        }
+    };
+    my $operation = Dancer::from_json($operation_creation->{content});
+    dancer_response DELETE => '/api/operation/' . $operation->{pk};
+
     my $resp = dancer_response GET => '/api/user', { params => { user_login => 'admin' } };
     my $user = Dancer::from_json($resp->{content})->[0];
     my $delete = dancer_response DELETE => '/api/user/' . $user->{pk};

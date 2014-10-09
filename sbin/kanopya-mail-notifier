@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use MailNotifier;
+use Daemon::MessageQueuing::MailNotifier;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -38,7 +38,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $s = MailNotifier->new();
+my $s = Daemon::MessageQueuing::MailNotifier->new();
 $s->run(name       => "kanopya-mail-notifier",
         daemonize  => $opts{b},
         pidfile    => $opts{p});

@@ -26,7 +26,17 @@ It corresponds to the related metric anomaly score computation
 
 package Entity::Metric::Anomaly;
 use base Entity::Metric;
-use AnomalyDetection;
+use strict;
+use warnings;
+use TryCatch;
+
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
+use constant METHODS => ('AnomalyDetection::LinearRegression', 'AnomalyDetection::Seasonality');
+
+use AnomalyDetection::LinearRegression;
+use AnomalyDetection::Seasonality;
 
 use constant ATTR_DEF => {
     related_metric_id => {
@@ -52,6 +62,16 @@ The (key,value) (store,'rrd') is added to the args
 sub new {
     my ($class, %args) = @_;
     $args{store} = 'rrd';
+    my @managed_params = ('period', 'window', 'num_periods' );
+
+    use Data::Dumper;
+    for my $managed_param (@managed_params) {
+        if (defined $args{$managed_param}) {
+            $args{params}->{$managed_param} = $args{$managed_param};
+            delete $args{$managed_param};
+        }
+    }
+
     return $class->SUPER::new(%args);
 }
 
@@ -86,8 +106,26 @@ Compute an anomaly score w.r.t. given values
 
 sub computeAnomaly {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['values']);
-    return AnomalyDetection->detect(values => $args{values});
+    General::checkParams(
+        args => \%args,
+        required => ['values'],
+        optional => {
+            method => undef,
+            params => $self->getParams()
+        }
+    );
+
+    if (defined $args{method}) {
+        if ((scalar grep {$_ eq $args{method}} METHODS) eq 0) {
+            my $error = 'Parameter <method> value must be in ' . METHODS;
+            throw Kanopya::Exception::Internal::WrongValue->(error => $error);
+        }
+        General::requireClass($args{method});
+    }
+    else {
+        $args{method} = 'AnomalyDetection::Seasonality';
+    }
+    return $args{method}->detect(%args);
 }
 
 1;

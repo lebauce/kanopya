@@ -1192,11 +1192,15 @@ sub _scaleMetric {
 
 =begin classdoc
 
-Find the HV id which can accept the resources. Choose the one
-with minimum space (average btw RAM and CPU)
+Find the HV id which can accept the resources under policy and affinity constraints.
 
 @param resources values wanted for the vm
 @param hv_selection_ids hypervisor which can be used to perform the migration
+@param cpu_multiplier set between -1 (spread) and 1 (stack) to reflect policy
+@param ram_multiplier set between -1 (spread) and 1 (stack) to reflect policy
+@param strict_affinity ids of VMs to be set with
+@param strict_anti_affinity ids of VMs not to be set with
+@param affinity_weights hash table linking VM ids to affinity weights between -1 (affinity) and 1 (anti-affinity)
 
 @return a hash with keys : hv_id => the hypervisor id, min_size_remaining => the 'score' used to
 compare 2 hypervisors
@@ -1208,20 +1212,66 @@ compare 2 hypervisors
 sub _findMinHVidRespectCapa {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['hv_selection_ids', 'resources']);
+    General::checkParams(
+        args => \%args,
+        required => ['hv_selection_ids', 'resources'],
+        optional => {
+            cpu_multiplier       => 1,
+            ram_multiplier       => 1,
+            strict_affinity      => [],
+            strict_anti_affinity => [],
+            affinity_weights     => {},
+        }
+    );
     General::checkParams(args => $args{resources}, required => ['ram', 'cpu']);
 
+    my @hv_selection_ids = @{$args{hv_selection_ids}};
     my $wanted_metrics = $args{resources};
+
+    # Filter hvs that do not respect strict A/AA requirements
+    my @vm_affinity_ids = @{$args{strict_affinity}};
+    my @hv_affinity_ids;
+
+    if (scalar (@vm_affinity_ids) > 0) {
+        for my $vm_id (@vm_affinity_ids) {
+            my $vm = $self->{_infra}->{vms}->{$vm_id};
+            my $hv_id = $vm->{hv_id};
+            push @hv_affinity_ids, $self->{_infra}->{vms}->{$vm_id}->{hv_id};
+        }
+        @hv_selection_ids = @hv_affinity_ids;
+    }
+
+    my @vm_anti_affinity_ids = @{$args{strict_anti_affinity}};
+    for my $vm_id (@vm_anti_affinity_ids) {
+        @hv_selection_ids = grep { $_ ne $self->{_infra}->{vms}->{$vm_id}->{hv_id} } @hv_selection_ids;
+    }
+
+    # Soft A/AA requirements will be scored as weights
+    # Positive weights for anti-affinity ]0, 1]
+    # Negative for affinity [-1, 0[
+    @vm_affinity_ids = keys %{$args{affinity_weights}};
+    my %hv_affinity_weights;
+    for my $hv_id (@hv_selection_ids) {
+        $hv_affinity_weights{$hv_id} = 0;
+    }
+    for my $vm_id (@vm_affinity_ids) {
+        $hv_affinity_weights{$self->{_infra}->{vms}->{$vm_id}->{hv_id}} = $args{affinity_weights}{$vm_id};
+    }
 
     my $result = {};
     $result->{hv_id} = undef;
     $result->{min_size_remaining} = undef;
 
-    for my $hv_id (@{$args{hv_selection_ids}}){
+    for my $hv_id (@hv_selection_ids){
 
         my $size_remaining = $self->_getHvSizeRemaining(hv_id => $hv_id);
 
-        my $total_score = $size_remaining->{cpu_p} + $size_remaining->{ram_p};
+        my $cpu_p = $size_remaining->{cpu_p};
+        my $ram_p = $size_remaining->{ram_p};
+        my $aff_weight = $hv_affinity_weights{$hv_id};
+
+        my $total_score = $cpu_p*$args{cpu_multiplier} + $ram_p*$args{ram_multiplier};
+        $total_score += $aff_weight;
 
         $log->debug('HV <'.$hv_id.'> Wanted RAM <'.($wanted_metrics->{ram})
                     .'> got <'.($size_remaining->{ram}).' ('.(100*$size_remaining->{ram_p})

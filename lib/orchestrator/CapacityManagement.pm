@@ -44,7 +44,7 @@ use List::Util;
 use Entity;
 use EEntity;
 use Message;
-use Entity::ServiceProvider::Cluster;
+
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -65,23 +65,53 @@ from all its VMs).
 =cut
 
 sub optimIaas {
-    my $self = shift;
+    my ($self,%args) = @_;
+    General::checkParams(args     => \%args,
+                         optional => {
+                            policy => "stack",
+                         });
 
     $self->{_operationPlan} = [];
-    my $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
     my $optim;
     my $current_plan = [];
     my $step = 1;
-    do{
-        $optim = $self->_optimStep(
-            hv_selected_ids => $hv_selected_ids,
-            methode         => 2,
-            current_plan    => $current_plan,
-        );
-        $step++;
+    my $hv_selected_ids;
 
+    if ($args{policy} eq "spread") {
+
+        $hv_selected_ids = $self->_separateEmptyHvIds()->{hv_ids};
+        my @hv_selection_ids = @$hv_selected_ids;
+        do {
+            $optim = scalar (@hv_selection_ids);
+
+            # Run optimStep on the fullest HV
+            my $fullest_hv_id = $self->_optimStepSpread(
+                hv_selected_ids => \@hv_selection_ids,
+                current_plan    => $current_plan,
+            );
+            $step++;
+
+            # Withdraw processed HV from list
+            @hv_selection_ids = grep { $_ != $fullest_hv_id } @hv_selection_ids;
+            $optim = scalar (@hv_selection_ids);
+        } while ($optim > 1);
+    }
+
+    else {
         $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
-    } while ($optim == 1);
+
+        do {
+            $optim = $self->_optimStep(
+                hv_selected_ids => $hv_selected_ids,
+                methode         => 2,
+                current_plan    => $current_plan,
+            );
+
+            $step++;
+            $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+        } while ($optim == 1);
+
+    }
 
     $self->_applyMigrationPlan(
         plan                 => $current_plan,
@@ -189,7 +219,17 @@ with minimum size (in order to optimize infrastructure usage)
 
 sub getHypervisorIdForVM {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => ['resources']);
+    General::checkParams(
+        args => \%args,
+        required => ['resources'],
+        optional => {
+            cpu_multiplier       => 1,
+            ram_multiplier       => 1,
+            strict_affinity      => [],
+            strict_anti_affinity => [],
+            affinity_weights     => {},
+        }
+    );
 
     # Option : blacklisted_hv_ids
     # Option : selected_hv_ids
@@ -219,7 +259,12 @@ sub getHypervisorIdForVM {
 
     my $hv = $self->_findMinHVidRespectCapa(
         hv_selection_ids => \@hv_selection_ids_keys,
-        resources        => $args{resources},
+        resources            => $args{resources},
+        cpu_multiplier       => $args{cpu_multiplier},
+        ram_multiplier       => $args{ram_multiplier},
+        strict_affinity      => $args{strict_affinity},
+        strict_anti_affinity => $args{strict_anti_affinity},
+        affinity_weights     => $args{affinity_weights},
     );
 
     if (defined $hv->{hv_id}) {
@@ -411,6 +456,110 @@ sub _optimStep {
 
 
 =pod
+=begin classdoc
+
+    Compute a potential new rate from the migration of a new VM on the host.
+
+=end classdoc
+=cut
+
+sub _getOccupancyRate {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => ['hv_index'],
+        optional => {
+            vm_cpu => 0,
+            vm_ram => 0,
+        }
+    );
+
+    my $hv_id = $args{hv_index};
+    my @vmlist = keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+    my $total_cpu = $args{vm_cpu};
+    my $total_ram = $args{vm_ram};
+
+    for my $vm_id (@vmlist){
+        $total_cpu += $self->{_infra}->{vms}->{$vm_id}->{resources}->{cpu};
+        $total_ram += $self->{_infra}->{vms}->{$vm_id}->{resources}->{ram};
+    }
+
+    my $cpu_rate = $total_cpu / $self->{_infra}->{hvs}->{$hv_id}->{resources}->{cpu};
+    my $ram_rate = $total_ram / $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram};
+
+    return List::Util::max ($cpu_rate, $ram_rate);
+}
+
+
+=pod
+=begin classdoc
+
+Desc : Process one step of optimization which tries to alleviate the fullest HV
+
+=end classdoc
+=cut
+
+sub _optimStepSpread {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args => \%args,
+        required => ['current_plan', 'hv_selected_ids'],
+    );
+    my $current_plan    = $args{current_plan};
+    my $hv_selected_ids = $args{hv_selected_ids};
+
+    my $fullest_hv =  $self->_findFullestHvId(hvs => $self->{_infra}->{hvs}, hv_selected_ids => $hv_selected_ids);
+    my $max_occupancy_rate = $self->_getOccupancyRate(hv_index => $fullest_hv);
+
+    my @hv_selection_ids;
+    my $hv_id = $fullest_hv;
+
+        @hv_selection_ids = grep { $_ != $hv_id } @$hv_selected_ids;
+        $log->debug("List of HVs available to free <$hv_id> : @hv_selection_ids");
+
+        my @vmlist = keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+        $log->debug("List of VMs to migrate = @vmlist");
+
+
+        # For each VM on the fullest HV:
+        # Find a host to migrate on (under spreading policy).
+        # Launch migration only if it does not imply
+        # a higher occupation ratio on the destination host.
+        for my $vm_to_migrate_id (@vmlist) {
+
+            my $hv_dest_id = $self->_findMinHVidRespectCapa(
+                hv_selection_ids => \@hv_selection_ids,
+                resources        => $self->{_infra}->{vms}->{$vm_to_migrate_id}->{resources},
+                cpu_multiplier   => -1,
+                ram_multiplier   => -1,
+            );
+
+            # Chech ratio before authorizing migration:
+            my $msg;
+            if (defined $hv_dest_id->{hv_id}) {
+                my $new_occupancy_rate = $self->_getOccupancyRate(
+                        hv_index  => $hv_dest_id->{hv_id},
+                        vm_cpu    => $self->{_infra}->{vms}->{$vm_to_migrate_id}->{resources}->{cpu},
+                        vm_ram    => $self->{_infra}->{vms}->{$vm_to_migrate_id}->{resources}->{ram},
+                    );
+
+                if ($new_occupancy_rate < $max_occupancy_rate) {
+                    $msg = "Enqueue VM <$vm_to_migrate_id> migration";
+                    $self->_migrateVmModifyInfra(
+                        vm_id => $vm_to_migrate_id,
+                        hv_id => $hv_dest_id->{hv_id},
+                    );
+                    push @$current_plan, {vm_id => $vm_to_migrate_id, hv_id => $hv_dest_id->{hv_id}};
+                }
+
+                $max_occupancy_rate = $self->_getOccupancyRate(hv_index => $hv_id);
+            }
+            $log->debug($msg);
+        }
+    return $hv_id;
+}
+
+=pod
 
 =begin classdoc
 
@@ -493,6 +642,33 @@ sub _findHvIdWithMinVmSize{
     return $rep;
 }
 
+=pod
+
+=begin classdoc
+
+    Return the id of the fullest hypervisor, i.e with the maximum occupancy rate
+
+=end classdoc
+
+=cut
+
+sub _findFullestHvId {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['hv_selected_ids']);
+
+    my $hv_selected_ids = $args{hv_selected_ids};
+    my $fullest_hv_id = $hv_selected_ids->[0];
+    my $max_rate = 0;
+
+    for my $hv_index_s (@{$hv_selected_ids}) {
+        my $occupancy_rate = $self->_getOccupancyRate(hv_index => $hv_index_s);
+        if ($occupancy_rate >= $max_rate) {
+            $fullest_hv_id = $hv_index_s;
+            $max_rate = $occupancy_rate;
+        }
+    }
+    return $fullest_hv_id;
+}
 
 =pod
 

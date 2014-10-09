@@ -13,13 +13,13 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::OpenStack;
+use Kanopya::Test::OpenStack;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
     file=>'openstack_live_migration.t.log',
-    layout=>'%F %L %p %m%n'
+    layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
@@ -35,23 +35,39 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
-    Kanopya::Tools::OpenStack->start1OpenStackOn3Clusters();
+    Kanopya::Test::OpenStack->start1OpenStackOn3Clusters();
 
     my $cloud = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "CloudController" });
     my $compute = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "Compute" });
+
+    my $vm = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "VmCluster" });
     my $cinder = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "CinderVmCluster" });
-    
+
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cinder);
+        Kanopya::Test::Execution->startCluster(cluster => $vm);
+    } 'Starting VM Cluster';
+
+    lives_ok {
+        Kanopya::Test::Execution->startCluster(cluster => $cinder);
     } 'Starting CinderVM Cluster';
 
     lives_ok {
-        Kanopya::Tools::Execution->addNode(cluster => $compute);
+        Kanopya::Test::Execution->addNode(cluster => $compute);
     } 'Starting a 2nd Compute node';
-    
-    $controller = $cloud->getComponent(name => "NovaController");
+
+    my $hypervisor_dst;
     lives_ok {
-        $controller->migrateHost( host => 'cindervm1', hypervisor_dst => 'compute2');
+        $hypervisor_dst = Entity::Node->find(hash => { node_hostname => 'compute2' })->host;
+    } 'Retrieve 2nd Compute node';
+
+    my $vm_to_migrate;
+    lives_ok {
+        $vm_to_migrate = Entity::Node->find(hash => { node_hostname => 'cindervm1' })->host;
+    } 'Retrieve cindervm node';
+
+    my $controller = $cloud->getComponent(name => "NovaController");
+    lives_ok {
+        $controller->migrate(host_id => $vm_to_migrate->id, hypervisor_dst => $hypervisor_dst->id);
     } 'Migrate CinderVM to 2nd Compute';
 
     if ($testing == 1) {

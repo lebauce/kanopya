@@ -20,7 +20,7 @@ use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
     file=>'rabbitmq_clusterization.t.log',
-    layout=>'%F %L %p %m%n'
+    layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
@@ -35,10 +35,10 @@ use Entity::Netconf;
 use Entity::Poolip;
 use Entity::Operation;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -54,13 +54,13 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Execution::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster(
+        $cluster = Kanopya::Test::Create->createCluster(
                        components => {
                            'amqp' => {}
                        },
@@ -74,7 +74,7 @@ sub main {
 
     diag('Start RabbitMQ cluster with 2 nodes');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
 
     if ($testing == 1) {

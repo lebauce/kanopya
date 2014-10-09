@@ -29,7 +29,7 @@ class kanopya::linux::system {
     ensure => present,
     mode   => 0644,
     source => "puppet:///kanopyafiles/${sourcepath}/etc/hosts",
-    tag    => "kanopya::operation::startnode"
+    tag    => "kanopya::deployment::deploynode"
   }
 
   if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
@@ -49,7 +49,7 @@ class kanopya::linux (
   $mounts = [],
   $swaps  = []
 ) {
-  tag("kanopya::operation::poststartnode")
+  tag("kanopya::service::poststartnode")
 
   class { 'kanopya::linux::system':
     stage => 'system'

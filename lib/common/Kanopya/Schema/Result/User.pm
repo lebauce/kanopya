@@ -327,8 +327,8 @@ Composing rels: L</user_profiles> -> profile
 __PACKAGE__->many_to_many("profiles", "user_profiles", "profile");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-26 15:17:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QU7EBxJZHCCL5CELCmEuGQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kxzra5MjIhS1ixaAOGqBjQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

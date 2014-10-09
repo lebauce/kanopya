@@ -21,7 +21,11 @@
                     "netconfs" : [ { "class_type" : "Entity::Netconf", "netconf_name" : "Kanopya admin" } ],
                     "interface_name" : "eth1"
                 }
-            ]
+            ],
+            "network_manager_id" : {
+                "class_type" : "Entity::Component::HCMNetworkManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            }
         },
         "Default OpenNebula KVM IAAS" : {
             "policy_name" : "Default OpenNebula KVM IAAS",
@@ -29,6 +33,14 @@
             "policy_type" : "system",
             "cluster_si_persistent" : 0,
             "systemimage_size" : 5368709120,
+            "deployment_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "boot_manager_id" : {
+                "class_type" : "Entity::Component::KanopyaDeploymentManager",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
             "components" : [
                 {
                     "component_type" : {

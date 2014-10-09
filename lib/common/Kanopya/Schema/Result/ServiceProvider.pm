@@ -46,6 +46,13 @@ __PACKAGE__->table("service_provider");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 service_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 service_provider_type_id
 
   data_type: 'integer'
@@ -62,6 +69,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "service_manager_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
   "service_provider_type_id",
   {
@@ -227,21 +241,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 harddisks
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Harddisk>
-
-=cut
-
-__PACKAGE__->has_many(
-  "harddisks",
-  "Kanopya::Schema::Result::Harddisk",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 indicators
 
 Type: has_many
@@ -319,21 +318,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 notification_subscriptions
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::NotificationSubscription>
-
-=cut
-
-__PACKAGE__->has_many(
-  "notification_subscriptions",
-  "Kanopya::Schema::Result::NotificationSubscription",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 rules
 
 Type: has_many
@@ -347,6 +331,26 @@ __PACKAGE__->has_many(
   "Kanopya::Schema::Result::Rule",
   { "foreign.service_provider_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_manager
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_manager",
+  "Kanopya::Schema::Result::Component",
+  { component_id => "service_manager_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 service_provider
@@ -399,21 +403,6 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 systemimages
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimages",
-  "Kanopya::Schema::Result::Systemimage",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 unified_computing_system
 
 Type: might_have
@@ -440,8 +429,8 @@ Composing rels: L</collects> -> indicatorset
 __PACKAGE__->many_to_many("indicatorsets", "collects", "indicatorset");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:H5gQ9wwOMpcsL/ElxvpwVA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-13 11:28:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:00KABEVaOKKumgrF5RbrOQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

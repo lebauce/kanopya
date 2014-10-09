@@ -7,16 +7,18 @@ use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
 use Kanopya::Database;
-use Aggregator;
+use Daemon::Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
+use Entity::Node;
 
+use File::Basename;
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=> __FILE__.'.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=> basename(__FILE__).'.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -83,7 +85,7 @@ sub rule_predict {
 }
 
 sub fill_rrd {
-    my $time_serie = Kanopya::Tools::TimeSerie->new();
+    my $time_serie = Kanopya::Test::TimeSerie->new();
 
         $time_serie->generate(func => 'X',
                               srand => 1,
@@ -97,7 +99,7 @@ sub fill_rrd {
 }
 
 sub setup {
-    $aggregator = Aggregator->new();
+    $aggregator = Daemon::Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
@@ -118,14 +120,14 @@ sub setup {
     );
 
     # Create node 1
-    $node_1 = Node->new(
+    $node_1 = Entity::Node->new(
         node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
     # Create node 2
-    $node_2 = Node->new(
+    $node_2 = Entity::Node->new(
         node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

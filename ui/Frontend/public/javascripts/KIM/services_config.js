@@ -44,7 +44,7 @@ function loadServicesConfig(cid, eid) {
             title      : 'Add components',
             type       : 'cluster',
             id         : eid,
-            relations  : { 'components' : [ "component_type_id" ] },
+            relations  : { 'components' : [ "component_type_id", "executor_component_id" ] },
             displayed  : [ 'cluster_name', 'components' ],
             rawattrdef : {
                 components : {

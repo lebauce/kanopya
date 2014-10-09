@@ -36,7 +36,7 @@ my $adm = Kanopya::Database::authenticate(
 
 eval {
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $kanopya->getComponent(name => "KanopyaExecutor")->enqueue(
         type     => 'DeployMasterimage',
         params   => { file_path => "$arg", keep_file => 1 },
     );

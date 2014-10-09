@@ -155,9 +155,25 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
         var templateFile = '/templates/anomaly-editor.tmpl.html';
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
-            $('body').append(template({metric: metricData}));
+            $('body').append(template({
+                metric: metricData,
+                periodUnit: getPeriodUnitData()
+            }));
             openDialog();
         });
+    }
+
+    function getPeriodUnitData() {
+        return [
+            {
+                id: 'd',
+                label: 'day(s)'
+            },
+            {
+                id: 'w',
+                label: 'week(s)'
+            }
+        ];
     }
 
     function openDialog() {
@@ -167,9 +183,9 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
             modal: true,
             dialogClass: "no-close",
             closeOnEscape: false,
-            width: 400,
-            minwidth: 400,
-            height: 230,
+            width: 600,
+            // minwidth: 600,
+            height: 400,
             buttons : [
                 {
                     id: dialogContainerId + '-cancel-button',
@@ -196,37 +212,100 @@ function openAnomalyCreateDialog(serviceProviderId, gridId, metricObject) {
             }
         });
 
-        $('#metric').change(function() {
-            $('#message').removeClass();
-            $('#message').text('');
+        $('#anomaly-editor').find('input, select').change(function() {
+            var element = $('#' + $(this).attr('id') + '-error');
+            element.remove();
         });
     }
 
-    // Check if the new anomaly already exists
     function validateMetric() {
-        $.getJSON(
-            '/api/anomaly',
-            {'related_metric_id': $('#metric').val()},
-            function(data) {
+
+        var errorCount = 0;
+
+        $.ajax({
+            url: '/api/anomaly',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                'related_metric_id': $('#metric').val()
+            },
+            async: false,
+            success: function(data) {
                 if (data.length > 0) {
-                    $('#message').addClass('error');
-                    $('#message').text('This service metric is already used.');
-                } else {
-                    createMetric();
+                    errorCount += 1;
+                    displayError('metric', 'This service metric is already used.');
                 }
             }
-        );
+        });
+
+        var fieldIdList = [
+            'window',
+            'period',
+            'period-count'
+        ];
+        var re = /^\d+$/;
+        var value;
+        for (var i = 0; i < fieldIdList.length; i++) {
+            value = $('#' + fieldIdList[i]).val();
+            if (value !== '' && re.test(value) === false) {
+                errorCount += 1;
+                displayError(fieldIdList[i], 'This value must be an integer.');
+            }
+        }
+
+        if (errorCount === 0) {
+            createMetric();
+        }
+    }
+
+    function displayError(fieldId, errorMessage) {
+        var element = $('#' + fieldId + '-error');
+        if (element.length === 0) {
+            var html = '<div id="' + fieldId + '-error" class="error">' + errorMessage + '</div>';
+            $('#' + fieldId).parent().append(html);
+        }
     }
 
     function createMetric() {
-        var fields = {
-            metric: $('#metric').val(),
+
+        var value, list;
+        var field = {
+            'metric': $('#metric').val(),
+        };
+
+        value = $('#period').val();
+        if (value) {
+            switch ($('#period-unit').val()) {
+                case 'd':
+                    value *= 60 * 60 * 24;
+                    break;
+                case 'w':
+                    value *= 60 * 60 * 24 * 7;
+                    break;
+            }
         }
+        field.period = value;
+
+        value = $('#window').val();
+        if (value) {
+            value = parseInt(value, 10);
+        }
+        field.window = value;
+
+        value = $('#period-count').val();
+        if (value) {
+            value = parseInt(value, 10);
+        }
+        field.periodCount = value;
+
         $.ajax({
             url: '/api/anomaly',
             type: 'POST',
             data: {
-                'related_metric_id': fields.metric
+                'related_metric_id': field.metric,
+                'window': field.window,
+                'period': field.period,
+                'num_periods': field.periodCount
             },
             success: function() {
                 $('#' + gridId).trigger('reloadGrid');

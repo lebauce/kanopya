@@ -13,14 +13,14 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::OpenStack;
+use Kanopya::Test::OpenStack;
 use Entity::ServiceProvider::Cluster;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
     file=>'openstack-sync.t.log',
-    layout=>'%F %L %p %m%n'
+    layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
@@ -40,7 +40,7 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
-    Kanopya::Tools::OpenStack->start1OpenStackOn3Clusters();
+    Kanopya::Test::OpenStack->start1OpenStackOn3Clusters();
 
     # Retrieve the NovaController previously deployed 
     my $cloud = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => "CloudController" });
@@ -84,15 +84,15 @@ sub main {
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
-        Kanopya::Tools::Execution->executeOne(entity => $cloud->stop());
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+        Kanopya::Test::Execution->executeOne(entity => $cloud->stop());
+        Kanopya::Test::Execution->executeAll(timeout => 3600);
     } 'Stopping NovaController instance';
 
     waitForOpenstackSyncStopConsuming();
 
     diag('Restart NovaController instance');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cloud);
+        Kanopya::Test::Execution->startCluster(cluster => $cloud);
     } 'Restart NovaController instance';
 
     waitForOpenstackSyncStartConsuming();

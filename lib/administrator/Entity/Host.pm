@@ -30,10 +30,10 @@ use strict;
 use warnings;
 
 use General;
-use Node;
 use Harddisk;
 use Entity::Iface;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -47,7 +47,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 0,
     },
     hostmodel_id => {
@@ -193,7 +193,7 @@ sub create {
     General::checkParams(args   => \%args,
                          required => [ 'host_manager_id', 'host_core', 'host_ram', 'host_serial_number' ]);
 
-    Entity->get(id => $args{host_manager_id})->createHost(%args);
+    return Entity::Component->get(id => $args{host_manager_id})->createHost(%args);
 }
 
 sub resubmit {
@@ -245,29 +245,18 @@ sub setState {
 
 sub getNodeState {
     my $self = shift;
-    my $state = $self->node->node_state;
-    return wantarray ? split(/:/, $state) : $state;
+    return $self->node->getState();
 }
 
 sub getPrevNodeState {
     my $self = shift;
-    my $state = $self->node->node_prev_state;
-    return wantarray ? split(/:/, $state) : $state;
+    return $self->node->getPrevState();
 }
 
 sub setNodeState {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'state' ]);
-
-    my $new_state = $args{state};
-    my $current_state = $self->getNodeState();
-
-    my $node = $self->node;
-    $node->setAttr(name => 'node_prev_state', value => $current_state || "");
-    $node->setAttr(name => 'node_state', value => $new_state . ":" . time);
-    $node->save();
+    return $self->node->setState(%args);
 }
 
 
@@ -279,7 +268,7 @@ sub updateCPU {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->owner;
+        my $user = $self->node->owner;
 
         if ($args{cpu_number} < $self->host_core) {
             $user->releaseQuota(resource => 'cpu',
@@ -302,7 +291,7 @@ sub updateMemory {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->owner;
+        my $user = $self->node->owner;
 
         if ($args{memory} < $self->host_ram) {
             $user->releaseQuota(resource => 'ram',
@@ -492,13 +481,33 @@ sub removeHarddisk {
 sub activate{
     my $self = shift;
 
-    return $self->host_manager->activateHost(host => $self);
+    # check if host is not active
+    if ($self->active) {
+        throw Kanopya::Exception::Internal(error => "Host <" . $self->label. "> is already active");
+    }
+
+    $self->active(1);
+
+    $log->info("Host <" . $self->label . "> is now active");
 }
 
 sub deactivate{
     my $self = shift;
 
-    return $self->host_manager->deactivateHost(host => $self);
+    # Check if host is not active
+    if (not $self->active) {
+        throw Kanopya::Exception::Internal(error => "Host <" . $self->label . "> is not active");
+    }
+
+    # Check if host is used as a node
+    if ($self->node) {
+        throw Kanopya::Exception::Internal(error => "Host <" . $self->label . "> is a node");
+    }
+
+    # set host active in db
+    $self->active(0);
+
+    $log->info("Host <" . $self->label . "> deactivated");
 }
 
 =pod
@@ -514,31 +523,27 @@ Return a string representation of the entity
 sub label {
     my $self = shift;
 
-    return $self->node
-         ? $self->node->node_hostname
-         : $self->host_serial_number;
+    try {
+        return $self->node->node_hostname;
+    }
+    catch ($err) {
+        return $self->host_serial_number;
+    }
 }
 
-sub getClusterId {
-    my $self = shift;
-    return $self->node->service_provider->id;
-}
-
-sub getCluster {
-    my $self = shift;
-    return $self->node->service_provider;
-}
-
-sub getModel {
-    my $self = shift;
-    return $self->hostmodel;
-}
 
 sub remoteSessionUrl {
     my $self = shift;
 
-   return $self->getHostManager->getRemoteSessionURL(host => $self);
+    try {
+        return $self->host_manager->getRemoteSessionURL(host => $self);
+    }
+    catch {
+        # Host not manager
+        return "";
+    }
 }
+
 
 =pod
 =begin classdoc

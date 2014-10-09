@@ -19,12 +19,13 @@ sub print_usage {
     print "       setup.pl -d\n";
     print "       setup.pl -f yaml_file\n";
     print "       setup.pl -s file_to_generate\n";
+    print "       setup.pl -m (include mocks)\n";
     print "Process initial Kanopya configuration\n";
     exit(1);
 }
 
 my %opts = ();
-getopts("df:s:", \%opts) or print_usage;
+getopts("df:s:m", \%opts) or print_usage;
 
 # Check operating system and load corresponding setup class
 my $setup;
@@ -59,6 +60,10 @@ if (defined $opts{s}) {
     catch {
         throw Kanopya::Exception::IO(error => "Unable to create/write the specified file <$opts{s}> for parameters serialization.\n");
     }
+}
+
+if (defined $opts{m}) {
+    $setup->{include_mocks} = $opts{m};
 }
 
 # Ask parameters 

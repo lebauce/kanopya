@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'basedb_virtual_on_demand.t.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 my $log = get_logger("");
@@ -20,7 +20,7 @@ my $log = get_logger("");
 my $testing = 1;
 
 use Kanopya::Database;
-use Node;
+use Entity::Node;
 
 use TryCatch;
 my $err;
@@ -35,14 +35,14 @@ sub main {
     }
 
     lives_ok {
-        my $json = Node->find()->toJSON();
+        my $json = Entity::Node->find()->toJSON();
         if (exists $json->{puppet_manifest}) {
             die 'Virtual attribute "puppet_manifest" found in the json of a Node, without expand=pauppet_manifest specified.'
         }
     } 'Check that toJSON on a Node without expand=pauppet_manifest specified do not return attr puppet_manifest';
 
     lives_ok {
-        my $json = Node->find()->toJSON(expand => [ 'puppet_manifest' ]);
+        my $json = Entity::Node->find()->toJSON(expand => [ 'puppet_manifest' ]);
         if (! exists $json->{puppet_manifest}) {
             die 'Virtual attribute "puppet_manifest" not found in the json of a Node, while expand=pauppet_manifest specified.'
         }

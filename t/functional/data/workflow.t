@@ -11,8 +11,8 @@ use Data::Dumper;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => 'workflowDef.log',
-    layout => '%F %L %p %m%n'
+    file   => 'workflow.t.log',
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 my $log = get_logger("");
 my $workflow;
@@ -22,8 +22,10 @@ use BaseDB;
 use General;
 use Entity;
 use Entity::Workflow;
+use Entity::Operationtype;
+use Entity::Component::KanopyaExecutor;
 
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -44,13 +46,13 @@ sub main {
 
 sub createWorkflow {
     lives_ok {
-        $workflow = Entity::Workflow->run(name => 'AddNode');
+        $workflow = Entity::Workflow->run(name => 'AddNode', workflow_manager => Entity::Component::KanopyaExecutor->find());
         my @operations = $workflow->operations;
-        my @expectedOperationNames = ('AddNode','PreStartNode', 'StartNode', 'PostStartNode');
+        my @expectedOperationNames = ('AddNode','PreStartNode', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
-                die 'Wrond operation name <'.$operations[$i]->operationtype->operationtype_name.'> expected <'.$expectedOperationNames[$i].'>';
+                die 'Wrong operation name <'.$operations[$i]->operationtype->operationtype_name.'> expected <'.$expectedOperationNames[$i].'>';
             }
         }
     } 'Workflow creation';
@@ -60,12 +62,11 @@ sub enqueueBefore {
     lives_ok {
         # Enqueue one operation before all operations;
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my $op =  { priority => 200,
-                    type     => 'LaunchSCOWorkflow' };
+        my $op =  { priority => 200, type => "LaunchSCOWorkflow" };
 
         $workflow->enqueueBefore(current_operation => $operations[0], operation => $op);
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my @expectedOperationNames = ('LaunchSCOWorkflow', 'AddNode','PreStartNode', 'StartNode', 'PostStartNode');
+        my @expectedOperationNames = ('LaunchSCOWorkflow', 'AddNode','PreStartNode', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
@@ -79,13 +80,12 @@ sub enqueueBefore {
     lives_ok {
         # Enqueue one operation before all operations;
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my $op =  { priority => 200,
-                    type     => 'SynchronizeInfrastructure' };
+        my $op =  { priority => 200, type => 'SynchronizeInfrastructure' };
 
         $workflow->enqueueBefore(current_operation => $operations[2], operation => $op);
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
         my @expectedOperationNames = ('LaunchSCOWorkflow', 'AddNode', 'SynchronizeInfrastructure',
-                                      'PreStartNode', 'StartNode', 'PostStartNode');
+                                      'PreStartNode', 'PostStartNode');
 
 
         for my $i (0..@expectedOperationNames-1) {
@@ -105,11 +105,9 @@ sub enqueueBefore {
         my @expectedOperationNames = ('LaunchSCOWorkflow',
                                       'AddNode',
                                       'PreStopNode',
-                                      'StopNode',
                                       'PostStopNode',
                                       'SynchronizeInfrastructure',
                                       'PreStartNode',
-                                      'StartNode',
                                       'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
@@ -128,13 +126,12 @@ sub enqueueNow {
         $operations[0]->state('succeeded');
         $operations[1]->state('processing');
 
-        my $op =  { priority => 200,
-                    type     => 'ActivateHost' };
+        my $op = { priority => 200, type => 'MigrateHost' };
 
         $workflow->enqueueNow(operation => $op);
 
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my @expectedOperationNames = ('AddNode','PreStartNode', 'ActivateHost', 'StartNode', 'PostStartNode');
+        my @expectedOperationNames = ('AddNode','PreStartNode', 'MigrateHost', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
@@ -144,16 +141,13 @@ sub enqueueNow {
     } 'EnqueueNow one Operation';
 
     lives_ok {
-        my $op =  { priority => 200,
-                    type     => 'ActivateHost' };
-
         my $workflow_to_enqueue = { name => 'StopNode' };
         $workflow->enqueueNow(workflow => $workflow_to_enqueue);
 
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
         my @expectedOperationNames = ('AddNode','PreStartNode',
-                                      'PreStopNode', 'StopNode', 'PostStopNode',
-                                      'ActivateHost', 'StartNode', 'PostStartNode');
+                                      'PreStopNode', 'PostStopNode',
+                                      'MigrateHost', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
@@ -175,7 +169,7 @@ sub paramPresetTransmission {
         $operation->state('succeeded');
 
         my $op1 =  {priority => 200,
-                    type     => 'ActivateHost',
+                    type     => 'MigrateHost',
                     params   => {
                         param1 => 'parameter_1_1',
                         param2 => 'parameter_2_1',
@@ -194,13 +188,13 @@ sub paramPresetTransmission {
         $operation = $workflow->prepareNextOperation(current => $operation);
         my $pp = $operation->param_preset->load();
 
-        if ($operation->operationtype->operationtype_name ne 'ActivateHost'
+        if ($operation->operationtype->operationtype_name ne 'MigrateHost'
             || $pp->{param1} ne 'parameter_1_1'
             || $pp->{param2} ne 'parameter_2_1'
             || defined $pp->{param3}) {
 
             die "Wrong execution.\n".
-                "Got operation <".$operation->operationtype->operationtype_name."> expected <ActivateHost>".
+                "Got operation <".$operation->operationtype->operationtype_name."> expected <MigrateHost>".
                 "Got param1 <".$pp->{param1}."> expected <parameter_1_1>".
                 "Got param2 <".$pp->{param2}."> expected <parameter_2_1>".
                 "Got param3 <".$pp->{param3}."> expected <>";

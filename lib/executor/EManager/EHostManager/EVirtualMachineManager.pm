@@ -28,8 +28,11 @@ use base "EManager::EHostManager";
 
 use strict;
 use warnings;
-use Data::Dumper;
 
+use Entity::Node;
+
+use TryCatch;
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
@@ -38,33 +41,34 @@ my $errmsg;
 sub getFreeHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster" ]);
+    General::checkParams(args     => \%args,
+                         required => [ "interfaces", "ram" ],
+                         optional => { "core" => undef, "cpu" => undef });
 
-    my $cluster     = $args{cluster};
-    my $host_params = $cluster->getManagerParameters(manager_type => "HostManager");
-    my @interfaces  = $cluster->interfaces;
-
-    $log->info("Looking for a virtual host");
-    my $host;
-    eval {
-        $host = $self->createVirtualHost(
-                    core   => $host_params->{core},
-                    ram    => $host_params->{ram},
-                    ifaces => scalar @interfaces,
-                );
-    };
-    if ($@) {
-        $errmsg = "Virtual Machine Manager component <" . $self->getAttr(name => 'component_id') .
-                  "> No capabilities to host this vm core <$args{core}> and ram <$args{ram}>:\n" . $@;
-        # We can't create virtual host for some reasons (e.g can't meet constraints)
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    # We are not consistent yet for the arg "core"
+    if (! (defined($args{core}) || defined($args{cpu}))) {
+        General::checkParams(args => \%args, required => [ "core" ]);
+    }
+    elsif (defined($args{cpu})) {
+        $args{core} = delete $args{cpu};
     }
 
-    return $host;
+    $log->info("Looking for a virtual host");
+    try {
+        my @interfaces = @{ delete $args{interfaces} };
+        return $self->createVirtualHost(ifaces => scalar(@interfaces), %args);
+    }
+    catch ($err) {
+        # We can't create virtual host for some reasons (e.g can't meet constraints)
+        throw Kanopya::Exception::Internal(
+                  error => "Virtual machine manager <" . $self->label . "> has not capabilities " .
+                           "to host this vm with core <$args{core}> and ram <$args{ram}>:\n" . $err
+              );
+    }
 }
 
-=cut
 
+=cut
 =begin classdoc
 
 Check the state of the vm
@@ -72,7 +76,6 @@ Check the state of the vm
 @return boolean
 
 =end classdoc
-
 =cut
 
 sub checkUp {
@@ -127,8 +130,7 @@ sub repairVMRessourceIntegrity {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     for my $vm ($args{host}->virtual_machines) {
-        my $evm = new EEntity(data => $vm)->getResources(resource => [ 'cpu' , 'ram' ]);
-
+        my $evm = $self->getVMDetails(host => $vm);
         if ($evm->{ram} != $vm->host_ram) {
             $vm->setAttr(name => 'host_ram', value => $evm->{ram});
         }
@@ -192,8 +194,8 @@ wrong_hv              : vms which are in the infrastructure and in the Kanopya D
 
 sub checkAllInfrastructureIntegrity {
     my $self = shift;
-    my $hypervisors = $self->hypervisors;
-    return $self->checkHypervisorsVMPlacementIntegrity(hypervisors => $hypervisors);
+    my @hypervisors = $self->hypervisors;
+    return $self->checkHypervisorsVMPlacementIntegrity(hypervisors => \@hypervisors);
 }
 
 
@@ -259,7 +261,7 @@ sub repairVmInInfraUnkInDB {
                                  vm_uuid        => $vm_uuid,
                                  hypervisor_id  => $hv_id);
 
-        my $evm = new EEntity(data => $host)->getResources(resource => [ 'cpu' , 'ram' ]);
+        my $evm = $self->getVMDetails(host => $host);
         $host->setAttr(name => 'host_ram',  value => $evm->{ram});
         $host->setAttr(name => 'host_core', value => $evm->{cpu});
         $host->save();
@@ -343,14 +345,13 @@ sub checkHypervisorVMPlacementIntegrity {
     # Check vm of hv in db which are not in the hv_infra
     for my $vm (@db_hv_vms) {
         if ((! defined $hv_infra->{$vm->id}) && (! defined $args{diff_infra_db}->{wrong_hv}->{$vm->id})) {
-            eval {
+            try {
                 $args{diff_infra_db} = $self->checkVMPlacementIntegrity(host          => Entity->get(id => $vm->id),
                                                                         diff_infra_db => $args{diff_infra_db});
-            };
-            if ($@) {
+            }
+            catch ($err) {
                 $args{diff_infra_db}->{base_not_hv_infra}->{$vm->id} = undef;
             }
-
         }
     }
     return $args{diff_infra_db};
@@ -387,18 +388,17 @@ sub checkVMPlacementIntegrity {
                          });
 
     my $detail;
-    eval {
+    try {
         $detail = $self->getVMDetails(host => $args{host});
-    };
-    if ($@) {
+    }
+    catch ($err) {
         # Case unknown vm
-        my $error = $@;
         $args{diff_infra_db}->{base_not_hv_infra}->{$args{host}->id} = undef;
-        throw Kanopya::Exception(error => $error);
+        throw Kanopya::Exception(error => $err);
     }
 
     my $hypervisor_hostname = $detail->{hypervisor};
-    my $hypervisor_id = Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
+    my $hypervisor_id = Entity::Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
     my $db_hypervisor = $args{host}->hypervisor;
 
     if (defined $db_hypervisor && ($hypervisor_id == $db_hypervisor->id)) {

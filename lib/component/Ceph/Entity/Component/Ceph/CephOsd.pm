@@ -49,8 +49,10 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
     my $devices = {};
-    for my $harddisk ($args{host}->harddisks) {
+    for my $harddisk ($args{node}->host->harddisks) {
         $devices->{$harddisk->harddisk_device} = { };
     }
 

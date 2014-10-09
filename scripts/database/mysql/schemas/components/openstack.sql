@@ -2,6 +2,17 @@ USE `kanopya`
 
 SET foreign_key_checks=0;
 
+CREATE TABLE `open_stack` (
+  `open_stack_id` int(8) unsigned NOT NULL,
+  `api_username` varchar(255) NOT NULL,
+  `api_password` varchar(255) NOT NULL,
+  `keystone_url` varchar(255) NOT NULL,
+  `tenant_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`open_stack_id`),
+  UNIQUE KEY (`keystone_url`, `tenant_name`),
+  FOREIGN KEY (`open_stack_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `glance` (
   `glance_id` int(8) unsigned NOT NULL,
   `mysql5_id` int(8) unsigned NULL DEFAULT NULL,
@@ -67,10 +78,8 @@ CREATE TABLE `neutron` (
 
 CREATE TABLE `openstack_hypervisor` (
   `openstack_hypervisor_id` int(8) unsigned NOT NULL,
-  `nova_controller_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`openstack_hypervisor_id`),
-  FOREIGN KEY (`openstack_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`nova_controller_id`) REFERENCES `nova_controller` (`nova_controller_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`openstack_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `openstack_vm` (
@@ -79,13 +88,28 @@ CREATE TABLE `openstack_vm` (
   `openstack_vm_uuid` char(64) NULL DEFAULT NULL,
   PRIMARY KEY (`openstack_vm_id`),
   FOREIGN KEY (`openstack_vm_id`) REFERENCES `virtual_machine` (`virtual_machine_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`nova_controller_id`) REFERENCES `nova_controller` (`nova_controller_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`nova_controller_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `openstack_repository` (
   `openstack_repository_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`openstack_repository_id`),
   FOREIGN KEY (`openstack_repository_id`) REFERENCES `repository` (`repository_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cinder_systemimage` (
+  `cinder_systemimage_id` int(8) unsigned NOT NULL,
+  `image_uuid` char(64) NULL DEFAULT NULL,
+  `volume_uuid` char(64) NULL DEFAULT NULL,
+  PRIMARY KEY (`cinder_systemimage_id`),
+  FOREIGN KEY (`cinder_systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `keystone_endpoint` (
+  `open_stack_id` int(8) unsigned NOT NULL,
+  `keystone_uuid` char(64) NOT NULL,
+  PRIMARY KEY (`keystone_uuid`),
+  FOREIGN KEY (`open_stack_id`) REFERENCES `open_stack` (`open_stack_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

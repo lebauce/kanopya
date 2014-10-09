@@ -14,20 +14,23 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Differences;
 
-use Kanopya::Tools::Execution;
+use Kanopya::Test::Execution;
 
 use EEntity;
 use Entity::User::Customer::StackBuilderCustomer;
 use Entity::Component::KanopyaStackBuilder;
+use Entity::Component::KanopyaExecutor;
 use Entity::Operation;
+use Entity::Operationtype;
 use NotificationSubscription;
 
+use File::Basename;
 use Data::Dumper;
 use TryCatch;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level  => 'INFO',
-    file   => __FILE__.'.log',
+    file   => basename(__FILE__).'.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
@@ -104,9 +107,9 @@ sub main {
     } 'Create a customer stack_builder_test for the subscriber';
 
     my $operation = EEntity::EOperation->new(operation => Entity::Operation->new(
-                        priority => 200,
-                        type     => "ConfigureStack",
-                        params   => {
+                        priority      => 200,
+                        operationtype => Entity::Operationtype->find(hash => { operationtype_name => "ConfigureStack" }),
+                        params        => {
                             context => {
                                 stack_builder  => $stackbuilder,
                                 user           => $customer,
@@ -115,7 +118,8 @@ sub main {
                             },
                             stack_id => $stackid,
                             admin_password => $admin_password
-                        }
+                        },
+                        workflow_manager => Entity::Component::KanopyaExecutor->find
                     ));
 
     my $message =  EEntity->new(entity => $customer)->notificationMessage(operation  => $operation,

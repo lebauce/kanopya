@@ -16,6 +16,8 @@ use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
+
+use TryCatch;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -25,40 +27,32 @@ my $errmsg;
 sub configureNode {
     my ($self, %args) = @_;
 
-    my $conf = $self->getConf();
-    my $cluster = $self->service_provider;
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
 
-    # Generation of memcached.conf
-    my $data = { connection_port => $conf->{memcached1_port},
-                 listening_address => $args{host}->adminIp };
-
-    my $file = $self->generateNodeFile(
-        cluster       => $cluster,
-        host          => $args{host},
-        file          => '/etc/memcached.conf',
-        template_dir  => 'components/memcached',
-        template_file => 'memcached.conf.tt',
-        data          => $data,
-        mount_point   => $args{mount_point}
-    );
-}
-
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster', 'mount_point', 'host' ]);
-    
     # Memcached run only on master node
-    if (not defined $self->getMasterNode) {
-        # no masternode defined, this host becomes the masternode
-            
-        $self->configureNode(%args);
-        
-        $self->addInitScripts(    
-            mountpoint => $args{mount_point},
-            scriptname => 'memcached', 
-        );
+    try {
+        $self->getMasterNode;
     }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # no masternode defined, this host becomes the masternode
+
+        # Generation of memcached.conf
+        my $data = { connection_port => $self->getConf()->{memcached1_port},
+                     listening_address => $args{host}->adminIp };
+
+        $self->generateNodeFile(
+            host          => $args{host},
+            file          => '/etc/memcached.conf',
+            template_dir  => 'components/memcached',
+            template_file => 'memcached.conf.tt',
+            data          => $data,
+            mount_point   => $args{mount_point}
+        );
+
+        $self->addInitScripts(mountpoint => $args{mount_point},
+                              scriptname => 'memcached');
+    }
+    catch ($err) { $err->rethrow() }
 }
 
 1;

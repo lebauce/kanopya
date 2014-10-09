@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Command line interface to Kanopya::Tools::TimeSerie module
+# Command line interface to Kanopya::Test::TimeSerie module
 
 use strict;
 use warnings;
@@ -9,7 +9,7 @@ use Getopt::Long;
 
 use Kanopya::Database;
 use Entity;
-use Kanopya::Tools::TimeSerie;
+use Kanopya::Test::TimeSerie;
 
 # ex:
 # -func 'z+sin(x)+sin(y)' -r 10000 -p x=0.01 -p y=0.02 -p z=0.001  ==> trend + seasonnality
@@ -41,7 +41,7 @@ my $opt_ok = GetOptions(%getOptions_def);
 
 if ($help) {
     print "Time serie generation, storage (rrd), display and linking to metric\n";
-    print "Command line interface to Kanopya::Tools::TimeSerie module\n\n";
+    print "Command line interface to Kanopya::Test::TimeSerie module\n\n";
     print "OPTIONS:\n";
     for my $opt (@options_def) {
         print "\t--" . $opt->[0] . "\n\t\t" . $opt->[2] . "\n";
@@ -51,7 +51,7 @@ if ($help) {
 
 exit if ($opt_ok != 1);
 
-my $time_serie = Kanopya::Tools::TimeSerie->new();
+my $time_serie = Kanopya::Test::TimeSerie->new();
 $time_serie->generate( %options );
 $time_serie->store(file => $output_rrd);
 $time_serie->graph();

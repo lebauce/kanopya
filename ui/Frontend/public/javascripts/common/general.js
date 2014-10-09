@@ -369,6 +369,24 @@ function openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, canc
                 $.each(grid_ids, function(idx, grid_id) {
                     $('#' + grid_id).trigger('reloadGrid')
                 });
+            },
+            error : function(data) {
+                browser.remove();
+                var failure = $('<div>');
+                failure.append(JSON.parse(data.responseText).reason);
+                var fail_buttons = {};
+                fail_buttons['Ok'] = function() {
+                    $(this).dialog("close");
+                }
+                failure.dialog({
+                    title: 'Error in deletion',
+                    modal: true,
+                    width: '400px',
+                    buttons: fail_buttons,
+                    close: function (event, ui) {
+                        $(this).remove();
+                    }
+                });
             }
         });
         $(this).dialog("close");

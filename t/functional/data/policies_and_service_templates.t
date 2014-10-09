@@ -10,7 +10,11 @@ use Data::Dumper;
 use ClassType;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({ level=>'DEBUG', file => 'policies_and_service_templates.log', layout => '%F %L %p %m%n' });
+Log::Log4perl->easy_init({
+    level=>'DEBUG',
+    file => 'policies_and_service_templates.log',
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
+});
 my $log = get_logger("");
 
 my $testing = 1;
@@ -27,6 +31,9 @@ use Entity::Policy::HostingPolicy;
 use Entity::Component::Physicalhoster0;
 use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
+use Entity::Component::HCMStorageManager;
+use Entity::Component::HCMNetworkManager;
+use Entity::Component::KanopyaDeploymentManager;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -41,6 +48,7 @@ sub main {
 
     test_policies_json();
     test_policies_merge();
+    test_policies_hash_to_list();
     test_service_template_json();
     test_service_template_creation();
     test_service_creation_from_service_template();
@@ -78,25 +86,32 @@ sub test_policies_merge {
 
     # Create a policy with presets containing arrays
     my $policy = Entity::Policy::StoragePolicy->new(
-                     policy_name       => "storage_policy_test",
-                     policy_type       => "storage",
-                     disk_manager_id   => Entity::Component::Lvm2->find()->id,
-                     vg_id             => 1,
-                     export_manager_id => Entity::Component::Iscsi::Iscsitarget1->find()->id,
-                     iscsi_portals     => [ 1 ]
+                     policy_name        => "storage_policy_test",
+                     policy_type        => "storage",
+                     storage_manager_id => Entity::Component::HCMStorageManager->find()->id,
+                     disk_manager_id    => Entity::Component::Lvm2->find()->id,
+                     vg_id              => 1,
+                     export_manager_id  => Entity::Component::Iscsi::Iscsitarget1->find()->id,
+                     iscsi_portals      => [ 1 ]
                  );
+
+    lives_ok {
+        # Check if the jysonification is working
+        $policy->toJSON();
+    } "Check if the jysonification is working";
 
     my $params = Entity::ServiceProvider::Cluster->buildConfigurationPattern(
-                     policies          => ($policy),
-                     policy_type       => "storage",
-                     disk_manager_id   => Entity::Component::Lvm2->find()->id,
-                     vg_id             => 2,
-                     export_manager_id => Entity::Component::Iscsi::Iscsitarget1->find()->id,
-                     iscsi_portals     => [ 1 ]
+                     policies           => ($policy),
+                     policy_type        => "storage",
+                     storage_manager_id => Entity::Component::HCMStorageManager->find()->id,
+                     disk_manager_id    => Entity::Component::Lvm2->find()->id,
+                     vg_id              => 2,
+                     export_manager_id  => Entity::Component::Iscsi::Iscsitarget1->find()->id,
+                     iscsi_portals      => [ 1 ]
                  );
 
-    my @portals = @{ $params->{managers}->{export_manager}->{manager_params}->{iscsi_portals} };
-    my $vg_id = $params->{managers}->{disk_manager}->{manager_params}->{vg_id};
+    my @portals = @{ $params->{managers}->{storage_manager}->{manager_params}->{iscsi_portals} };
+    my $vg_id = $params->{managers}->{storage_manager}->{manager_params}->{vg_id};
     lives_ok {
         if (scalar(@portals) != 1 || (pop @portals) != 1) {
             die "Iscsiportals from the merged configuration pattern: " . Dumper(\@portals) .
@@ -106,6 +121,91 @@ sub test_policies_merge {
             die "Vg_id from the merged configuration pattern: " . $vg_id . " do not match the overriden value: 2";
         }
     } "Check if the service template attrdef JSON contains all policy type attributes.";
+}
+
+sub test_policies_hash_to_list {
+
+    # Create a policy with presets containing arrays
+    my $net_policy = Entity::Policy::NetworkPolicy->new(
+                         policy_name        => "net_policy_tests_hash_to_list",
+                         policy_type        => "storage",
+                         cluster_nameserver1 => "8.8.8.8",
+                         cluster_nameserver2 => "8.8.4.4",
+                         cluster_domainname => "hedera-technology.com",
+                         network_manager_id => Entity::Component::HCMNetworkManager->find->id,
+                         interfaces => [ { 
+                            interface_name => "eth0",
+                            netconfs => [ 123 ]
+                         }, {
+                            interface_name => "eth0",
+                            netconfs => [ 123, 5678 ]
+                         } ],
+                     );
+
+    lives_ok {
+        # Check if the jysonification is working
+        $net_policy->toJSON();
+    } "Check if the jysonification is working";
+
+    my $sys_policy = Entity::Policy::SystemPolicy->new(
+                         policy_name        => "sys_policy_tests_hash_to_list",
+                         policy_type        => "storage",
+                         cluster_si_persistent => 0,
+                         systemimage_size => 5368709120,
+                         deployment_manager_id => Entity::Component::KanopyaDeploymentManager->find->id,
+                         boot_manager_id => Entity::Component::KanopyaDeploymentManager->find->id,
+                         components => [ {
+                            component_type => 29
+                         }, {
+                            component_type => 30
+                         }, {
+                            component_type => 31
+                         } ]
+                     );
+
+    lives_ok {
+        # Check if the jysonification is working
+        $sys_policy->toJSON();
+    } "Check if the jysonification is working";
+
+    lives_ok {
+        my $net_pattern = $net_policy->param_preset->load;
+        my $interfaces =  $net_pattern->{managers}->{network_manager}->{manager_params}->{interfaces};
+        if (ref($interfaces) ne "HASH") {
+            die "Value for key \"interfaces\" should be a HASH, not: " . ref($interfaces);
+        }
+
+        my @interfaces = values %{ $interfaces };
+        my $any_interface = pop @interfaces;
+        if (ref($any_interface->{netconfs}) ne "HASH") {
+            die "Value for key \"netconfs\" should be a HASH, not: " . ref($any_interface->{netconfs});
+        }
+
+        my $sys_pattern = $sys_policy->param_preset->load;
+        my $components =  $sys_pattern->{managers}->{deployment_manager}->{manager_params}->{components};
+        if (ref($components) ne "HASH") {
+            die "Value for key \"components\" should be a HASH, not: " . ref($components);
+        }
+
+    } "Check if the list values are properly stored as hashes";
+
+    lives_ok {
+        my $net_params = $net_policy->getParams;
+        if (ref($net_params->{interfaces}) ne "ARRAY") {
+            die "Value for key \"interfaces\" should be a ARRAY, not: " . ref($net_params->{interfaces});
+        }
+
+        my $any_interface = pop @{ $net_params->{interfaces} };
+        if (ref($any_interface->{netconfs}) ne "ARRAY") {
+            die "Value for key \"netconfs\" should be a ARRAY, not: " . ref($any_interface->{netconfs});
+        }
+
+        my $sys_params = $sys_policy->getParams;
+        if (ref($sys_params->{components}) ne "ARRAY") {
+            die "Value for key \"components\" should be a ARRAY, not: " . ref($sys_params->{components});
+        }
+
+    } "Check if the list values stored as hashes are properly returned as list at getParams";
 }
 
 sub test_service_template_json {
@@ -126,6 +226,7 @@ sub test_service_template_json {
     my $service_template = Entity::ServiceTemplate->find();
     my @policies = $service_template->getPolicies();
     $attributes = Entity::ServiceTemplate->toJSON(params => { service_template_id => $service_template->id })->{attributes};
+
     lives_ok {
         for my $attr (grep { $_ =~ m/.*policy_id/ } keys $attributes) {
             if ("$attributes->{$attr}->{is_editable}" == "1") {
@@ -145,7 +246,10 @@ sub test_service_template_json {
                     defined $policyclass->getPolicySelectorAttrDef->{$policyattr}) {
                     next;
                 }
-                if (defined $policyparams->{$policyattr} && "$attributes->{$policyattr}->{is_editable}" == "1") {
+                # Relation single_multi and multi are editable as we allow to add entries at service instanciation
+                if (defined $policyparams->{$policyattr} &&
+                    ! ($attributes->{$policyattr}->{type} eq "relation" && $attributes->{$policyattr}->{relation} =~ m/^(single_multi|multi)$/) &&
+                    "$attributes->{$policyattr}->{is_editable}" == "1") {
                     die "Service template attribute definition JSON contains editable policy attr <$policyattr>";
                 }
                 elsif (! defined $policyparams->{$policyattr} && $attributes->{$policyattr}->{is_editable} != 1) {

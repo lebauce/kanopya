@@ -66,7 +66,7 @@ __PACKAGE__->table("harddisk");
   extra: {unsigned => 1}
   is_nullable: 1
 
-=head2 service_provider_id
+=head2 deployed_on_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -99,7 +99,7 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_nullable => 1,
   },
-  "service_provider_id",
+  "deployed_on_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -122,6 +122,26 @@ __PACKAGE__->set_primary_key("harddisk_id");
 
 =head1 RELATIONS
 
+=head2 deployed_on
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Node>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "deployed_on",
+  "Kanopya::Schema::Result::Node",
+  { node_id => "deployed_on_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "NO ACTION",
+  },
+);
+
 =head2 host
 
 Type: belongs_to
@@ -137,29 +157,9 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 service_provider
 
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::ServiceProvider>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "Kanopya::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "SET NULL",
-    on_update     => "NO ACTION",
-  },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dn8vr9iYF21IwZADPGZE0Q
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-23 22:52:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7Jk4W5PfvZBa0jKjohYzSg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

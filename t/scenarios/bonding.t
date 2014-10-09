@@ -17,7 +17,7 @@ use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
     file=>'Bonding.t.log',
-    layout=>'%F %L %p %m%n'
+    layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
@@ -26,10 +26,10 @@ use Entity::Iface;
 use Net::Ping;
 use Ip;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 my $testing = 0;
 
@@ -72,13 +72,13 @@ sub main {
     $eth2->save();
     
     diag('register masterimage');
-    my $masterimage = Kanopya::Tools::Register::registerMasterImage();
+    my $masterimage = Kanopya::Test::Execution::registerMasterImage();
 
     diag('retrieve admin netconf');
-    my $adminnetconf = Kanopya::Tools::Retrieve->retrieveNetconf(criteria => { netconf_name => 'Kanopya admin' });
+    my $adminnetconf = Kanopya::Test::Retrieve->retrieveNetconf(criteria => { netconf_name => 'Kanopya admin' });
 
     diag('Create and configure cluster');
-    my $bondage = Kanopya::Tools::Create->createCluster(
+    my $bondage = Kanopya::Test::Create->createCluster(
                       cluster_conf => {
                           cluster_name         => 'Bondage',
                           cluster_basehostname => 'bondage',
@@ -94,7 +94,7 @@ sub main {
                   );
 
     diag('Start host with bonded interfaces');
-    Kanopya::Tools::Execution->startCluster(cluster => $bondage);
+    Kanopya::Test::Execution->startCluster(cluster => $bondage);
 
     diag('deactivate slave n°1');
     _deactivate_iface(iface => 'eth1', cluster => $bondage);
@@ -128,7 +128,7 @@ sub _deactivate_iface {
 sub _ping_ifaces {
     lives_ok {
         diag('retrieve Cluster via name');
-        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
+        my $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
 
         my @bonded_ifaces;
         foreach my $host ($cluster->getHosts()) {

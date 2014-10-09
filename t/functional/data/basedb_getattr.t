@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'basedb_getattr.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 my $log = get_logger("");
@@ -87,7 +87,7 @@ sub main {
                         my $classname = BaseDB->_className(class => $dbix->relationship_info($attrname)->{class});
                         my $relclass;
                         try {
-                            $relclass = BaseDB->_classType(class => $classname);
+                            $relclass = BaseDB->_classType(classname => $classname);
                         }
                         catch ($err) {
                             $relclass = $classname;

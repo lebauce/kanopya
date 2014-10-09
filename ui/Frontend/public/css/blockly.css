@@ -16,11 +16,6 @@
     width: 400px;
 }
 
-.dialog-container .line {
-    height: 1px;
-    background-color: #cccccc;
-}
-
 #metric-blockly {
     margin-top: 30px;
     position: relative;

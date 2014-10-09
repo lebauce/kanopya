@@ -24,7 +24,6 @@ Anomaly detection algorithm implementation
 =cut
 
 package AnomalyDetection;
-use DataModelSelector;
 
 use strict;
 use warnings;
@@ -39,36 +38,7 @@ Compute an anomaly detection score. A score close to 0 means no anomaly detected
 =cut
 
 sub detect {
-    my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => ['values']);
-
-    my $train_window = 20;
-    my $predicted_window = 10;
-
-    # TODO we convert here and the value is reconverted in the predict lib =>
-    # Manage timeseries data structure !!!
-
-    my $start_index = - $train_window - $predicted_window - 1;
-    my $end_index   = - $predicted_window - 1;
-    my @learn_inds  = $start_index..$end_index;
-
-    my %timeserie;
-    for my $i (@learn_inds) {
-        $timeserie{$args{values}->{timestamps}->[$i]} = $args{values}->{values}->[$i];
-    }
-
-    my $pdata = DataModelSelector->autoPredictData(
-                    predict_start_tstamps => $args{values}->{timestamps}->[- $predicted_window - 1],
-                    predict_end_tstamps   => $args{values}->{timestamps}->[-1],
-                    timeserie             => \%timeserie,
-                    model_list            => ['DataModel::AnalyticRegression::LinearRegression'],
-                );
-
-    my $value = 1;
-    my $timestamp = $args{values}->{timestamps}->[-1];
-
-    return {timestamp => $timestamp,
-            value     => abs($args{values}->{values}->[-1] - $pdata->{values}->[-1])};
+    throw Kanopya::Exceptions::NotImplemented();
 }
 
 1;

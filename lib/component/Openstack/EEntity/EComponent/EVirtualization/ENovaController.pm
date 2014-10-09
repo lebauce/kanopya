@@ -23,7 +23,6 @@ EEntity for the OpenStack host manager
 =cut
 
 package EEntity::EComponent::EVirtualization::ENovaController;
-
 use base "EEntity::EComponent";
 use base "EManager::EHostManager::EVirtualMachineManager";
 
@@ -57,41 +56,16 @@ sub api {
         $api_password = $self->api_password;
     }
 
-    my $credentials = {
-        auth => {
-            passwordCredentials => {
-                username    => $api_user,
-                password    => $api_password,
-            },
-            tenantName      => "openstack"
-        }
-    };
-
-    my $keystone = $self->keystone;
-    my $config = {
-        verify_ssl => 0,
-        identity => {
-            url     => 'http://' . $keystone->getMasterNode->fqdn . ':5000/v2.0'
-        },
-    };
-
-    return OpenStack::API->new(credentials => $credentials,
-                               config      => $config);
-}
-
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'host', 'mount_point', 'cluster' ]
-    );
+    return OpenStack::API->new(user         => $api_user,
+                               password     => $api_password,
+                               tenant_name  => "openstack",
+                               keystone_url => $self->keystone->getMasterNode->fqdn);
 }
 
 sub postStartNode {
     my ($self, %args) = @_;
-    
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     try {
         my $api = $self->api;
@@ -169,7 +143,7 @@ sub postStartNode {
 sub postStopNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     # Unregister the NovaController from the OpenstackSync.
     if (defined $self->kanopya_openstack_sync && scalar($self->nodes) <= 1) {
@@ -200,7 +174,7 @@ sub unregisterHypervisor {
 Migrate an openstack vm from one hypervisor to another
 
 @params host the vm to migrate
-@params hypervisor_dst the destination hypervisor
+@params hypervisor the destination hypervisor
 
 =end classdoc
 
@@ -209,10 +183,10 @@ Migrate an openstack vm from one hypervisor to another
 sub migrateHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
 
     my $host = $args{host};
-    my $hv   = $args{hypervisor_dst};
+    my $hv   = $args{hypervisor};
     my $uuid = $host->openstack_vm_uuid;
     my $api  = $self->api;
 
@@ -287,7 +261,6 @@ sub getHypervisorVMs {
 
 
 =pod
-
 =begin classdoc
 
 Get the detail of a vm
@@ -295,26 +268,27 @@ Get the detail of a vm
 @params host vm
 
 =end classdoc
-
 =cut
 
 sub getVMDetails {
     my ($self, %args) = @_;
-
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $host = $args{host};
-    my $uuid = $host->openstack_vm_uuid;
+    my $details = OpenStack::Server->detail(
+                      api => $self->api,
+                      id => $args{host}->openstack_vm_uuid,
+                      flavor_detail => 1,
+                  );
 
-    my $details =  $self->api->compute->servers(id => $uuid)->get;
-
-    if (defined $details->{'itemNotFound'}) {
-        throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure");
+    if (defined $details->{itemNotFound}) {
+        throw Kanopya::Exception(error => $details->{itemNotFound});
     }
 
     return {
-        state      => $details->{server}->{status},
         hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
+        state => $details->{server}->{status},
+        ram => $details->{server}->{flavor}->{ram},
+        cpu => $details->{server}->{flavor}->{vcpus},
     };
 }
 
@@ -347,7 +321,7 @@ sub getVMState {
             'ERROR'     => 'fail',
             'SHUTOFF'   => 'shut'
         };
-    
+
         return {
             state      => $state_map->{$details->{state}} || 'fail',
             hypervisor => $details->{hypervisor},
@@ -433,26 +407,30 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'boot_policy' ]);
 
     if (! defined $args{hypervisor}) {
         throw Kanopya::Exception::Internal(error => "No hypervisor available");
     }
 
+    # Get the cluster from the host as startHost do not take cluster as param any more
+    # TODO: Do not required the host cluster
+    my $cluster = $args{host}->node->service_provider;
+
     my $api = $self->api;
     my $image_id;
-    my $diskless = $args{cluster}->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
+    my $diskless = $args{boot_policy} ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
 
     if (not $diskless) {
         # Register system image
         $image_id = $self->registerSystemImage(host    => $args{host},
-                                               cluster => $args{cluster});
+                                               cluster => $cluster);
     }
     else {
         $image_id = $self->registerPXEImage();
     }
 
-    my $flavor = $api->compute->flavors(id => $args{cluster}->id)
+    my $flavor = $api->compute->flavors(id => $cluster->id)
                      ->get->{flavor};
 
     if ($flavor->{id}) {
@@ -465,7 +443,7 @@ sub startHost {
                 'name'                        => 'flavor_' . $args{host}->node->node_hostname,
                 'ram'                         => $args{host}->host_ram / 1024 / 1024,
                 'vcpus'                       => $args{host}->host_core,
-                'id'                          => $args{cluster}->id,
+                'id'                          => $cluster->id,
                 'swap'                        => 0,
                 'os-flavor-access:is_public'  => JSON::true,
                 'rxtx_factor'                 => 1,
@@ -490,11 +468,11 @@ sub startHost {
             };
         }
 
-        my $disk_manager = $args{cluster}->getManager(manager_type => 'DiskManager');
+        my $disk_manager = $cluster->getManager(manager_type => 'DiskManager');
         my $isCinder     = 0;
         my $volume       = undef;
         my $apiRoute     = $api->compute->servers;
-        if ($disk_manager->isa('Entity::Component::Openstack::Cinder')) {
+        if ($disk_manager->isa('Entity::Component::Cinder')) {
             $isCinder    = 1;
             my $volumeId = $disk_manager->getVolumeId(container => $args{host}->node->systemimage->getContainer);
             $volume      = [
@@ -565,7 +543,7 @@ sub registerSystemImage {
     General::checkParams(args => \%args, required => [ 'host', 'cluster' ]);
 
     my $image = $args{host}->node->systemimage;
-    my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'DiskManager');
+    my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'StorageManager');
     my $image_name = $image->systemimage_name;
     my $image_type = $disk_params->{image_type};
 
@@ -707,7 +685,7 @@ sub deletePort {
     General::checkParams(args => \%args, required => [ 'port' ]);
 
     my $api = $self->api;
-    my $port_id = $api->neutron->ports(id => $args{port})->delete();
+    my $port_id = $api->network->ports(id => $args{port})->delete();
 }
 
 sub stopHost {
@@ -848,14 +826,6 @@ sub vmLoggedErrorMessage {
     return $lastmessage[-1];
 }
 
-sub applyVLAN {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'iface', 'vlan' ]
-    );
-}
 
 =pod
 
@@ -908,7 +878,7 @@ sub _getOrRegisterNetwork {
 
     my $api = $self->api;
     my $network_id = undef;
-    my $networks = $api->neutron->networks->get;
+    my $networks = $api->network->networks->get;
     if (defined $vlan) { # check if a network has already been created for physical vlan interface
         VLAN:
         for my $network (@{ $networks->{networks} }) {
@@ -939,7 +909,7 @@ sub _getOrRegisterNetwork {
             }
         };
         $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
-        $network_id = $api->neutron->networks->post(
+        $network_id = $api->network->networks->post(
             content => $network_conf
         )->{network}->{id};
     }
@@ -978,7 +948,7 @@ sub _getOrRegisterSubnet {
 
     # check if kanopya.network already registered in openstack.subnet (for openstack.network previously created)
     my $subnet_id = undef;
-    my $subnets = $api->neutron->subnets(filter => "network-id=$network_id")->get;
+    my $subnets = $api->network->subnets(filter => "network-id=$network_id")->get;
     SUBNET:
     for my $subnet ( @{$subnets->{subnets}} ) {
         if ( $subnet->{'cidr'} eq $network_addr->cidr() ) { # network already registered
@@ -990,7 +960,7 @@ sub _getOrRegisterSubnet {
     # create a new subnet if no subnet found
     # one allocation_pool is created with all ip usable
     if (not defined $subnet_id) {
-        $subnet_id = $api->neutron->subnets->post(
+        $subnet_id = $api->network->subnets->post(
             content => {
                 'subnet' => {
                     'name'              => $cluster_name . '-subnet',
@@ -1039,7 +1009,7 @@ sub _registerPort {
 
     my $api = $self->api;
 
-    my $port_id = $api->neutron->ports->post(
+    my $port_id = $api->network->ports->post(
         content => {
             'port' => {
                 'name'          => $hostname . '-' . $iface->iface_name,

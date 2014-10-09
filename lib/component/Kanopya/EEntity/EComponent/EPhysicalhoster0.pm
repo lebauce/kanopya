@@ -95,7 +95,7 @@ sub startHost {
         if (not -e $wol) {
             $wol = '/usr/bin/wol';
             if (not -e $wol) {
-                $errmsg = "EOperation::EStartNode->startNode : Neither 'etherwake' nor 'wol' command where found";
+                $errmsg = "Neither 'etherwake' nor 'wol' command where found";
                 throw Kanopya::Exception::Execution(error => $errmsg);
             }
             $wol .= " --host " . $args{host}->getPXEIface->getIPAddr;
@@ -115,7 +115,7 @@ sub startHost {
 
     my $current_state = $args{host}->getState();
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $args{host}->_entity->can('save'),
             parameters => [ $args{host} ]

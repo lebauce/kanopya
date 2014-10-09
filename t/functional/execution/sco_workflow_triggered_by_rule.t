@@ -18,17 +18,18 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'INFO',
     file=>'sco_workflow_triggered_by_rule.log',
-    layout=>'%F %L %p %m%n'
+    layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
 
-use RulesEngine;
-use Aggregator;
+use Daemon::RulesEngine;
+use Daemon::Aggregator;
 use Entity::CollectorIndicator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Component::Sco;
+use Entity::Component::KanopyaExecutor;
 use Entity::Workflow;
 use Entity::Operation;
 use Entity::Metric::Combination;
@@ -41,12 +42,11 @@ use Entity::Metric::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Rule::AggregateRule;
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::TestUtils 'expectedException';
-use Operationtype;
+use Kanopya::Test::Execution;
+use Kanopya::Test::TestUtils 'expectedException';
+use Entity::Node;
 
 use TryCatch;
-my $err;
 
 my $testing = 0;
 
@@ -67,12 +67,12 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
-    Kanopya::Tools::Execution->purgeQueues();
+    Kanopya::Test::Execution->purgeQueues();
 
     sco_workflow_triggered_by_rule();
     clean_infra();
 
-    Kanopya::Tools::Execution->purgeQueues();
+    Kanopya::Test::Execution->purgeQueues();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
@@ -80,7 +80,7 @@ sub main {
 }
 
 sub sco_workflow_triggered_by_rule {
-    my $aggregator= Aggregator->new();
+    my $aggregator = Daemon::Aggregator->new();
 
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
@@ -98,7 +98,7 @@ sub sco_workflow_triggered_by_rule {
     push @all_objects, $service_provider;
 
     # Create one node
-    my $node = Node->new(
+    my $node = Entity::Node->new(
         node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
@@ -122,7 +122,7 @@ sub sco_workflow_triggered_by_rule {
     $aggregator->update();
 
     # Launch orchestrator with no workflow to trigger
-    my $rulesengine = RulesEngine->new();
+    my $rulesengine = Daemon::RulesEngine->new();
     $rulesengine->_component->time_step(2);
     $rulesengine->refreshConfiguration();
 
@@ -146,6 +146,7 @@ sub sco_workflow_triggered_by_rule {
 
     my $sco = Entity::Component::Sco->new(
             service_provider_id => $external_cluster_sco->id,
+            executor_component_id => Entity::Component::KanopyaExecutor->find->id
     );
 
     push @all_objects, $sco;
@@ -244,23 +245,23 @@ sub sco_workflow_triggered_by_rule {
         # TODO try to use executeOperation + handleResult like the followed commented part
 
         # Run the both workflows
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
 
         # Execute and handle result of both first ProcessRule operations
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
 
         # Execute and handle result of both second LaunchSCOWorkflow operations,
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
         # Kee the connection after fetvch the first operation result as the first operation will be reported
         # and if the connection rest for the next fetch, the operation has been re inserted in queue and
         # will be fetched infinitly.
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1, keep_connection => 1);
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1, keep_connection => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
 
 #        my $executor = Executor->new(duration => 'SECOND');
 #        my @processes_rules = Entity::Operation->search(hash => {'operationtype.operationtype_name' => 'ProcessRule'});
@@ -351,7 +352,7 @@ sub sco_workflow_triggered_by_rule {
         $service_sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
         $service_sco_operation->save();
 
-        Kanopya::Tools::Execution->executeAll(timeout => 660);
+        Kanopya::Test::Execution->executeAll(timeout => 660);
 
         expectedException {
             Entity::Operation->find( hash => {
@@ -373,14 +374,11 @@ sub sco_workflow_triggered_by_rule {
         $node_workflow = Entity::Workflow->find(hash=>{
             workflow_id => $node_workflow->id,
             state => 'done',
-            related_id => $service_provider->id,
         });
 
         diag('Check if service workflow is done');
         $service_workflow = Entity::Workflow->find(hash=>{
             workflow_id => $service_workflow->id,
-            state => 'done',
-            related_id => $service_provider->id,
         });
 
         # Modify node rule2 to avoid a new triggering

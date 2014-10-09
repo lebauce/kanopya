@@ -51,35 +51,36 @@ use constant BOOT_POLICIES => {
     local_disk   => 'BootOnLocalDisk'
 };
 
-sub getHostManagerParams {
-    my $self = shift;
-    my %args = @_;
-
-    my $definition = $self->getManagerParamsDef();
-    $definition->{tags}->{options} = {};
-    $definition->{no_tags}->{options} = {};
-
-    my @tags = Entity::Tag->search();
-    for my $tag (@tags) {
-        $definition->{tags}->{options}->{$tag->id} = $tag->tag;
-        $definition->{no_tags}->{options}->{$tag->id} = $tag->tag;
-    }
-
+sub methods {
     return {
-        cpu     => $definition->{cpu},
-        ram     => $definition->{ram},
-        tags    => $definition->{tags},
-	no_tags => $definition->{no_tags},
-
+        createHost => {
+            description => 'create a host',
+        },
+        removeHost => {
+            description => 'remove a host',
+        },
+        startHost  => {
+            description => 'start a host',
+        },
+        stopHost => {
+            description => 'stop a host',
+        },
+        releaseHost => {
+            description => 'release a host',
+        },
+        getFreeHost => {
+            description => 'get an available host',
+        },
     };
 }
 
-sub checkHostManagerParams {
-    my $self = shift;
-    my %args  = @_;
+sub getHostManagerParams {
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ "cpu", "ram" ]);
+    return {};
 }
+
+sub checkHostManagerParams {}
 
 
 =pod
@@ -93,150 +94,73 @@ sub checkHostManagerParams {
 sub getManagerParamsDef {
     my ($self, %args) = @_;
 
-    return {
-        cpu => {
-            label        => 'Required CPU number',
-            type         => 'integer',
-            unit         => 'core(s)',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        },
-        ram => {
-            label        => 'Required RAM amount',
-            type         => 'integer',
-            unit         => 'byte',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        },
-        tags => {
-            label        => 'Mandatory Tags',
-            type         => 'enum',
-            relation     => 'multi',
-            is_mandatory => 0,
-        },
-        no_tags => {
-            label        => 'Forbidden Tags',
-            type         => 'enum',
-            relation     => 'multi',
-            is_mandatory => 0,
-        },
-        deploy_on_disk => {
-            label        => 'Deploy on hard disk',
-            type         => 'boolean',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        }
-    };
+    return {};
 }
 
 
-sub addHost {
-    my $self = shift;
-    my %args  = @_;
+sub createHost {
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ "host_core", "host_serial_number", "host_ram" ]);
 
-    # Instanciate new Host Entity
-    my $host;
-    eval {
-        $host = Entity::Host->new(host_manager_id => $self->id, %args);
-    };
-    if($@) {
-        my $errmsg = "Wrong host attributes detected\n" . $@;
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+    my $host = Entity::Host->new(host_manager_id => $self->id, %args);
 
     # Set initial state to down
-    $host->setAttr(name => 'host_state', value => 'down:' . time);
-
-    # Save the Entity in DB
-    $host->save();
+    $host->host_state("down:" . time);
 
     return $host;
 }
 
 
-sub delHost {
+sub removeHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ "host" ]);
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    # check if host is not active
+    # if ($args{host}->active) {
+    #     throw Kanopya::Exception::Internal(
+    #               error => "Host <" . $args{host}->label . "> is still active"
+    #           );
+    # }
 
     # Delete the host from db
     $args{host}->delete();
 }
 
 
-sub createHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "host_core", "host_serial_number", "host_ram" ]);
-
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type     => 'AddHost',
-        params   => {
-            context  => {
-                host_manager => $self,
-            },
-            %args
-        }
-    );
-}
-
-sub removeHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args  => \%args, required => [ "host" ]);
-
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type     => 'RemoveHost',
-        params   => {
-            context  => {
-                host => $args{host},
-            },
-        },
-    );
-}
-
-sub activateHost {
+sub startHost {
     my ($self, %args) = @_;
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type     => 'ActivateHost',
-        params   => {
-            context => {
-                host => $args{host},
-           }
-       }
-   );
+    throw Kanopya::Exception::NotImplemented();
 }
 
-sub deactivateHost {
+
+sub stopHost {
     my ($self, %args) = @_;
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type     => 'DeactivateHost',
-        params   => {
-            context => {
-                host_to_deactivate => $args{host},
-            }
-        }
-    );
+    throw Kanopya::Exception::NotImplemented();
 }
+
+
+sub getFreeHost {
+    my ($self,%args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
 
 sub resubmitHost {
     my ($self, %args) = @_;
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    return $self->executor_component->run(
         name   => 'ResubmitNode',
         params => {
             context => {
@@ -244,15 +168,6 @@ sub resubmitHost {
             }
         }
     );
-}
-
-sub getOvercommitmentFactors {
-    my ($self) = @_;
-
-    return {
-        overcommitment_cpu_factor    => 1.0,
-        overcommitment_memory_factor => 1.0,
-    }
 }
 
 
@@ -284,9 +199,11 @@ sub hostType {
     return "Host";
 }
 
-
 sub getRemoteSessionURL {
     throw Kanopya::Exception::NotImplemented();
 }
 
+sub selectHypervisor {
+    throw Kanopya::Exception::NotImplemented();
+}
 1;

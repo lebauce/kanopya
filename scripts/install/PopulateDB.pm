@@ -2,13 +2,22 @@
 # The other way to insert data during setup is Data.sql.tt (pb: id management)
 #
 
-use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
+use lib qw(/opt/kanopya/lib/common/
+           /opt/kanopya/lib/administrator/
+           /opt/kanopya/lib/deployment/
+           /opt/kanopya/lib/service/
+           /opt/kanopya/lib/executor/
+           /opt/kanopya/lib/monitor/
+           /opt/kanopya/lib/orchestrator/
+           /opt/kanopya/lib/external
+           /opt/kanopya/lib/mock
+           /opt/kanopya/lib/tools);
 
 use General;
 use Kanopya::Database;
 use Kanopya::Config;
 use Entity::Component;
-use Operationtype;
+use Entity::Operationtype;
 use EEntity;
 use ClassType;
 use ClassType::ComponentType;
@@ -20,7 +29,6 @@ use UserProfile;
 use ComponentTemplate;
 use Indicatorset;
 use Ip;
-use Node;
 use ServiceProviderManager;
 use Lvm2Vg;
 use Lvm2Pv;
@@ -40,7 +48,6 @@ use Date::Simple (':all');
 use Class::ISA;
 
 use TryCatch;
-my $err;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
@@ -55,6 +62,7 @@ my @classes = (
     'Entity::Kernel',
     'Entity::Processormodel',
     'Entity::Systemimage',
+    'Entity::Systemimage::CinderSystemimage',
     'Entity::User',
     'Entity::User::Customer',
     'Entity::User::Customer::StackBuilderCustomer',
@@ -76,6 +84,7 @@ my @classes = (
     'Entity::Container::NetappVolume',
     'Entity::Container::FileContainer',
     'Entity::Component',
+    'Entity::Component::KanopyaAnomalyDetector',
     'Entity::Component::KanopyaExecutor',
     'Entity::Component::KanopyaFront',
     'Entity::Component::KanopyaAggregator',
@@ -83,7 +92,10 @@ my @classes = (
     'Entity::Component::KanopyaMailNotifier',
     'Entity::Component::KanopyaOpenstackSync',
     'Entity::Component::KanopyaStackBuilder',
-    'Entity::Component::KanopyaAnomalyDetector',
+    'Entity::Component::KanopyaDeploymentManager',
+    'Entity::Component::KanopyaServiceManager',
+    'Entity::Component::HCMStorageManager',
+    'Entity::Component::HCMNetworkManager',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -114,16 +126,18 @@ my @classes = (
     'Entity::Component::Amqp',
     'Entity::Component::Virtualization::NovaController',
     'Entity::Component::Vmm::NovaCompute',
-    'Entity::Component::Openstack::Cinder',
-    'Entity::Component::Openstack::Neutron',
-    'Entity::Component::Openstack::Keystone',
-    'Entity::Component::Openstack::Glance',
-    'Entity::Component::Openstack::SwiftProxy',
-    'Entity::Component::Openstack::SwiftStorage',
+    'Entity::Component::Cinder',
+    'Entity::Component::Neutron',
+    'Entity::Component::Keystone',
+    'Entity::Component::Glance',
+    'Entity::Component::Virtualization::OpenStack',
+    'Entity::Component::SwiftProxy',
+    'Entity::Component::SwiftStorage',
     'Entity::Repository::OpenstackRepository',
     'Entity::Repository::Opennebula3Repository',
     'Entity::Repository::Vsphere5Repository',
     'Entity::Component::Physicalhoster0',
+    'Entity::Component::DummyHostManager',
     'Entity::Component::Vmm',
     'Entity::Component::Vmm::Kvm',
     'Entity::Component::Vmm::Xen',
@@ -140,6 +154,7 @@ my @classes = (
     'Entity::Poolip',
     'Entity::Vlan',
     'Entity::Masterimage',
+    'Entity::Masterimage::GlanceMasterimage',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
     'Entity::Netconf',
@@ -158,6 +173,8 @@ my @classes = (
     'Entity::Host::VirtualMachine::OpenstackVm',
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
+    'Entity::Operation',
+    'Entity::Operationtype',
     'Entity::Policy',
     'Entity::Policy::HostingPolicy',
     'Entity::Policy::StoragePolicy',
@@ -166,7 +183,6 @@ my @classes = (
     'Entity::Policy::ScalabilityPolicy',
     'Entity::Policy::BillingPolicy',
     'Entity::Policy::OrchestrationPolicy',
-    'Entity::Operation',
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
@@ -193,7 +209,8 @@ my @classes = (
     'Entity::Component::Ceph::CephOsd',
     'Entity::Tag',
     'Entity::Component::HpcManager',
-    'Entity::ServiceProvider::Hpc7000'
+    'Entity::ServiceProvider::Hpc7000',
+    'Entity::Node'
 );
 
 sub registerKernels {
@@ -298,7 +315,7 @@ sub registerUsers {
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
-              'Sales' => [ 'get', 'create', 'subscribe', 'unsubscribe' ],
+              'Sales' => [ 'get', 'create' ],
           }
         },
         { name    => 'Kernel',
@@ -314,7 +331,11 @@ sub registerUsers {
         { name    => 'Operationtype',
           type    => 'Operationtype',
           desc    => 'Operationtype master group containing all operations',
-          system  => 1
+          system  => 1,
+          methods => {
+              'Sales' => [ 'subscribe', 'unsubscribe' ],
+              'Administrator' => [ 'subscribe', 'unsubscribe' ],
+          }
         },
         { name    => 'Masterimage',
           type    => 'Masterimage',
@@ -396,7 +417,7 @@ sub registerUsers {
           desc    => 'Entity master group containing all entities',
           system  => 1,
           methods => {
-              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe', 'unsubscribe' ],
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm' ],
               'Guest'         => [ 'get' ]
           }
         },
@@ -642,10 +663,7 @@ sub registerOperations {
     my %args = @_;
 
     my $operations = [
-        [ 'AddHost', 'Activating host "[% host ? host : "n/a" %]"' ],
-        [ 'RemoveHost', 'Removing host [% host ? host : "n/a" %]' ],
-        [ 'ActivateHost', 'Activating host "[% host ? host : "n/a" %]"' ],
-        [ 'DeactivateHost', 'Desactivating host "[% host ? host : "n/a" %]"' ],
+        [ 'DummyOperation', 'Doing dummy job..."' ],
         [ 'AddCluster', 'Instanciating new service "[% cluster_params.cluster_name %]"' ],
         [ 'RemoveCluster', 'Removing service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'ActivateCluster', 'Activating service "[% cluster ? cluster : "n/a" %]"' ],
@@ -677,12 +695,15 @@ sub registerOperations {
         # Workflow AddNode
         [ 'AddNode', 'Preparing a new node for instance "[% cluster ? cluster : "n/a" %]"' ],
         [ 'PreStartNode', 'Configuring node "[% host ? host : "n/a" %]"' ],
-        [ 'StartNode', 'Starting node "[% host ? host : "n/a" %]"' ],
         [ 'PostStartNode', 'Validating node "[% host ? host : "n/a" %]"' ],
         # Workflow StopNode
-        [ 'StopNode', 'Stopping node "[% host ? host : "n/a" %]"' ],
         [ 'PreStopNode', 'Configuring node removal for instance "[% cluster ? cluster : "n/a" %]"' ],
         [ 'PostStopNode', 'Finalizing removing node "[% host ? host : "n/a" %]"' ],
+        # Workflow Deploy/ReleaseNode
+        [ 'PrepareNode', 'Configuring node "[% node ? node : "n/a" %]"' ],
+        [ 'UnconfigureNode', 'Unconfiguring node "[% node ? node : "n/a" %]"' ],
+        [ 'DeployNode', 'Deploying node "[% node ? node : "n/a" %]"' ],
+        [ 'ReleaseNode', 'Releasing node "[% node ? node : "n/a" %]"' ],
         # Workflow BuildStack
         [ 'BuildStack', 'Building stack' ],
         [ 'StartStack', 'Starting stack' ],
@@ -694,7 +715,7 @@ sub registerOperations {
     ];
 
     for my $operation (@{$operations}) {
-        Operationtype->new(
+        Entity::Operationtype->new(
             operationtype_name  => $operation->[0],
             operationtype_label => $operation->[1] || ''
         );
@@ -706,13 +727,17 @@ sub registerManagerCategories {
 
     my $managers = [
         'HostManager',
+        'VirtualMachineManager',
+        'StorageManager',
         'DiskManager',
         'ExportManager',
+        'DeploymentManager',
+        'BootManager',
+        'NetworkManager',
         'CollectorManager',
         'NotificationManager',
         'WorkflowManager',
         'DirectoryServiceManager',
-        'ExecutionManager',
     ];
 
     for my $manager (@{$managers}) {
@@ -899,7 +924,7 @@ sub registerComponents {
             component_name         => 'Opennebula',
             component_version      => 3,
             deployable             => 1,
-            component_categories   => [ 'HostManager' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'NetworkManager' ],
             service_provider_types => [ 'Cluster', 'Centos6', 'Sles6' ],
         },
         {
@@ -983,7 +1008,7 @@ sub registerComponents {
             component_name         => 'Vsphere',
             component_version      => 5,
             deployable             => 1,
-            component_categories   => [ 'Hostmanager', 'Hypervisor' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'Hypervisor' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
@@ -1056,7 +1081,7 @@ sub registerComponents {
             component_name         => 'UcsManager',
             component_version      => 1,
             deployable             => 1,
-            component_categories   => [ 'HostManager' ],
+            component_categories   => [ 'HostManager', 'NetworkManager' ],
             service_provider_types => [ 'UnifiedComputingSystem' ],
         },
         {
@@ -1088,6 +1113,13 @@ sub registerComponents {
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
+            component_name         => 'OpenStack',
+            component_version      => 6,
+            deployable             => 1,
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
             component_name         => 'Keystone',
             component_version      => 6,
             deployable             => 1,
@@ -1105,7 +1137,7 @@ sub registerComponents {
             component_name         => 'NovaController',
             component_version      => 6,
             deployable             => 1,
-            component_categories   => [ 'HostManager' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'NetworkManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
@@ -1140,7 +1172,33 @@ sub registerComponents {
             component_name         => 'KanopyaExecutor',
             component_version      => 0,
             deployable             => 0,
-            component_categories   => [ 'ExecutionManager' ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
+            component_name         => 'KanopyaDeploymentManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'DeploymentManager', 'BootManager' ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
+            component_name         => 'HCMStorageManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'StorageManager' ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
+            component_name         => 'HCMNetworkManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'NetworkManager' ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
+            component_name         => 'KanopyaServiceManager',
+            component_version      => 0,
+            deployable             => 0,
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
@@ -1223,7 +1281,18 @@ sub registerComponents {
         },
     ];
 
-    for my $component_type (@{$components}) {
+    # Include the mocks
+    if ($args{include_mocks}) {
+        push @{ $components }, {
+            component_name         => 'DummyHostManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'Hostmanager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+    }
+
+    for my $component_type (@{ $components }) {
         my $class_type;
         eval {
             $class_type = ClassType->find(hash => {
@@ -1510,7 +1579,6 @@ sub registerKanopyaMaster {
                             cluster_min_node      => 1,
                             cluster_max_node      => 10,
                             cluster_priority      => 500,
-                            cluster_boot_policy   => Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
                             cluster_si_persistent => 0,
                             cluster_domainname    => $args{admin_domainname},
                             cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '8.8.8.8',
@@ -1537,69 +1605,81 @@ sub registerKanopyaMaster {
         die "Unknown distribution";
     }
 
-    my $components = [
-        {
-            name => 'KanopyaFront'
-        },
-        {
-            name    => 'KanopyaExecutor',
-            manager => 'ExecutionManager',
+    my $components = {
+        'KanopyaFront' => {},
+        'KanopyaExecutor' => {
             conf    => {
                 masterimages_directory => $args{masterimages_directory} || "/var/lib/kanopya/masterimages/",
                 clusters_directory     => $args{clusters_directory} || "/var/lib/kanopya/clusters/",
                 private_directory      => $args{private_directory} || "/var/lib/kanopya/private/"
             },
+            require => {
+                notifier_component => 'KanopyaMailNotifier',
+            }
         },
-        {
-            name => 'KanopyaOpenstackSync',
+        'KanopyaDeploymentManager' => {
+            manager => 'DeploymentManager',
+            require => {
+                executor_component => 'KanopyaExecutor',
+                dhcp_component   => 'Dhcpd',
+                tftp_component   => 'Tftpd',
+                system_component => $distro,
+            }
         },
-        {
-            name => 'KanopyaStackBuilder',
+        'HCMStorageManager' => {
+            manager => 'StorageManager',
+            require => {
+                executor_component => 'KanopyaExecutor',
+            }
         },
-        {
-            name => 'KanopyaAggregator'
+        'HCMNetworkManager' => {
+            manager => 'NetworkManager',
+            require => {
+                executor_component => 'KanopyaExecutor',
+            }
         },
-        {
-            name => 'KanopyaAnomalyDetector'
+        'KanopyaAnomalyDetector' => {},
+        'KanopyaRulesEngine' => {},
+        'KanopyaServiceManager' => {
+            require => { executor_component => 'KanopyaExecutor' },
         },
-        {
-            name => 'KanopyaRulesEngine'
+        'KanopyaOpenstackSync' => {},
+        'KanopyaStackBuilder' => {
+            require => { executor_component => 'KanopyaExecutor' },
         },
-        {
-            name => 'Lvm',
+        'KanopyaAggregator' => {},
+        'KanopyaRulesEngine' => {},
+        'Lvm' => {
+            require => { executor_component => 'KanopyaExecutor' },
             manager => 'DiskManager'
         },
-        {
-            name => 'Storage'
+        'Storage' => {
+            require => { executor_component => 'KanopyaExecutor' },
         },
-        {
-            name => 'Iscsitarget',
+        'Iscsitarget' =>  {
+            require => { executor_component => 'KanopyaExecutor' },
             manager => 'ExportManager'
         },
-        {
-            name => 'Iscsi'
+        'Iscsi' => {
+            require => { executor_component => 'KanopyaExecutor' },
         },
-        {
-            name => 'Fileimagemanager'
+        'Fileimagemanager' => {
+            require => { executor_component => 'KanopyaExecutor' },
         },
-        {
-            name => "Dhcpd",
+        'Dhcpd' => {
             conf => {
                 dhcpd3_domain_name =>  "hedera-technology.com",
                 dhcpd3_servername  => "node001"
-            }
+            },
         },
-        {
-            name => "Tftpd",
+        'Tftpd' => {
             conf => {
                 tftpd_repository => defined $args{tftp_directory} ? $args{tftp_directory} : "/var/lib/kanopya/tftp/"
             }
         },
-        {
-            name => "Snmpd",
-        },
-        {
-            name => "Nfsd",
+        'Snmpd' => {},
+        'Nfsd' => {
+            require => { executor_component => 'KanopyaExecutor' },
             conf => {
                 nfsd3_need_gssd => 'no',
                 nfsd3_rpcnfsdcount => 8,
@@ -1607,62 +1687,54 @@ sub registerKanopyaMaster {
                 nfsd3_need_svcgssd => 'no'
             }
         },
-        {
-            name => "Syslogng",
-        },
-        {
-            name => "Puppetmaster",
+        'Syslogng' => {},
+        'Puppetmaster' => {
             conf => {
                 puppetmaster2_options => ""
             }
         },
-        {
-            name => "Puppetagent",
+        'Puppetagent' => {
             conf => {
                 puppetagent2_options    => '--no-client',
                 puppetagent2_mode       => "kanopya",
                 puppetagent2_masterfqdn => $hostname . '.' . $args{admin_domainname},
                 puppetagent2_masterip   => $args{poolip_addr}
-            }
+            },
+            require => { puppet_master => 'Puppetmaster' }
         },
-        {
-            name => "Mysql"
-        },
-        {
-            name => "Kanopyacollector",
+        'Mysql' => {},
+        'Kanopyacollector' => {
             manager => 'CollectorManager'
         },
-        {
-            name => "Kanopyaworkflow"
+        'Kanopyaworkflow' => {
+            require => { executor_component => 'KanopyaExecutor' },
         },
-        {
-            name => $distro
-        },
-        {
-            name => "KanopyaMailNotifier",
+        'KanopyaMailNotifier' => {
             manager => "NotificationManager",
             conf => {
                 smtp_server => "localhost"
             }
         },
-        {
-            name => "Amqp",
-        },
-        {
-            name => 'Physicalhoster',
+        'Amqp' => {},
+        'Physicalhoster' => {
+            require => { executor_component => 'KanopyaExecutor' },
             manager => 'HostManager'
         },
-        {
-            name => "Openssh",
+        'Openssh' => {},
+        $distro => {
+            conf => {
+                owner_id           => $admin->id,
+                domainname         => $args{admin_domainname},
+                nameserver1        => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '8.8.8.8',
+                nameserver2        => defined $args{kanopya_nameserver2} ? $args{kanopya_nameserver2} : '8.8.4.4',
+                default_gateway_id => $admin_network->id,
+            }
         },
-    ];
+    };
 
-    for my $component (@{$components}) {
-        installComponent(cluster => $admin_cluster,
-                         name    => $component->{name},
-                         manager => $component->{manager},
-                         conf    => $component->{conf},
-                         extra   => $component->{extra});
+    # include the mocks
+    if ($args{include_mocks}) {
+        $components->{DummyHostManager} = {}
     }
 
     # Create the host for the Kanopya master
@@ -1692,9 +1764,7 @@ sub registerKanopyaMaster {
                               interface_name      => $args{admin_interface}
                           );
 
-    my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
     my $admin_host = Entity::Host->new(
-                         host_manager_id    => $physical_hoster->id,
                          host_serial_number => "1",
                          host_desc          => "Admin host",
                          active             => 1,
@@ -1732,11 +1802,53 @@ sub registerKanopyaMaster {
     NetconfIface->new(netconf_id => $netconf->id, iface_id => $admin_iface->id);
 
     # Finally register the new node in the admin cluster
-    $admin_cluster->registerNode(hostname         => $hostname,
-                                 host             => $admin_host,
-                                 state            => "in",
-                                 number           => 1,
-                                 monitoring_state => 'disabled');
+    my $admin_node = $admin_cluster->registerNode(
+                         hostname         => $hostname,
+                         host             => $admin_host,
+                         state            => "in",
+                         number           => 1,
+                         monitoring_state => 'disabled'
+                     );
+
+    # Install components
+    # TODO: use recursivity to handle requirements, force priority for now
+    for my $name ('KanopyaExecutor', (keys %{ $components })) {
+        my $component = $components->{$name};
+        if (exists $component->{instance}) {
+            next;
+        }
+
+        my $conf = $component->{conf};
+        if (defined $component->{require}) {
+            for my $relation (keys %{ $component->{require} }) {
+                my $required = $components->{$component->{require}->{$relation}};
+                if (defined $required->{instance}) {
+                    $conf->{$relation} = $required->{instance};
+                }
+                else  {
+                    $conf->{$relation} = installComponent(cluster => $admin_cluster,
+                                                          name    => $component->{require}->{$relation},
+                                                          manager => $required->{manager},
+                                                          conf    => $required->{conf},
+                                                          extra   => $required->{extra});
+                    $components->{$component->{require}->{$relation}}->{instance} = $conf->{$relation};
+                }
+                # WORKAROUND: PuppetAgent require PuppetMaster but do not take it in parameter
+                # TODO: Link PuppetAgent with PuppetMaster in database.
+                if ($name eq 'Puppetagent' && $relation eq 'puppet_master') {
+                    delete $conf->{$relation};
+                }
+            }
+        }
+        $component->{instance} = installComponent(cluster => $admin_cluster,
+                                                  name    => $name,
+                                                  manager => $component->{manager},
+                                                  conf    => $conf,
+                                                  extra   => $component->{extra});
+    }
+
+    # Set the host manager for the admin host
+    $admin_host->host_manager($admin_cluster->getComponent(name => 'Physicalhoster'));
 
     # Configure components on kanopya master
     my $kanopyacollector = $admin_cluster->getComponent(name => 'Kanopyacollector');
@@ -1797,18 +1909,36 @@ sub registerKanopyaMaster {
 
     my $ehost = EEntity->new(entity => $admin_host);
 
-    $admin_host->setAttr(name  => "host_core",
-                         value => $ehost->getTotalCpu);
+    $admin_host->host_core($ehost->getTotalCpu);
+    $admin_host->host_ram($ehost->getTotalMemory);
 
-    $admin_host->setAttr(name  => "host_ram",
-                         value => $ehost->getTotalMemory);
-    $admin_host->save();
+    # Set service manager to the kanopya service
+    $admin_cluster->service_manager($components->{'KanopyaServiceManager'}->{instance});
 
+    # Check component availability
+    print "\t- Check availability of the registred components\n";
+    my @components = sort { $a->priority <=> $b->priority } $admin_node->components;
+    foreach my $component (map { EEntity->new(entity => $_) } @components) {
+        print "\t\t- Checking component " . $component->label . "...\n";
+        try {
+            if ($component->isUp(node => EEntity->new(entity => $admin_node))) {
+                print "\t\t\t=> up\n";
+            }
+            else {
+                print "\t\t\t=> down\n";
+            }
+        }
+        catch ($err) {
+            print "\t\t\t=> down, $err\n";
+        }
+    }
     return $admin_cluster;
 }
 
 sub installComponent {
     my %args = @_;
+
+    print "\t\t- Installing component $args{name}...\n";
 
     # Get the template if exists
     my $component_template;
@@ -1833,6 +1963,7 @@ sub installComponent {
                                    manager_type => $args{manager},
                                    manager_params => $args{params});
     }
+    return $comp;
 }
 
 sub registerScopes {
@@ -1875,7 +2006,7 @@ sub populate_workflow_def {
                                  service_provider_id => $args{kanopya_master}->id
                              });
 
-    my $scale_op_id       = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
+    my $scale_op_id       = Entity::Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
     my $scale_amount_desc = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
 
     my $delay_desc = 'Delay minimum between two workflow triggers';
@@ -1920,10 +2051,9 @@ sub populate_workflow_def {
     );
 
     # AddNode workflow def
-    my $addnode_op_id = Operationtype->find( hash => { operationtype_name => 'AddNode' })->id;
-    my $prestart_op_id = Operationtype->find( hash => { operationtype_name => 'PreStartNode' })->id;
-    my $start_op_id = Operationtype->find( hash => { operationtype_name => 'StartNode' })->id;
-    my $poststart_op_id = Operationtype->find( hash => { operationtype_name => 'PostStartNode' })->id;
+    my $addnode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'AddNode' })->id;
+    my $prestart_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PreStartNode' })->id;
+    my $poststart_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PostStartNode' })->id;
     my $addnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'AddNode',
         params => {
@@ -1937,14 +2067,13 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $addnode_op_id, $prestart_op_id, $start_op_id, $poststart_op_id ],
+        steps => [ $addnode_op_id, $prestart_op_id, $poststart_op_id ],
         description => "Adding node to instance \"[% cluster %]\""
     );
 
     # StopNode workflow def
-    my $prestop_op_id = Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
-    my $stop_op_id = Operationtype->find( hash => { operationtype_name => 'StopNode' })->id;
-    my $poststop_op_id = Operationtype->find( hash => { operationtype_name => 'PostStopNode' })->id;
+    my $prestop_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
+    my $poststop_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PostStopNode' })->id;
     my $stopnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'StopNode',
         params => {
@@ -1958,20 +2087,38 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $prestop_op_id, $stop_op_id, $poststop_op_id ],
+        steps => [ $prestop_op_id, $poststop_op_id ],
         description => "Removing node \"[% host %]\" from service \"[% cluster %]\""
     );
 
+    # DeployNode workflow def
+    my $confnode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PrepareNode' })->id;
+    my $deploynode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'DeployNode' })->id;
+    my $deploynode_wf = $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'DeployNode',
+        steps => [ $confnode_op_id, $deploynode_op_id, ],
+        description => "Deploying node \"[% node ? node : \"n/a\" %]\""
+    );
+
+    # ReleaseNode workflow def
+    my $unconfnode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'UnconfigureNode' })->id;
+    my $releasenode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'ReleaseNode' })->id;
+    my $releasenode_wf = $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'ReleaseNode',
+        steps => [ $unconfnode_op_id, $releasenode_op_id ],
+        description => "Releasing node \"[% node ? node : \"n/a\" %]\""
+    );
+
     # Optimiaas Workflow def
-    my $optimiaas_op_id = Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
+    my $optimiaas_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
     my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(
                            workflow_name => 'OptimiaasWorkflow',
-                           step          => [ $optimiaas_op_id ],
+                           steps         => [ $optimiaas_op_id ],
                            description   => "Optimizing virtual machines placement for IAAS \"[% cloudmanager_comp %]\""
                        );
 
     # Migrate Workflow def
-    my $migrate_op_id = Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
+    my $migrate_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
     my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(
                          workflow_name => 'MigrateWorkflow',
                          steps         => [ $migrate_op_id ],
@@ -1979,9 +2126,9 @@ sub populate_workflow_def {
                      );
 
     # ResubmitNode  workflow def
-    my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
-    my $scale_cpu_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
-    my $scale_mem_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
+    my $resubmit_node_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
+    my $scale_cpu_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
+    my $scale_mem_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
     my $resubmit_node_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitNode',
         params => {
@@ -2000,7 +2147,7 @@ sub populate_workflow_def {
     );
 
     # RelieveHypervisor workflow def
-    my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
+    my $relieve_hypervisor_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
     my $relieve_hypervisor_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'RelieveHypervisor',
         params => {
@@ -2019,8 +2166,7 @@ sub populate_workflow_def {
     );
 
     # MaintenanceHypervisor workflow def
-    my $flush_hypervisor_op_id = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
-    my $deactivate_host_op_id  = Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id;
+    my $flush_hypervisor_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
     my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'HypervisorMaintenance',
         params => {
@@ -2034,12 +2180,12 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $flush_hypervisor_op_id, $deactivate_host_op_id ],
-        description => "Putting hypervisor \"[% flushed_hypervisor %]\" in maintenance."
+        steps => [ $flush_hypervisor_op_id ],
+        description => "Putting hypervisor \"[% host %]\" in maintenance."
     );
 
     # Hypervisor resubmit workflow def
-    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
+    my $resubmit_hypervisor_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
     my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitHypervisor',
         params => {
@@ -2089,7 +2235,7 @@ sub populate_workflow_def {
                 entity => { label => 'Entity' }
             }
         },
-        steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
+        steps => [ Entity::Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
         description => "Synchronizing component \"[% entity %]\""
     );
 
@@ -2098,9 +2244,9 @@ sub populate_workflow_def {
         workflow_name => 'BuildStack',
         params => {},
         steps => [
-            Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'ConfigureStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'ConfigureStack' })->id,
         ],
         description => "Build stack"
     );
@@ -2109,9 +2255,9 @@ sub populate_workflow_def {
         workflow_name => 'EndStack',
         params => {},
         steps => [
-            Operationtype->find( hash => { operationtype_name => 'UnconfigureStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'StopStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'UnconfigureStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'StopStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
         ],
         description => "End stack"
     );

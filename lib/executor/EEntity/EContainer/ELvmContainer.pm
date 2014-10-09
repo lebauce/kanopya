@@ -31,10 +31,7 @@ sub getDefaultExportManager {
     my $self = shift;
     my %args = @_;
 
-    my $manager = $self->getDiskManager();
-    my $cluster = Entity->get(id => $manager->getAttr(name => 'service_provider_id'));
-
-    return $cluster->getComponent(category => "BlockExportManager");
+    return $self->disk_manager->getMasterNode->getComponent(category => "BlockExportManager");
 }
 
 1;

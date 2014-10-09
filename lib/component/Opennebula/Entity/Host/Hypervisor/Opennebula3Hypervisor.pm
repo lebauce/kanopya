@@ -28,11 +28,6 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    opennebula3_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_extended  => 0
-    },
     onehost_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
@@ -46,8 +41,4 @@ sub methods {
     return {};
 }
 
-sub getCloudManager {
-    my $self = shift;
-    return $self->opennebula3;
-}
 1;

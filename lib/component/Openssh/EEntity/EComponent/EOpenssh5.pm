@@ -28,11 +28,9 @@ use base "EEntity::EComponent";
 use strict;
 use warnings;
 
-use Template;
-use String::Random;
+use Kanopya::Exceptions;
 
-use Entity::ServiceProvider::Cluster;
-
+use TryCatch;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -55,30 +53,28 @@ Check if host is up
 sub isUp {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ "host" ]);
+    General::checkParams(args => \%args, required => [ "node" ]);
 
-    my $host = $args{host};
-
-    eval {
-        $host->getEContext->execute(command => "uptime");
-    };
-    if ($@) {
-        $log->info('isUp() check for host <' . $host->adminIp . '>, host not sshable');
+    try {
+        $args{node}->getEContext->execute(command => "uptime");
+    }
+    catch (Kanopya::Exception $err) {
+        $log->info("Try to contact node <" . $args{node}->adminIp . ">, node not sshable");
         return 0;
+    }
+    catch ($err) {
+        throw Kanopya::Exception(error => "$err");
     }
 
     return 1;
 }
 
-sub addNode {
+sub configureNode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
-    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $executor = $kanopya->getComponent(name => "KanopyaExecutor");
-    my $privatedir = $executor->private_directory;
-
+    my $privatedir = $self->_executor->private_directory;
     my $rsapubkey_cmd = "mkdir -m 600 -p $args{mount_point}/root/.ssh ; " .
                         "install -m 600 $privatedir/kanopya_rsa.pub " .
                         "$args{mount_point}/root/.ssh/authorized_keys";

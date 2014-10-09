@@ -24,7 +24,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
     file=>'start_and_stop_vm.log',
-    layout=>'%F %L %p %m%n'
+    layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
@@ -34,7 +34,7 @@ use Entity::Workflow;
 use Entity::WorkflowDef;
 use Kanopya::Config;
 
-use Kanopya::Tools::Execution;
+use Kanopya::Test::Execution;
 
 my $testing = 0;
 
@@ -74,7 +74,7 @@ sub main {
 sub start_vm_cluster {
     lives_ok {
         $vm_cluster->start();
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         my @vms = $hv1->virtual_machines;
         my $num_vms = scalar @vms;
@@ -93,7 +93,7 @@ sub start_vm_cluster {
 sub add_1_vm_in_first_hv {
     lives_ok {
         $vm_cluster->addNode;
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         my @vms = $hv1->virtual_machines;
         my $num_vms = scalar @vms;
@@ -112,7 +112,7 @@ sub add_3_rd_vm_will_deploy_2_nd_hv {
     lives_ok {
         my @hv1_vms = $hv1->virtual_machines;
         $vm_cluster->addNode;
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
         _check_good_hypervisor(vm => (pop @hv1_vms), hypervisor => $hv1);
         _check_good_hypervisor(vm => (pop @hv1_vms), hypervisor => $hv1);
 
@@ -139,7 +139,7 @@ sub add_3_rd_vm_will_deploy_2_nd_hv {
 sub add_4_th_vm_will_deploy_2_nd_hv {
     lives_ok {
         $vm_cluster->addNode;
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         my @hv1_vms = $hv1->virtual_machines;
         my @hv2_vms = $hv2->virtual_machines;
@@ -157,7 +157,7 @@ sub add_4_th_vm_will_deploy_2_nd_hv {
 sub add_5_th_vm_refused {
     lives_ok {
         $vm_cluster->addNode;
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
 
         my @hv1_vms = $hv1->virtual_machines;
@@ -184,7 +184,7 @@ sub stop_2_vms {
         (pop @hv1_vms)->node->remove;
         (pop @hv2_vms)->node->remove;
 
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         @hv1_vms = $hv1->reload->virtual_machines;
         @hv2_vms = $hv2->reload->virtual_machines;
@@ -203,7 +203,7 @@ sub stop_2nd_hv_with_hv {
     lives_ok {
         $hv2->node->remove();
 
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         my @hvs = $one->hypervisors;
 
@@ -227,7 +227,7 @@ sub stop_vm_cluster {
         }
 
         $vm_cluster->stop;
-        Kanopya::Tools::Execution->executeAll();
+        Kanopya::Test::Execution->executeAll();
 
         my @hv1_vms = $hv1->virtual_machines;
 

@@ -59,16 +59,17 @@ sub test1c {
         }
     };
     # Create Cluster and add network interfaces to it
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
         cluster_conf => $host_manager_conf,
     );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     for my $interface ($cluster->interfaces) {
         $interface->delete();
     }
-    $cluster->configureInterfaces(
+
+    my $network_manager_params = {
         interfaces => {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
@@ -86,14 +87,15 @@ sub test1c {
                 interface_name => "eth2",
             },
         }
-    );
+    };
+    $cluster->configureInterfaces(%{ $network_manager_params });
 
     ######################
     #### Create Hosts ####
     ######################
 
     # Create Host 1
-    my $host1 = Kanopya::Tools::Register->registerHost(
+    my $host1 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 1,
             core          => 1,
@@ -115,7 +117,7 @@ sub test1c {
         },
     );
     # Create Host 2
-    my $host2 = Kanopya::Tools::Register->registerHost(
+    my $host2 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 2,
             core          => 2,
@@ -129,7 +131,7 @@ sub test1c {
         },
     );
     # Create Host 3
-    my $host3 = Kanopya::Tools::Register->registerHost(
+    my $host3 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 3,
             core          => 4,
@@ -152,8 +154,11 @@ sub test1c {
     ##########################
 
     lives_ok {
-        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
-
+        my $selected_host = DecisionMaker::HostSelector->getHost(
+                                host_manager => Entity::Component::Physicalhoster0->find(),
+                                %{ $network_manager_params },
+                                %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                            );
         # The selected host must be the 1st.
         if ($selected_host->id != $host1->id) {
             die ("Test 1.c : Wrong host selected");

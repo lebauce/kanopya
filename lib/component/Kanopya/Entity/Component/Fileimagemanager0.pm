@@ -35,7 +35,6 @@ use Entity::Container::FileContainer;
 use Entity::ContainerAccess::FileContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ContainerAccess;
-use Entity::ServiceProvider;
 
 use Manager::HostManager;
 use Kanopya::Exceptions;
@@ -47,6 +46,14 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     image_type => {
         pattern      => '^img|vmdk|qcow2$',
         is_mandatory => 0,
@@ -154,8 +161,6 @@ sub getBootPolicyFromExportManager {
 
     General::checkParams(args => \%args, required => [ "export_manager" ]);
 
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-
     if ($args{export_manager}->id == $self->id) {
         return Manager::HostManager->BOOT_POLICIES->{virtual_disk};
     }
@@ -189,7 +194,7 @@ sub createDisk {
                          required => [ "container_access", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateDisk',
         params   => {
             name                => $args{name},
@@ -224,7 +229,7 @@ sub createExport {
                          required => [ "container", "export_name" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {

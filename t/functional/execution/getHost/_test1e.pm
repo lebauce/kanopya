@@ -128,16 +128,17 @@ sub test1e {
         }
     };
     # Create Cluster and add network interfaces to it
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
         cluster_conf => $host_manager_conf,
     );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     for my $interface ($cluster->interfaces) {
         $interface->delete();
     }
-    $cluster->configureInterfaces(
+
+    my $network_manager_params = {
         interfaces => {
             interface1 => {
                 netconfs       => {$netConf1->netconf_name => $netConf1 },
@@ -155,14 +156,15 @@ sub test1e {
                 interface_name => "eth2",
             },
         }
-    );
+    };
+    $cluster->configureInterfaces(%{ $network_manager_params });
 
     ######################
     #### Create Hosts ####
     ######################
 
     # Create Host 1
-    my $host1 = Kanopya::Tools::Register->registerHost(
+    my $host1 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 1,
             core          => 1,
@@ -215,7 +217,7 @@ sub test1e {
     );
 
     # Create Host 2
-    my $host2 = Kanopya::Tools::Register->registerHost(
+    my $host2 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 2,
             core          => 2,
@@ -240,7 +242,7 @@ sub test1e {
     );
 
     # Create Host 3
-    my $host3 = Kanopya::Tools::Register->registerHost(
+    my $host3 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 3,
             core          => 4,
@@ -279,7 +281,7 @@ sub test1e {
     );
 
     # Create Host 4
-    my $host4 = Kanopya::Tools::Register->registerHost(
+    my $host4 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 4,
             core          => 1,
@@ -332,7 +334,7 @@ sub test1e {
     );
 
     # Create Host 5
-    my $host5 = Kanopya::Tools::Register->registerHost(
+    my $host5 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 5,
             core          => 2,
@@ -385,7 +387,7 @@ sub test1e {
     );
 
     # Create Host 6
-    my $host6 = Kanopya::Tools::Register->registerHost(
+    my $host6 = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 6,
             core          => 4,
@@ -442,8 +444,11 @@ sub test1e {
     ##########################
 
     lives_ok {
-        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
-
+        my $selected_host = DecisionMaker::HostSelector->getHost(
+                                host_manager => Entity::Component::Physicalhoster0->find(),
+                                %{ $network_manager_params },
+                                %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                            );
         # The selected host must be the 5th.
         if ($selected_host->id != $host5->id) {
             die ("Test 1.e : Wrong host selected");

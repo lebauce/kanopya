@@ -27,13 +27,16 @@ test -x "/opt/kanopya/sbin/$EXEC" || exit 1
 PERL5LIB=\
 /opt/kanopya/lib/common:\
 /opt/kanopya/lib/administrator:\
+/opt/kanopya/lib/service:\
+/opt/kanopya/lib/deployment:\
 /opt/kanopya/lib/monitor:\
 /opt/kanopya/lib/executor:\
 /opt/kanopya/lib/external:\
 /opt/kanopya/lib/external/NetApp:\
 /opt/kanopya/lib/orchestrator:\
 /opt/kanopya/lib/component/Kanopya:\
-/opt/kanopya/lib/mock
+/opt/kanopya/lib/mock:\
+/opt/kanopya/lib/tools
 
 export PERL5LIB
 KANOPYA_OPENSTACK_SYNC_RUN=yes

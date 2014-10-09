@@ -46,13 +46,6 @@ __PACKAGE__->table("opennebula3_hypervisor");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 opennebula3_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 onehost_id
 
   data_type: 'integer'
@@ -63,13 +56,6 @@ __PACKAGE__->table("opennebula3_hypervisor");
 
 __PACKAGE__->add_columns(
   "opennebula3_hypervisor_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "opennebula3_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -93,21 +79,6 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("opennebula3_hypervisor_id");
 
 =head1 RELATIONS
-
-=head2 opennebula3
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::Opennebula3>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "opennebula3",
-  "Kanopya::Schema::Result::Opennebula3",
-  { opennebula3_id => "opennebula3_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
-);
 
 =head2 opennebula3_hypervisor
 
@@ -159,8 +130,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x4sq6pBrEHBbs9IP49IVCQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hXrbde4rp9/1W76VMneQ6g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

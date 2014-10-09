@@ -53,10 +53,16 @@ function loadSubscriptionModal (container_id, elem_id, operationtype, mustValida
         ],
         action_delete: {
             callback: function(subscrition_id) {
-                $.post('/api/entity/' + elem_id + '/unsubscribe', { notification_subscription_id: subscrition_id } )
+                // NOTE: The notifications at rule triggering have implemented differently
+                // TODO: Use the common mechanism
+                if (operationtype == "ProcessRule") {
+                    $.post('/api/entity/' + elem_id + '/unsubscribe', { notification_subscription_id: subscrition_id } )
+                } else {
+                    $.post('/api/operationtype/unsubscribe', { notification_subscription_id: subscrition_id } )
+                }
             }
         }
-  } );
+    } );
 
     grid.bind('reloadGrid', function () {
         buildUserSelectInput(subscriber, elem_id);
@@ -97,13 +103,34 @@ function loadSubscriptionModal (container_id, elem_id, operationtype, mustValida
             $(validation).attr('value', 0);
         }
 
-        var data = $(form).serialize() + '&operationtype=' + operationtype;
-        $.ajax({
-            async : false,
-            url   : '/api/entity/' + elem_id + '/subscribe',
-            type  : 'POST',
-            data  : data,
-        });
+        // NOTE: The notifications at rule triggering have implemented differently
+        // TODO: Use the common mechanism
+        var data = $(form).serialize();
+        if (operationtype == "ProcessRule") {
+            data += '&operationtype=' + operationtype;
+            $.ajax({
+                async : false,
+                url   : '/api/rule/' + elem_id + '/subscribe',
+                type  : 'POST',
+                data  : data,
+            });
+
+        } else {
+            $.ajax({
+                type     : 'GET',
+                async    : false,
+                url     : '/api/operationtype?operationtype_name=' + operationtype,
+                success : function(type) {
+                    $.ajax({
+                        async : false,
+                        url   : '/api/operationtype/' + type[0].pk + '/subscribe',
+                        type  : 'POST',
+                        data  : data,
+                    });
+                }
+            });
+        }
+
         grid.trigger("reloadGrid");
         return false;
     })

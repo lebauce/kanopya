@@ -34,7 +34,7 @@ use warnings;
 
 use General;
 use Scope;
-use Operationtype;
+use Entity::Operationtype;
 use Entity::Workflow;
 use Entity::ServiceProvider;
 
@@ -42,7 +42,16 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
+};
 sub getAttrDef { return ATTR_DEF; }
 
 
@@ -89,7 +98,7 @@ sub createWorkflowDef {
                          optional => { 'params' => undef, 'steps' => [] });
 
     # Manually add the only step for all workflow definitions of Sco workfow manager
-    push @{$args{steps}}, Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' })->id;
+    push @{$args{steps}}, Entity::Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' })->id;
 
     return $self->SUPER::createWorkflowDef(%args);
 }

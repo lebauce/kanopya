@@ -18,7 +18,11 @@
 =pod
 =begin classdoc
 
-EComponent is the general abstract type for components.
+Execution lib for Component class inherited by components.
+
+@since    2010-Nov-23
+@instance hash
+@self     $self
 
 =end classdoc
 =cut
@@ -43,6 +47,17 @@ use EEntity;
 my $log = get_logger("");
 my $errmsg;
 
+
+=pod
+=begin classdoc
+
+Install the system service corresponding to the component on the mounted system image.
+
+@param mountpoint the directory where is mounted the system image
+@param scriptname the name of the service script to install
+
+=end classdoc
+=cut
 
 sub addInitScripts {
     my ($self, %args) = @_;
@@ -110,8 +125,6 @@ sub generateFile {
 
 Generate a file on a remote host.
 
-@param dst_host the destination host on which execute commands.
-
 @return the econtext instance
 
 =end classdoc
@@ -123,20 +136,16 @@ sub generateNodeFile {
     General::checkParams(
         args     => \%args,
         required => [ 'file', 'template_dir', 'template_file', 'data' ],
-        optional => { cluster => undef, host => undef, send => 0,
-                      mount_point => '', mode => undef, user => undef,
-                      group => undef }
+        optional => { host => undef, send => 0, mount_point => '',
+                      mode => undef, user => undef, group => undef }
     );
 
-    $args{cluster} = $args{cluster} || $self->service_provider;
     $args{host} = $args{host} || EEntity->new(entity => $self->getMasterNode->host);
 
-    my $path = $self->_executor->getConf->{clusters_directory};
-    $path .= '/' . $args{cluster}->cluster_name;
-    $path .= '/' . $args{host}->node->node_hostname;
-    $path .= '/' . $args{file};
-    my ($filename, $directories, $prefix) = fileparse($path);
+    my $path = $self->_executor->getConf->{clusters_directory} . '/' .
+               $args{host}->node->node_hostname . '/' . $args{file};
 
+    my ($filename, $directories, $prefix) = fileparse($path);
     $self->_host->getEContext->execute(command => "mkdir -p $directories");
 
     $self->generateFile(
@@ -173,41 +182,72 @@ sub generateNodeFile {
 
 sub generateConfiguration {}
 
-sub addNode {}
-sub stopNode {}
-sub postStartNode {}
-sub preStartNode{}
-sub preStopNode{return 0;}
-sub postStopNode{}
+sub configureNode {}
+
+sub preStartNode {}
 sub readyNodeAddition { return 1; }
+sub postStartNode {}
+
+sub preStopNode {}
 sub readyNodeRemoving { return 1; }
+sub postStopNode {}
 
 sub cleanNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args,
-                         required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     eval { $self->preStopNode(%args); };
     eval { $self->stopNode(%args); };
     eval { $self->postStopNode(%args); };
 }
 
+=pod
+=begin classdoc
+
+Base method to test if component is available. Basically check if the component
+is up on its master node.
+
+Should be overriden in conrete component to replace or improve
+the check the availability of the component.
+
+=end classdoc
+=cut
+
+sub isAvailable {
+    my ($self, %args) = @_;
+
+    return $self->isUp(node => $self->getMasterNode());
+}
+
+
+=pod
+=begin classdoc
+
+Check the network availability of the component on a node, could
+execute commands defined in the concrete components to ensure the system
+availability on the specified node.
+
+@param node the node where to test the component availability
+
+=end classdoc
+=cut
+
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
-    
+    General::checkParams( args => \%args, required => [ 'node' ] );
+
     my $availability = 1;
-    my $execution_list = $self->_entity->getExecToTest(host => $args{host});
-    my $net_conf = $self->_entity->getNetConf();
+    my $execution_list = $self->getExecToTest(node => $args{node});
+    my $net_conf = $self->getNetConf();
 
     # Test executable
     foreach my $i (keys %$execution_list) {
         my $ret;
         eval {
-            $ret = $args{host}->getEContext->execute(command => $execution_list->{$i}->{cmd});
+            $ret = $args{node}->getEContext->execute(command => $execution_list->{$i}->{cmd});
         };
         if ($@ || (not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
             return 0;
@@ -215,7 +255,7 @@ sub isUp {
     }
 
     # Test Services
-    my $ip = $args{host}->adminIp;
+    my $ip = $args{node}->adminIp;
     while (my ($daemon, $conf) = each %$net_conf) {
         my $cmd = "nmap -n ";
         PROTO:
@@ -239,25 +279,38 @@ sub isUp {
     return 1;
 }
 
-sub getEContext {
+
+=pod
+=begin classdoc
+
+Return the econtext instance to connect on the master node.
+
+=end classdoc
+=cut
+
+sub getEContext { 
     my ($self) = @_;
 
-    return $self->SUPER::getEContext(dst_host => $self->getMasterNode->host);
+    return $self->SUPER::getEContext(dst_ip => $self->getMasterNode->adminIp);
 }
+
+
+=pod
+=begin classdoc
+
+Apply the component configuration on all nodes where it is running.
+
+=end classdoc
+=cut
 
 sub applyConfiguration {
     my ($self, %args) = @_;
 
     my $tags = $args{tags} || [ 'kanopya::' . lc($self->component_type->component_name) ];
-    my $cluster = $self->service_provider;
-    my $epuppet = EEntity->new(entity => $cluster->getComponent(category => "Configurationagent"));
-    my @hosts = map { EEntity->new(entity => $_->host) } $self->getActiveNodes();
 
-    return $epuppet->applyConfiguration(
-               cluster => $cluster,
-               hosts   => \@hosts,
-               tags    => $tags
-           );
+    my $puppet = $self->getMasterNode->getComponent(category => "Configurationagent");
+    return EEntity->new(entity => $puppet)->applyConfiguration(nodes => $self->getActiveNodes(),
+                                                               tags  => $tags);
 }
 
 1;

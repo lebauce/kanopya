@@ -46,11 +46,18 @@ __PACKAGE__->table("systemimage");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 storage_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 systemimage_name
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
 =head2 systemimage_desc
 
@@ -64,13 +71,6 @@ __PACKAGE__->table("systemimage");
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 service_provider_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -81,19 +81,19 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "systemimage_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
-  "systemimage_desc",
-  { data_type => "char", is_nullable => 1, size => 255 },
-  "active",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "service_provider_id",
+  "storage_manager_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
+  "systemimage_name",
+  { data_type => "char", is_nullable => 0, size => 255 },
+  "systemimage_desc",
+  { data_type => "char", is_nullable => 1, size => 255 },
+  "active",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -123,6 +123,21 @@ __PACKAGE__->set_primary_key("systemimage_id");
 __PACKAGE__->add_unique_constraint("systemimage_name", ["systemimage_name"]);
 
 =head1 RELATIONS
+
+=head2 cinder_systemimage
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::CinderSystemimage>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cinder_systemimage",
+  "Kanopya::Schema::Result::CinderSystemimage",
+  { "foreign.cinder_systemimage_id" => "self.systemimage_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 components_installed
 
@@ -154,19 +169,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 service_provider
+=head2 storage_manager
 
 Type: belongs_to
 
-Related object: L<Kanopya::Schema::Result::ServiceProvider>
+Related object: L<Kanopya::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "service_provider",
-  "Kanopya::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  "storage_manager",
+  "Kanopya::Schema::Result::Component",
+  { component_id => "storage_manager_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 systemimage
@@ -224,8 +244,8 @@ __PACKAGE__->many_to_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GStoXyqhmPtUj7txmOQCbQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Wv/sT46LFoiRhxfSCGqMBQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

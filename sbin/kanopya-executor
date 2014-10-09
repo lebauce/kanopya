@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use Executor;
+use Daemon::MessageQueuing::Executor;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -38,7 +38,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $executor = Executor->new();
+my $executor = Daemon::MessageQueuing::Executor->new();
 $executor->run(name       => "kanopya-executor",
                daemonize  => $opts{b},
                pidfile    => $opts{p});

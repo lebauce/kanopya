@@ -27,12 +27,9 @@ CREATE TABLE `opennebula3` (
 
 CREATE TABLE `opennebula3_hypervisor` (
   `opennebula3_hypervisor_id` int(8) unsigned NOT NULL,
-  `opennebula3_id` int(8) unsigned NOT NULL,
   `onehost_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`opennebula3_hypervisor_id`),
-  FOREIGN KEY (`opennebula3_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`opennebula3_id`),
-  FOREIGN KEY (`opennebula3_id`) REFERENCES `opennebula3` (`opennebula3_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`opennebula3_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

@@ -26,15 +26,21 @@ package Utils::TimeSerieAnalysis;
 
 use strict;
 use warnings;
+
 use General;
-use Statistics::R;
+
 use Utils::R;
 use Data::Dumper;
 use List::MoreUtils qw(firstidx);
-
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
+
+eval {
+    require Statistics::R;
+};
+if ($@) {
+    warn("Can locate Statistics::R, time serie analysis will be unavailable...");
+}
 
 
 =pod

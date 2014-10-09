@@ -18,7 +18,7 @@
 =pod
 =begin classdoc
 
-Kanopya executor runs workflows and operations
+Execution entity for component KanopyaStackBuilder.
 
 =end classdoc
 =cut
@@ -140,6 +140,7 @@ sub buildStack {
                        ", add version number to the service name: $cluster_name");
         }
 
+        my $hcm = Entity::ServiceProvider::Cluster->getKanopyaCluster;
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
                          # Add the specific params
@@ -148,14 +149,15 @@ sub buildStack {
                          %{ clone($common_params) }
                      );
 
+        $params->{context}->{service_manager} = $hcm->getComponent(name => "KanopyaServiceManager");
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',
             priority   => 200,
-            params     => $params,
-            related_id => $self->service_provider->id
+            params     => $params
         });
     }
 }
+
 
 sub startStack {
     my ($self, %args) = @_;
@@ -268,7 +270,7 @@ sub startStack {
 
     # Create a logical volume on Kanopya to store nova instance meta data.
     my $nova_lv_name = "nova-instances-" . 
-                       $components->{novacompute}->{serviceprovider}->cluster_name;
+                       $components->{novacompute}->{serviceprovider}->id;
 
     $log->info("Creating and exporting logical volume $nova_lv_name");
     
@@ -314,7 +316,7 @@ sub startStack {
         $err->rethrow();
     }
 
-    $components->{novacompute}->{component}->service_provider->getComponent(category => "System")->addMount(
+    $components->{novacompute}->{serviceprovider}->getComponent(category => "System")->addMount(
         mountpoint => "/var/lib/nova/instances",
         filesystem => "nfs",
         options    => "vers=3",
@@ -417,10 +419,13 @@ sub startStack {
         $log->info ("Starting service " . $cluster->label. " in an embedded workflow...");
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
-            related_id => $cluster->id,
             params     => {
                 context => {
                     cluster => $cluster,
+                    service_manager => $cluster->service_manager,
+                    host_manager    => $cluster->getManager(manager_type => 'HostManager'),
+                    disk_manager    => $cluster->getManager(manager_type => 'DiskManager'),
+                    export_manager  => $cluster->getManager(manager_type => 'ExportManager'),
                 },
             },
         });
@@ -643,10 +648,10 @@ sub stopStack {
                 operation => {
                     type       => 'StopCluster',
                     priority   => 200,
-                    related_id => $cluster->id,
                     params     => {
                         context => {
                             cluster => $cluster,
+                            service_manager => $cluster->service_manager,
                         },
                     },
                 },
@@ -694,10 +699,10 @@ sub endStack {
                 $args{workflow}->enqueueNow(operation => {
                     type       => 'ForceStopCluster',
                     priority   => 200,
-                    related_id => $cluster->id,
                     params     => {
                         context => {
                             cluster => $cluster,
+                            service_manager => $cluster->service_manager,
                         },
                     },
                 });

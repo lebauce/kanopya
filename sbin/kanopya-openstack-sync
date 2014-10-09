@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use OpenstackSync;
+use Daemon::MessageQueuing::OpenstackSync;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -38,7 +38,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $s = OpenstackSync->new();
+my $s = Daemon::MessageQueuing::OpenstackSync->new();
 $s->run(name       => "kanopya-openstack-sync",
         daemonize  => $opts{b},
         pidfile    => $opts{p});

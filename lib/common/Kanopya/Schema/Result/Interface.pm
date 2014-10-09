@@ -215,8 +215,8 @@ Composing rels: L</netconf_interfaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_interfaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AnCnzh0sRqij0YK+t4sFNw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 16:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:htywOYSv7GOqU+b4u4F73Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

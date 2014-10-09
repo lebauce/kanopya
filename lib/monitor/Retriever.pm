@@ -30,8 +30,11 @@ use Indicatorset;
 use List::Util qw(sum);
 use XML::Simple;
 
-if ($^O eq 'linux') {
+eval {
     require RRDTool::OO;
+};
+if ($@) {
+    warn("Can locate RRDTool::OO, monitoring data storage will be unavailable...");
 }
 
 use Data::Dumper;

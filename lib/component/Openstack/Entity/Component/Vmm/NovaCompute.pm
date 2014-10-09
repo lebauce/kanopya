@@ -56,8 +56,7 @@ sub nova_controller {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     # The support of network is very limited
     # We create only one bridge for all the networks with no VLAN
@@ -67,7 +66,7 @@ sub getPuppetDefinition {
     my $bridge_flat;
 
     IFACE:
-    for my $iface ($args{host}->getIfaces()) {
+    for my $iface ($args{node}->host->getIfaces()) {
         next IFACE if $iface->hasRole(role => 'admin');
 
         for my $netconf ($iface->netconfs) {
@@ -101,7 +100,7 @@ sub getPuppetDefinition {
             classes => {
                 "kanopya::openstack::nova::compute" => {
                     bridge_uplinks => \@uplinks,
-                    email => $self->nova_controller->service_provider->owner->user_email,
+                    email => $self->nova_controller->getMasterNode->owner->user_email,
                     libvirt_type => $self->libvirt_type,
                     rabbit_user => "nova-" . $self->nova_controller->id,
                     rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
@@ -112,25 +111,40 @@ sub getPuppetDefinition {
     } );
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries;
-    for my $glance ($self->nova_controller->glances) {
-        @entries = (@entries, $glance->service_provider->getHostEntries());
-    }
+=pod
+=begin classdoc
 
-    @entries = ($self->nova_controller->keystone->service_provider->getHostEntries(),
-                $self->nova_controller->amqp->service_provider->getHostEntries());
+NovaCompute depend on the keystone, amqp and glances of the nova controller.
 
-    return \@entries;
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    my @dependent = ($self->nova_controller->glances,
+                     $self->nova_controller->keystone,
+                     $self->nova_controller->amqp);
+
+    return \@dependent;
 }
 
+
 sub checkConfiguration {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'ignore' => [] });
 
     $self->checkAttribute(attribute => "iaas");
-    $self->checkDependency(component => $self->iaas);
+
+    my $component = $self->iaas;
+    if (scalar(grep { $component->id == $_->id } @{ $args{ignore} }) == 0) {
+        $self->checkDependency(component => $component);
+    }
+    else {
+        $log->debug("Ignore the check of the dependent component $component");
+    }
 }
 
 1;

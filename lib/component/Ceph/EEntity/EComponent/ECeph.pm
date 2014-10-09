@@ -20,8 +20,7 @@ use warnings;
 sub preStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     if (!$self->ceph_fsid) {
         my $uuid = `uuid`;

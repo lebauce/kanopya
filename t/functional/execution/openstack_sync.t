@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'openstack_sync.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 my $log = get_logger("");
 
@@ -21,14 +21,19 @@ use BaseDB;
 use General;
 use Entity;
 use ParamPreset;
-use Kanopya::Tools::TestUtils 'expectedException';
-
+use Kanopya::Test::TestUtils 'expectedException';
+use Entity::Node;
 use Entity::Component::Virtualization::NovaController;
-use OpenstackSync;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Create;
-use Node;
-Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
+use Entity::Component::KanopyaExecutor;
+use Daemon::MessageQueuing::OpenstackSync;
+use Kanopya::Test::Register;
+use Kanopya::Test::Create;
+use Kanopya::Test::Execution;
+
+use String::Random;
+
+my $random = String::Random->new;
+my $postfix = $random->randpattern("nnCccCCnnncCCnncnCCn");
 
 my $nova_controller;
 my $hypervisor1 = 'hypervisor_1';
@@ -46,27 +51,47 @@ sub main {
     test_create_and_delete_vm();
     test_create_and_rebuild_vm();
 
-     Kanopya::Database::rollbackTransaction;
-     # Kanopya::Database::commitTransaction;
+    Kanopya::Database::rollbackTransaction;
 }
 
 sub register_infrastructure {
 
-    my $nova_cluster = Kanopya::Tools::Create->createCluster(
+
+    diag('Register master image');
+    my $masterimage;
+    lives_ok {
+        $masterimage = Kanopya::Test::Execution::registerMasterImage();
+    } 'Register master image';
+
+    # Add a fake hypervisor
+    my $noda_host = Kanopya::Test::Register->registerHost(
+                        board => {
+                            serial_number => 1,
+                            core          => 10,
+                            ram           => 10*1024**3,
+                            ifaces        => [ { name => 'eth0',pxe  => 0 } ]
+                        },
+                    );
+
+    my $nova_cluster = Kanopya::Test::Create->createCluster(
                            cluster_conf => {
-                               cluster_name => 'nova_cluster',
+                               cluster_name => 'nova_cluster' . $postfix,
                                cluster_basehostname => 'nova',
+                               masterimage_id => $masterimage->id,
                            },
                        );
 
-    Kanopya::Tools::Execution->executeAll();
-
     $nova_controller = Entity::Component::Virtualization::NovaController->new(
-                           service_provider_id => $nova_cluster->id
+                           service_provider_id   => $nova_cluster->id,
+                           executor_component_id => Entity::Component::KanopyaExecutor->find->id
                        );
 
+    $nova_cluster->registerNode(hostname => "nova_master_node",
+                                host     => $noda_host,
+                                number   => 1);
+
     # Add a fake hypervisor
-    my $hv_host_1 = Kanopya::Tools::Register->registerHost(
+    my $hv_host_1 = Kanopya::Test::Register->registerHost(
                          board => {
                              serial_number => 1,
                              core          => 10,
@@ -75,7 +100,7 @@ sub register_infrastructure {
                          },
                      );
 
-    my $hv_host_2 = Kanopya::Tools::Register->registerHost(
+    my $hv_host_2 = Kanopya::Test::Register->registerHost(
                          board => {
                              serial_number => 1,
                              core          => 10,
@@ -88,14 +113,12 @@ sub register_infrastructure {
     $hv_host_1 = $nova_controller->addHypervisor(host => $hv_host_1);
     $hv_host_2 = $nova_controller->addHypervisor(host => $hv_host_2);
 
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
                       cluster_conf => {
-                          cluster_name         => 'compute_clustera',
+                          cluster_name         => 'compute_clustera' . $postfix,
                           cluster_basehostname => 'computea',
                       },
                   );
-
-    Kanopya::Tools::Execution->executeAll();
 
     $hv_host_1 = $hv_host_1->reload;
     $hv_host_2 = $hv_host_2->reload;
@@ -140,10 +163,10 @@ sub test_create_and_delete_vm {
         }
 
         $message = _get_delete_json(hostname => $hostname, instance_id => $instance_id);
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
         expectedException {
-            Node->get(id => $node->id);
+            Entity::Node->get(id => $node->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Node <' .$node->id. '> not deleted';
 
         expectedException {
@@ -180,7 +203,7 @@ sub test_create_and_rebuild_vm {
     my $node;
 
     lives_ok {
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
         $node = check_node_existance(
                     hostname    => $hostname,
@@ -199,7 +222,7 @@ sub test_create_and_rebuild_vm {
                );
 
     lives_ok {
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
                 $node = check_node_existance(
                     hostname    => $hostname,
                     ips         => [ $ip ],
@@ -223,12 +246,12 @@ sub create_vm {
                       hypervisor  => $args{hypervisor} || $hypervisor1,
                   );
 
-    OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+    Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
     my $node;
 
     lives_ok {
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
         $node = check_node_existance(
                     hostname    => $args{hostname} || "test_vm",

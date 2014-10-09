@@ -45,6 +45,14 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     container_accesses => {
         label        => 'Exports',
         type         => 'relation',
@@ -225,7 +233,7 @@ sub createExport {
                          required => [ "container", "client_name", "client_options" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {

@@ -56,7 +56,6 @@ use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
 use Entity::Host;
-use Node;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -64,7 +63,16 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
+
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     repositories => {
         label       => 'Virtual machine images repositories',
         type        => 'relation',
@@ -931,7 +939,6 @@ sub registerVm {
                 cluster_basehostname   => 'vsphere-registered-vm' . $vm_view->summary->vm->value,
                 cluster_nameserver1    => '127.0.0.1',
                 cluster_nameserver2    => '127.0.0.1',
-                cluster_boot_policy    => '',
                 owner_id               => $admin_user->id,
             );
 
@@ -947,9 +954,6 @@ sub registerVm {
                 manager_type => 'HostManager',
                 manager_id   => $self->id
             );
-
-            # add default execution manager
-            $self->_addExecutionManager(cluster => $service_provider);
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere vm: '. $@;
@@ -1173,27 +1177,6 @@ sub generateMacAddress {
     );
 }
 
-=pod
-
-=begin classdoc
-
-Return the list of hypervisors managed by the component
-
-@return \@hypervisors
-
-=end classdoc
-
-=cut
-
-sub hypervisors {
-    my $self = shift;
-
-    my @hypervisors = Entity::Host::Hypervisor::Vsphere5Hypervisor->search(
-                          hash => { vsphere5_id => $self->id }
-                      );
-
-    return \@hypervisors;
-}
 
 =pod
 
@@ -1322,36 +1305,6 @@ sub promoteVm {
     return $args{host};
 }
 
-=pod
-
-=begin classdoc
-
-Add default execution manager to a cluster
-
-@param cluster the cluster on which manager will be added
-
-=end classdoc
-
-=cut
-
-sub _addExecutionManager {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster' ]);
-
-    my $service_provider = $args{cluster};
-
-    # Find the kanopya cluster
-    my $kanopya = $service_provider->getKanopyaCluster();
-
-    # Add default execution manager
-    my $execution_manager = $kanopya->getComponent(name => "KanopyaExecutor");
-
-    $service_provider->addManager(
-        manager_id   => $execution_manager->id,
-        manager_type => "ExecutionManager"
-    );
-}
 
 sub _registerTemplate {
     my ($self, %args) = @_;
@@ -1400,40 +1353,17 @@ Promote an Hypervisor class into a Vsphere5Hypervisor one
 =cut
 
 sub addHypervisor {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'datacenter_id', 'uuid' ]);
 
     return Entity::Host::Hypervisor::Vsphere5Hypervisor->promote(
-                                 promoted               => $args{host},
-                                 vsphere5_id            => $self->id,
-                                 vsphere5_datacenter_id => $args{datacenter_id},
-                                 vsphere5_uuid          => $args{uuid},
+               promoted               => $self->SUPER::addHypervisor(host => $args{host}),
+               vsphere5_datacenter_id => $args{datacenter_id},
+               vsphere5_uuid          => $args{uuid},
            );
 }
 
-=pod
-
-=begin classdoc
-
-Return a list of active hypervisors ruled by this manager
-
-@return active_hypervisors
-
-=end classdoc
-
-=cut
-
-sub activeHypervisors {
-    my $self = shift;
-
-    my @hypervisors = $self->searchRelated(
-                          filters => [ 'vsphere5_hypervisors' ],
-                          hash    => { active => 1 }
-                      );
-
-    return wantarray ? @hypervisors : \@hypervisors;
-}
 
 =pod
 

@@ -68,7 +68,7 @@ sub createExport {
 
     $self->generate();
 
-    $log->debug("Added iSCSI Export of device <$device> with target <$disk_targetname>");
+    $log->info("Added iSCSI Export of device <$device> with target <$disk_targetname>");
 
     if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
@@ -169,7 +169,10 @@ sub addTarget {
 
     # Create the new target
     $cmd = "ietadm --op new --tid=$tid --params Name=$args{target_name}";
-    $self->getEContext->execute(command => $cmd);
+    my $res = $self->getEContext->execute(command => $cmd);
+    if ($res->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution::CommandFailed(error => $res->{stderr});
+    }
 }
 
 sub gettid {
@@ -183,8 +186,7 @@ sub gettid {
                  );
 
     if ($result->{stdout} eq "") {
-        $errmsg = "EComponent::EIscsitarget1->gettid : no target name found for $args{target_name}!";
-        $log->error($errmsg);
+        $errmsg = "No target name found for $args{target_name}!";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -211,7 +213,10 @@ sub addLun {
                   "Type=$args{typeio}," .
                   "IOMode=$args{iomode}";
 
-    my $result = $self->getEContext->execute(command => $command);
+    my $res = $self->getEContext->execute(command => $command);
+    if ($res->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution::CommandFailed(error => $res->{stderr});
+    }
 }
 
 sub removeTarget {
@@ -336,7 +341,7 @@ sub generate {
         send          => 1
     );
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('generate'),
             parameters => [ $self ]
@@ -347,12 +352,11 @@ sub generate {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
     IscsiPortal->findOrCreate(
         iscsi_id          => $self->id,
-        iscsi_portal_ip   => $args{host}->adminIp,
+        iscsi_portal_ip   => $args{node}->adminIp,
         iscsi_portal_port => 3260
     );
 }

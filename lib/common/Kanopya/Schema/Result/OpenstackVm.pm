@@ -98,14 +98,14 @@ __PACKAGE__->set_primary_key("openstack_vm_id");
 
 Type: belongs_to
 
-Related object: L<Kanopya::Schema::Result::NovaController>
+Related object: L<Kanopya::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "nova_controller",
-  "Kanopya::Schema::Result::NovaController",
-  { nova_controller_id => "nova_controller_id" },
+  "Kanopya::Schema::Result::Component",
+  { component_id => "nova_controller_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
@@ -125,8 +125,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:T3hNzXf6oq2ZPZaOdSZIiw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-22 14:07:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1ypOQQAoVT4ASZh6jzFJLQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

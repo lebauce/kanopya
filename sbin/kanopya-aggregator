@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use Aggregator;
+use Daemon::Aggregator;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -38,7 +38,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $aggregator = Aggregator->new();
+my $aggregator = Daemon::Aggregator->new();
 $aggregator->run(name       => "kanopya-aggregator",
                  daemonize  => $opts{b},
                  pidfile    => $opts{p});

@@ -100,6 +100,21 @@ __PACKAGE__->set_primary_key("virtualization_id");
 
 =head1 RELATIONS
 
+=head2 hypervisors
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Hypervisor>
+
+=cut
+
+__PACKAGE__->has_many(
+  "hypervisors",
+  "Kanopya::Schema::Result::Hypervisor",
+  { "foreign.iaas_id" => "self.virtualization_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nova_controller
 
 Type: might_have
@@ -112,6 +127,21 @@ __PACKAGE__->might_have(
   "nova_controller",
   "Kanopya::Schema::Result::NovaController",
   { "foreign.nova_controller_id" => "self.virtualization_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 open_stack
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::OpenStack>
+
+=cut
+
+__PACKAGE__->might_have(
+  "open_stack",
+  "Kanopya::Schema::Result::OpenStack",
+  { "foreign.open_stack_id" => "self.virtualization_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -191,8 +221,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-21 18:16:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:f87Zx9ifNi/aB4oFofz4eA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uuVwguoxw1ePFU6nzaVzRQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -40,7 +40,7 @@
 #
 
 use Entity::Tag;
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 #use strict;
 #use warnings;
 
@@ -76,16 +76,17 @@ sub test4b {
     };
 
     # Create Cluster and add network interface to it
-    my $cluster = Kanopya::Tools::Create->createCluster(
+    my $cluster = Kanopya::Test::Create->createCluster(
                      cluster_conf => $host_manager_conf,
                   );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Test::Execution->executeAll();
 
     for my $interface ($cluster->interfaces) {
         $interface->delete();
     }
-    $cluster->configureInterfaces(
+
+    my $network_manager_params = {
         interfaces => {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
@@ -93,7 +94,8 @@ sub test4b {
                 interface_name => "eth0",
             },
         }
-    );
+    };
+    $cluster->configureInterfaces(%{ $network_manager_params });
 
     ######################
     #### Create Hosts ####
@@ -102,7 +104,7 @@ sub test4b {
     my @hosts = ();
     my $host;
     # Create Host 1
-    $host = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 1,
             core          => 2,
@@ -123,7 +125,7 @@ sub test4b {
     push @hosts, $host;
 
     # Create Host 2
-    $host = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 2,
             core          => 2,
@@ -144,7 +146,7 @@ sub test4b {
     push @hosts, $host;
 
     # Create Host 3
-    $host = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 3,
             core          => 2,
@@ -165,7 +167,7 @@ sub test4b {
     push @hosts, $host;
 
     # Create Host 4
-    $host = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 6,
             core          => 2,
@@ -186,7 +188,7 @@ sub test4b {
     push @hosts, $host;
 
     # Create Host 5
-    $host = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Test::Register->registerHost(
         board => {
             serial_number => 5,
             core          => 2,
@@ -214,11 +216,16 @@ sub test4b {
     lives_ok {
 
         expectedException {
-            my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
+            my $selected_host = DecisionMaker::HostSelector->getHost(
+                                    host_manager => Entity::Component::Physicalhoster0->find(),
+                                   %{ $network_manager_params },
+                                    %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                                );
+
         } 'Kanopya::Exception', 'Test 4.b : Wrong host selected expected no host';
 
         # Create Host 6
-        $host = Kanopya::Tools::Register->registerHost(
+        $host = Kanopya::Test::Register->registerHost(
             board => {
                 serial_number => 4,
                 core          => 2,
@@ -238,8 +245,12 @@ sub test4b {
         );
         push @hosts, $host;
 
+        my $selected_host = DecisionMaker::HostSelector->getHost(
+                                host_manager => Entity::Component::Physicalhoster0->find(),
+                                %{ $network_manager_params },
+                                %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                            );
 
-        $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
         # The selected host must be the last one.
         if ($selected_host->id != $hosts[-1]->id) {
             die ('Test 4.b : Wrong host <'.($selected_host->id).'> selected, expected <'.($hosts[3]->id).'>');

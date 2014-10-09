@@ -13,8 +13,8 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Network;
@@ -23,7 +23,7 @@ use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'stack_builder_allinone.t.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 
@@ -38,7 +38,7 @@ sub main {
     }
 
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Test::Execution::registerMasterImage();
     } 'Register master image';
 
     my $builder;
@@ -124,7 +124,7 @@ sub main {
     my $build_stack;
     lives_ok {
        $build_stack = $builder->buildStack(stack => $stack);
-       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+       Kanopya::Test::Execution->executeOne(entity => $build_stack);
     } 'Run workflow BuildStack';
 
     if ($testing == 1) {

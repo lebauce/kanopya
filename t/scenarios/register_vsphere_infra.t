@@ -7,14 +7,14 @@ use Test::More 'no_plan';
 use Test::Exception;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'RegisterVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'RegisterVsphereInfra.t.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 
 use Kanopya::Database;
 use Vsphere5Datacenter;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 
-use Kanopya::Tools::Create;
+use Kanopya::Test::Create;
 
 # 1) Retrieve (separately for each type) vSphere items
 # 2) Register items in Kanopya
@@ -37,7 +37,7 @@ if ($testing == 1) {
 
 my $vsphere_cluster;
 lives_ok {
-    $vsphere_cluster = Kanopya::Tools::Create->createCluster(
+    $vsphere_cluster = Kanopya::Test::Create->createCluster(
                     cluster_conf => {
                         cluster_name         => 'VSphere',
                         cluster_basehostname => 'vsphere'

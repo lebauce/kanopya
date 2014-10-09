@@ -22,7 +22,7 @@
 use strict;
 use warnings;
 
-use Collector;
+use Daemon::Pooling::Collector;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -42,7 +42,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $collector = Collector->new();
+my $collector = Daemon::Pooling::Collector->new();
 $collector->run(name       => "kanopya-collector",
                 daemonize  => $opts{b},
                 pidfile    => $opts{p});

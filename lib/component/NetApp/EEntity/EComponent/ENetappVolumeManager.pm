@@ -117,7 +117,7 @@ sub createExport {
 
     $log->info("Added NFS export for volume " . $args{container}->getAttr(name => "container_name"));
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('removeExport'),
             parameters => [ $self, "container_access", $container_access ]

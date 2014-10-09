@@ -250,4 +250,72 @@ sub uniq {
     return keys %{{ map { $_ => 1 } @{$args{data}}} };
 }
 
+
+=pod
+=begin classdoc
+
+Dynamic param checker.
+The difference with General::checkParams is that it only check that required params exist, but they can be null.
+TODO Is it really necessary to have this specific method?
+
+@param required Array of required parameters
+@param args the checked args
+
+=end classdoc
+=cut
+
+sub checkMissingParams {
+    my %args = @_;
+
+    my $caller_args = $args{args};
+    my $required = $args{required};
+    my $caller_sub_name = (caller(1))[3];
+
+    for my $param (@$required) {
+        if (! exists $caller_args->{$param} ) {
+            my $errmsg = "$caller_sub_name needs a '$param' named argument!";
+
+            # Log in general logger
+            # TODO log in the logger corresponding to caller package;
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::IncorrectParam();
+        }
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Utility method used to clone a formula
+Clone all objects used in formula and translate formula to use cloned object ids
+
+@param dest_sp_id id of the service provider where to import all cloned objects
+@param formula string representing a formula (i.e operators and object ids in the format "idXXX")
+@param formula_class class of object used in formula
+
+@return the cloned object
+
+=end classdoc
+=cut
+
+sub _cloneFormula {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_sp_id', 'formula', 'formula_class']);
+
+    my $formula = $args{formula};
+    # Get ids in formula
+    my %ids = map { $_ => undef } ($formula =~ m/id(\d+)/g);
+    # Clone objects used in formula
+    %ids = map {
+        $_ => $args{formula_class}->get(id => $_)->clone(dest_service_provider_id => $args{dest_sp_id})->id
+    } keys %ids;
+
+    # Replace ids in formula with cloned objects ids
+    $formula =~ s/id(\d+)/id$ids{$1}/g;
+
+    return $formula;
+}
+
 1;

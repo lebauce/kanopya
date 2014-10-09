@@ -20,7 +20,7 @@ use TryCatch;
 use Log::Log4perl qw(:easy get_logger);
 
 use Kanopya::Database; Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
-use Kanopya::Tools::TestUtils 'expectedException';
+use Kanopya::Test::TestUtils 'expectedException';
 
 
 Log::Log4perl->easy_init({

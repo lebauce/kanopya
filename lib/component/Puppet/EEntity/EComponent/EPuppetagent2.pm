@@ -15,70 +15,24 @@ package EEntity::EComponent::EPuppetagent2;
 use base "EEntity::EComponent";
 
 use strict;
-use Template;
+use warnings;
+
 use General;
 use EEntity;
-use Entity::ServiceProvider::Cluster;
-use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
 
+use Template;
+use Hash::Merge;
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
-my $errmsg;
 
-# generate configuration files on node
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+
 sub configureNode {
     my ($self, %args) = @_;
-    General::checkParams(args     => \%args,
-                         required => ['cluster','host','mount_point']);
-    
-    my $conf = $self->_entity->getConf();
 
-    # Generation of /etc/default/puppet
-    my $data = { 
-        puppetagent2_bootstart => 'yes',
-        puppetagent2_options   => $conf->{puppetagent2_options},
-    };
-    
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/default/puppet',
-        template_dir  => 'components/puppetagent',
-        template_file => 'default_puppet.tt',
-        data          => $data,
-        mount_point   => $args{mount_point}
-    );
-
-    # Generation of puppet.conf
-    $data = { 
-        puppetagent2_masterserver => $conf->{puppetagent2_masterfqdn},
-    };
-     
-    $file = $self->generateNodeFile( 
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/puppet/puppet.conf',
-        template_dir  => 'components/puppetagent',
-        template_file => 'puppet.conf.tt',
-        data          => $data,
-        mount_point   => $args{mount_point}
-    );
-
-    $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/puppet/auth.conf',
-        template_dir  => 'components/puppetagent',
-        template_file => 'auth.conf.tt',
-        data          => $data,
-        mount_point   => $args{mount_point}
-    );
-}
-
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster','mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
 
     if ($self->puppetagent2_mode eq 'kanopya') {
         # create, sign and push a puppet certificate on the image
@@ -91,10 +45,43 @@ sub addNode {
         );
     }
 
-    $self->configureNode(
-        cluster     => $args{cluster},
-        mount_point => $args{mount_point},
-        host        => $args{host}
+    # Generation of /etc/default/puppet
+    my $conf = $self->getConf();
+    my $data = { 
+        puppetagent2_bootstart => 'yes',
+        puppetagent2_options   => $conf->{puppetagent2_options},
+    };
+    
+    my $file = $self->generateNodeFile(
+        host          => $args{host},
+        file          => '/etc/default/puppet',
+        template_dir  => 'components/puppetagent',
+        template_file => 'default_puppet.tt',
+        data          => $data,
+        mount_point   => $args{mount_point}
+    );
+
+    # Generation of puppet.conf
+    $data = { 
+        puppetagent2_masterserver => $conf->{puppetagent2_masterfqdn},
+    };
+
+    $file = $self->generateNodeFile( 
+        host          => $args{host},
+        file          => '/etc/puppet/puppet.conf',
+        template_dir  => 'components/puppetagent',
+        template_file => 'puppet.conf.tt',
+        data          => $data,
+        mount_point   => $args{mount_point}
+    );
+
+    $file = $self->generateNodeFile(
+        host          => $args{host},
+        file          => '/etc/puppet/auth.conf',
+        template_dir  => 'components/puppetagent',
+        template_file => 'auth.conf.tt',
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 
     $self->addInitScripts(
@@ -106,23 +93,23 @@ sub addNode {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    $self->applyConfiguration(%args);
+    $self->applyConfiguration(nodes => [ $args{node} ]);
 }
 
 sub postStopNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    $self->applyConfiguration(%args);
+    $self->applyConfiguration(nodes => [ $args{host}->node ]);
 }
 
 sub stopNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     $log->info('Remove the certificate on the puppet master');
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
@@ -133,39 +120,22 @@ sub applyConfiguration {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args,
-                         required => [ 'cluster' ],
-                         optional => { 'host' => undef,
-                                       'hosts' => undef,
-                                       'tags' => [] });
+                         optional => { 'nodes' => $self->getActiveNodes(), 'tags'  => [] });
 
-    my @ehosts;
-    if (defined $args{host}) {
-        @ehosts = ($args{host});
-    }
-    elsif (defined $args{hosts}) {
-        @ehosts = @{ $args{hosts} };
-    }
-    else {
-        @ehosts = map { EEntity->new(entity => $_->host) }
-                  $self->getActiveNodes();
-    }
+    my $econtext = EEntity->new(data => $self->getPuppetMaster)->getEContext;
 
     my $ret = -1;
     my $timeout = 360;
-    my @hosts = (defined $args{host}) ? ($args{host}->node->fqdn) : (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
-    my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
-    my $econtext = (EEntity->new(data => $puppetmaster))->getEContext;
+    my @nodes = map { $_->fqdn } @{ $args{nodes} };
 
-    do {
-        if ($ret != -1) {
-            sleep 5;
-            $timeout -= 5;
-        }
-        $log->info("Configuring node(s) " . join(',', @hosts) . ", with tag(s) " . join(',', @{ $args{tags} }));
+    $log->debug("Lets go to puppet kick for nodes " . join(',', @nodes));
+    while ($timeout > 0 && (scalar @nodes)) {
+        $log->info("Configuring node(s) " . join(',', @nodes) . ", tag(s) " . join(',', @{ $args{tags} }));
 
-        my $command = "puppet kick --configtimeout=900 --ignoreschedules --foreground --parallel " . (scalar @hosts);
+        my $command = "puppet kick --configtimeout=900 --ignoreschedules --foreground ";
+        $command .= "--parallel " . (scalar @nodes);
         map { $command .= " --tag " . $_; } @{ $args{tags} };
-        map { $command .= " --host $_" } @hosts;
+        map { $command .= " --host $_" } @nodes;
 
         $ret = $econtext->execute(command => $command, timeout => 900);
         while ($ret->{stdout} =~ /([\w.\-]+) finished with exit code (\d+)/g) {
@@ -174,53 +144,74 @@ sub applyConfiguration {
             # In both cases, puppet kick returns 3 so we filter the broken hosts
             # and the hosts that have already applied the manifest
             if ($2 != 3) {
-                @hosts = grep{ $_ ne $1 } @hosts;
+                @nodes = grep{ $_ ne $1 } @nodes;
             }
         }
-    } while ($timeout > 0 && (scalar @hosts));
+
+        $log->debug("Puppet kick returned " .  (defined($ret->{exitcode}) ? $ret->{exitcode} : "undef") .
+                    ", " . scalar(@nodes) . " nodes remaining, timeout $timeout left.");
+
+        if ($ret != -1) {
+            sleep 5;
+            $timeout -= 5;
+        }
+    };
 }
 
-sub isUp {
+sub isConfigured {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'node' ]);
 
-    my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
-    my $econtext     = (EEntity->new(data => $puppetmaster))->getEContext;
+    $self->applyConfiguration(nodes => [ $args{node} ]);
 
-    my $reconfigure = { };
-    $self->applyConfiguration(cluster => $args{cluster},
-                              host    => $args{host});
+    $log->debug("Look for dependent components that require reconfiguration...");
+    # Build the nodes to reconfigure by browsing the node components and thier dependencies.
+    # Sort nodes to reconfigure by corresponding puppetagent component to optimize the number
+    # of calls to applyConfiguration.
+    # TODO: Need to reconfigure all active nodes of the current node components ?
+    my $reconfigure = {};
+    for my $component ($args{node}->components) {
+        $log->debug("Look for dependencies of component " . $component->label);
 
-    my @components  = $args{cluster}->getComponents(category => "all");
-    # Sort the components by service provider
-    for my $component (@components) {
-        my $defs = $component->getPuppetDefinition(%args);
-        for my $chunk (keys %{$defs}) {
-            my @dependencies = @{$defs->{$chunk}->{dependencies} || []};
-            for my $dependency (@dependencies) {
-                my $key = $dependency->service_provider->id;
-                if (! defined ($reconfigure->{$key})) {
-                    $reconfigure->{$key} = [ $dependency ];
-                } else {
-                    push @{$reconfigure->{$key}}, $dependency;
-                }
+        for my $dependency (@{ $component->getDependentComponents}) {
+            $log->debug("Found dependent component " . $dependency->label);
+
+            for my $node (@{ $dependency->getActiveNodes }) {
+                $log->debug("Handle node " . $node->label . " for reconfiguration.");
+                my $agent = $node->getComponent(category => "Configurationagent");
+                my $entry = { agent      => $agent,
+                              nodes      => { $node->id => $node },
+                              components => { $dependency->id => $dependency } };
+
+                $reconfigure->{$agent->id} = $merge->merge($reconfigure->{$agent->id}, $entry);
             }
         }
     }
 
-    # Reconfigure the required components for each cluster
-    for my $cluster_id (keys %{$reconfigure}) {
-        my $cluster = $reconfigure->{$cluster_id}->[0]->service_provider;
-        my @tags = map {
-                       'kanopya::' . lc($_->component_type->component_name)
-                   } @{$reconfigure->{$cluster_id}};
-        EEntity->new(entity => $cluster)->reconfigure(tags => \@tags);
+    # Reconfigure the required nodes
+    for my $toreconfiure (values %{ $reconfigure }) {
+        # Build the list of tags from components list
+        my @dependentnodes = values %{ $toreconfiure->{nodes} };
+        my @tags = map { 'kanopya::' . lc($_->component_type->component_name) }
+                       values %{ $toreconfiure->{components} };
+
+        if (scalar(@dependentnodes)) {
+            $log->debug("Node " . $args{node}->label . ", reconfiguring dependent components " .
+                        join(',', @tags) . " on nodes " . join(',', map { $_->fqdn } @dependentnodes));
+
+            # Reconfigure the nodes
+            EEntity->new(entity => $toreconfiure->{agent})->applyConfiguration(nodes => \@dependentnodes,
+                                                                               tags  => \@tags);
+        }
+        else {
+            $log->debug("Node " . $args{node}->label . ", no dependent nodes to reconfigure...");
+        }
     }
 
-    if (scalar (keys %{$reconfigure})) {
-        $self->applyConfiguration(cluster => $args{cluster},
-                                  host    => $args{host});
+    # Reconfigure the current node if we have reconfigured the dependencies
+    if (scalar (keys %{ $reconfigure })) {
+        $self->applyConfiguration(nodes => [ $args{node} ]);
     }
 
     return 1;

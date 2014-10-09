@@ -12,25 +12,25 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'delegatee.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 my $log = get_logger("");
 
-my $testing = 1;
+my $testing = 0;
 
 use Kanopya::Database;
 use General;
 
-use Node;
+use Entity::Node;
 use Entity::ServiceProvider;
 use Entity::User::Customer;
 use Entity::Metric::Combination::AggregateCombination;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
+use Kanopya::Test::Retrieve;
+use Kanopya::Test::Create;
 
 use String::Random;
 
@@ -55,7 +55,7 @@ sub main {
     my $admin = Entity::User->find(hash => { user_login => 'admin' });
 
     # Create a cluster for the customer
-    my $customercluster = Kanopya::Tools::Create->createCluster(owner_id => $customer->id);
+    my $customercluster = Kanopya::Test::Create->createCluster(owner_id => $customer->id);
 
     # Retrieve a cluster on which the customer do not have any permissions
     my $admincluster = Entity::ServiceProvider::Cluster->find(hash => { owner_id => $admin->id });
@@ -72,7 +72,7 @@ sub main {
     # Create a node
     my $adminnode;
     lives_ok {
-        $adminnode = Node->apiCall(
+        $adminnode = Entity::Node->apiCall(
                          method => 'create',
                          params => {
                              service_provider_id => $admincluster->id,
@@ -83,7 +83,7 @@ sub main {
 
     # Retreive, update and remove the node
     lives_ok {
-        Node->apiCall(method => 'get', params => { id => $adminnode->id });
+        Entity::Node->apiCall(method => 'get', params => { id => $adminnode->id });
     } 'Get a node from apiCall as admin';
 
     lives_ok {
@@ -112,7 +112,7 @@ sub main {
     # Create a node
     my $customernode;
     throws_ok {
-        $customernode = Node->apiCall(
+        $customernode = Entity::Node->apiCall(
                             method => 'create',
                             params => {
                                 service_provider_id => $admincluster->id,
@@ -124,7 +124,7 @@ sub main {
 
     # Retreive, update and remove the node
     throws_ok {
-        Node->apiCall(method => 'get', params => { id => $adminnode->id });
+        Entity::Node->apiCall(method => 'get', params => { id => $adminnode->id });
     } 'Kanopya::Exception::Permission::Denied',
       'Get a node from apiCall as customer';
 
@@ -153,7 +153,7 @@ sub main {
 
     # Create a node
     lives_ok {
-        $customernode = Node->apiCall(
+        $customernode = Entity::Node->apiCall(
                             method => 'create',
                             params => {
                                 service_provider_id => $customercluster->id,
@@ -164,7 +164,7 @@ sub main {
 
     # Retreive, update and remove the node
     lives_ok {
-        Node->apiCall(method => 'get', params => { id => $customernode->id });
+        Entity::Node->apiCall(method => 'get', params => { id => $customernode->id });
     } 'Get a node from apiCall as customer';
 
     lives_ok {

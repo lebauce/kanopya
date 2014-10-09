@@ -29,48 +29,48 @@ use base "Manager::HostManager";
 use Entity::Host::Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
-use String::Random 'random_regex';
 use Entity::Workflow;
+use Kanopya::Exceptions;
+
+use TryCatch;
+use String::Random 'random_regex';
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
+
 
 sub methods {
     return {
         scaleHost => {
             description => 'scale host\'s cpu / memory',
-            perm_holder => 'entity',
         },
         migrate => {
             description => 'migrate a host',
-            perm_holder => 'entity',
         },
         optimiaas  => {
             description => 'optimize IaaS (packing)',
-            perm_holder => 'entity',
-        },
-        # TODO(methods): Remove this method from the api once the merge of component/connector
-        hypervisors => {
-            description => 'get the hypervisors manzaged by the cloud component',
-            perm_holder => 'entity',
-            is_virtual  => 1
         },
     };
 }
 
 
 sub createVirtualHost {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ], optional => { 'ifaces' => 0 });
+    General::checkParams(args     => \%args,
+                         required => [ 'ram', 'core' ],
+                         optional => { 'ifaces'        => 0,
+                                       'hypervisor_id' => undef,
+                                       'serial_number' => "Virtual Host managed by component " . $self->id });
 
     # Use the first kernel found...
     my $kernel = Entity::Kernel->find(hash => {});
 
     my $vm = Entity::Host::VirtualMachine->new(
                  host_manager_id    => $self->id,
-                 host_serial_number => "Virtual Host managed by component " . $self->id,
+                 hypervisor_id      => $args{hypervisor_id},
+                 host_serial_number => $args{serial_number},
                  kernel_id          => $kernel->id,
                  host_ram           => $args{ram},
                  host_core          => $args{core},
@@ -85,8 +85,27 @@ sub createVirtualHost {
         );
     }
 
-    $log->debug("Return host with <" . $vm->id . ">");
     return $vm;
+}
+
+
+=pod
+=begin classdoc
+
+Redirect calls to createHost to createVirtualHost, should be never call,
+usefull for test purpose.
+
+@return the created virtual machine
+
+=end classdoc
+=cut
+
+sub createHost {
+    my ($self, %args) = @_;
+
+    return $self->createVirtualHost(ram  => delete $args{host_ram},
+                                    core => delete $args{host_core},
+                                    %args);
 }
 
 
@@ -147,7 +166,7 @@ sub scaleHost {
         }
     };
 
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    return $self->executor_component->run(
         name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
         params => $wf_params
     );
@@ -177,52 +196,12 @@ sub migrate {
         }
     };
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    return $self->executor_component->run(
                name       => 'MigrateWorkflow',
-               related_id => $hypervisor->getClusterId(),
                params     => $wf_params
            );
 }
 
-
-=pod
-
-=begin classdoc
-
-Update hypervisor of vm in DB
-
-=end classdoc
-
-=cut
-
-sub migrateHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
-
-    $log->info('Migrating host <' . $args{host}->id . '> to hypervisor ' . $args{hypervisor_dst}->id);
-
-    $args{host}->hypervisor_id($args{hypervisor_dst}->id);
-
-}
-
-
-=pod
-
-=begin classdoc
-
-Abstract method to get the list of hypervisors managed by this host manager.
-
-@return the hypervisor list
-
-=end classdoc
-
-=cut
-
-sub hypervisors {
-    throw Kanopya::Exception::NotImplemented();
-}
 
 sub hostType {
     return "Virtual Machine";
@@ -304,4 +283,34 @@ sub promoteVm {
     General::checkParams(args => \%args, required => [ 'host', 'hypervisor_id' ]);
     throw Kanopya::Exception::NotImplemented();
 }
+
+sub selectHypervisor {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
+
+    my $cm = CapacityManagement->new(cloud_manager => $self);
+    return $cm->getHypervisorIdForVM(resources => {ram => $args{ram}, cpu => $args{core}});
+}
+
+
+sub optimiaas {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        optional => {
+            policy => 'stack',
+        }
+    );
+
+    $self->executor_component->run(
+        name   => 'OptimiaasWorkflow',
+        params => {
+            context => {
+                cloudmanager_comp => $self,
+            },
+            policy => $args{policy},
+        }
+    );
+}
+
 1;

@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'workflowDef.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 my $log = get_logger("");
 
@@ -22,8 +22,8 @@ use General;
 use Entity;
 use Entity::WorkflowDef;
 use ParamPreset;
-use Kanopya::Tools::TestUtils 'expectedException';
-use Operationtype;
+use Kanopya::Test::TestUtils 'expectedException';
+use Entity::Operationtype;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -85,7 +85,7 @@ sub main {
 
 
     lives_ok {
-        my @ops = Operationtype->search();
+        my @ops = Entity::Operationtype->search();
         my $op1 = pop @ops;
         my $op2 = pop @ops;
 

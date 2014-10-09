@@ -23,19 +23,16 @@ use Kanopya::Config;
 use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
-sub addNode {
+sub configureNode {
     my ($self, %args) = @_;
-    
-    General::checkParams(args => \%args, required => ['mount_point', 'host', 'container_access']);
+
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
 
     $log->info("Configuring system for iSCSI");
  
     # generation of /etc/iscsi/initiatorname.iscsi (needed to start the iscsid daemon)
-    my $cluster = $self->service_provider;
     my $data = { initiatorname => $args{host}->host_initiatorname };
-    
     my $file = $self->generateNodeFile(
-        cluster       => $cluster,
         host          => $args{host},
         file          => '/etc/iscsi/initiatorname.iscsi',
         template_dir  => 'components/open-iscsi',
@@ -52,38 +49,6 @@ sub addNode {
     $self->_host->getEContext->execute(
         command => "echo \"InitiatorName=$initiatorname\" > " .
         "$args{mount_point}/etc/initiatorname.iscsi"
-    );
-}
-
-sub _generateKanopyaHalt {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "cluster", "host", "mount_point", "targetname", "container_access" ]);
-
-    my $vars = {
-        target       => $args{targetname},
-        nas_ip       => $args{container_access}->container_access_ip,
-        nas_port     => $args{container_access}->container_access_port,
-        data_exports => $self->getConf()->{openiscsi2_targets}
-    };
-
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/init.d/Kanopya_halt',
-        template_dir  => 'components/open-iscsi',
-        template_file => 'KanopyaHalt.tt',
-        data          => $vars,
-        mode          => 755,
-        mount_point   => $args{mount_point}
-    );
-
-    $self->_host->getEContext->send(
-        src  => Kanopya::Config::getKanopyaDir() . '/templates/internal/Kanopya_omitted_iscsid',
-        dest => "$args{mount_point}/etc/init.d/Kanopya_omitted_iscsid",
-        mode => 755
     );
 }
 

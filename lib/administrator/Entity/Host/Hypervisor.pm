@@ -44,6 +44,26 @@ sub methods {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Do not proppgate the call the host manager if call on Hypervisor, should be never call,
+usefull for test purpose.
+
+@return the created hypervisor
+
+=end classdoc
+=cut
+
+sub create {
+    my $self = shift;
+    my %args = @_;
+
+    return $self->new(%args);
+}
+
+
 sub getVms {
     my $self = shift;
     my %args = @_;
@@ -57,22 +77,13 @@ sub checkStoppable {
     my $self = shift;
     my @vms = $self->getVms();
 
-#    if (scalar @vms) {
-#        throw Kanopya::Exception(error => "The hypervisor " . $self->node->node_hostname .
-#                                          " can't be stopped as it still runs virtual machines");
-#    }
-
     return (scalar @vms) == 0 ? 1 : 0;
-}
-
-sub getCloudManager {
-    throw Kanopya::Exception::NotImplemented();
 }
 
 sub maintenance {
     my $self = shift;
 
-    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    $self->iaas->executor_component->run(
         name   => 'HypervisorMaintenance',
         params => {
             context => {
@@ -85,7 +96,7 @@ sub maintenance {
 sub resubmitVms {
     my $self = shift;
 
-    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    $self->iaas->executor_component->run(
         name   => 'ResubmitHypervisor',
         params => {
             context => {

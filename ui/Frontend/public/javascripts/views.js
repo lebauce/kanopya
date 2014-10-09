@@ -83,10 +83,15 @@ function create_all_content() {
 // param 'details' is optionnal and allow to specify/override details_def for this grid
 function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     var details_info = details || details_def[grid_class];
+
     // Not defined details menu
     if (details_info === undefined) {
         //console.log('No details for grid ' +  grid_class);
         return;
+    }
+
+    if (typeof details_info === 'function') {
+        details_info = details_info.call(null, elem_id);
     }
 
     // Details accessible from menu (dynamic loaded menu)
@@ -102,11 +107,17 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
         return;
     }
 
+    // Else display details according to the grid definition
+    display_row_details(elem_id, details_info, row_data, grid_id);
+}
+
+
+function display_row_details(elem_id, details_info, row_data, grid_id) {
     // Enables the dynamic loading of tabs
     var tabs = details_info.tabs;
     if (typeof details_info.tabs === 'function') {
         tabs = details_info.tabs.call(null, elem_id);
-    };
+    }
 
     // modal details
     var id = 'view_detail_' + elem_id;
@@ -181,6 +192,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     // Load first tab content
     reload_content('content_' + tabs[0]['id'] + '_' + elem_id, elem_id, {keep_last : true, elem_data : row_data});
 }
+
 
 function _gridActionModalCommonParams() {
     var dialog_height   = 120;

@@ -23,6 +23,7 @@ use warnings;
 
 use Kanopya::Config;
 use Kanopya::Exceptions;
+use Entity::ServiceProvider::Cluster;
 
 use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
@@ -113,7 +114,7 @@ sub insertDefaultExtendedConfiguration {
     my %args = @_;
 
     # Retrieve admin ip
-    my $kanopya = $self->service_provider->getKanopyaCluster();
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     my $syslog  = $kanopya->getComponent(name => "Syslogng", version => "3");
 
     # If no kanopya syslogng nodes found, this component has just

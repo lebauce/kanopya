@@ -82,12 +82,6 @@ __PACKAGE__->table("cluster");
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 cluster_boot_policy
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
-
 =head2 cluster_si_persistent
 
   data_type: 'integer'
@@ -188,8 +182,6 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "cluster_priority",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "cluster_boot_policy",
-  { data_type => "char", is_nullable => 0, size => 32 },
   "cluster_si_persistent",
   {
     data_type => "integer",
@@ -412,8 +404,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-02 11:56:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TNG698G4c16by3yKJP0bow
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-07-30 17:09:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k7OovOgcv0K618zEn+oR3A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

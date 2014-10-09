@@ -1,0 +1,230 @@
+@errorColor: #a94442;
+@errorBackgroundColor: #f2dede;
+@infoColor: #31708f;
+@infoBackgroundColor: #d9edf7;
+@successColor: #3c763d;
+@successBackgroundColor: #dff0d8;
+@warningColor: #8a6d3b;
+@warningBackgroundColor: #fcf8e3;
+
+@lineColor: #cccccc;
+
+
+/*
+ * Dialog editor (generic)
+ */
+.dialog-container input,
+.dialog-container select,
+.dialog-container textarea {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.dialog-container .block-title {
+    margin-top: 20px;
+    font-size: 120%;
+    color: #cccccc;
+}
+
+.dialog-container .line {
+    height: 1px;
+    background-color: @lineColor;
+}
+
+.dialog-container button:hover {
+    cursor : pointer;
+}
+
+.dialog-container .error {
+    color: @errorColor;
+    margin: 0;
+}
+
+.dialog-container .info {
+    color: @infoColor;
+    margin: 0;
+}
+
+.dialog-container .border-error {
+    border: 1px solid @errorColor !important;
+}
+
+.dialog-container .background-error {
+    background-color: @errorBackgroundColor !important;
+}
+
+.dialog-container .field-error {
+    border: 1px solid @errorColor !important;
+    background-color: @errorBackgroundColor !important;
+}
+
+/*
+ * Rule editor (rule-editor.tmpl.html)
+ */
+
+#rule-editor .backcolor-0 {
+    background-color: #eeeeee;
+}
+
+#rule-editor .backcolor-1 {
+    background-color: #dddddd;
+}
+
+#rule-editor .backcolor-2 {
+    background-color: #cccccc;
+}
+
+#rule-editor .backcolor-3 {
+    background-color: #bbbbbb;
+}
+
+#rule-editor .condition-remove,
+#rule-editor .action-remove {
+    background: url(/images/remove.png) no-repeat top left;
+    border: none;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+#rule-identification label {
+    display: inline-block;
+    text-align: right;
+    width: 100px;
+}
+
+#rule-identification input[type=text] {
+    width: 400px;
+}
+
+#rule-identification input[type=text].large {
+    width: 800px;
+}
+
+#rule-identification .caption {
+    margin-left: 5px;
+}
+
+#rule-identification .enabled {
+    color: #468847;
+}
+
+#rule-identification .disabled {
+    color: @errorColor;
+}
+
+#rule-conditions-builder {
+    margin-top: 10px;
+}
+
+#rule-conditions-builder .hidden {
+    display: none !important;
+}
+
+#rule-conditions-builder .error {
+    margin-left: 5px;
+}
+
+#rule-conditions-builder .condition-content {
+    border: 1px solid rgba(81, 203, 238, 1);
+    background-color: #ffffff;
+}
+
+#rule-conditions-builder .condition-group {
+    margin-left: 50px;
+    padding: 5px;
+}
+
+#rule-conditions-builder .condition-group.root {
+    margin-left: 0;
+}
+
+#rule-conditions-builder .condition-add {
+    margin-left: 50px;
+}
+
+#rule-conditions-builder .condition {
+    padding: 5px;
+}
+
+#rule-conditions-builder .condition-line {
+    margin-left: 50px;
+    padding: 5px;
+}
+
+#rule-conditions-builder .logic {
+    width: 55px;
+}
+
+#rule-conditions-builder .function1,
+#rule-conditions-builder .function2 {
+    width: 90px;
+}
+
+#rule-conditions-builder .operand1,
+#rule-conditions-builder .operand2,
+#rule-conditions-builder .condition-value {
+    width: 180px;
+}
+
+#rule-actions-builder {
+    margin-top: 10px;
+}
+
+#rule-actions-builder .action {
+    padding: 5px;
+}
+
+#rule-actions-builder .action-line {
+    padding: 5px;
+}
+
+#rule-actions-builder .action-select,
+#rule-actions-builder .action-value {
+    width: 180px;
+}
+
+/*
+ * Anomaly detector editor (anomaly-editor.tmpl.html)
+ */
+
+@anomalyInputWidth: 140px;
+@anomalyOptionsPadding: 10px;
+
+#anomaly-identity {
+    label {
+        display: inline-block;
+        text-align: right;
+        width: @anomalyInputWidth + @anomalyOptionsPadding;
+    }
+}
+
+#anomaly-options {
+    border: 1px solid @lineColor;
+    padding: @anomalyOptionsPadding;
+
+    label {
+        width: @anomalyInputWidth;
+    }
+
+    input[type=text] {
+        width: 40px;
+        text-align: right;
+    }
+}
+
+#anomaly-options .title {
+    font-size: 120%;
+    color: #cccccc;
+}
+
+#anomaly-editor .error {
+    margin: 3px 0 0 145px;
+}
+
+#metric-error {
+    margin: 3px 0 0 155px !important;
+}

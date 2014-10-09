@@ -13,12 +13,13 @@ TODO
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
+use Kanopya::Test::Execution;
+use Kanopya::Test::Register;
 
 use Entity::User::Customer;
 use Entity::Component::Physicalhoster0;
 use Entity::Operation;
+use Entity::Operationtype;
 use NotificationSubscription;
 
 use Data::Dumper;
@@ -52,17 +53,17 @@ sub main {
 
     use_ok ('Daemon::MessageQueuing');
 
-    # Dynamically modify the EAddHost pre/post requisites
+    # Dynamically modify the EDummyOperation pre/post requisites
     # methods to control when operations are reported
-    use_ok ('EEntity::EOperation::EAddHost');
+    use_ok ('EEntity::EOperation::EDummyOperation');
 
     my ($prereport, $postreport) = (0, 0);
-    sub EEntity::EOperation::EAddHost::prerequisites {
+    sub EEntity::EOperation::EDummyOperation::prerequisites {
         my ($self, %args) = @_;
 
         return $prereport;
     }
-    sub EEntity::EOperation::EAddHost::postrequisites {
+    sub EEntity::EOperation::EDummyOperation::postrequisites {
         my ($self, %args) = @_;
 
         return $postreport;
@@ -85,7 +86,7 @@ sub main {
     my @configarray = %$daemonconf;
     my $genericdaemon = new_ok("Daemon::MessageQueuing", \@configarray, "Instantiate a generic Daemon::MessageQueuing");
 
-    # Get the physical hoster to enqueue AddHost operations
+    # Get the physical hoster to enqueue DummyOperation operations
     my $physicalhoster;
     lives_ok {
        $physicalhoster = Entity::Component::Physicalhoster0->find(),
@@ -163,108 +164,102 @@ sub main {
     # Subscribe to notifications on the operation state
     for my $state (@states) {
         lives_ok {
-            $physicalhoster->subscribe(subscriber_id   => $customer->id,
-                                       operationtype   => "addhost",
-                                       operation_state => $state);
-        } "Subscribe to notifications on state $state for operation AddHost"
+            Entity::Operationtype->find(hash => { operationtype_name => "DummyOperation" })->subscribe(
+                subscriber_id   => $customer->id,
+                entity_id       => $physicalhoster->id,
+                operation_state => $state
+            );
+        } "Subscribe to notifications on state $state for operation DummyOperation"
     }
 
     # Enqueue an operation that should succeed
-    my $add_host;
-    my $executor = $physicalhoster->service_provider->getManager(manager_type => 'ExecutionManager');
+    my $dummy_op;
+    my $executor = $physicalhoster->executor_component;
     lives_ok {
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
-                            host_serial_number => "notification_subscriptions_test",
-                            host_core          => 1,
-                            host_ram           => 1
+                            dummy_param => "hello",
                         }
                     );
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
-    } 'Run workflow AddHost';
+        Kanopya::Test::Execution->executeOne(entity => $dummy_op);
+    } 'Run workflow DummyOperation';
 
     # Enqueue an operation that should timeout
     lives_ok {
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
-                            host_serial_number => "notification_subscriptions_test",
-                            host_core          => 1,
-                            host_ram           => 1
+                            dummy_param => "hello",
                         },
                         timeout => 1,
                     );
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
-    } 'Run workflow AddHost with timeout';
+        Kanopya::Test::Execution->executeOne(entity => $dummy_op);
+    } 'Run workflow DummyOperation with timeout';
 
     # Enqueue an operation that should cancel
     throws_ok {
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
                         }
                     );
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
-    } 'Kanopya::Exception::Internal', 'Run workflow AddHost with mandatory attr required';
+        Kanopya::Test::Execution->executeOne(entity => $dummy_op);
+    } 'Kanopya::Exception::Test', 'Run workflow DummyOperation with mandatory attr required';
 
     # Enqueue an operation that should fail
     throws_ok {
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         harmless => 1,  
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
                         }
                     );
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
-    } 'Kanopya::Exception::Internal', 'Run workflow AddHost with mandatory attr required';
+        Kanopya::Test::Execution->executeOne(entity => $dummy_op);
+    } 'Kanopya::Exception::Internal', 'Run workflow DummyOperation with mandatory attr required';
 
     # Enqueue an operation that should interrupted
     throws_ok {
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
-                            host_serial_number => "notification_subscriptions_test",
-                            host_core          => 1,
-                            host_ram           => 1,
+                            dummy_param => "hello",
                         }
                     );
 
-        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
+        Kanopya::Test::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
     
-        $add_host->workflow->interrupt();
+        $dummy_op->workflow->interrupt();
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
-    } 'Kanopya::Exception::Internal', 'Run workflow AddHost with interrupted workflow';
+        Kanopya::Test::Execution->executeOne(entity => $dummy_op);
+    } 'Kanopya::Exception::Internal', 'Run workflow DummyOperation with interrupted workflow';
 
     # Enqueue an operation that should statereported
     lives_ok {
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
-                            host_serial_number => "notification_subscriptions_test",
-                            host_core          => 1,
-                            host_ram           => 1,
+                            dummy_param => "hello",
                         }
                     );
 
@@ -272,10 +267,10 @@ sub main {
         $physicalhoster->unlock(consumer => $customer);
         $physicalhoster->lock(consumer => $customer);
 
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         $physicalhoster->unlock(consumer => $customer);
-    } 'Run workflow AddHost with already locked context';
+    } 'Run workflow DummyOperation with already locked context';
 
     # Subcribe with validation
     my $subsciption;
@@ -286,64 +281,59 @@ sub main {
                            operation_state => "processing"
                        });
         $subsciption->validation(1);
-    } "Subscribe to validation on state \"processing\" for operation AddHost";
+    } "Subscribe to validation on state \"processing\" for operation DummyOperation";
 
     # Enqueue an operation that require validation
     lives_ok {
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
-                            host_serial_number => "notification_subscriptions_test",
-                            host_core          => 1,
-                            host_ram           => 1
+                            dummy_param => "hello",
                         },
-                        related_id => $physicalhoster->service_provider->id,
                     );
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         $subsciption->validation(0);
-    } 'Run workflow AddHost';
+    } 'Run workflow DummyOperation';
 
     # Validate the operation
     lives_ok {
-        $add_host->validate();
+        $dummy_op->validate();
 
-        Kanopya::Tools::Execution->executeOne(entity => $add_host);
+        Kanopya::Test::Execution->executeOne(entity => $dummy_op);
 
-    } 'Run workflow AddHost';
+    } 'Run workflow DummyOperation';
 
     # Enqueue an operation that is prereported
     lives_ok {
         $prereport = 1;
 
-        $add_host = $executor->enqueue(
-                        type     => 'AddHost',
+        $dummy_op = $executor->enqueue(
+                        type     => 'DummyOperation',
                         params   => {
                             context  => {
-                                host_manager => $physicalhoster,
+                                dummy_object => $physicalhoster,
                             },
-                            host_serial_number => "notification_subscriptions_test",
-                            host_core          => 1,
-                            host_ram           => 1
+                            dummy_param => "hello",
                         },
-                        related_id => $physicalhoster->service_provider->id,
                     );
-        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Test::Execution->oneRun();
 
         $prereport = 0;
         $postreport = 1;
 
-        sleep 2;
-        Kanopya::Tools::Execution->oneRun();
+        sleep 15;
+        Kanopya::Test::Execution->oneRun();
 
         $postreport = 0;
 
-        Kanopya::Tools::Execution->oneRun();
+        sleep 15;
+        Kanopya::Test::Execution->oneRun();
 
-    } 'Run workflow AddHost';
+    } 'Run workflow DummyOperation';
 
     # Browse all notification messages of the mail notifier to check if subscribed states are notified
     try {

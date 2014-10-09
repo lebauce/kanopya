@@ -38,6 +38,21 @@ my $log = get_logger("");
 my $errmsg;
 
 
+sub methods {
+    return {
+        createDisk => {
+            description => 'create a disk',
+        },
+        removeDisk => {
+            description => 'remove a disk',
+        },
+        mkfs => {
+            description => 'Format a disk',
+        },
+    };
+}
+
+
 =pod
 =begin classdoc
 
@@ -60,15 +75,7 @@ sub checkDiskManagerParams {}
 sub getManagerParamsDef {
     my ($self, %args) = @_;
 
-    return {
-        systemimage_size => {
-            label        => 'System image size',
-            type         => 'integer',
-            unit         => 'byte',
-            pattern      => '^\d*$',
-            is_mandatory => 0,
-        },
-    };
+    return {};
 }
 
 
@@ -81,27 +88,27 @@ sub getManagerParamsDef {
 =cut
 
 sub getDiskManagerParams {
-    my $self = shift;
-    my %args  = @_;
+    my ($self, %args) = @_;
 
     return {};
 }
 
 
 sub getFreeSpace {
+    my ($self, %args) = @_;
+
     throw Kanopya::Exception::NotImplemented();
 }
 
 
 sub createDisk {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ "name" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateDisk',
         params   => {
             context => {
@@ -114,13 +121,12 @@ sub createDisk {
 
 
 sub removeDisk {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "container" ]);
 
     $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'RemoveDisk',
         params   => {
             context => {
@@ -133,23 +139,28 @@ sub removeDisk {
 
 
 sub getExportManagers {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     return [];
 }
 
 sub diskType {
+    my ($self, %args) = @_;
+
     return '';
 }
 
 
 sub getExportManagerFromBootPolicy {
+    my ($self, %args) = @_;
+
     throw Kanopya::Exception::NotImplemented();
 }
 
 
 sub getBootPolicyFromExportManager {
+    my ($self, %args) = @_;
+
     throw Kanopya::Exception::NotImplemented();
 }
 

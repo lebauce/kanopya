@@ -50,7 +50,7 @@ __PACKAGE__->table("externalcluster");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 200
 
 =head2 externalcluster_desc
 
@@ -82,7 +82,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "externalcluster_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 200 },
   "externalcluster_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "externalcluster_state",
@@ -140,8 +140,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I7T99mHfMkgCVnhHRC5KuQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-13 18:40:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:n3QSCxLe2TvPwnMQqc+jJg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

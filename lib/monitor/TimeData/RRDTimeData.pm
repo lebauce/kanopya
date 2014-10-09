@@ -35,14 +35,18 @@ use warnings;
 use General;
 use Data::Dumper;
 use Kanopya::Config;
-use RRDTool::OO;
 
 use TryCatch;
-my $err;
-
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("timedata");
+
+eval {
+    require RRDTool::OO;
+};
+if ($@) {
+    warn("Can locate RRDTool::OO, monitoring data storage will be unavailable...");
+}
+
 
 my $dir    = '/var/cache/kanopya/monitor/';
 my $rrd    = '/usr/bin/rrdtool';
@@ -201,7 +205,7 @@ sub fetchTimeDataStore {
     my $step = $rrdoo->{fetch_time_step};
 
     my @timestamps = map {$start_time + $_ * $step} (0..scalar @$data - 1);
-    my @values = map {pop $_} @$data;
+    my @values = map {pop @{$_}} @$data;
 
     while ($timestamps[-1] > $end) {
         pop @values;

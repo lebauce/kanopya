@@ -50,23 +50,22 @@ sub start {
     my $self = shift;
     my %args = @_;
 
-    $self->getHostManager->startHost(host       => $self,
-                                     hypervisor => $args{hypervisor},
-                                     cluster    => $args{cluster},
-                                     erollback  => $args{erollback});
+    # Do not known the list of params, it dpends of the type of host manager
+    $self->getHostManager->startHost(host => $self, %args);
 
     $self->setState(state => 'starting');
 
     # Sommetimes a host can be promoted to another object type
     # So reload the object to be sure to have the good type.
-    return EEntity->new(data => Entity->get(id => $self->id));
+    return $self->reload;
 }
 
 sub halt {
     my $self = shift;
     my %args = @_;
 
-    my $result = $self->getEContext->execute(command => 'poweroff');
+    $self->getHostManager->haltHost(host => $self);
+
     $self->setState(state => 'stopping');
 }
 
@@ -115,7 +114,7 @@ Return the component to interrogate to get system informations
 sub getSystemComponent {
     my $self = shift;
 
-    return EEntity->new(entity => $self->node->service_provider->getComponent(category => "System"));
+    return EEntity->new(entity => $self->node->getComponent(category => "System"));
 }
 
 
@@ -166,7 +165,7 @@ sub getTotalCpu {
 sub getEContext {
     my $self = shift;
 
-    return $self->SUPER::getEContext(dst_host => $self);
+    return $self->SUPER::getEContext(dst_ip => $self->adminIp);
 }
 
 1;

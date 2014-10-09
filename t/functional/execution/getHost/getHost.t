@@ -48,8 +48,9 @@ use Test::Exception;
 use Kanopya::Exceptions;
 
 use Entity::Netconf;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::Register;
+use Entity::Component::Physicalhoster0;
+use Kanopya::Test::Create;
+use Kanopya::Test::Register;
 
 use Kanopya::Database;
 
@@ -89,7 +90,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'getHost.t.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 
