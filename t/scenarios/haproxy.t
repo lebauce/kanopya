@@ -62,7 +62,7 @@ sub main {
     
     lives_ok {
         $haproxy->setConf(conf => {
-            haproxy1s_listen => [ { listen_name    => 'mysql',
+            haproxy1_listens => [ { listen_name    => 'mysql',
                                     listen_ip      => '0.0.0.0',
                                     listen_port    => 33060,
                                     listen_mode    => 'tcp',
