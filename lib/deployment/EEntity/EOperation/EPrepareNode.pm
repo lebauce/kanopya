@@ -108,6 +108,7 @@ sub cancel {
     $self->{context}->{deployment_manager}->cancelPrepareNode(
         node         => $self->{context}->{node},
         boot_manager => $self->{context}->{boot_manager},
+        network_manager => $self->{context}->{network_manager},
         %{ $self->{params} }
     );
 }

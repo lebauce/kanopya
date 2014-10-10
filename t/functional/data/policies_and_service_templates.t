@@ -22,18 +22,22 @@ my $testing = 1;
 use Kanopya::Database;
 use ClassType;
 use Entity::User;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
 use Entity::Policy;
 use Entity::Policy::StoragePolicy;
 use Lvm2Vg;
 use Entity::Policy::HostingPolicy;
+use Entity::Policy::OrchestrationPolicy;
 use Entity::Component::Physicalhoster0;
 use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::HCMStorageManager;
 use Entity::Component::HCMNetworkManager;
 use Entity::Component::KanopyaDeploymentManager;
+use Entity::Component::Kanopyacollector1;
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -52,6 +56,8 @@ sub main {
     test_service_template_json();
     test_service_template_creation();
     test_service_creation_from_service_template();
+    test_add_manager();
+    test_orchestration_policy();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
@@ -133,7 +139,7 @@ sub test_policies_hash_to_list {
                          cluster_nameserver2 => "8.8.4.4",
                          cluster_domainname => "hedera-technology.com",
                          network_manager_id => Entity::Component::HCMNetworkManager->find->id,
-                         interfaces => [ { 
+                         interfaces => [ {
                             interface_name => "eth0",
                             netconfs => [ 123 ]
                          }, {
@@ -341,4 +347,67 @@ sub test_service_creation_from_service_template {
             %$additional_policy_aprams
         );
     } "Create service from service template.";
+}
+
+sub test_orchestration_policy {
+
+    my $sp = Entity::ServiceProvider->new();
+    my $collector_manager = Entity::Component::Kanopyacollector1->find();
+    $sp->addManager(manager_id => $collector_manager->id, manager_type => 'CollectorManager');
+
+    my $orchestration_policy = Entity::Policy::OrchestrationPolicy->create(
+                                   collector_manager_id => $collector_manager->id,
+                                   policy_name => 'Test orchestration',
+                                   policy_type => 'orchestration',
+                                   orchestration => {service_provider_id => $sp->id},
+                               );
+    $orchestration_policy->remove();
+    lives_ok {
+        expectedException { Entity->get(id => $sp->id) }
+            'Kanopya::Exception::Internal::NotFound',
+            'Service Provider has to be deleted';
+
+    } 'Remove orchestration policy service provider with policy deletion'
+}
+
+sub test_add_manager {
+    my $sp = Entity::ServiceProvider->new();
+    my $collector_manager_1 = Entity::Component::Kanopyacollector1->find();
+    my $collector_manager_2 = Entity::Component::Kanopyacollector1->new();
+
+    my $collector_manager;
+    lives_ok {
+        expectedException {
+            $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+        } 'Kanopya::Exception::Internal::NotFound',
+          'Service Provider should not have any Collector manager';
+
+        $sp->addManager(manager_id => $collector_manager_1->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_1->id) {
+            die 'Collector manager should be collector manager 1';
+        }
+
+        $sp->addManager(manager_id => $collector_manager_2->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_2->id) {
+            die 'Collector manager should be collector manager 2';
+        }
+
+        $sp->addManager(manager_id => $collector_manager_1->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_1->id) {
+            die 'Collector manager should be collector manager 1 (2nd time)';
+        }
+
+    } 'Add manager'
 }

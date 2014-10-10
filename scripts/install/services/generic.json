@@ -119,7 +119,16 @@
                     "class_type" : "Entity::ServiceProvider",
                     "service_provider_type_id" : null
                 }
+            },
+            "collector_manager_id" : {
+                "class_type" : "Entity::Component::Kanopyacollector1",
+                "service_provider.cluster.cluster_name" : "Kanopya"
             }
+        },
+        "Empty orchestration configuration" : {
+            "policy_name": "Empty orchestration configuration",
+            "policy_desc": "Empty orchestration configuration",
+            "policy_type": "orchestration"
         }
     },
     "services" : {
@@ -128,7 +137,7 @@
             "service_desc": "Service template for generic service instances",
             "orchestration_policy_id": {
                 "class_type" : "Entity::Policy::OrchestrationPolicy",
-                "policy_name" : "Standard orchestration configuration"
+                "policy_name" : "Empty orchestration configuration"
             },
             "scalability_policy_id": {
                 "class_type" : "Entity::Policy::ScalabilityPolicy",

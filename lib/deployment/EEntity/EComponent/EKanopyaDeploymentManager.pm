@@ -384,9 +384,14 @@ Ensure the component do not respond any-more and the host unreachable.
 sub cancelPrepareNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'node', 'boot_manager' ]);
+    General::checkParams(args => \%args, required => [ 'node', 'boot_manager', 'network_manager' ]);
 
-    $self->unconfigureNode(node => $args{node}, boot_manager => $args{boot_manager});
+    $self->unconfigureNode(
+        node => $args{node},
+        boot_manager => $args{boot_manager},
+        network_manager => $args{network_manager},
+    );
+
     EEntity->new(entity => $self->dhcp_component)->applyConfiguration();
 }
 

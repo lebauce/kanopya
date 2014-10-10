@@ -467,11 +467,6 @@ sub configureManagers {
         $args{managers}->{workflow_manager} = { manager_id   => $workflow_manager->id,
                                                 manager_type => "WorkflowManager" };
 
-        # Add default collector manager
-        my $collector_manager = $kanopya->getComponent(name => "Kanopyacollector", version => "1");
-        $args{managers}->{collector_manager} = { manager_id   => $collector_manager->id,
-                                                 manager_type => "CollectorManager" };
-
         for my $manager (values %{ $args{managers} }) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
@@ -597,6 +592,9 @@ sub configureBillingLimits {
 
     if (defined $args{billing_limits}) {
         my @limits = values %{ $args{billing_limits} };
+        if (@limits eq 0) {
+            return;
+        }
         $self->_populateRelations(relations => { billinglimits => \@limits }, override => 1);
 
         my @indicators = qw(Memory Cores);

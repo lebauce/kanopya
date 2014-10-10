@@ -33,6 +33,7 @@ use parent Manager::HostManager::VirtualMachineManager;
 use parent Manager::StorageManager;
 use parent Manager::BootManager;
 use parent Manager::NetworkManager;
+use parent Manager::CollectorManager;
 
 use strict;
 use warnings;
@@ -171,6 +172,11 @@ sub new {
             $err->rethrow;
         }
     }
+
+    my @indicator_sets = (Indicatorset->search(hash =>{indicatorset_name => 'ceilometer'}));
+    $self->createCollectorIndicators(
+        indicator_sets => \@indicator_sets,
+    );
 
     Kanopya::Database::commitTransaction();
     return $self;
@@ -804,26 +810,30 @@ sub getVMState {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $details;
     try {
-        my $details =  $self->getVMDetails(%args);
-
-        my $state_map = {
-            'MIGRATING' => 'migr',
-            'BUILD'     => 'pend',
-            'REBUILD'   => 'pend',
-            'ACTIVE'    => 'runn',
-            'ERROR'     => 'fail',
-            'SHUTOFF'   => 'shut'
-        };
-
-        return {
-            state      => $state_map->{$details->{state}} || 'fail',
-            hypervisor => $details->{hypervisor},
-        };
+        $details =  $self->getVMDetails(%args);
     }
     catch ($err) {
         $log->warn($err);
+        return {state => 'fail'};
     }
+
+    my $state_map = {
+        'MIGRATING' => 'migr',
+        'BUILD'     => 'pend',
+        'REBUILD'   => 'pend',
+        'ACTIVE'    => 'runn',
+        'ERROR'     => 'fail',
+        'SHUTOFF'   => 'shut'
+    };
+
+    return {
+        state      => $state_map->{$details->{state}} || 'fail',
+        hypervisor => $details->{hypervisor},
+    };
+
+
 }
 
 =pod
@@ -913,8 +923,13 @@ sub removeSystemImage {
         my $detail;
         my $time_out = time + 60;
         do {
-            $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->volume_uuid);
-
+            try {
+                $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->volume_uuid);
+            }
+            catch ($err) {
+                $log->warn('Error when getting volume detail: ' . $err);
+                return $args{systemimage}->delete;
+            }
             $log->debug("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
 
             sleep 3;
@@ -1317,6 +1332,25 @@ sub vmms {
     throw Kanopya::Exception::Internal(error => "Hypervisors not managerd by iaas " . $self->label);
 }
 
+sub retrieveData {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['nodelist', 'indicators', 'time_span']);
+
+    my $output = {};
+    my @oids = keys %{$args{indicators}};
+
+    my $res = OpenStack::Ceilometer->retrieve(api => $self->_api,
+                                              meters => \@oids,
+                                              hostnames => $args{nodelist});
+
+    for my $nodename (@{$args{nodelist}}) {
+        for my $oid (@oids) {
+            $output->{$nodename}->{$oid} = $res->{$nodename}->{$oid}->{volume};
+        }
+    }
+
+    return $output;
+}
 
 sub _api {
     my ($self, %args) = @_;
