@@ -56,6 +56,7 @@ sub main {
     test_service_template_json();
     test_service_template_creation();
     test_service_creation_from_service_template();
+    test_add_manager();
     test_orchestration_policy();
 
     if ($testing == 1) {
@@ -133,7 +134,7 @@ sub test_policies_hash_to_list {
                          cluster_nameserver2 => "8.8.4.4",
                          cluster_domainname => "hedera-technology.com",
                          network_manager_id => Entity::Component::HCMNetworkManager->find->id,
-                         interfaces => [ { 
+                         interfaces => [ {
                             interface_name => "eth0",
                             netconfs => [ 123 ]
                          }, {
@@ -351,4 +352,46 @@ sub test_orchestration_policy {
             'Service Provider has to be deleted';
 
     } 'Remove orchestration policy service provider with policy deletion'
+}
+
+sub test_add_manager {
+    my $sp = Entity::ServiceProvider->new();
+    my $collector_manager_1 = Entity::Component::Kanopyacollector1->find();
+    my $collector_manager_2 = Entity::Component::Kanopyacollector1->new();
+
+    my $collector_manager;
+    lives_ok {
+        expectedException {
+            $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+        } 'Kanopya::Exception::Internal::NotFound',
+          'Service Provider should not have any Collector manager';
+
+        $sp->addManager(manager_id => $collector_manager_1->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_1->id) {
+            die 'Collector manager should be collector manager 1';
+        }
+
+        $sp->addManager(manager_id => $collector_manager_2->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_2->id) {
+            die 'Collector manager should be collector manager 2';
+        }
+
+        $sp->addManager(manager_id => $collector_manager_1->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_1->id) {
+            die 'Collector manager should be collector manager 1 (2nd time)';
+        }
+
+    } 'Add manager'
 }
