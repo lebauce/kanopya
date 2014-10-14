@@ -19,7 +19,12 @@
 =begin classdoc
 
 The AWS component provides access and management of Amazon Web Services.
-It is modeled after the OpenStack component.
+It is modeled after the OpenStack component, therefore it is at the same time
+a data holder for accessing AWS infrastructure (for one account) 
+and it offers methods for the manipulation of said infrastructure.
+
+API calls are encapsulated within AWS::API (general means of access) and
+AWS::EC2 (individual API calls for EC2).
 
 # This component is able to synchronise the existing infrastructure to the HCM api, and load
 # the available parameters/option for each AWSW services.
@@ -41,14 +46,15 @@ use warnings;
 
 #use Entity::Host::Hypervisor::OpenstackHypervisor;
 #use Entity::Host::VirtualMachine::OpenstackVm;
-#use Entity::Masterimage::GlanceMasterimage;
-#use ClassType::ServiceProviderType::ClusterType;
+use Entity::Masterimage::AwsMasterimage;
+use ClassType::ServiceProviderType::ClusterType;
 #use Entity::Systemimage::CinderSystemimage;
 #use Entity::Node;
-#use Kanopya::Exceptions;
+use Kanopya::Exceptions;
 #use ParamPreset;
 
-#use OpenStack::API;
+use AWS::API;
+use AWS::EC2;
 #use OpenStack::Port;
 #use OpenStack::Volume;
 #use OpenStack::Server;
@@ -80,7 +86,6 @@ use constant ATTR_DEF => {
         label        => 'AWS secret key',
         type         => 'password',
         pattern      => '^.*$',
-        default      => 'eu-west-1',
         is_mandatory => 0
     },
     region => {
@@ -125,34 +130,44 @@ the the related param preset.
 
 sub new {
     my ($class, %args) = @_;
+    my $fields = ['api_access_key', 'api_secret_key'];
 
-    General::checkParams(args     => \%args,
-                         required => [ 'api_access_key', 'api_secret_key' ]);
+    General::checkParams(args => \%args, required => $fields);
                          
-    # unless (defined($args{region})) {
-    #    $args{region} = 'eu-west-1';
-    # }
+    unless (defined($args{region})) {
+        $args{region} = 'eu-west-1';
+    }
 
     my $self = $class->SUPER::new(%args);
 
     # Initialize the param preset entry used to store available configuration
     $self->param_preset(ParamPreset->new());
-
-    # Try to connect to the API to avoid registering the component if connexion infos are erroneous
-#    try {
-#        $self->_api;
-#    }
-#    catch ($err) {
-#        throw Kanopya::Exception::Internal::WrongValue(
-#                  error => "Unable to connect to the OpenStack keystone service, " .
-#                           "please check your connexion informations."
-#              );
-#    }
-
-    $log->debug("Created AWS component instance. The region is ".$self->region);
+    
+    foreach my $key (@$fields, 'region') {
+        $self->{key} = $args{key};
+    }
 
     return $self;
 }
+
+=pod
+=begin classdoc
+
+Lazily load an API object, so that it can be available for this instance. 
+
+@return AWS::API instance for this account
+
+=end classdoc
+=cut
+
+sub _api {
+    my ($self) = @_;
+    
+    $self->{api} ||= AWS::API->new(aws_account => $self);
+    
+    return $self->{api};
+}
+
 
 #
 #sub remove {
@@ -1078,34 +1093,35 @@ sub new {
 #    }
 #    $self->param_preset->update(params => $params, override => 1);
 #}
-#
-#=pod
-#=begin classdoc
-#
-#
-#Querry the openstack API to register exsting hypervisors, virtaul machines
-#and all options available in the existing OpenStack.
-#
-#=end classdoc
-#=cut
-#
-#sub synchronize {
-#    my ($self, %args) = @_;
-#
-#    General::checkParams(args => \%args, optional => { 'workflow' => undef });
-#
-#    return $self->executor_component->run(
-#               name   => 'Synchronize',
-#               workflow => delete $args{workflow},
-#               params => {
-#                   context => {
-#                       entity => $self
-#                   }
-#               }
-#           );
-#}
-#
-#
+
+=pod
+=begin classdoc
+
+
+Query AWS to register a "virtual" hypervisor, existing virtual machines
+and all available options.
+
+=end classdoc
+=cut
+
+# NOTE MERGE: code is the same as in OpenStack.pm
+sub synchronize {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'workflow' => undef });
+
+    return $self->executor_component->run(
+               name   => 'Synchronize',
+               workflow => delete $args{workflow},
+               params => {
+                   context => {
+                       entity => $self
+                   }
+               }
+           );
+}
+
+
 #=pod
 #=begin classdoc
 #
@@ -1317,13 +1333,23 @@ sub new {
 #
 #    return $self->{_api}
 #}
-#
-#
-#sub _load {
-#    my ($self, %args) = @_;
-#
-#    General::checkParams(args => \%args, required => [ 'infra' ]);
-#
+
+
+=pod
+=begin classdoc
+
+Synchronize the retrieved AWS infrastructure with HCM.
+
+@param infra (Hashref) The infrastructure. See AWS::EC2->getInfrastructure() for the structure. 
+
+=end classdoc
+=cut
+
+sub _load {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'infra' ]);
+
 #    my $tenants_name_id = {};
 #    my $tenants = {};
 #    for my $tenant (@{$args{infra}->{tenants}}) {
@@ -1352,12 +1378,12 @@ sub new {
 #    for my $volume_type (@{ $args{infra}->{volume_types} }) {
 #        $volume_types->{delete $volume_type->{id}} = $volume_type;
 #    }
-#
+
 #    my $images = {};
 #    for my $image (@{$args{infra}->{images}}) {
 #        $images->{$image->{id}} = $image;
 #    }
-#
+
 #    my $networks_name_id = {};
 #    my $networks = {};
 #    for my $network (@{$args{infra}->{networks}}) {
@@ -1383,20 +1409,34 @@ sub new {
 #        override => 1,
 #    );
 #
-#    # Manage images
-#    my $cluster_type = ClassType::ServiceProviderType::ClusterType->find(
-#                           service_provider_name => 'Cluster',
-#                       );
-#
-#    for my $image_info (@{$args{infra}->{images}}) {
-#        Entity::Masterimage::GlanceMasterimage->findOrCreate(
-#            masterimage_name => $image_info->{name},
-#            masterimage_file => $image_info->{file},
-#            masterimage_size => $image_info->{size},
-#            masterimage_cluster_type_id => $cluster_type->id,
-#        );
-#    }
-#
+    # Manage images
+    my $cluster_type_id = ClassType::ServiceProviderType::ClusterType->find(
+                              service_provider_name => 'Cluster'
+                          )->id;
+
+    # TODO: Master images (and system images) should be managed by a dedicated component 
+    # with its dedicated tables. With more and more different external infrastructures,
+    # it makes no sense any more to throw them all together.
+    # But this will need quite a bit of refactoring.
+    foreach my $image_info (@{$args{infra}->{images}}) {
+        my %primary_fields = (
+            masterimage_file => $image_info->{image_id}        
+        ); 
+        my %other_fields = (
+            masterimage_name => $image_info->{name},
+            masterimage_size => $image_info->{size},
+            masterimage_desc => $image_info->{desc},
+            masterimage_cluster_type_id => $cluster_type_id
+        );
+        try {
+            my %primary_fields_copy = %primary_fields;
+            my $aws_image = Entity::Masterimage::AwsMasterimage->find(hash => \%primary_fields_copy);
+            $aws_image->update(%other_fields);
+        } catch (Kanopya::Exception::Internal::NotFound $ex) {
+            Entity::Masterimage::AwsMasterimage->new(%primary_fields, %other_fields);
+        }
+    }
+
 #    # Manage hypervisors
 #    my $count = 0;
 #    my $hv_count = 0;
@@ -1501,7 +1541,7 @@ sub new {
 #            }
 #        }
 #    }
-#}
+}
 
 1;
 

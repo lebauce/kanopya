@@ -156,6 +156,7 @@ my @classes = (
     'Entity::Vlan',
     'Entity::Masterimage',
     'Entity::Masterimage::GlanceMasterimage',
+    'Entity::Masterimage::AwsMasterimage',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
     'Entity::Netconf',

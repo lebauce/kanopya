@@ -6,7 +6,8 @@ Create and stop a VM on AWS.
 
 =head1 PRE-REQUISITE
 
-An AWS account.
+An AWS account. Export the credentials into the environment
+variables AWS_ACCESS_KEY and AWS_SECRET_KEY for use in this test.
 
 =cut
 
@@ -27,7 +28,7 @@ Log::Log4perl->easy_init({
 
 use Kanopya::Database;
 
-#use Kanopya::Test::Execution;
+use Kanopya::Test::Execution;
 use Kanopya::Test::Register;
 #use Kanopya::Test::Retrieve;
 #use Kanopya::Test::Create;
@@ -35,7 +36,10 @@ use Kanopya::Test::Register;
 #use Entity::Component::KanopyaDeploymentManager;
 #use Entity::Masterimage::GlanceMasterimage;
 
+use AWS::API;
+use AWS::EC2;
 use Entity::Component::Virtualization::AwsAccount;
+
 
 my $testing = 1;
 
@@ -61,16 +65,23 @@ sub main {
                    componenttype => "AwsAccount",
                    hostname      => $localhostname,
                    component_params => {
-                       api_access_key => 'AKIAINWH2SNTATQDBOHQ',
-                       api_secret_key => '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' 
+                       api_access_key => $ENV{AWS_ACCESS_KEY},
+                       api_secret_key => $ENV{AWS_SECRET_KEY} 
                    }
                );
+    
+#    my $api = AWS::API->new(aws_account => $aws);
+#    my $ec2 = AWS::EC2->new(api => $api);
+#    
+#    $ec2->getImages(); 
+                
+#        foreach my $image (@$aws_images) {
+#            diag("Found image: $image");
+#        }
 
-#        diag('Synchronize the existing infrastructure');
-#        lives_ok {
-#            Kanopya::Test::Execution->executeOne(entity => $openstack->synchronize());
-#
-#        } 'Synchronize the existing infrastructure';
+        lives_ok {
+            Kanopya::Test::Execution->executeOne(entity => $aws->synchronize());
+        } 'Synchronize the existing infrastructure';
     }
     
     
