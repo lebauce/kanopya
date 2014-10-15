@@ -70,6 +70,7 @@ use constant ATTR_DEF => {
     param_presets => {
         is_virtual   => 1,
         is_editable  => 1,
+        on_demand    => 1,
     },
     priority => {
         is_virtual => 1
