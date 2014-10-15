@@ -278,6 +278,23 @@ sub getDeploymentManagerParams {
 =pod
 =begin classdoc
 
+@return the boot manager parameters as an attribute definition.
+
+@see <package>Manager::BootManager</package>
+
+=end classdoc
+=cut
+
+sub getBootManagerParams {
+    my ($self, %args) = @_;
+
+    return {};
+}
+
+
+=pod
+=begin classdoc
+
 Use the executor to run the operation AddCluster.
 
 @param node the node to deploy
