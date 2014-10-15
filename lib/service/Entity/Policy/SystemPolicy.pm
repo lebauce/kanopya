@@ -61,17 +61,20 @@ use constant POLICY_ATTR_DEF => {
         relation     => 'single',
         pattern      => '^\d*$',
         reload       => 1,
+        order        => 1,
     },
     cluster_si_persistent => {
         label        => 'Persistent system images',
         type         => 'boolean',
-        is_mandatory => 1
+        is_mandatory => 1,
+        order        => 2,
     },
     cluster_basehostname => {
         label        => 'Cluster base hostname',
         type         => 'string',
         pattern      => '^[A-Za-z0-9]+$',
-        is_mandatory => 0
+        is_mandatory => 0,
+        order        => 3,
     },
     deployment_manager_id => {
         label        => "Deployment manager",
@@ -80,6 +83,7 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^\d*$',
         reload       => 1,
         is_mandatory => 1,
+        order        => 4,
     },
 };
 
@@ -108,18 +112,6 @@ sub getPolicyDef {
                          required => [ 'attributes' ],
                          optional => { 'params' => {}, 'trigger' => undef });
 
-    # Add the dynamic attributes to displayed
-    push @{ $args{attributes}->{displayed} }, 'masterimage_id';
-    push @{ $args{attributes}->{displayed} }, 'systemimage_size';
-    push @{ $args{attributes}->{displayed} }, 'cluster_basehostname';
-    push @{ $args{attributes}->{displayed} }, 'cluster_si_persistent';
-    push @{ $args{attributes}->{displayed} }, 'deployment_manager_id';
-
-    my @masterimages;
-    for my $masterimage (Entity::Masterimage->search(hash => {})) {
-        push @masterimages, $masterimage->toJSON();
-    }
-
     # Manually add the systemimage_size attrs because they are manager params
     $args{attributes}->{attributes}->{systemimage_size}
         = Manager::StorageManager->getManagerParamsDef->{systemimage_size};
@@ -127,76 +119,15 @@ sub getPolicyDef {
     $args{attributes}->{attributes}->{systemimage_size}->{is_mandatory}
         = defined $args{params}->{masterimage_id} ? 1 : 0;
 
-    $args{attributes}->{attributes}->{masterimage_id}->{options} = \@masterimages;
+    my $attributes = $self->SUPER::getPolicyDef(%args);
 
-    # Build the list of deployment managers
-    my $manager_options = {};
-    for my $component (Entity::Component->search(custom => { category => 'DeploymentManager' })) {
-        $manager_options->{$component->id} = $component->toJSON;
-        $manager_options->{$component->id}->{label} = $component->label;
+    my @masterimages;
+    for my $masterimage (Entity::Masterimage->search(hash => {})) {
+        push @masterimages, $masterimage->toJSON();
     }
-    my @manageroptions = values %{$manager_options};
-    $args{attributes}->{attributes}->{deployment_manager_id}->{options} = \@manageroptions;
+    $attributes->{attributes}->{masterimage_id}->{options} = \@masterimages;
 
-    # If deployment_manager_id defined but do not corresponding to a available value,
-    # it is an old value, so delete it.
-    if (not $manager_options->{$args{params}->{deployment_manager_id}}) {
-        delete $args{params}->{deployment_manager_id};
-    }
-    # If no disk_manager_id defined and and attr is mandatory, use the first one as value
-    if (! $args{params}->{deployment_manager_id} && $args{set_mandatory}) {
-        $self->setFirstSelected(name       => 'deployment_manager_id',
-                                attributes => $args{attributes}->{attributes},
-                                params     => $args{params});
-    }
-
-    if ($args{params}->{deployment_manager_id}) {
-        # Get the deployment manager params from the selected deployment manager
-        my $deploymentmanager = Entity->get(id => $args{params}->{deployment_manager_id});
-        my $managerparams = $deploymentmanager->getDeploymentManagerParams(params => $args{params});
-
-        for my $attrname (keys %{ $managerparams }) {
-            $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
-            # If no value defined in params, use the first one
-            if (! $args{params}->{$attrname} && $args{set_mandatory}) {
-                $self->setFirstSelected(name       => $attrname,
-                                        attributes => $args{attributes}->{attributes},
-                                        params     => $args{params});
-            }
-
-            # If the attribute is a manager, set it as reload trigger as
-            # it probably hav specific params too
-            if ($attrname =~ m/.*_manager_id/) {
-                $args{attributes}->{attributes}->{$attrname}->{reload} = 1;
-            }
-
-            # HCMDeploymentManager specific, should not be in the generic policy code
-            if ($attrname eq "components") {
-                push @{ $args{attributes}->{displayed} }, { components => [ 'component_type' ] };
-
-                # Add the components to the relations definition
-                $args{attributes}->{relations}->{components} = {
-                    attrs    => { accessor => 'multi' },
-                    cond     => { 'foreign.policy_id' => 'self.policy_id' },
-                    resource => 'component'
-                };
-            }
-            else {
-                # Add the attribute to the displayed list
-                push @{ $args{attributes}->{displayed} }, $attrname;
-            }
-        }
-    }
-    # Remove possibly defined value of attributes that depends on disk_manager_id.
-    # (It is probably a first implementation of the full generic version of
-    # manager management in policies...)
-    else {
-        for my $dependency (@{ $self->getPolicySelectorMap->{deployment_manager_id} }) {
-            delete $args{params}->{$dependency};
-        }
-    }
-
-    return $args{attributes};
+    return $attributes;
 }
 
 
@@ -221,12 +152,6 @@ sub getPatternFromParams {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'params' ]);
-
-    if (ref($args{params}->{components}) eq 'ARRAY') {
-        my %components = map { 'component_' . $_->{component_type} => $_ }
-                             @{ delete $args{params}->{components} };
-        $args{params}->{components} = \%components;
-    }
 
     my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
 

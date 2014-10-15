@@ -478,6 +478,7 @@ sub getNetworkManagerParams {
     my @tenant_names = keys %{$pp->{tenants_name_id}};
     my $tenants = $params->{network_tenant};
     $tenants->{options} = \@tenant_names;
+    $tenants->{order} = 1;
     $tenants->{reload} = 1;
 
     my $hash = { network_tenant => $tenants };
@@ -493,6 +494,7 @@ sub getNetworkManagerParams {
             }
         }
         $hash->{subnets} = $subnets;
+        $hash->{subnets}->{order} = 2;
     }
     return $hash;
 }
