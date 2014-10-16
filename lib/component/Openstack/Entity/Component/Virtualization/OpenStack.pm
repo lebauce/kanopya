@@ -350,7 +350,6 @@ sub getManagerParamsDef {
             is_editable  => 1,
             options      => [],
         },
-
     };
 }
 
@@ -479,6 +478,7 @@ sub getNetworkManagerParams {
     my @tenant_names = keys %{$pp->{tenants_name_id}};
     my $tenants = $params->{network_tenant};
     $tenants->{options} = \@tenant_names;
+    $tenants->{order} = 1;
     $tenants->{reload} = 1;
 
     my $hash = { network_tenant => $tenants };
@@ -494,6 +494,7 @@ sub getNetworkManagerParams {
             }
         }
         $hash->{subnets} = $subnets;
+        $hash->{subnets}->{order} = 2;
     }
     return $hash;
 }
@@ -539,6 +540,23 @@ sub releaseNetworkManagerParams {
 =pod
 =begin classdoc
 
+@return the boot manager parameters as an attribute definition.
+
+@see <package>Manager::BootManager</package>
+
+=end classdoc
+=cut
+
+sub getBootManagerParams {
+    my ($self, %args) = @_;
+
+    return {};
+}
+
+
+=pod
+=begin classdoc
+
 Check for virtual machine placement, and create the virtual host instance.
 
 @see <package>Manager::HostManager</package>
@@ -564,7 +582,7 @@ sub getFreeHost {
         }
 
         return $self->createVirtualHost(
-                   ifaces => scalar(@{ [ $args{subnets} ] }),
+                   ifaces => scalar(keys %{ $args{subnets} }),
                    ram => $ram,
                    core => $core,
                );
@@ -1041,7 +1059,7 @@ sub configureNetworkInterfaces {
     my $pp = $self->param_preset->load;
     my @ifaces = $args{node}->host->getIfaces;
     my $port_macs = {};
-    for my $subnet (@{ $args{subnets} }) {
+    for my $subnet (values %{ $args{subnets} }) {
         (my $subnet_addr = $subnet) =~ s/ \(.*\)$//g;
         (my $network_name = $subnet) =~ s/^.* \(//g;
         $network_name =~ s/\)$//g;

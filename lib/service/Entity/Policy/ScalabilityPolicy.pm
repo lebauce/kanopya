@@ -52,54 +52,27 @@ use constant POLICY_ATTR_DEF => {
         label        => 'Minimum node number',
         type         => 'integer',
         pattern      => '^[1-9][0-9]*$',
-        is_mandatory => 1
+        is_mandatory => 1,
+        order        => 1,
     },
     cluster_max_node => {
         label        => 'Maximum node number',
         type         => 'integer',
         pattern      => '^[1-9][0-9]*$',
-        is_mandatory => 1
+        is_mandatory => 1,
+        order        => 2,
     },
     cluster_priority => {
         label        => 'Cluster priority',
         type         => 'integer',
         pattern      => '^[1-9][0-9]*$',
-        is_mandatory => 1
+        is_mandatory => 1,
+        order        => 3,
     },
 };
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
-
-
-=pod
-=begin classdoc
-
-Build the dynamic attributes definition depending on attributes
-values given in parameters.
-
-@return the dynamic attributes definition.
-
-=end classdoc
-=cut
-
-sub getPolicyDef {
-    my $self  = shift;
-    my $class = ref($self) || $self;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'attributes' ],
-                         optional => { 'params' => {}, 'trigger' => undef });
-
-    # Add the dynamic attributes to displayed
-    push @{ $args{attributes}->{displayed} }, 'cluster_min_node';
-    push @{ $args{attributes}->{displayed} }, 'cluster_max_node';
-    push @{ $args{attributes}->{displayed} }, 'cluster_priority';
-
-    # Complete the attributes with common ones
-    return $args{attributes};
-}
 
 1;

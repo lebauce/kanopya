@@ -66,7 +66,6 @@ sub main {
 
 sub test_policies_json {
     for my $policy (Entity::Policy->search(hash => { -not => { policy_type => 'orchestration' } })) {
-
         my $json = $policy->toJSON();
         my $presets = $policy->getParams();
         lives_ok {
@@ -77,7 +76,21 @@ sub test_policies_json {
 
         my $class = ref($policy);
         my $baseattrdef = $class->_attributesDefinition();
-        my $attrdef = $class->toJSON(params => $json)->{attributes};
+        my $attrjson = $class->toJSON(params => $json);
+        my $attrdef = $attrjson->{attributes};
+
+        my @skiped = ('gps', 'time_periods', 'tags');
+        lives_ok {
+            for my $attr (keys %{ $attrdef }) {
+                if (scalar(grep { $_ eq $attr } @skiped) <= 0 && 
+                    $attrdef->{$attr}->{type} eq "relation" &&
+                    $attrdef->{$attr}->{relation} eq "single_multi" &&
+                    ! defined $attrjson->{relations}->{$attr}) {
+                    die "Attribute \"$attr\" should be in the relation definition";
+                }
+            }
+        } "Check if relations are in the relations fields";
+
         lives_ok {
             for my $attr (keys %{ $attrdef }) {
                 if (! defined $baseattrdef->{$attr} && ! $attrdef->{$attr}->{is_editable}) {
@@ -134,7 +147,7 @@ sub test_policies_hash_to_list {
     # Create a policy with presets containing arrays
     my $net_policy = Entity::Policy::NetworkPolicy->new(
                          policy_name        => "net_policy_tests_hash_to_list",
-                         policy_type        => "storage",
+                         policy_type        => "network",
                          cluster_nameserver1 => "8.8.8.8",
                          cluster_nameserver2 => "8.8.4.4",
                          cluster_domainname => "hedera-technology.com",
@@ -143,19 +156,30 @@ sub test_policies_hash_to_list {
                             interface_name => "eth0",
                             netconfs => [ 123 ]
                          }, {
-                            interface_name => "eth0",
+                            interface_name => "eth1",
                             netconfs => [ 123, 5678 ]
                          } ],
                      );
 
     lives_ok {
         # Check if the jysonification is working
-        $net_policy->toJSON();
+        my $dynamic_attrdef = Entity::Policy::NetworkPolicy->toJSON(params => $net_policy->toJSON());
+        if (! defined $dynamic_attrdef->{attributes}->{interfaces}) {
+            die "Network policy dynamic attr def should contains attr \"interfaces\"";
+        }
+        if (! defined $dynamic_attrdef->{relations}->{interfaces}) {
+            die "Network policy dynamic relation def should contains relations \"interfaces\"";
+        }
+
+        my @displayed_relations = grep { ref($_) eq "HASH" } @{ $dynamic_attrdef->{displayed} };
+        if (scalar(grep { (keys %{ $_ })[0] eq "interfaces" } @displayed_relations) <= 0) {
+            die "Network policy dynamic attr def should contains attr \"interfaces\" in the displayed list";
+        }
     } "Check if the jysonification is working";
 
     my $sys_policy = Entity::Policy::SystemPolicy->new(
                          policy_name        => "sys_policy_tests_hash_to_list",
-                         policy_type        => "storage",
+                         policy_type        => "system",
                          cluster_si_persistent => 0,
                          systemimage_size => 5368709120,
                          deployment_manager_id => Entity::Component::KanopyaDeploymentManager->find->id,
@@ -171,7 +195,19 @@ sub test_policies_hash_to_list {
 
     lives_ok {
         # Check if the jysonification is working
-        $sys_policy->toJSON();
+        my $dynamic_attrdef = Entity::Policy::SystemPolicy->toJSON(params => $sys_policy->toJSON());
+
+        if (! defined $dynamic_attrdef->{attributes}->{components}) {
+            die "System policy dynamic attr def should contains attr \"components\"";
+        }
+        if (! defined $dynamic_attrdef->{relations}->{components}) {
+            die "System policy dynamic relation def should contains relations \"components\"";
+        }
+
+        my @displayed_relations = grep { ref($_) eq "HASH" } @{ $dynamic_attrdef->{displayed} };
+        if (scalar(grep { (keys %{ $_ })[0] eq "components" } @displayed_relations) <= 0) {
+            die "System policy dynamic attr def should contains attr \"components\" in the displayed list";
+        }
     } "Check if the jysonification is working";
 
     lives_ok {
@@ -263,7 +299,7 @@ sub test_service_template_json {
                 }
             }
         }
-    } "Check if the service template attrdef JSON with defined service_template_id params cnotains only non editable policies ids.";
+    } "Check if the service template attrdef JSON with defined service_template_id params contains only non editable policies ids.";
 }
 
 sub test_service_template_creation {
