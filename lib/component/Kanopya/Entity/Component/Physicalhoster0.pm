@@ -114,26 +114,30 @@ sub getManagerParamsDef {
             type         => 'integer',
             unit         => 'core(s)',
             pattern      => '^\d*$',
-            is_mandatory => 1
+            is_mandatory => 1,
+            order        => 1
         },
         ram => {
             label        => 'Required RAM amount',
             type         => 'integer',
             unit         => 'byte',
             pattern      => '^\d*$',
-            is_mandatory => 1
+            is_mandatory => 1,
+            order        => 2
         },
         tags => {
             label        => 'Mandatory Tags',
             type         => 'enum',
             relation     => 'multi',
             is_mandatory => 0,
+            order        => 3
         },
         no_tags => {
             label        => 'Forbidden Tags',
             type         => 'enum',
             relation     => 'multi',
             is_mandatory => 0,
+            order        => 4
         },
     };
 }

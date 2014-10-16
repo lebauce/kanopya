@@ -374,14 +374,17 @@ sub getHostManagerParams {
     my $flavors = $params->{flavor};
     my @flavor_names = map {$pp->{flavors}->{$_}->{name}} keys %{$pp->{flavors}};
     $flavors->{options} = \@flavor_names;
+    $flavors->{order} = 3;
 
     my $zones = $params->{availability_zone};
     my @zone_names = keys %{$pp->{zones}};
     $zones->{options} = \@zone_names;
+    $zones->{order} = 2;
 
     my @tenant_names = keys %{$pp->{tenants_name_id}};
     my $tenants = $params->{hosting_tenant};
     $tenants->{options} = \@tenant_names;
+    $tenants->{order} = 1;
 
     my $hash = {
         flavor => $flavors,

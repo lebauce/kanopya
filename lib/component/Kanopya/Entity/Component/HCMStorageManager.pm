@@ -107,6 +107,7 @@ sub getManagerParamsDef {
             pattern      => '^[0-9\.]*$',
             is_mandatory => 1,
             is_editable  => 0,
+            order        => 1
         },
         export_manager_id => {
             label        => 'Export manager',
@@ -115,6 +116,7 @@ sub getManagerParamsDef {
             pattern      => '^[0-9\.]*$',
             is_mandatory => 1,
             is_editable  => 0,
+            order        => 2
         },
     };
 }
