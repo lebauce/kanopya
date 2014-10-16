@@ -344,7 +344,10 @@ sub getPolicyDef {
 
     # Push all attributes to the displayed fiels according the extra tag "order"
     my $attrdef = $args{attributes}->{attributes};
-    for my $attrname (sort { $attrdef->{$a}->{order} <=> $attrdef->{$b}->{order} } keys (%{ $attrdef })) {
+
+    my @sorted = sort { ($attrdef->{$a}->{order} || 0) <=> ($attrdef->{$b}->{order} || 0) }
+                     keys (%{ $attrdef });
+    for my $attrname (@sorted) {
         $class->handlePolicyDefAttribute(attrname => $attrname, %args);
     }
     return $args{attributes};
