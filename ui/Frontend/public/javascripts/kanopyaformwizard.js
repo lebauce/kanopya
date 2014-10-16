@@ -399,6 +399,12 @@ var KanopyaFormWizard = (function() {
                 }
 
                 // Set current option to value if defined
+                // WORKAROUND: Some manager params value are returned as hashes from the backend,
+                //             in this case we are using the values of the hash as value
+                // TODO: Return the manager params of a service as the same way as the polcies params.
+                if ($.isPlainObject(value)) {
+                    value = $.map(value, function(v) { return v; });
+                }
                 if (optionvalue == value || ($.isArray(value) && $.inArray(optionvalue, value) >= 0)) {
                     $(option).attr('selected', 'selected');
                 }
