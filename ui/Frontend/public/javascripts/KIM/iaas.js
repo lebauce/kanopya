@@ -194,6 +194,46 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
 }
 
 function load_iaas_content (container_id) {
+
+    $('<div>', {class: 'top-action-block'})
+        .append($('<a>', {
+            text: 'Register an OpenStack',
+            class: 'top-action openstack',
+            click: function(e) {
+                iaas_registerbutton_action(e, grid);
+            }
+        }))
+        .append($('<a>', {
+            text: 'Register a vCenter',
+            class: 'top-action vcenter',
+            click: function(e) {
+                // iaas_registerbutton_action(e, grid);
+            }
+        }))
+        .append($('<div>', {
+            text: 'Register an AWS',
+            class: 'top-action aws disabled',
+            click: function(e) {
+            }
+        }))
+        .appendTo($('#' + container_id).prev('.action_buttons'));
+
+
+    // console.debug('container_id', container_id);
+
+    var templateFile = '/templates/iaas-home.tmpl.html';
+    $.get(templateFile, function(templateHtml) {
+        var template = Handlebars.compile(templateHtml);
+        $('#' + container_id).append(template({
+            'title': ''
+        }));
+    });
+
+    return;
+
+
+
+
     require('common/formatters.js');
 
     var tabs = [];
@@ -290,27 +330,4 @@ function load_iaas_content (container_id) {
             }
         },
     });
-
-    $('<div>', {class: 'top-action-block'})
-        .append($('<a>', {
-            text: 'Register an OpenStack',
-            class: 'top-action openstack',
-            click: function(e) {
-                iaas_registerbutton_action(e, grid);
-            }
-        }))
-        .append($('<a>', {
-            text: 'Register a vCenter',
-            class: 'top-action vcenter',
-            click: function(e) {
-                // iaas_registerbutton_action(e, grid);
-            }
-        }))
-        .append($('<div>', {
-            text: 'Register an AWS',
-            class: 'top-action aws disabled',
-            click: function(e) {
-            }
-        }))
-        .appendTo($('#' + container_id).prev('.action_buttons'));
 }

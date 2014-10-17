@@ -199,13 +199,13 @@ a.top-action:hover {
 }
 
 .top-action.openstack {
-    background: url(/images/iaas-openstack.png) 0 0 no-repeat;
+    background: url(/images/iaas-openstack-32.png) 0 0 no-repeat;
 }
 
 .top-action.vcenter {
-    background: url(/images/iaas-vcenter.png) 0 0 no-repeat;
+    background: url(/images/iaas-vcenter-32.png) 0 0 no-repeat;
 }
 
 .top-action.aws {
-    background: url(/images/iaas-aws-dis.png) 0 0 no-repeat;
+    background: url(/images/iaas-aws-32-dis.png) 0 0 no-repeat;
 }

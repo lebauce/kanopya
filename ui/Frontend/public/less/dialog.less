@@ -1,18 +1,13 @@
-@errorColor: #a94442;
-@errorBackgroundColor: #f2dede;
-@infoColor: #31708f;
-@infoBackgroundColor: #d9edf7;
-@successColor: #3c763d;
-@successBackgroundColor: #dff0d8;
-@warningColor: #8a6d3b;
-@warningBackgroundColor: #fcf8e3;
+//
+// dialog
+// --------------------------------------------------
 
-@lineColor: #cccccc;
+// Core variables
+@import "variables.less";
 
+// Dialog editor (generic)
+//
 
-/*
- * Dialog editor (generic)
- */
 .dialog-container input,
 .dialog-container select,
 .dialog-container textarea {
@@ -37,32 +32,29 @@
 }
 
 .dialog-container .error {
-    color: @errorColor;
+    color: @error-color;
     margin: 0;
 }
 
 .dialog-container .info {
-    color: @infoColor;
+    color: @info-color;
     margin: 0;
 }
 
 .dialog-container .border-error {
-    border: 1px solid @errorColor !important;
+    border: 1px solid @error-color !important;
 }
 
 .dialog-container .background-error {
-    background-color: @errorBackgroundColor !important;
+    background-color: @error-background-color !important;
 }
 
 .dialog-container .field-error {
-    border: 1px solid @errorColor !important;
-    background-color: @errorBackgroundColor !important;
+    border: 1px solid @error-color !important;
+    background-color: @error-background-color !important;
 }
 
-/*
- * Rule editor (rule-editor.tmpl.html)
- */
-
+// Rule editor (rule-editor.tmpl.html)
 #rule-editor .backcolor-0 {
     background-color: #eeeeee;
 }
@@ -113,7 +105,7 @@
 }
 
 #rule-identification .disabled {
-    color: @errorColor;
+    color: @error-color;
 }
 
 #rule-conditions-builder {
@@ -187,9 +179,8 @@
     width: 180px;
 }
 
-/*
- * Anomaly detector editor (anomaly-editor.tmpl.html)
- */
+// Anomaly detector editor (anomaly-editor.tmpl.html)
+//
 
 @anomalyInputWidth: 140px;
 @anomalyOptionsPadding: 10px;

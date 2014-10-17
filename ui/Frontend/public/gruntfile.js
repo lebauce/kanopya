@@ -5,21 +5,33 @@ module.exports = function(grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         less: {
-            development: {
+            components: {
                 options: {
+                    // imports: {
+                    //     // Use the new "reference" directive, e.g.
+                    //     // @import (reference) "variables.less";
+                    //     reference: [
+                    //         "less/variables.less" 
+                    //     ]
+                    // },
                     compress: true,
                     yuicompress: true,
                     optimization: 2
                 },
-                files: {
-                    // target.css file: source.less file
-                    "css/dialog.css": "less/dialog.less"
-                }
+                files: [
+                    {
+                      expand: true,
+                      cwd: 'less',
+                      src: ['*.less', '!{var,mix}*.less'],
+                      dest: 'css/',
+                      ext: '.css'
+                    }
+                ]
             }
         },
         watch: {
             less: {
-                files: ['less/*.less'], // which files to watch
+                files: ['less/**/*.less'], // which files to watch
                 tasks: ['less'],
                 options: {
                     nospawn: true
