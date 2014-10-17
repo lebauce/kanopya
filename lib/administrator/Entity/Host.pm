@@ -215,6 +215,12 @@ Return the component/conector that manage this host.
 sub getHostManager {
     my $self = shift;
 
+    if ( ! defined $self->host_manager) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => 'Host <' . $self->label . '> does not have an HostManager'
+              );
+    }
+
     return $self->host_manager;
 }
 
