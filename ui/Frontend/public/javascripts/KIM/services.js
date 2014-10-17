@@ -421,7 +421,13 @@ function loadServicesResources (container_id, elem_id) {
                     ],
             title : { from_column : 'node_hostname' }
         },
-        action_delete: {url : '/api/node'},
+        action_delete:{
+            callback : function (id) {
+                if (confirm("This will stop the node, do you want to continue ?")) {
+                    ajax('POST', '/api/cluster/' + elem_id + '/removeNode', { node_id : id });
+                }
+            }
+        },
     } );
 }
 
