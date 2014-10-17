@@ -67,7 +67,6 @@ Lists all available images
 
 sub getImages {
     my ($self, %args) = @_;
-    # General::checkParams(args => \%args, required => [ 'api' ]);
     
     my $response = $self->{api}->get(
         action => 'DescribeImages',
@@ -87,7 +86,6 @@ sub getImages {
             'ami-d02386a7'  # Windows Server 2012 R2
         ]]
     );
-    
     $log->debug("VHH DEBUG: first XML document is: ".$response->toString(0));
     
     my @found_images = ();
@@ -107,30 +105,41 @@ sub getImages {
         }
     }
     
-    $log->debug("Found the following AWS images: ".Data::Dumper->Dump([ \@found_images ]));
-    
-#    
-#
-#    my $output = $args{api}->image->images->get;
-#    my $images_and_snap = OpenStack::API->handleOutput(output => $output)->{images};
-#
-#    my @images = ();
-#    my @snaps = ();
-#
-#    for my $image_info (@$images_and_snap) {
-#        if (defined $image_info->{'image_name'}) {
-#            push @snaps, $image_info;
-#        }
-#        else {
-#            push @images, $image_info;
-#        }
-#    }
-#    return {
-#        images => \@images,
-#        snapshots => \@snaps,
-#    }
+    $log->debug("Found the following AWS images: ".Data::Dumper->Dump([ \@found_images ]));    
     return \@found_images;
 }
+
+=pod
+
+=begin classdoc
+
+Lists all VMs ("Instances").
+
+=end classdoc
+=cut
+
+sub getInstances {
+    my ($self, %args) = @_;
+    
+    my $response = $self->{api}->get( action => 'DescribeInstances' );
+    my @found_instances = ();
+    my $xpc = $self->{api}->xpc;
+
+    foreach my $item ($xpc->findnodes('//x:instancesSet/x:item', $xml)) {
+        # TODO: need to get private addresses and/or all interfaces ?
+        my $first_interface = ($xpc->findnodes('x:networkInterfaceSet/x:item', $xpc))[0];
+        push @found_instances, {
+            instance_id => $xpc->findvalue('x:instanceId', $item),
+            'state'     => $xpc->findvalue('x:instanceState/x:name', $item),
+            ip          => $xpc->findvalue('x:ipAddress', $item),
+            type        => $xpc->findvalue('x:instanceType', $item),
+            mac_addr    => $xpc->findvalue('x:macAddress', $first_interface)
+        };
+    }
+    
+    return \@found_instances;
+}
+
 
 =pod
 
@@ -158,7 +167,8 @@ sub getInfrastructure {
 
     return {
 #        'hypervisors' => $hypervisors,
-        'images' => $self->getImages,
+        'images'    => $self->getImages,
+        'instances' => $self->getInstances
 #        'volumes' => OpenStack::Volume->list(%args, all_tenants => 1),
 #        'volume_types' => OpenStack::VolumeType->list(%args),
 #        'tenants' => OpenStack::Tenant->list(%args, all_tenants => 1),

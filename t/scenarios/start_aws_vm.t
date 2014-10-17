@@ -86,68 +86,68 @@ sub main {
     
     
 
-#    diag('Create and configure the openstack vm cluster');
-#    my $cluster;
-#    my $masterimage = Entity::Masterimage::GlanceMasterimage->find(
-#                          hash => { masterimage_name => "trusty-server-cloudimg" }
-#                      );
-#
-#    lives_ok {
-#        my $clustername = "openstack_vm_cluster_test_" . time();
-#        my $create = Entity::ServiceProvider::Cluster->create(
-#                        active                => 1,
-#                        cluster_name          => $clustername,
-#                        cluster_min_node      => 1,
-#                        cluster_max_node      => 3,
-#                        cluster_priority      => "100",
-#                        cluster_si_persistent => 1,
-#                        cluster_domainname    => 'my.domain',
-#                        cluster_nameserver1   => '208.67.222.222',
-#                        cluster_nameserver2   => '127.0.0.1',
-#                        owner_id              => Entity::User->find(hash => { user_login => 'admin' })->id,
-#                        masterimage_id        => $masterimage->id,
-#                        managers => {
-#                            host_manager => {
-#                                manager_id     => $openstack->id,
-#                                manager_type   => "HostManager",
-#                                manager_params => {
-#                                    flavor => "m1.tiny",
-#                                    availability_zone => "nova",
-#                                    tenant => "Doc",
-#                                },
-#                            },
-#                            storage_manager => {
-#                                manager_id     => $openstack->id,
-#                                manager_type   => "StorageManager",
-#                                manager_params => {
-#                                    volume_type => "dummy",
-#                                    systemimage_size => $masterimage->masterimage_size + (1024 * 1024 * 1024),
-#                                },
-#                            },
-#                            deployment_manager => {
-#                                manager_id     => Entity::Component::KanopyaDeploymentManager->find()->id,
-#                                manager_type   => "DeploymentManager",
-#                                manager_params => {
-#                                    boot_manager_id => $openstack->id,
-#                                    boot_policy     => 'Boot from Glance Image',
-#                                    components => {},
-#                                },
-#                            },
-#                            network_manager => {
-#                                manager_id     => $openstack->id,
-#                                manager_type   => "NetworkManager",
-#                                manager_params => {
-#                                    subnets => [ "10.0.0.0/24 (DocNetwork)" ]
-#                                },
-#                            },
-#                        },
-#                     );
-#
-#        Kanopya::Test::Execution->executeOne(entity => $create);
-#
-#        $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => { cluster_name => $clustername });
-#    } 'Create OpenStack VM cluster';
-#
+    diag('Create and configure the openstack vm cluster');
+    my $cluster;
+    my $masterimage = Entity::Masterimage::GlanceMasterimage->find(
+                          hash => { masterimage_name => "RHEL-7.0_GA_HVM-x86_64-3-Hourly2" }
+                      );
+
+    lives_ok {
+        my $clustername = "aws_vm_cluster_test_" . time();
+        my $create = Entity::ServiceProvider::Cluster->create(
+                        active                => 1,
+                        cluster_name          => $clustername,
+                        cluster_min_node      => 1,
+                        cluster_max_node      => 3,
+                        cluster_priority      => "100",
+                        cluster_si_persistent => 1,
+                        cluster_domainname    => 'my.domain',
+                        cluster_nameserver1   => '208.67.222.222',
+                        cluster_nameserver2   => '127.0.0.1',
+                        owner_id              => Entity::User->find(hash => { user_login => 'admin' })->id,
+                        masterimage_id        => $masterimage->id,
+                        managers => {
+                            host_manager => {
+                                manager_id     => $aws->id,
+                                manager_type   => "HostManager",
+                                manager_params => {
+                                    # flavor => "m1.tiny",
+                                    # availability_zone => "nova",
+                                    # tenant => "Doc",
+                                },
+                            },
+                            storage_manager => {
+                                manager_id     => $aws->id,
+                                manager_type   => "StorageManager",
+                                manager_params => {
+                                    # volume_type => "dummy",
+                                    # systemimage_size => $masterimage->masterimage_size + (1024 * 1024 * 1024),
+                                },
+                            },
+                            deployment_manager => {
+                                manager_id     => Entity::Component::KanopyaDeploymentManager->find()->id,
+                                manager_type   => "DeploymentManager",
+                                manager_params => {
+                                    # boot_manager_id => $aws->id,
+                                    # boot_policy     => 'Boot from Glance Image',
+                                    # components => {},
+                                },
+                            },
+                            network_manager => {
+                                manager_id     => $aws->id,
+                                manager_type   => "NetworkManager",
+                                manager_params => {
+                                    # subnets => [ "10.0.0.0/24 (DocNetwork)" ]
+                                },
+                            },
+                        },
+                     );
+
+        Kanopya::Test::Execution->executeOne(entity => $create);
+
+        $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => { cluster_name => $clustername });
+    } 'Create OpenStack VM cluster';
+
 #    diag('Start OpenStack VM cluster');
 #    lives_ok {
 #        Kanopya::Test::Execution->startCluster(cluster => $cluster);

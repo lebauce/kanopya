@@ -83,10 +83,7 @@ and all available options.
 sub synchronize {
     my ($self, %args) = @_;
     
-    my $ec2 = AWS::EC2->new(api => $self->_api);
-    my $aws_infra = $ec2->getInfrastructure();
-    
-    return $self->_load(infra => $aws_infra);
+    return $self->_load(infra => $self->_ec2->getInfrastructure);
 }
 
 
