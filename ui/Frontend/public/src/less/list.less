@@ -5,8 +5,8 @@
 // Core variables
 @import "variables.less";
 @import "mixins.less";
-@import "../components/bootstrap/less/variables.less";
-@import "../components/bootstrap/less/mixins.less";
+@import "../../components/bootstrap/less/variables.less";
+@import "../../components/bootstrap/less/mixins.less";
 
 .list.container {
     // background-color: #ff0000;
@@ -29,10 +29,6 @@
     background-color: @list-background-color;
     padding: 15px;
 
-    .after {
-        .clearfix;
-    }
-
     .button-group {
         .btn-action3 {
             .button-variant(@btn-danger-color; @btn-danger-bg; @btn-danger-border);
@@ -49,6 +45,7 @@
 }
 
 .list-item-info {
+    .clearfix;
 
     .name {
         float: left;
@@ -75,10 +72,6 @@
     .state.accept {
         background: url(/images/icon-accept-32.png) no-repeat top center;
     }
-
-    .after {
-        .clearfix
-    }
 }
 
 .list-line {
@@ -89,6 +82,7 @@
 .list-properties {
     .make-row();
     .padding-horizontal(15px);
+    .clearfix;
 
     > div {
         border-left: 5px solid @lineColor;
