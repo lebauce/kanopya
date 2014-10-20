@@ -797,6 +797,11 @@ sub registerServiceProviders {
         service_provider_name => 'Cluster',
     );
 
+    ClassType::ServiceProviderType->promote(
+        promoted              => ClassType->find(hash => { class_type => 'Entity::ServiceProvider' }),
+        service_provider_name => 'ServiceProvider',
+    );
+
     for my $cluster_type (@{ $clusters }) {
         my $class_type = ClassType->find(hash => {
                              class_type => {
@@ -2276,7 +2281,7 @@ sub populate_policies {
 sub configureDefaultOrchestrationPolicyService {
     my %args = @_;
 
-    my $sp = Entity::ServiceProvider->new();
+    my $sp = Entity::ServiceProvider->new(service_provider_type_id => undef);
 
      # Add default workflow manager
     my $workflow_manager = $args{admin_cluster}->getComponent(name => "Kanopyaworkflow", version => "0");

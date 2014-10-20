@@ -401,10 +401,16 @@ sub setupREST {
                 my $obj = {};
                 my $hash = {};
                 my %params = params;
+
                 if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
                     %params = %{ from_json(request->body) };
                 } else {
                     %params = params;
+                }
+
+                # Workaround to allow passing null as value for a param
+                for my $undefparam (grep { $params{$_} eq "null" } keys %params) {
+                    $params{$undefparam} = undef;
                 }
 
                 return jsonify($class->apiCall(method => 'create', params => \%params));

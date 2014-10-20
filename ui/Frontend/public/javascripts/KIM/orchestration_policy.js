@@ -99,6 +99,9 @@ function createPolicyServiceProvider() {
        type     : 'POST',
        url      : 'api/serviceprovider',
        async    : false,
+       data     : {
+            service_provider_type_id: null,
+       },
        success  : function(data) {
            sp_id = data.service_provider_id;
        }
