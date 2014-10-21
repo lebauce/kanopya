@@ -1326,6 +1326,10 @@ sub registerComponents {
             }
         }
 
+        # Workaround: Add the generic service type ServiceProvider fro all components
+        # TODO: Specify wich kind of components we can install on a generix ServiceProvider
+        push @{ $component_type->{service_provider_types} }, "ServiceProvider";
+
         my @servicetypes;
         for my $servicetype (@{ $component_type->{service_provider_types} }) {
             push @servicetypes, ClassType::ServiceProviderType->find(hash => { service_provider_name => $servicetype });
