@@ -1367,21 +1367,25 @@ sub checkUserPerm {
     # Firstly check permssions on parameters
     foreach my $key (keys %{ $args{params} }) {
         my $param = $args{params}->{$key};
-        if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
-            my $paramclass = $self->_classType(id => $param->{class_type_id});
-            General::requireClass($paramclass);
-            try {
-                $paramclass->_delegatee->checkPerm(user_id => $args{user_id}, method => "get");
+        if (ref($param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
+            $args{params}->{$key} = $self->checkUserParamPerm(pk            => $param->{pk},
+                                                              class_type_id => $param->{class_type_id},
+                                                              user_id       => $args{user_id});
+        }
+        elsif (ref($param) eq "ARRAY") {
+            my @paramlist = @{ delete $args{params}->{$key} };
+            $args{params}->{$key} = [];
+            for my $paramitem (@paramlist) {
+                if ((ref $paramitem) eq "HASH" &&
+                    defined ($paramitem->{pk}) && defined ($paramitem->{class_type_id})) {
+                    # If an element of the list is an object, check permissions on
+                    $paramitem = $self->checkUserParamPerm(key           => $key,
+                                                           pk            => $paramitem->{pk},
+                                                           class_type_id => $paramitem->{class_type_id},
+                                                           user_id       => $args{user_id});
+                }
+                push @{ $args{params}->{$key} }, $paramitem;
             }
-            catch (Kanopya::Exception::Permission::Denied $err) {
-                my $msg = "Permission denied to get parameter " . $param->{pk};
-                throw Kanopya::Exception::Permission::Denied(error => $msg);
-            }
-
-            # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
-            $args{params}->{$key} = $paramclass->get(id => $param->{pk});
-            $log->debug("Replace the json object parameter $key with pk $param->{pk} " .
-                        "by the corresponding object " . $args{params}->{$key});
         }
     }
 
@@ -1399,6 +1403,37 @@ sub checkUserPerm {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Check permmissions on a method param for a user.
+
+=end classdoc
+=cut
+
+sub checkUserParamPerm {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'key', 'pk', 'class_type_id', 'user_id' ]);
+
+    my $paramclass = $self->_classType(id => $args{class_type_id});
+    General::requireClass($paramclass);
+    try {
+        $paramclass->_delegatee->checkPerm(user_id => $args{user_id}, method => "get");
+    }
+    catch (Kanopya::Exception::Permission::Denied $err) {
+        my $msg = "Permission denied to get parameter " . $args{pk};
+        throw Kanopya::Exception::Permission::Denied(error => $msg);
+    }
+
+    # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
+    my $instance = $paramclass->get(id => $args{pk});
+    $log->debug("Replace the json object parameter $args{key} with pk $args{pk} " .
+                "by the corresponding object " . $instance);
+    return $instance;
+}
 
 =pod
 =begin classdoc

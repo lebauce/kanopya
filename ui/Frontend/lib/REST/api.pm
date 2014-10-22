@@ -473,7 +473,7 @@ sub setupREST {
             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
 
             if (not defined $methods->{$method}) {
-                throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
+                throw Kanopya::Exception::NotImplemented(error => "Method <$method> not implemented");
             }
 
             my %params;
