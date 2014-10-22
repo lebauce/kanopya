@@ -1400,6 +1400,30 @@ sub _load {
 
     General::checkParams(args => \%args, required => [ 'infra' ]);
 
+    # Firstly create the IAAS infrastructure, the nodes where are ditributed the IAAS service
+    my $endpoints = {};
+    my $config = $self->_api->{config};
+    my @services = grep { ref($config->{$_}) eq "HASH" && defined $config->{$_}->{hostname} }
+                       keys %{ $config };
+
+    for my $service (@services) {
+        if (! defined $endpoints->{$config->{$service}->{hostname}}) {
+            $endpoints->{$config->{$service}->{hostname}} = [$service];
+        }
+        else {
+            push @{ $endpoints->{$config->{$service}->{hostname}} }, $service;
+        }
+    }
+
+    # Fro each nodes, associate the IAAS component
+    for my $hostname (keys %{ $endpoints }) {
+        my $node = Entity::Node->findOrCreate(node_hostname => $hostname);
+
+        $log->info("Associate component \"" . $self->label . "\" with node \"" . $node->label . "\"");
+        my $master = (scalar(grep { $_ eq "identity" } @{ $endpoints->{$hostname} }) > 0) ? 1 : 0;
+        $self->registerNode(node => $node, master_node => $master);
+    }
+
     my $tenants_name_id = {};
     my $tenants = {};
     for my $tenant (@{$args{infra}->{tenants}}) {
