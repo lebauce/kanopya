@@ -55,8 +55,8 @@ sub getFreeHost {
 
     $log->info("Looking for a virtual host");
     try {
-        my @interfaces = @{ delete $args{interfaces} };
-        return $self->createVirtualHost(ifaces => scalar(@interfaces), %args);
+        my $interfaces = delete $args{interfaces};
+        return $self->createVirtualHost(ifaces => scalar(keys(%$interfaces)), %args);
     }
     catch ($err) {
         # We can't create virtual host for some reasons (e.g can't meet constraints)
