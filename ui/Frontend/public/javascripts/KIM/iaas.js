@@ -214,12 +214,12 @@ function load_iaas_content (container_id) {
     var details_tab = $.grep(tabs, function (e) { return e.id == 'service_details' });
     details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
 
-    var url = '/api/component?custom.category=VirtualMachineManager&expand=service_provider&deep=1';
+    var url = '/api/component?custom.category=VirtualMachineManager&expand=service_provider,nodes&deep=1';
     var grid = create_grid({
         url : url,
         content_container_id    : container_id,
         grid_id                 : 'iaas_list',
-        colNames                : [ 'ID', 'ServiceProvider', 'Name', 'State', 'Active', 'Synchronize', 'Stack', 'Spread' ],
+        colNames                : [ 'ID', 'ServiceProvider', 'Name', 'State', 'Active', 'Synchronize', 'Stack', 'Spread', 'Enroll' ],
         colModel                : [
             { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
             { name : 'service_provider_id', index : 'service_provider_id', width : 60, sorttype : 'int', hidden : true },
@@ -229,6 +229,7 @@ function load_iaas_content (container_id) {
             { name : 'synchronize', index : 'synchronize', width : 40, align : 'center', nodetails : true },
             { name : 'stack', index : 'stack', width : 40, align : 'center', nodetails : true },
             { name : 'spread', index : 'spread', width : 40, align : 'center', nodetails : true },
+            { name : 'enroll', index : 'enroll', width : 40, align : 'center', nodetails : true },
         ],
         details : {
             onSelectRow : function(elem_id, row_data, grid_id) {
@@ -281,6 +282,15 @@ function load_iaas_content (container_id) {
                                   data : {'policy':'spread'}
                                });
                           });
+            $(cell).append(button);
+            cell    = $(grid).find('tr#' + rowid).find('td[aria-describedby="iaas_list_enroll"]');
+            button  = $('<button>', { text : 'Enroll', id : 'enroll-iaas' })
+                              .button({ icons : { primary : 'ui-icon-refresh' } })
+                              .attr('style', 'margin-top:0;')
+                              .click(function() {
+                                console.log({ nodes : rowelem.nodes });
+                                  ajax('POST', '/api/serviceprovider', { nodes : rowelem.nodes });
+                              });
             $(cell).append(button);
         },
         action_delete: {
