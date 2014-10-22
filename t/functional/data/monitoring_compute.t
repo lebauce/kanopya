@@ -44,13 +44,9 @@ my $aggregator;
 eval{
     $aggregator = Daemon::Aggregator->new();
 
-    $service_provider = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Service Provider'.time(),
-    );
+    $service_provider = Entity::ServiceProvider->new();
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Monitor'.time(),
-    );
+    my $external_cluster_mockmonitor = Entity::ServiceProvider->new();
 
     my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
@@ -63,16 +59,15 @@ eval{
     );
 
     # Create node 1
-    $node_1 = $service_provider->registerNode(hostname         => 'node_1',
-                                              monitoring_state => 'up',
-                                              number           => 1);
-    $service_provider->enableNode(node_id => $node_1->id);
+    $node_1 = Entity::Node->new(node_hostname    => 'node_1',
+                                monitoring_state => 'enabled');
 
     # Create node 2
-    $node_2 = $service_provider->registerNode(hostname         => 'node_2',
-                                              monitoring_state => 'up',
-                                              number           => 1);
-    $service_provider->enableNode(node_id => $node_2->id);
+    $node_2 = Entity::Node->new(node_hostname    => 'node_2',
+                                monitoring_state => 'enabled');
+
+    $service_provider->enrollNode(node => $node_1);
+    $service_provider->enrollNode(node => $node_2);
 
     # Get indicators
     $indic1 = Entity::CollectorIndicator->find (
@@ -173,7 +168,7 @@ sub testNodeMetric {
 
         # Create node 3
         $node_3 = $service_provider->registerNode(hostname         => 'node_3',
-                                                  monitoring_state => 'up',
+                                                  monitoring_state => 'enabled',
                                                   number           => 1);
 
         # When registering a new node, only nodemetrics linked to an indicator already linked to a
@@ -667,7 +662,7 @@ sub testBigAggregation {
         # Create nodes
         for my $i (1..$nodes_count) {
             my $node = $service_provider->registerNode(hostname         => 'node_' . $i,
-                                                       monitoring_state => 'up',
+                                                       monitoring_state => 'enabled',
                                                        number           => $i);
             $service_provider->enableNode(node_id => $node->id);
         }
@@ -723,7 +718,7 @@ sub testStatisticFunctions {
         # Create nodes
         for my $i (0..9) {
             my $node = $service_provider->registerNode(hostname         => 'node_' . $i,
-                                                       monitoring_state => 'up',
+                                                       monitoring_state => 'enabled',
                                                        number           => $i);
             $service_provider->enableNode(node_id => $node->id);
         }

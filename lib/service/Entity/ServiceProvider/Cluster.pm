@@ -889,26 +889,6 @@ sub getNewNodeNumber {
     return $counter;
 }
 
-sub getNodesMetrics {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'time_span', 'indicators' ]);
-
-    my $collector_manager = $self->getManager(manager_type => "CollectorManager");
-    my $mparams           = $self->getManagerParameters(manager_type => 'CollectorManager');
-
-    my @nodelist;
-    for my $host (@{ $self->getHosts() }) {
-        push @nodelist, $host->node->node_hostname;
-    }
-
-    return $collector_manager->retrieveData(
-               nodelist   => \@nodelist,
-               time_span  => $args{'time_span'},
-               indicators => $args{'indicators'},
-               %$mparams
-           );
-}
 
 sub generateOverLoadNodemetricRules {
     my ($self, %args) = @_;

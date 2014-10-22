@@ -59,9 +59,9 @@ sub main {
                          hostname      => $localhostname,
                          component_params => {
                              api_username => 'tgenin',
-                             api_password => 'doc@123',
+                             api_password => 'password',
                              keystone_url => '192.168.3.10',
-                             tenant_name  => 'Doc'
+                             tenant_name  => 'tgenin'
                          }
                      );
 
