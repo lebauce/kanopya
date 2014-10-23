@@ -79,7 +79,7 @@ sub stop {
 sub release {
     my $self = shift;
     my %args = @_;
-
+    $log->info("VHH DEBUG: here is EHost::release calling releaseHost. Who will respond??");
     $self->getHostManager->releaseHost(host => $self);
 }
 

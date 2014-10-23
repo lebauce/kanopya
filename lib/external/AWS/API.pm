@@ -247,6 +247,33 @@ sub xpc {
 }
 
 
+=pod
+=begin classdoc
+
+Parse a XML response, look for errors.
+
+@param xml The response.
+
+@return The errors, as an arrayref of tuples {code, message}. Empty arrayref if all is OK.
+
+=end classdoc
+=cut
+
+sub findErrors {
+    my ($self, $xml) = @_;
+    my $xpc = $self->xpc;
+    my @errors = ();
+    
+    foreach my $error ($xpc->findnodes('//x:Response/x:Errors/x:Error', $xml)) {
+        push @errors, {
+            code    => $xpc->findvalue('x:Code', $error),
+            message => $xpc->findvalue('x:Message', $error)
+        };
+    }
+    return \@errors;
+}
+
+
 #
 #
 #

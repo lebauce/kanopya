@@ -677,8 +677,11 @@ sub startHost {
     );
     my $vm_info = $instance->arrayref->[0];
     
-    # Only NOW we know some data: MAC address...
+    # Only NOW we know some data: MAC address, instance ID...
+    my $serial_number = $self->_addAwsPrefix($vm_info->{instance_id});
+    $host->update(host_serial_number => $serial_number);
     $host->getIfaces->[0]->update(iface_mac_addr   => $vm_info->{mac_addr});
+    $node->update(node_hostname => $serial_number);
     
     $self->setNodeState(node => $node, vm_info => $vm_info);
     
@@ -686,46 +689,29 @@ sub startHost {
 }
 
 
-#=pod
-#=begin classdoc
-#
-#Stop the virtual machine by calling the nova api.
-#
-#@see <package>Manager::HostManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub stopHost {
-#    my ($self, %args) = @_;
-#    General::checkParams(args  => \%args, required => [ "host" ]);
-#
-#    try {
-#        OpenStack::Server->delete(
-#            api => $self->_api,
-#            id => $args{host}->openstack_vm_uuid,
-#        );
-#    }
-#    catch ($err) {
-#        # When an Exception happens during the DeployNode transaction,
-#        # the openstack_vm_uuid is not registered.
-#        # Try to find the vm with the node hostname
-#        $log->info('Try to delete the vm by its name');
-#        try {
-#            OpenStack::Server->delete(
-#                api => $self->_api,
-#                name => $args{host}->node->node_hostname,
-#            );
-#        }
-#        catch ($err) {
-#            $log->warn('Error when deleting Openstack server:' . $err);
-#        }
-#    }
-#
-#    return;
-#}
-#
-#
+=pod
+=begin classdoc
+
+Terminate the VM.
+
+@see <package>Manager::HostManager</package>
+
+=end classdoc
+=cut
+
+sub stopHost {
+    my ($self, %args) = @_;
+    General::checkParams(args  => \%args, required => [ "host" ]);
+    
+    my $instance_id = $self->_removeAwsPrefix($args{host}->host_serial_number);
+    my $errors = $self->_ec2->terminateInstance(InstanceId => [$instance_id]);
+
+    if (@$errors > 0) {
+        $log->warn('Errors during AWS node termination: '.Data::Dumper->Dump($errors));
+    }
+}
+
+
 #=pod
 #=begin classdoc
 #
@@ -1157,31 +1143,49 @@ sub synchronize {
 }
 
 
-#=pod
-#=begin classdoc
-#
-#Terminate a host
-#
-#=end classdoc
-#=cut
-#
-#sub halt {
-#    my ($self, %args) = @_;
-#    General::checkParams(args => \%args, required => [ 'host' ]);
+=pod
+=begin classdoc
+
+Stop a host.
+
+=end classdoc
+=cut
+
+# TODO: is it not useless to call this right before calling stopHost ?
+
+sub halt {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+    my $instance_id = $self->_removeAwsPrefix($args{host}->host_serial_number);
+    my $errors = $self->_ec2->stopInstance(InstanceId => [$instance_id]);
+    
+    if (@$errors > 0) {
+        $log->warn('Errors during AWS node halt: '.Data::Dumper->Dump($errors));
+    }
+    
 #    try {
 #        OpenStack::Server->stop(api => $self->_api, id => $args{host}->openstack_vm_uuid);
 #    }
 #    catch($err) {
 #        $log->warn('Error during openstack node halt ' . $err);
 #    }
-#}
-#
-#sub releaseHost {
-#    my ($self, %args) = @_;
-#    General::checkParams(args => \%args, required => [ 'host' ]);
-#
-#    return $args{host}->delete();
-#}
+}
+
+=pod
+=begin classdoc
+
+Release a host, delete the Entity::Host object.
+
+=end classdoc
+=cut
+
+
+sub releaseHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return $args{host}->delete();
+}
 
 =pod
 =begin classdoc

@@ -223,6 +223,7 @@ Create one or more VMs.
 =end classdoc
 =cut
 
+# TODO: separate between creating new instances and starting stopped instances!
 sub createInstance {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'ImageId', 'InstanceType' ]);
@@ -244,6 +245,59 @@ sub createInstance {
     
     return $self->_parseInstances($response);
 }
+
+
+=pod
+
+=begin classdoc
+
+Stop one or more VMs. They are not destroyed, they can be started again.
+
+@param InstanceId (Arrayref of Strings) One or more instances to stop.
+
+@return An arrayref of errors. Empty if all is OK.
+
+=end classdoc
+=cut
+
+sub stopInstance {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'InstanceId' ]);
+    
+    my $response = $self->{api}->get(
+        action => 'StopInstances',
+        params => [ 'InstanceId', $args{InstanceId} ]
+    );
+    
+    return $self->{api}->findErrors($response);
+}
+
+
+=pod
+
+=begin classdoc
+
+Terminate one or more VMs. Their volumes will be destroyed.
+
+@param InstanceId (Arrayref of Strings) One or more instances to stop.
+
+@return An arrayref of errors. Empty if all is OK.
+
+=end classdoc
+=cut
+
+sub terminateInstance {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'InstanceId' ]);
+    
+    my $response = $self->{api}->get(
+        action => 'TerminateInstances',
+        params => [ 'InstanceId', $args{InstanceId} ]
+    );
+    
+    return $self->{api}->findErrors($response);
+}
+
 
 =pod
 

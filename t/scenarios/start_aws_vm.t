@@ -153,15 +153,15 @@ sub main {
         Kanopya::Test::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
 
-#    diag('Stopping OpenStack VM cluster');
-#    lives_ok {
-#        my ($state, $timestamp) = $cluster->reload->getState();
-#        if ($state ne 'up') {
-#            die "Cluster should be up, not $state";
-#        }
-#        Kanopya::Test::Execution->executeOne(entity => $cluster->stop());
-#    } 'Stopping OpenStack VM cluster';
-#
+    diag('Stopping OpenStack VM cluster');
+    lives_ok {
+        my ($state, $timestamp) = $cluster->reload->getState();
+        if ($state ne 'up') {
+            die "Cluster should be up, not $state";
+        }
+        Kanopya::Test::Execution->executeOne(entity => $cluster->stop());
+    } 'Stopping OpenStack VM cluster';
+
 #    diag('Remove OpenStack VM cluster');
 #    lives_ok {
 #        Kanopya::Test::Execution->executeOne(entity => $cluster->deactivate());
