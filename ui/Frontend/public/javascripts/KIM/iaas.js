@@ -39,6 +39,7 @@ function vmdetails(spid) {
 }
 
 function load_iaas_detail_hypervisor (container_id, elem_id) {
+
     var container = $('#' + container_id);
 
     // Retrieve the cloud manager
@@ -195,46 +196,320 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
 
 function load_iaas_content (container_id) {
 
-    $('<div>', {class: 'top-action-block'})
-        .append($('<a>', {
-            text: 'Register an OpenStack',
-            class: 'top-action openstack',
-            click: function(e) {
-                iaas_registerbutton_action(e, grid);
-            }
-        }))
-        .append($('<a>', {
-            text: 'Register a vCenter',
-            class: 'top-action vcenter',
-            click: function(e) {
-                // iaas_registerbutton_action(e, grid);
-            }
-        }))
-        .append($('<div>', {
-            text: 'Register an AWS',
-            class: 'top-action aws disabled',
-            click: function(e) {
-            }
-        }))
-        .appendTo($('#' + container_id).prev('.action_buttons'));
+    var iaasCollection;
 
+    function loadIaasCollection() {
 
-    // console.debug('container_id', container_id);
+        var iaasObject;
+        var index, map;
 
-    var templateFile = '/templates/iaas-home.tmpl.html';
-    $.get(templateFile, function(templateHtml) {
-        var template = Handlebars.compile(templateHtml);
-        $('#' + container_id).append(template({
-            'title': ''
+        var stateMap = {
+            'up'       : {
+                'label': 'Up',
+                'icon' : 'glyphicon-thumbs-up'
+            },
+            'in'       : {
+                'label': 'Up',
+                'icon' : 'glyphicon-thumbs-up'
+            },
+            'down'     : {
+                'label': 'Down',
+                'icon' : 'glyphicon-thumbs-down'
+            },
+            'broken'   : {
+                'label': 'Broken',
+                'icon' : 'glyphicon-remove'
+            }
+        };
+
+        iaasCollection = [];
+
+        $.getJSON(
+            '/api/component?custom.category=VirtualMachineManager&expand=component_type,service_provider&deep=1',
+            function(data) {
+                $.each(data, function(i, obj) {
+                    index = obj.keystone_url.search(/\d/);
+                    urlLabel = (index > -1) ? obj.keystone_url.substr(index) : '';
+
+                    iaasObject = {
+                        'id'                 : obj.pk,
+                        'label'              : obj.label,
+                        'url'                : obj.keystone_url,
+                        'urlLabel'           : '',
+                        'componentTypeId'    : obj.component_type_id,
+                        'componentName'      : obj.component_type.component_name.toLowerCase(),
+                        'hypervisorCount'    : 0,
+                        'vmCount'            : 0,
+                        'cpuTotal'           : 0,
+                        'cpuUsed'            : 0,
+                        'ramUnit'            : 'MB',
+                        'ramTotal'           : 0,
+                        'ramUsed'            : 0,
+                        // Necessary for detail mapping
+                        'pk'                 : obj.pk,
+                        'service_provider_id': obj.service_provider_id
+                    };
+
+                    index = iaasObject.url.search(/\d/);
+                    iaasObject.urlLabel = (index > -1) ? iaasObject.url.substr(index) : '';
+
+                    // State
+                    if (obj.service_provider) {
+                        iaasObject.state = obj.service_provider.cluster_state;
+                        index = iaasObject.state.indexOf(':');
+                        if (index > -1) {
+                            iaasObject.state = iaasObject.state.substring(iaasObject.state, 0, index);
+                        }
+                        if (iaasObject.state in stateMap) {
+                            iaasObject.stateLabel = stateMap[iaasObject.state].label;
+                            iaasObject.stateIcon = stateMap[iaasObject.state].icon;
+                        }
+                    }
+
+                    // Hypervisors
+                    $.ajax({
+                        url     : '/api/virtualization/' + iaasObject.id + '/hypervisors?expand=node',
+                        type    : 'GET',
+                        dataType: 'json',
+                        async   : false,
+                        success: function(data) {
+                            iaasObject.hypervisorCount += data.length;
+
+                            $.each(data, function(i, obj) {
+                                // Total CPU and RAM
+                                iaasObject.cpuTotal += obj.host_core;
+                                iaasObject.ramTotal += obj.host_ram;
+
+                                // Virtual machines
+                                $.ajax({
+                                    url     : '/api/hypervisor/' + obj.pk + '/virtual_machines?expand=node',
+                                    type    : 'GET',
+                                    dataType: 'json',
+                                    async   : false,
+                                    success: function(data) {
+                                        iaasObject.vmCount += data.length;
+
+                                        $.each(data, function(i, obj) {
+                                            // Used CPU and RAM
+                                            iaasObject.cpuUsed += obj.host_core;
+                                            iaasObject.ramUsed += obj.host_ram;
+                                        });
+                                    },
+                                    error: function() {
+                                        iaasObject.vmCount = '?';
+                                        iaasObject.cpuUsed = '?';
+                                        iaasObject.ramUsed = '?';
+                                        return false; // equivalent to break for $.each
+                                    }
+                                });
+                            });
+                        },
+                        error: function() {
+                            iaasObject.hypervisorCount = '?';
+                            iaasObject.vmCount = '?';
+                            iaasObject.cpuUsed = '?';
+                            iaasObject.ramUsed = '?';
+                        }
+                    });
+
+                    if (!isNaN(iaasObject.ramUsed)) {
+                        if (iaasObject.ramUsed > 0) {
+                            map = getReadableSize(iaasObject.ramUsed, false);
+                            iaasObject.ramUnit = map.unit;
+                            iaasObject.ramUsed = map.value;
+                        }
+                    }
+
+                    iaasCollection.push(iaasObject);
+                });
+                renderHtml();
+            }
+        );
+    }
+
+    function renderHtml() {
+
+        renderRegisterButtons();
+        renderTemplate();
+    }
+
+    function renderRegisterButtons() {
+
+        $('<div>', {class: 'top-action-block'})
+            .append($('<a>', {
+                text: 'Register an OpenStack',
+                class: 'top-action openstack',
+                click: function(e) {
+                    iaas_registerbutton_action(e, grid);
+                }
+            }))
+            .append($('<a>', {
+                text: 'Register a vCenter',
+                class: 'top-action vcenter',
+                click: function(e) {
+                    // iaas_registerbutton_action(e, grid);
+                }
+            }))
+            .append($('<div>', {
+                text: 'Register an AWS',
+                class: 'top-action aws disabled',
+                click: function(e) {
+                }
+            }))
+            .appendTo($('#' + container_id).prev('.action_buttons'));
+    }
+
+    function renderTemplate() {
+
+        var templateFile = '/templates/iaas-home.tmpl.html';
+        $.get(templateFile, function(templateHtml) {
+            var template = Handlebars.compile(templateHtml);
+            $('#' + container_id).append(template({
+                'iaasCollection': iaasCollection
+            }));
+            renderChart('cpu-chart', 'cpu', '#1D871B');
+            renderChart('ram-chart', 'ram', '#4E8FFF');
+            activateButtons();
+        });
+    }
+
+    function renderChart(containerId, infoType, infoColor) {
+
+        var value1, value2;
+        var ratio;
+        var serie;
+
+        if (isNaN(iaasCollection[infoType + 'Total']) || isNaN(iaasCollection[infoType + 'Used']) || iaasCollection[infoType + 'Total'] === 0) {
+            value1 = 0;
+            ratio = '';
+        } else {
+            value1 = Math.round(iaasCollection[infoType + 'Used'] / iaasCollection[infoType + 'Total'] * 100);
+            ratio = value1;
+        }
+        value2 = 100 - value1;
+
+        serie = [[1, value1], [2, value2]];
+
+        serie = [[1, 75], [2, 25]];
+        ratio = 75;
+
+        $.jqplot(containerId, [serie], {
+            title: {
+                text: (ratio === '') ? '' : ratio + '%',
+                fontSize: '9px',
+            },
+            seriesColors: [infoColor, '#e1e1e1'],
+            grid: {
+                shadow: false,
+                background: 'transparent',
+                drawBorder: false
+            },
+            seriesDefaults: {
+                renderer:$.jqplot.DonutRenderer,
+                rendererOptions:{
+                    sliceMargin: 0,
+                    startAngle: -90,
+                    showDatatabels: false,
+                    diameter: 45,
+                    innerDiameter: 20,
+                    shadowAlpha: 0,
+                }
+            }
+        });
+    }
+
+    function activateButtons() {
+
+        // Detail
+        $('.list-item-info .name span').click(function() {
+            $(this)
+                .parents('.list-item-box')
+                .find('.button-detail')
+                .trigger('click');
+        });
+        $('.button-detail').click(function() {
+            var id = $(this).parent().data('id');
+            displayDetail(id);
+        });
+
+        // Synchronize
+        $('.button-synchronize').click(function() {
+            var id = $(this).parent().data('id');
+            $.post('/api/component/' + id + '/synchronize');
+        });
+
+        // Optimize
+        $('.button-optimize').click(function() {
+            var id = $(this).parent().data('id');
+            $.post('/api/component/' + id + '/optimiaas');
+        });
+
+        // Unregister
+        $('.button-unregister').click(function() {
+            var id = $(this).parent().data('id');
+            confirmDelete(
+                '/api/openstack/',
+                id,
+                null,
+                {
+                    'actionLabel': 'unregister',
+                    'successCallback': function() {
+                        reloadList();
+                    }
+                }
+            );
+        });
+    }
+
+    function reloadList() {
+        $('.top-action-block').remove();
+        $('#' + container_id).empty();
+        load_iaas_content(container_id);
+    }
+
+    function displayDetail(iaasId) {
+
+        var iaasObject = getIaasObjectById(iaasId);
+
+        var details = {
+            noDialog: true
+        };
+        if (iaasObject.service_provider_id) {
+            // If the component is installed on a service provider,
+            // display the service provider details with the additional
+            // tab hypervisors
+            details['tabs'] = tabs;
+            iaasId = iaasObject.service_provider_id;
+
+        } else {
+            details['tabs'] = [hypervisors_tab];
+        }
+
+        $('.top-action-block').remove();
+        $('#' + container_id)
+            .empty()
+            .append($('<div>', {
+                'id': 'content_hypervisors_' + iaasId
         }));
-    });
 
-    return;
+        display_row_details(iaasId, details, iaasObject, 'iaas_list');
+    }
 
+    function getIaasObjectById(iaasId) {
 
+        var iaasObject = {};
 
+        for (var i = 0; i < iaasCollection.length; i++) {
+            if (iaasCollection[i].id == iaasId) {
+                iaasObject = iaasCollection[i];
+                break;
+            }
+        }
 
-    require('common/formatters.js');
+        return iaasObject;
+    }
+
+    loadIaasCollection();
 
     var tabs = [];
     // Add the same tabs than 'Services'
@@ -247,12 +522,27 @@ function load_iaas_content (container_id) {
         }
     }
     // Add the tab 'Hypervisor'
-    var hypervisors_tab = { label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor, icon : 'compute' };
+    var hypervisors_tab = {
+        label : 'Hypervisors',
+        id    : 'hypervisors',
+        onLoad: load_iaas_detail_hypervisor,
+        icon  : 'compute'
+    };
     tabs.push(hypervisors_tab);
 
     // change details tab callback to inform we are in IAAS mode
-    var details_tab = $.grep(tabs, function (e) { return e.id == 'service_details' });
-    details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
+    var details_tab = $.grep(tabs, function (e) {
+        return e.id == 'service_details'
+    });
+    details_tab[0].onLoad = function(cid, eid) {
+        require('KIM/services_details.js');
+        loadServicesDetails(cid, eid, 1);
+    };
+
+    return;
+    ///////////////////////////////////////////////////////////////////////////
+
+    require('common/formatters.js');
 
     var url = '/api/component?custom.category=VirtualMachineManager&expand=service_provider&deep=1';
     var grid = create_grid({
@@ -283,7 +573,6 @@ function load_iaas_content (container_id) {
                 } else {
                     details['tabs'] = [ hypervisors_tab ];
                 }
-
                 display_row_details(elem_id, details, row_data, grid_id);
             },
         },

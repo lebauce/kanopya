@@ -35,10 +35,10 @@
             margin-left: 30px;
         }
         .btn-action2 {
-            .button-variant(#fff; @theme-color1; darken(@theme-color1, 5%));
+            .button-variant(@btn-primary-color; @btn-primary-bg; @btn-primary-border);
         }
         .btn-action1 {
-            .button-variant(@btn-primary-color; @btn-primary-bg; @btn-primary-border);
+            .button-variant(#fff; @theme-color1; darken(@theme-color1, 5%));
             float: right;
         }
     }
@@ -51,6 +51,13 @@
         float: left;
         font-size: @font-size-h3;
         font-weight: bold;
+
+        > span {
+            display: inline-block;
+        }
+        > span:hover {
+            cursor: pointer;
+        }
 
         .ip {
         font-size: @font-size-xs;
@@ -65,12 +72,21 @@
 
     .state {
         float: right;
-        padding-top: 37px;
         font-size: @font-size-xs;
         text-align: center;
-    }
-    .state.accept {
-        background: url(/images/icon-accept-32.png) no-repeat top center;
+
+        .glyphicon {
+            font-size: 40px;
+        }
+        .glyphicon-thumbs-up {
+            color: @success-color;
+        }
+        .glyphicon-thumbs-down {
+            color: @error-color;
+        }
+        .glyphicon-remove {
+            color: @error-color;
+        }
     }
 }
 
@@ -87,6 +103,7 @@
     > div {
         border-left: 5px solid @lineColor;
         text-align: center;
+        height: 75px;
 
         .title {
             font-size: @font-size-base;
@@ -117,7 +134,9 @@
 
     .cpu-ram {
         .make-xs-column(4);
-    
+        padding-left: 5px;
+        padding-right: 5px;
+
         .detail {
             margin: 5px auto;
 
@@ -125,68 +144,66 @@
                 float: left;
             }
 
-            .radial {
-                .square(45px);
+            .donut-chart {
+                .size(66px, 86px);
+                margin-top: -18px;
+                margin-left: -10px;
+
+                .jqplot-title {
+                    top: 34px !important;
+                }
             }
 
             .info {
-                padding-left: 15px;
+                padding-left: 0px;
                 padding-right: 0;
 
-                .meter {
-                    margin-top: 15px;
-                    line-height: 120%;
+                margin-top: 15px;
+                line-height: 120%;
 
-                    > div {
-                        float: left;
-                    }
+                > div {
+                    float: left;
+                }
 
-                    .total {
-                        font-size: @font-size-h3;
-                        padding-right: 0;
-                        margin-right: 0;
-                    }
+                .total {
+                    font-size: @font-size-h3;
+                    padding-right: 0;
+                    margin-right: 0;
+                }
 
-                    .used {
-                        font-size: @font-size-h3;
-                        border-left-width: 5px;
-                        border-left-style: solid;
-                        padding-left: 10px;
-                    }
+                .used {
+                    font-size: @font-size-h3;
+                    border-left-width: 5px;
+                    border-left-style: solid;
+                    padding-left: 10px;
+                }
 
-                    .label {
-                        font-size: @font-size-xs;
-                        font-weight: normal;
-                        color: black;
-                        padding-left: 5px;
-                        padding-right: 10px;
-                    }
+                .label {
+                    font-size: @font-size-xs;
+                    font-weight: normal;
+                    color: black;
+                    padding-left: 5px;
+                    padding-right: 10px;
                 }
             }
         }
     }
 
-    .cpu .detail {
-        width: 180px;
+    .cpu {
+        .detail {
+            width: 210px;
+        }
+        .used {
+            border-left-color: #1D871B;
+        }
     }
 
-    .cpu .radial {
-        background: url(/images/radial50.png) no-repeat top left;
-    }
-
-    .cpu .used {
-        border-left-color: #1D871B;
-    }
-
-    .ram .detail {
-        width: 190px;
-    }
-
-    .ram .radial {
-        background: url(/images/radial78.png) no-repeat top left;
-    }
-
-    .ram .used {
-        border-left-color: #4E8FFF;
+    .ram {
+        .detail {
+            width: 220px;
+        }
+        .used {
+            border-left-color: #4E8FFF;
+        }
     }
 }

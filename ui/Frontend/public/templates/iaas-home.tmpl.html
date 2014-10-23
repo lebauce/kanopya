@@ -1,57 +1,56 @@
 
 <div id="iaas-home" class="list container">
     <div class="list-container">
+        {{#iaasCollection}}
         <div class="list-item">
             <div class="list-item-box">
                 <div class="list-item-info">
-                    <div class="name openstack">OpenStack<br/><span class="ip">10.0.0.251</span></div>
-                    <div class="state accept">Running</div>
-                    <div class="after"></div>
+                    <div class="name {{componentName}}"><span>{{label}}</span><br/><a href="{{url}}" class="ip" target="_blank">{{urlLabel}}</a></div>
+                    <div class="state">
+                        <div class="glyphicon {{stateIcon}}"></div>
+                        <div class="state-label">{{stateLabel}}</div>
+                    </div>
                 </div>
                 <div class="list-line"></div>
                 <div class="list-properties">
                     <div class="vm first">
                         <div class="title">VMs</div>
-                        <div class="value number">4</div>
+                        <div class="value number">{{vmCount}}</div>
                     </div>
                     <div class="hypervisor">
                         <div class="title">HYPERVISORS</div>
-                        <div class="value number">1</div>
+                        <div class="value number">{{hypervisorCount}}</div>
                     </div>
                     <div class="cpu-ram cpu">
                         <div class="title">CPU</div>
                         <div class="detail">
-                            <div class="radial"></div>
+                            <div id="cpu-chart" class="donut-chart"></div>
                             <div class="info">
-                                <div class="meter">
-                                    <div class="total number">4<span class="label">cores</span></div>
-                                    <div class="used number">2<span class="label">used</span></div>
-                                </div>
+                                    <div class="total number">{{cpuTotal}}<span class="label">cores</span></div>
+                                    <div class="used number">{{cpuUsed}}<span class="label">used</span></div>
                             </div>
                         </div>
                     </div>
                     <div class="cpu-ram ram">
                         <div class="title">RAM</div>
                         <div class="detail">
-                            <div class="radial"></div>
+                            <div id="ram-chart" class="donut-chart"></div>
                             <div class="info">
-                                <div class="meter">
-                                    <div class="total number">8<span class="label">GB</span></div>
-                                    <div class="used number">6.2<span class="label">used</span></div>
-                                </div>
+                                <div class="total number">{{ramTotal}}<span class="label">{{ramUnit}}</span></div>
+                                <div class="used number">{{ramUsed}}<span class="label">used</span></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="after"></div>
                 <div class="list-line"></div>
-                <div class="button-group">
-                    <button type="button" class="btn btn-action2">Synchronize</button>
-                    <button type="button" class="btn btn-action2">Optimize</button>
-                    <button type="button" class="btn btn-action3">Unregister</button>
-                    <button type="button" class="btn btn-action1">Detail</button>
+                <div class="button-group" data-id="{{id}}">
+                    <button type="button" class="btn btn-action2 button-synchronize">Synchronize</button>
+                    <button type="button" class="btn btn-action2 button-optimize">Optimize</button>
+                    <button type="button" class="btn btn-action3 button-unregister">Unregister</button>
+                    <button type="button" class="btn btn-action1 button-detail">Detail</button>
                 </div>
             </div>
         </div>
+        {{/iaasCollection}}
     </div>
 </div>
