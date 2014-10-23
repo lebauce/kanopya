@@ -228,7 +228,6 @@ function load_iaas_content (container_id) {
             '/api/component?custom.category=VirtualMachineManager&expand=component_type,service_provider&deep=1',
             function(data) {
                 $.each(data, function(i, obj) {
-
                     iaasObject = {
                         'id'                 : obj.pk,
                         'label'              : obj.label,
