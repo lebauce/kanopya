@@ -109,7 +109,8 @@ sub get {
         args => \%args, 
         required => [ 'action' ],
         optional => { service => 'ec2', params => [] }
-    );    
+    );
+    $log->debug("GET arguments: ".Data::Dumper->Dump([ \%args ]));
     my $params = $self->_flattenParams($args{params});
     
     my $uri = URI->new($self->_url($args{service}));

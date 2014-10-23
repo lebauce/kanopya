@@ -29,6 +29,7 @@ use parent EManager::EHostManager::EVirtualMachineManager;
 use strict;
 use warnings;
 
+use AwsInstanceType;
 
 =pod
 =begin classdoc
@@ -42,16 +43,7 @@ Override the parent execution method to forward the call to the component entity
 
 sub getFreeHost {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'flavor' ]);
-
-    my %flavors = %{$self->param_preset->load->{flavors}};
-    while (my ($flavor_id, $flavor) = each (%flavors)) {
-        if ($flavor->{name} eq $args{flavor}) {
-            $args{ram} = $flavor->{ram} * 1024 * 1024; # MB to B
-            $args{core} = $flavor->{vcpus};
-            last;
-        }
-    }
+    # General::checkParams(args => \%args, required => [ 'type' ]);
     return $self->_entity->getFreeHost(%args);
 }
 
@@ -70,7 +62,6 @@ sub startHost {
     return $self->_entity->startHost(%args);
 }
 
-
 =pod
 =begin classdoc
 
@@ -82,7 +73,6 @@ and all available options.
 
 sub synchronize {
     my ($self, %args) = @_;
-    
     return $self->_load(infra => $self->_ec2->getInfrastructure);
 }
 
@@ -136,5 +126,103 @@ sub decreaseConsumers {
     return $self->_entity->decreaseConsumers(%args);
 }
 
-1;
+=begin classdoc
 
+Create AWS VMs with given instance IDs.
+
+@param vm_uuids (Hashref) A hash of VM Instance IDs to Hypervisor (Host) IDs
+
+=end classdoc
+
+=cut
+
+sub repairVmInInfraUnkInDB {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm_uuids' ]);
+    my $vm_infos = $self->_entity->_ec2->getInstances(
+        use_cache_if_not_older_than => 10
+    );
+    
+    while (my ($vm_uuid, $hv_id) = each (%{$args{vm_uuids}})) {
+        my $instance_id = $self->_entity->_removeAwsPrefix($vm_uuid);
+        my $vm_info = $vm_infos->get($instance_id);
+                
+        $self->_entity->createAwsVirtualHost(
+            aws_instance_type => $vm_info->{type},
+            instance_id       => $instance_id,
+            hypervisor_id     => $hv_id,
+            mac_address       => $vm_info->{mac_addr}
+        );
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
+Synchronize VM RAM and cores with infrastructure
+
+@param host (Host) Hypervisor
+
+=end classdoc
+
+=cut
+
+sub repairVMRessourceIntegrity {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $vm_infos = $self->_entity->_ec2->getInstances(
+        use_cache_if_not_older_than => 10
+    );
+
+    for my $vm ($args{host}->virtual_machines) {
+        my $instance_id = $self->_entity->_removeAwsPrefix($vm->host_serial_number);
+        my $vm_info = $vm_infos->get($instance_id);
+        my $aws_it = AwsInstanceType->getType(name => $vm_info->{type});
+        
+        # Micro-benchmark shows: no need to check for change of values.
+        # update() won't do useless SQL UPDATEs.
+        $vm->update(
+            host_ram  => $aws_it->ram,
+            host_core => $aws_it->cpu
+        );
+    }
+}
+
+=cut
+=begin classdoc
+
+Ensure that a freshly started VM has its own admin IP. 
+Called by EKanopyaDeploymentManager::checkNodeUp.
+
+@param node (Entity::Node) The Host instance
+
+@return Boolean (1 or 0), whether the node is up
+
+=end classdoc
+=cut
+
+sub checkUp {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+    my $node = $args{host}->node;
+    return if defined $node->admin_ip_addr;
+    
+    my $aws = $self->_entity;
+    
+    my $instance_id = $aws->_removeAwsPrefix($args{host}->host_serial_number);
+    my $vm_info = $aws->_ec2->getInstances(InstanceId => [$instance_id])->arrayref->[0];
+    $aws->setNodeState(node => $node, vm_info => $vm_info);    
+    
+    if (defined $vm_info->{ip}) {
+        $node->update(admin_ip_addr => $vm_info->{ip});
+        return 0;
+    } else {
+        return 10;
+    }
+}
+
+
+1;

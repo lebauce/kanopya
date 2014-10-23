@@ -56,7 +56,7 @@ use constant ATTR_DEF => {
 };
 
 # We will have a small number of objects that might get requested several times. So we cache the instances.
-my $cache = {};
+my %cache = ();
 
 =pod
 =begin classdoc

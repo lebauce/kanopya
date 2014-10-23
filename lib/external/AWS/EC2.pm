@@ -25,11 +25,19 @@ package AWS::EC2;
 use strict;
 use warnings;
 
+use AWS::InstancesInfo;
 use General;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
+
+# A very temporary cache for instance data.
+# As this is a class variable, it only works within the same Perl interpreter.
+my %cacheVM = (
+    'data' => undef,
+    'time' => undef
+);
 
 =pod
 =begin classdoc
@@ -66,7 +74,7 @@ Lists all available images
 
 
 sub getImages {
-    my ($self, %args) = @_;
+    my ($self) = @_;
     
     my $response = $self->{api}->get(
         action => 'DescribeImages',
@@ -115,31 +123,127 @@ sub getImages {
 
 Lists all VMs ("Instances").
 
+@param InstanceId (Arrayref) If given, only retrieve information for these Instances.
+@param use_cache_if_not_older_than (Integer) Allow the retrieval of cached data,
+  if this data is not older than the given number of seconds. Default: 0 (do not use cached data).
+  If the cache is used, the whole stored AWS::InstancesInfo will be returned,
+  - an "InstanceId" parameter will be ignored.
+
 =end classdoc
 =cut
 
 sub getInstances {
     my ($self, %args) = @_;
+    my $use_cache = $args{use_cache_if_not_older_than};
+    $use_cache ||= 0;
     
-    my $response = $self->{api}->get( action => 'DescribeInstances' );
-    my @found_instances = ();
+    if ($use_cache > 0 and $cacheVM{time} >= time() - $use_cache) {
+        $log->debug("using cached data");
+        return $cacheVM{data};
+        
+    } else { # get fresh data
+        $log->debug("doing a fresh request 'DescribeInstances'");
+        my @params = ('action', 'DescribeInstances');
+        if ($args{InstanceId}) {
+            push @params, 'InstanceId', $args{InstanceId};
+        }
+        my $response = $self->{api}->get(@params);
+        my $result = $self->_parseInstances($response);
+        
+        if ($args{InstanceId}) {
+            # We have fresh data, but not for all instances.
+            # Let's replace only the obsolete data.
+            if (defined $cacheVM{data}) {
+                $cacheVM{data}->merge($result);
+            }
+            # We keep the 'time' as it is - there might be older data left.
+        } else {
+            $cacheVM{data}   = $result;
+            $cacheVM{'time'} = time();
+        }
+        
+        return $result;
+    }
+}
+
+=pod
+
+=begin classdoc
+
+Convert XML data about one or more instances into an array of "VM information hashes".
+
+@param xml (direct parameter - String) The XML to convert.
+@return An AWS::InstancesInfo object.
+
+=end classdoc
+=cut
+
+sub _parseInstances {
+    my ($self, $xml) = @_;
+    
+    my $vm_infos = AWS::InstancesInfo->new();
     my $xpc = $self->{api}->xpc;
 
     foreach my $item ($xpc->findnodes('//x:instancesSet/x:item', $xml)) {
+        # Terminated VMs may still show up for 10-20 minutes. We ignore them.
+        # Terminated or shutting-down instancces do not have any network interfaces listed.
+        my $state = $xpc->findvalue('x:instanceState/x:name', $item);
+        next if $state eq 'terminated';
+        
         # TODO: need to get private addresses and/or all interfaces ?
-        my $first_interface = ($xpc->findnodes('x:networkInterfaceSet/x:item', $xpc))[0];
-        push @found_instances, {
+        my $first_interface = ($xpc->findnodes('x:networkInterfaceSet/x:item', $item))[0];
+        
+        my $ip = undef;
+        {
+            my $ip_node = $xpc->findnodes('x:ipAddress', $item);
+            if ($ip_node->size > 0) {
+                $ip = $ip_node->to_literal;
+            }
+        }
+        
+        $vm_infos->add({
             instance_id => $xpc->findvalue('x:instanceId', $item),
-            'state'     => $xpc->findvalue('x:instanceState/x:name', $item),
-            ip          => $xpc->findvalue('x:ipAddress', $item),
+            'state'     => $state,
+            ip          => $ip,   # might still be undef
             type        => $xpc->findvalue('x:instanceType', $item),
             mac_addr    => $xpc->findvalue('x:macAddress', $first_interface)
-        };
+        });
     }
     
-    return \@found_instances;
+    return $vm_infos;
 }
 
+
+=pod
+
+=begin classdoc
+
+Create one or more VMs.
+
+=end classdoc
+=cut
+
+sub createInstance {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'ImageId', 'InstanceType' ]);
+    
+    # TODO: consider the case where we burst one existing VM ?
+    my $response = $self->{api}->get(
+        action => 'RunInstances',
+        params => [
+            'ImageId',         $args{ImageId},
+            'MinCount',        1,
+            'MaxCount',        1, # TODO: can we access the scalability policy here ?
+            'KeyName',         'aws-test-key', # TODO: include this - where ?
+            'SecurityGroupId', ['sg-cf6edfaa'], # TODO: include this - where ?
+            'InstanceType',    $args{InstanceType}
+        ]
+    );
+    
+    $log->debug("VHH DEBUG: after call to createInstance: \n$response");
+    
+    return $self->_parseInstances($response);
+}
 
 =pod
 

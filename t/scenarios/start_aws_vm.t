@@ -11,13 +11,6 @@ variables AWS_ACCESS_KEY and AWS_SECRET_KEY for use in this test.
 
 =cut
 
-use Test::More 'no_plan';
-use Test::Exception;
-# use Test::Pod;
-use Kanopya::Exceptions;
-# use ClassType::ComponentType;
-
-use TryCatch;
 use File::Basename;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -25,23 +18,29 @@ Log::Log4perl->easy_init({
     file   => basename(__FILE__) . '.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
+use Test::More 'no_plan';
+use Test::Exception;
+# use Test::Pod;
+# use ClassType::ComponentType;
+use TryCatch;
 
 use Kanopya::Database;
-
+use Kanopya::Exceptions;
 use Kanopya::Test::Execution;
 use Kanopya::Test::Register;
-#use Kanopya::Test::Retrieve;
+use Kanopya::Test::Retrieve;
+
+
 #use Kanopya::Test::Create;
-
 #use Entity::Component::KanopyaDeploymentManager;
-#use Entity::Masterimage::GlanceMasterimage;
-
 use AWS::API;
 use AWS::EC2;
+# This one can only get loaded after the Kanopya* stuff above!
 use Entity::Component::Virtualization::AwsAccount;
+use Entity::Masterimage;
+use Entity::ServiceProvider::Cluster;
 
-
-my $testing = 1;
+my $testing = 0;
 
 main();
 
@@ -86,9 +85,9 @@ sub main {
     
     
 
-    diag('Create and configure the openstack vm cluster');
+    diag('Create and configure an AWS cluster');
     my $cluster;
-    my $masterimage = Entity::Masterimage::GlanceMasterimage->find(
+    my $masterimage = Entity::Masterimage->find(
                           hash => { masterimage_name => "RHEL-7.0_GA_HVM-x86_64-3-Hourly2" }
                       );
 
@@ -111,6 +110,7 @@ sub main {
                                 manager_id     => $aws->id,
                                 manager_type   => "HostManager",
                                 manager_params => {
+                                    type => 't2.micro'
                                     # flavor => "m1.tiny",
                                     # availability_zone => "nova",
                                     # tenant => "Doc",
@@ -128,9 +128,9 @@ sub main {
                                 manager_id     => Entity::Component::KanopyaDeploymentManager->find()->id,
                                 manager_type   => "DeploymentManager",
                                 manager_params => {
-                                    # boot_manager_id => $aws->id,
-                                    # boot_policy     => 'Boot from Glance Image',
-                                    # components => {},
+                                    boot_manager_id => $aws->id,
+                                    # boot_policy     => 'Boot from AWS image',
+                                    components => {}
                                 },
                             },
                             network_manager => {
@@ -146,13 +146,13 @@ sub main {
         Kanopya::Test::Execution->executeOne(entity => $create);
 
         $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => { cluster_name => $clustername });
-    } 'Create OpenStack VM cluster';
+    } 'Create AWS cluster';
 
-#    diag('Start OpenStack VM cluster');
-#    lives_ok {
-#        Kanopya::Test::Execution->startCluster(cluster => $cluster);
-#    } 'Start cluster';
-#
+    diag('Start AWS cluster');
+    lives_ok {
+        Kanopya::Test::Execution->startCluster(cluster => $cluster);
+    } 'Start cluster';
+
 #    diag('Stopping OpenStack VM cluster');
 #    lives_ok {
 #        my ($state, $timestamp) = $cluster->reload->getState();

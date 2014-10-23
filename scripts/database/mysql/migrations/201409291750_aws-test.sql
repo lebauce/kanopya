@@ -25,9 +25,22 @@ INSERT INTO `aws_instance_type`
 INSERT INTO `class_type` (`class_type`) VALUES 
   ('Entity::Masterimage::AwsMasterimage');
 
+INSERT INTO `component_type` (`component_name`, `component_version`, `deployable`)
+  VALUES ('AwsAccount', 6, 1);
+
+INSERT INTO `component_type_category`
+  SELECT component_type.component_type_id, component_category.component_category_id
+  FROM component_type, component_category 
+  WHERE component_type.component_name = 'AwsAccount'
+    AND component_category.category_name IN
+      ( 'HostManager', 'VirtualMachineManager', 'StorageManager', 'BootManager', 'NetworkManager');
+      
   
 -- DOWN --
 
+DELETE FROM `component_type_category` WHERE `component_type_id` IN
+  (SELECT component_type_id FROM component_type WHERE component_name = 'AwsAccount');
+DELETE FROM `component_type` WHERE `component_name` = 'AwsAccount');
 DELETE FROM `class_type` WHERE `class_type` = 'Entity::Masterimage::AwsMasterimage');
 
 DROP TABLE IF EXISTS `aws_account`;
