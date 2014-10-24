@@ -69,21 +69,10 @@ sub main {
                    }
                );
     
-#    my $api = AWS::API->new(aws_account => $aws);
-#    my $ec2 = AWS::EC2->new(api => $api);
-#    
-#    $ec2->getImages(); 
-                
-#        foreach my $image (@$aws_images) {
-#            diag("Found image: $image");
-#        }
-
         lives_ok {
             Kanopya::Test::Execution->executeOne(entity => $aws->synchronize());
         } 'Synchronize the existing infrastructure';
     }
-    
-    
 
     diag('Create and configure an AWS cluster');
     my $cluster;
@@ -148,6 +137,8 @@ sub main {
         $cluster = Kanopya::Test::Retrieve->retrieveCluster(criteria => { cluster_name => $clustername });
     } 'Create AWS cluster';
 
+    diag('The created cluster has the ID: '.$cluster->id);
+
     diag('Start AWS cluster');
     lives_ok {
         Kanopya::Test::Execution->startCluster(cluster => $cluster);
@@ -162,15 +153,15 @@ sub main {
         Kanopya::Test::Execution->executeOne(entity => $cluster->stop());
     } 'Stopping OpenStack VM cluster';
 
-#    diag('Remove OpenStack VM cluster');
-#    lives_ok {
-#        Kanopya::Test::Execution->executeOne(entity => $cluster->deactivate());
-#        Kanopya::Test::Execution->executeOne(entity => $cluster->remove());
-#    } 'Removing OpenStack VM cluster';
-#
-#    my @systemimages = Entity::Systemimage->search();
-#    diag('Check if systemimage have been deleted');
-#    ok(scalar(@systemimages) == 0);
+    diag('Remove OpenStack VM cluster');
+    lives_ok {
+        Kanopya::Test::Execution->executeOne(entity => $cluster->deactivate());
+        Kanopya::Test::Execution->executeOne(entity => $cluster->remove());
+    } 'Removing OpenStack VM cluster';
+
+    my @systemimages = Entity::Systemimage->search();
+    diag('Check if systemimage have been deleted');
+    ok(scalar(@systemimages) == 0);
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;

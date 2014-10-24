@@ -869,6 +869,7 @@ There is no separate step for creating a system volume.
 @see <package>Manager::StorageManager</package>
 
 @param masterimage (Entity::Masterimage) The master image for this system image.
+@param systemimage_name (String)
 
 =end classdoc
 =cut
@@ -876,16 +877,17 @@ There is no separate step for creating a system volume.
 sub createSystemImage {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
-                         required => [ "masterimage" ]);
+                         required => [ 'masterimage', 'systemimage_name' ]);
     
-    # Systemimage names must be unique and "sanitized", descriptions not.
-    my $sane_name = $args{masterimage}->masterimage_name;
-    $sane_name =~ s#[^0-9A-Za-z_]+##g; # see attributes definition in Entity::Systemimage    
+    # If a systemimage_desc is given, it is not used, because _we_ use that field
+    # to store the connection to the masterimage.
+    # If it is important to let the caller set this field, we'd need to use some
+    # other (subclass) field, a ParamPreset, or something else.
     
     return Entity::Systemimage->new(
         storage_manager_id => $self->id,
         # names must be unique, descriptions not
-        systemimage_name => $sane_name.'_'.time(),
+        systemimage_name => $args{systemimage_name},
         systemimage_desc => $self->_addAwsPrefix($args{masterimage}->masterimage_file)
     );
 }
@@ -893,48 +895,26 @@ sub createSystemImage {
 # RHEL-7.0_GA_HVM-x86_64-3-Hourly2_1413821822
 
 
-#=pod
-#=begin classdoc
-#
-#Remove a system image from the storage system.
-#
-#@see <package>Manager::StorageManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub removeSystemImage {
-#    my ($self, %args) = @_;
-#
-#    General::checkParams(args => \%args, required => [ "systemimage" ]);
-#
-#    if (defined $args{systemimage}->volume_uuid) {
-#        my $detail;
-#        my $time_out = time + 60;
-#        do {
-#            $detail = OpenStack::Volume->detail(api => $self->_api, id => $args{systemimage}->volume_uuid);
-#
-#            $log->debug("Volume to delete status: $detail->{status} (timeout " . ($time_out - time) . "s left)");
-#
-#            sleep 3;
-#        } while ($detail->{status} =~ m/in-use/ && time < $time_out);
-#
-#        try {
-#            my $volume = OpenStack::Volume->delete(
-#                             api => $self->_api,
-#                             id => $args{systemimage}->volume_uuid,
-#                         );
-#            $log->debug(Dumper $volume);
-#        }
-#        catch ($err) {
-#            $log->warn('Error when deleting volume: ' . $err);
-#        }
-#    }
-#    else {
-#        $log->warn('No volume to delete');
-#    }
-#    $args{systemimage}->delete;
-#}
+=pod
+=begin classdoc
+
+Remove a system image from the storage system.
+In AWS, root partitions are linked to the instance. Terminate the instance, and you'll drop the images.
+(Or we keep the image next to it. This is subject to discussion.)
+
+@see <package>Manager::StorageManager</package>
+
+@param systemimage (Entity::Systemimage)
+
+=end classdoc
+=cut
+
+sub removeSystemImage {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ "systemimage" ]);
+    
+    $args{systemimage}->delete;
+}
 
 
 =pod
