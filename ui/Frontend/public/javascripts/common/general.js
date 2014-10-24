@@ -370,13 +370,6 @@ function openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, canc
         $(this).dialog("close");
     };
 
-    if (options.successCallback && typeof options.successCallback === 'function') {
-        options.successCallback.call(null);
-    } else {
-        console.debug('NO FUNCTION');
-    }
-    return;
-
     buttons[confirm_button_label] = function () {
         $.ajax({
             type    : 'DELETE',

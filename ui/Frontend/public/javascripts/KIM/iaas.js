@@ -390,8 +390,8 @@ function load_iaas_content (container_id) {
 
         serie = [[1, value1], [2, value2]];
 
-        serie = [[1, 75], [2, 25]];
-        ratio = 75;
+        // serie = [[1, 75], [2, 25]];
+        // ratio = 75;
 
         $.jqplot(containerId, [serie], {
             title: {
@@ -420,6 +420,8 @@ function load_iaas_content (container_id) {
 
     function activateButtons() {
 
+        var isRunning = false;
+
         // Detail
         $('.list-item-info .name span').click(function() {
             $(this)
@@ -434,14 +436,44 @@ function load_iaas_content (container_id) {
 
         // Synchronize
         $('.button-synchronize').click(function() {
+
+            if (isRunning === true) {
+                return;
+            }
+            isRunning = true;
+
             var id = $(this).parent().data('id');
-            $.post('/api/component/' + id + '/synchronize');
+            var _this = this;
+            startButtonAnimation(_this);
+            $.ajax({
+                type: "POST",
+                url: '/api/component/' + id + '/synchronize',
+                complete: function() {
+                    stopButtonAnimation(_this);
+                    isRunning = false;
+                }
+            });
         });
 
         // Optimize
         $('.button-optimize').click(function() {
+
+            if (isRunning === true) {
+                return;
+            }
+            isRunning = true;
+
             var id = $(this).parent().data('id');
-            $.post('/api/component/' + id + '/optimiaas');
+            var _this = this;
+            startButtonAnimation(_this);
+            $.ajax({
+                type: "POST",
+                url: '/api/component/' + id + '/optimiaas',
+                complete: function() {
+                    stopButtonAnimation(_this);
+                    isRunning = false;
+                }
+            });
         });
 
         // Unregister
@@ -459,6 +491,17 @@ function load_iaas_content (container_id) {
                 }
             );
         });
+    }
+
+    function startButtonAnimation(button) {
+        $(button)
+            .addClass('transparent-text')
+            .append($('<i>', {'class': 'glyphicon glyphicon-refresh spin'}));
+    }
+
+    function stopButtonAnimation(button) {
+        $(button).children('i').remove();
+        $(button).removeClass('transparent-text');
     }
 
     function reloadList() {

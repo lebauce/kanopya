@@ -9,7 +9,6 @@
 @import "../../components/bootstrap/less/mixins.less";
 
 .list.container {
-    // background-color: #ff0000;
     width: 100%;
     padding: 0;
     font-weight: normal;
@@ -30,16 +29,67 @@
     padding: 15px;
 
     .button-group {
+        .btn {
+            position: relative;
+
+            i {
+                position: absolute;
+                top: 10px;
+                left: 50%;
+                margin-left: -8px;
+                color: #ffffff;
+            }
+        }
         .btn-action3 {
             .button-variant(@btn-danger-color; @btn-danger-bg; @btn-danger-border);
             margin-left: 30px;
         }
         .btn-action2 {
             .button-variant(@btn-primary-color; @btn-primary-bg; @btn-primary-border);
+
+            &.transparent-text {
+                color: @btn-primary-bg;
+            }
+            &.transparent-text:hover,
+            &.transparent-text:focus {
+                color: darken(@btn-primary-bg, 10%);
+            }
         }
+
         .btn-action1 {
             .button-variant(#fff; @theme-color1; darken(@theme-color1, 5%));
             float: right;
+        }
+
+        .spin {
+          -webkit-animation: spin 2s infinite linear;
+          -moz-animation   : spin 2s infinite linear;
+          -o-animation     : spin 2s infinite linear;
+          animation        : spin 2s infinite linear;
+        }
+        @-moz-keyframes spin {
+            from {
+                -moz-transform: rotate(0deg);
+            }
+            to {
+                -moz-transform: rotate(360deg);
+            }
+        }
+        @-webkit-keyframes spin {
+            from {
+                -webkit-transform: rotate(0deg);
+            }
+            to {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
         }
     }
 }
