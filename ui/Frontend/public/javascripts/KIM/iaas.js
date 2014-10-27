@@ -228,8 +228,6 @@ function load_iaas_content (container_id) {
             '/api/component?custom.category=VirtualMachineManager&expand=component_type,service_provider&deep=1',
             function(data) {
                 $.each(data, function(i, obj) {
-                    index = obj.keystone_url.search(/\d/);
-                    urlLabel = (index > -1) ? obj.keystone_url.substr(index) : '';
 
                     iaasObject = {
                         'id'                 : obj.pk,
@@ -250,8 +248,10 @@ function load_iaas_content (container_id) {
                         'service_provider_id': obj.service_provider_id
                     };
 
-                    index = iaasObject.url.search(/\d/);
-                    iaasObject.urlLabel = (index > -1) ? iaasObject.url.substr(index) : '';
+                    if (iaasObject.url) {
+                        index = iaasObject.url.search(/\d/);
+                        iaasObject.urlLabel = (index > -1) ? iaasObject.url.substr(index) : iaasObject.url;
+                    }
 
                     // State
                     if (obj.service_provider) {
