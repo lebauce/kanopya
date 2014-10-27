@@ -115,6 +115,18 @@ my $vm_states = { active       => 'in',
 
 
 
+sub new {
+    my ($class, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ]);
+
+    # Initialize the param preset entry used to store available configuration
+    my $self = $class->SUPER::new(%args);
+    my $pp = ParamPreset->new();
+    $self->param_preset_id($pp->id);
+    return $self;
+}
+
 =pod
 =begin classdoc
 
@@ -128,18 +140,13 @@ the the related param preset.
 =end classdoc
 =cut
 
-sub new {
+sub create {
     my ($class, %args) = @_;
-
-
     General::checkParams(args     => \%args,
                          required => [ 'api_username', 'api_password', 'keystone_url', 'tenant_name' ]);
 
     Kanopya::Database::beginTransaction();
-    my $self = $class->SUPER::new(%args);
-
-    # Initialize the param preset entry used to store available configuration
-    $self->param_preset(ParamPreset->new());
+    my $self = $class->new(%args);
 
     # Try to connect to the api to do not register the componnet if connexion infos are eroneous
     try {
@@ -814,7 +821,7 @@ sub getVMDetails {
     }
 
     return {
-        hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
+        hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:hypervisor_hostname'},
         state => $details->{server}->{status},
         ram => $details->{server}->{flavor}->{ram} * 1024 * 1024, #MB to B
         cpu => $details->{server}->{flavor}->{vcpus},
@@ -1401,6 +1408,290 @@ sub _api {
     return $self->{_api}
 }
 
+sub _createHypervisor {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'ram', 'core', 'hostname' ]);
+
+    my $hypervisor = Entity::Host->new(
+                         active => 1,
+                         host_ram => $args{ram},
+                         host_core => $args{core},
+                         host_serial_number => $args{hostname},
+                         host_desc => 'Registered OpenStack Hypervisor - '
+                                      . $args{hostname},
+                     );
+
+    $self->addHypervisor(host => $hypervisor);
+    return $hypervisor;
+}
+
+sub _updateHypervisor {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'ram', 'core', 'hypervisor' ]);
+    $args{hypervisor}->update(
+        host_ram => $args{ram},
+        host_core => $args{core},
+    );
+    return;
+}
+
+sub _synchronizeHypervisors {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'hypervisor_list' ]);
+
+    # Delete removed hypervisor
+    for my $hv ($self->hypervisors) {
+        if (! exists $args{hypervisor_list}->{$hv->host_serial_number}) {
+            for my $vm ($hv->virtual_machines) {
+                $vm->hypervisor_id(undef);
+            }
+            try {
+                $hv->node->remove();
+            }
+            $hv->delete();
+        }
+    }
+
+    my $hv_count = 0;
+    for my $hypervisor_info (values %{$args{hypervisor_list}}) {
+        $hv_count++;
+
+        my $hypervisor;
+        try {
+            $hypervisor = Entity::Host::Hypervisor->find(hash => {
+                              host_serial_number => $hypervisor_info->{hypervisor_hostname},
+                          });
+
+            $self->_updateHypervisor(
+                hypervisor => $hypervisor,
+                ram => $hypervisor_info->{memory_mb} * (1024 ** 2),
+                core => $hypervisor_info->{vcpus},
+            );
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $hypervisor = $self->_createHypervisor(
+                              ram => $hypervisor_info->{memory_mb} * (1024 ** 2),
+                              core => $hypervisor_info->{vcpus},
+                              hostname =>$hypervisor_info->{hypervisor_hostname},
+                          );
+        }
+        catch ($err) {
+            $err->rethrow();
+        }
+
+        $hypervisor->setState(state => 'up');
+
+        # Create the corresponding node if not exist
+        # Can not use findOrCreate here as the node number should differs
+        my $node = $hypervisor->node;
+        if (! defined $node) {
+            $node = Entity::Node->new(
+                node_hostname => $hypervisor_info->{hypervisor_hostname},
+                host_id       => $hypervisor->id,
+                node_state    => 'in:' . time(), #TODO manage disabled hv
+                node_number   => $hv_count,
+            );
+        }
+        else {
+            $node->update(
+                node_hostname => $hypervisor_info->{hypervisor_hostname},
+                node_number => $hv_count,
+            );
+        }
+    }
+}
+
+sub _updateVm {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args => \%args,
+        required => [ 'vm', 'ram', 'core', 'hostname', 'hypervisor_name' ],
+    );
+
+    # TODO Optimize to avoid this call
+    my $hypervisor = $self->find(
+                         related => 'hypervisors',
+                         hash => {
+                            'node.node_hostname' => $args{hypervisor_name},
+                         }
+                     );
+
+    $args{vm}->update(
+        hypervisor_id => $hypervisor->id,
+        host_serial_number => $args{hostname},
+        host_ram => $args{ram},
+        host_core => $args{core},
+    );
+}
+
+sub _createVm {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args => \%args,
+        required => [ 'ram', 'core', 'hostname', 'hypervisor_name', 'vm_uuid', 'num_ifaces' ]
+    );
+
+    my $vm = $self->createVirtualHost(
+                 ram  => $args{ram},
+                 core => $args{core},
+                 ifaces => $args{num_ifaces},
+                 serial_number => $args{hostname},
+          );
+
+    # TODO Optimize to avoid this call
+    my $hypervisor = $self->find(
+                         related => 'hypervisors',
+                         hash => {
+                            'node.node_hostname' => $args{hypervisor_name},
+                         }
+                     );
+
+    $vm = $self->promoteVm(
+              host => $vm,
+              vm_uuid => $args{vm_uuid},
+              hypervisor_id => $hypervisor->id,
+          );
+
+    return $vm;
+}
+
+
+sub _synchronizeVirtualMachines {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm_list' ]);
+
+    # Delete removed vm
+    for my $vm ($self->hosts) {
+        if (! exists $args{vm_list}->{$vm->openstack_vm_uuid}) {
+            try {
+                $vm->node->delete();
+            }
+            $vm->delete();
+        }
+    }
+
+    my $count = 0;
+
+    for my $vm_info (values %{$args{vm_list}}) {
+        $count++;
+
+        my $network_info = $vm_info->{addresses};
+
+        my $vm;
+        try {
+            $vm = Entity::Host::VirtualMachine::OpenstackVm->find(
+                      hash => {openstack_vm_uuid => $vm_info->{id}}
+                  );
+
+            $self->_updateVm(
+                 vm => $vm,
+                 ram => $vm_info->{flavor}->{ram} * (1024 ** 2), # MB to B
+                 core => $vm_info->{flavor}->{vcpus},
+                 hostname => $vm_info->{name},
+                 hypervisor_name => $vm_info->{'OS-EXT-SRV-ATTR:hypervisor_hostname'},
+            );
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $vm = $self->_createVm(
+                      ram => $vm_info->{flavor}->{ram} * (1024 ** 2), # MB to B
+                      core => $vm_info->{flavor}->{vcpus},
+                      vm_uuid => $vm_info->{id},
+                      hostname => $vm_info->{name},
+                      num_ifaces => scalar (keys %$network_info),
+                      hypervisor_name => $vm_info->{'OS-EXT-SRV-ATTR:hypervisor_hostname'},
+                  );
+        }
+        catch ($err) {
+            $err->rethrow();
+        }
+
+        # Create the corresponding node if not exist
+        my $node = $vm->node;
+        if (! defined $node) {
+            $node = Entity::Node->new(
+                        node_hostname => $vm_info->{name},
+                        node_number => $count,
+                        host_id => $vm->id,
+                        systemimage_id => undef, # Manage
+                    );
+        }
+        else {
+            $node->update(
+                node_hostname       => $vm_info->{name},
+                node_number         => $count,
+            );
+        }
+        $node->setState(state => $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time());
+        my @ifaces = $vm->ifaces;
+        # Reaffect all mac/ip
+        for my $iface (@ifaces) {
+            $iface->iface_mac_addr(undef);
+            for my $ip ($iface->ips) {
+                $ip->delete;
+            }
+        }
+
+        while(my ($name, $ip_infos) = each(%$network_info)) {
+
+            # TODO Manage floating ips
+            my $ip_info;
+            # '=' is ok, we assign first and then we test
+            while(($ip_info = (pop @$ip_infos)) && ($ip_info->{'OS-EXT-IPS:type'} ne 'fixed')) {}
+
+            if (defined $ip_info) {
+                my $iface = (pop @ifaces);
+                $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
+
+                Ip->new(
+                    ip_addr  => $ip_info->{addr},
+                    iface_id => $iface->id,
+                );
+                $node->admin_ip_addr($ip_info->{addr});
+            }
+        }
+    }
+}
+
+sub _synchronizeMasterimages {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'images' ]);
+
+    # Delete removed masterimage
+    for my $mi ($self->masterimages) {
+        if (! exists $args{images}->{$mi->masterimage_file}) {
+            $mi->delete;
+        }
+    }
+
+    my $type = ClassType::ServiceProviderType::ClusterType->find(hash => {
+                   service_provider_name => 'Cluster',
+               });
+
+    for my $image_info (values %{$args{images}}) {
+        try {
+            my $image = Entity::Masterimage::GlanceMasterimage->find(hash => {
+                            masterimage_file => $image_info->{file},
+                        });
+
+            $image->update(
+                masterimage_name => $image_info->{name},
+                masterimage_size => $image_info->{size},
+            );
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            Entity::Masterimage::GlanceMasterimage->new(
+                masterimage_name => $image_info->{name},
+                masterimage_size => $image_info->{size},
+                masterimage_file => $image_info->{file},
+                masterimage_cluster_type_id => $type->id,
+                storage_manager_id => $self->id,
+            );
+        }
+        catch ($err) {
+            $err->rethrow();
+        }
+    }
+}
 
 sub _load {
     my ($self, %args) = @_;
@@ -1466,124 +1757,21 @@ sub _load {
         override => 1,
     );
 
-    # Manage images
-    my $cluster_type = ClassType::ServiceProviderType::ClusterType->find(
-                           service_provider_name => 'Cluster',
-                       );
-
-    for my $image_info (@{$args{infra}->{images}}) {
-        Entity::Masterimage::GlanceMasterimage->findOrCreate(
-            masterimage_name => $image_info->{name},
-            masterimage_file => $image_info->{file},
-            masterimage_size => $image_info->{size},
-            masterimage_cluster_type_id => $cluster_type->id,
-        );
-    }
-
-    # Manage hypervisors
-    my $count = 0;
-    my $hv_count = 0;
+    my $hypervisor_list = {};
+    my $vm_list = {};
     for my $hypervisor_info (@{$args{infra}->{hypervisors}}) {
-        my $hypervisor = Entity::Host->findOrCreate(
-                             active => 1,
-                             host_ram   => $hypervisor_info->{memory_mb} * (1024 ** 2), # MB to B
-                             host_core  => $hypervisor_info->{vcpus},
-                             host_desc  => 'Registered OpenStack Hypervisor - '
-                                           . $hypervisor_info->{hypervisor_hostname},
-                             host_serial_number => 'Registered OpenStack Hypervisor - '
-                                                   . $hypervisor_info->{hypervisor_hostname},
-                         );
-        $hv_count++;
-
-        $hypervisor->setState(state => 'up');
-        if (! $hypervisor->isa("Entity::Host::Hypervisor")) {
-            $self->addHypervisor(host => $hypervisor);
-        }
-
-        # Create the corresponding node if not exist
-        # Can not use findOrCreate here as the node number should differs
-        try {
-            Entity::Node->find(hash => {
-                node_hostname => $hypervisor_info->{hypervisor_hostname},
-                host_id       => $hypervisor->id,
-            })
-        }
-        catch {
-            Entity::Node->new(
-                node_hostname => $hypervisor_info->{hypervisor_hostname},
-                host_id       => $hypervisor->id,
-                node_state    => 'in:' . time(),
-                node_number   => $hv_count,
-            );
-        }
-
+        $hypervisor_list->{$hypervisor_info->{hypervisor_hostname}} = $hypervisor_info;
         for my $vm_info (@{$hypervisor_info->{servers}}) {
-            $count++;
-
-            my $network_info = $vm_info->{addresses};
-
-            my $vm;
-            try {
-                $vm = Entity::Host::VirtualMachine->find(
-                          hash => {serial_number => $vm_info->{name}}
-                      );
-            }
-            catch {
-                $vm = $self->createVirtualHost(
-                          ram  => $vm_info->{flavor}->{ram} * (1024 ** 2), # MB to B
-                          core => $vm_info->{flavor}->{vcpus},
-                          serial_number => $vm_info->{name},
-                          ifaces => scalar (keys %$network_info),
-                      );
-
-                $vm = $self->promoteVm(
-                          host => $vm,
-                          vm_uuid => $vm_info->{id},
-                          hypervisor_id => $hypervisor->id,
-                      );
-            }
-
-            # Create the corresponding node if not exist
-            # Can not use findOrCreate here as the node number should differs
-            my $node;
-            try {
-                $node = Entity::Node->find(hash => {
-                            node_hostname => $vm_info->{name},
-                            host_id       => $vm->id,
-                        });
-            }
-            catch {
-                $node = Entity::Node->new(
-                           node_hostname       => $vm_info->{name},
-                           host_id             => $vm->id,
-                           node_number         => $count,
-                           systemimage_id      => undef, # Manage
-                        );
-            }
-
-            $node->setState(state => $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time());
-
-            my @ifaces = $vm->ifaces;
-            while(my ($name, $ip_infos) = each(%$network_info)) {
-
-                # TODO Manage floating ips
-
-                my $ip_info;
-                # '=' is ok, we assign first and then we test
-                while(($ip_info = (pop @$ip_infos)) && ($ip_info->{'OS-EXT-IPS:type'} ne 'fixed')) {}
-
-                if (defined $ip_info) {
-                    my $iface = (pop @ifaces);
-                    $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
-                    Ip->new(
-                        ip_addr  => $ip_info->{addr},
-                        iface_id => $iface->id,
-                    );
-                    $node->admin_ip_addr($ip_info->{addr});
-                }
-            }
+            $vm_list->{$vm_info->{id}} = $vm_info;
         }
     }
-}
 
+    $self->_synchronizeHypervisors(hypervisor_list => $hypervisor_list);
+    $self->_synchronizeVirtualMachines(vm_list => $vm_list);
+
+    my %images = map {$_->{file}, $_} @{$args{infra}->{images}};
+    $self->_synchronizeMasterimages(images => \%images);
+
+    return;
+}
 1;
