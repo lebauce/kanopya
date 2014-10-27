@@ -26,9 +26,6 @@ and it offers methods for the manipulation of said infrastructure.
 API calls are encapsulated within AWS::API (general means of access) and
 AWS::EC2 (individual API calls for EC2).
 
-# This component is able to synchronise the existing infrastructure to the HCM api, and load
-# the available parameters/option for each AWSW services.
-
 It implements the four HCM management interfaces for IaaS components:
 VirtualMachineManager, StorageManager, BootManager, NetworkManager.
 
@@ -50,20 +47,9 @@ use AWS::EC2;
 use AwsInstanceType;
 use CapacityManagement;
 use ClassType::ServiceProviderType::ClusterType;
-#use Entity::Host::Hypervisor::OpenstackHypervisor;
-#use Entity::Host::VirtualMachine::OpenstackVm;
 use Entity::Masterimage::AwsMasterimage;
-#use Entity::Systemimage::CinderSystemimage;
-#use Entity::Node;
-#use ParamPreset;
 use Kanopya::Exceptions;
 
-#use OpenStack::Port;
-#use OpenStack::Volume;
-#use OpenStack::Server;
-#use OpenStack::Infrastructure;
-
-#use Hash::Merge;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -204,48 +190,81 @@ sub _ec2 {
 }
 
 
-#
+
 #sub remove {
 #    my ($self, %args) = @_;
 #    $self->unregister();
 #    $self->SUPER::remove();
 #}
-#
-#sub unregister {
-#    my ($self, %args) = @_;
-#    my @spms = $self->service_provider_managers;
-#    if (@spms) {
-#        my $error = 'Cannot unregister OpenStack: Still used as "'
-#                    . $spms[0]->manager_category->category_name
-#                    . '" by cluster "'
-#                    . $spms[0]->service_provider->label . '"';
-#        throw Kanopya::Exception::Internal(error => $error);
-#    }
-#
-#    my @sis = $self->systemimages;
-#    if (@sis) {
-#        my $error = 'Cannot unregister OpenStack: Still linked to a systemimage "'
-#                    . $sis[0]->label . '"';
-#        throw Kanopya::Exception::Internal(error => $error);
-#    }
-#
-#    for my $vm ($self->hosts) {
-#        if (defined $vm->node) {
-#            $vm->node->delete;
-#        }
-#        $vm->delete;
-#    }
-#
-#    for my $host ($self->hypervisors) {
-#        if (defined $host->node) {
-#            $host->node->delete;
-#        }
-#        $host->delete;
-#    }
-#
-#    $self->removeMasterimages();
-#}
-#
+
+=pod
+=begin classdoc
+
+Forget everything about this infrastructure in the database
+(i.e. undo all that _load() has done). 
+
+Only runs when no HCM services depend on the platform any longer.
+
+Does nothing on the remote platform. 
+
+=end classdoc
+=cut
+
+sub unregister {
+    my ($self, %args) = @_;
+    my @spms = $self->service_provider_managers;
+    my @spms_left;
+    if (@spms) {
+        # there might be phantoms from our own tests
+        foreach my $spm (@spms) {
+            my $sp;
+            try {
+                $sp = $spm->service_provider;
+                push @spms_left, $sp;
+            } catch (Kanopya::Exception::Internal::NotFound $ex) {
+                $log->info("Deleting empty Service Provider Manager #".$spm->id);
+                $spm->remove;
+            }
+        }
+    }
+    if (@spms_left) {
+        $log->info("still found ".scalar(@spms_left)." non-empty Service Provider Managers:");
+        my $spm_left = $spms_left[0];
+        my $error = 'Cannot unregister AWS: Still used as "'
+                    . $spm_left->manager_category->category_name
+                    . '" by cluster "' . $spm_left->service_provider->label . '"';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    # No services running any longer? then purge system images from our DB.
+    foreach my $systemimage ($self->systemimages) {
+        $log->info('Unregistering AWS: deleting left-over systemimage <'.$systemimage->systemimage_name.'>');
+        $systemimage->delete;
+    }
+
+    for my $vm ($self->hosts) {
+        my $node = $vm->node;
+        if (defined $node) {
+            $log->info('Unregistering AWS: deleting left-over node <'.$node->node_hostname.'>');
+            $node->delete;
+        }
+        $log->info('Unregistering AWS: deleting left-over host <'.$vm->host_desc.'>');
+        $vm->delete;
+    }
+
+    for my $host ($self->hypervisors) {
+        if (defined $host->node) {
+            $host->node->delete; # no log message - this one should actually exist
+        }
+        $host->delete;
+    }
+
+    $self->removeMasterimages();
+    
+    # TODO: why not in OpenStack ? is this too daring ?
+    $self->delete;
+}
+
 #sub hostType {
 #    my $self = shift;
 #    return $self->label;
@@ -590,9 +609,6 @@ sub getTheHypervisor {
     my ($self) = @_;
     return Entity::Host->find(hash => { host_serial_number => $self->_getHypervisorDescription });
 }
-
-
-
 
 =pod
 =begin classdoc
@@ -1298,33 +1314,30 @@ sub decreaseConsumers {
 }
 
 
-#=pod
-#=begin classdoc
-#
-#Remove related master images
-#
-#=end classdoc
-#=cut
-#
-#sub removeMasterimages {
-#    my ($self, %args) = @_;
-#    my $images = $self->param_preset->load->{images};
-#    for my $image (values %$images) {
-#        try {
-#            Entity::Masterimage::GlanceMasterimage->find(hash => {
-#                masterimage_name => $image->{name},
-#                masterimage_file => $image->{file},
-#            })->delete();
-#        }
-#        catch (Kanopya::Exception::Internal::NotFound $err) {
-#            $log->warn('Systeimage <' . $image->{name} . '> seems to have been already deleted');
-#        }
-#        catch ($err) {
-#            $err->rethrow;
-#        }
-#    }
-#}
-#
+=pod
+=begin classdoc
+
+Remove AWS master images
+
+=end classdoc
+=cut
+
+sub removeMasterimages {    
+    my ($self, %args) = @_;
+    
+    # TODO TODO TODO
+    # use TGE's new relation to find the Storage Managers from Masterimages
+    
+    # right now, a gross estimation:
+    
+    my @masterimages = Entity::Masterimage->search(hash => {
+       masterimage_file => { 'LIKE' => 'ami-%' } 
+    });
+    foreach my $masterimage (@masterimages) {
+        $masterimage->delete();
+    }
+}
+
 #=pod
 #=begin classdoc
 #

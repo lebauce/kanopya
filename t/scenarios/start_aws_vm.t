@@ -20,8 +20,6 @@ Log::Log4perl->easy_init({
 });
 use Test::More 'no_plan';
 use Test::Exception;
-# use Test::Pod;
-# use ClassType::ComponentType;
 use TryCatch;
 
 use Kanopya::Database;
@@ -31,8 +29,6 @@ use Kanopya::Test::Register;
 use Kanopya::Test::Retrieve;
 
 
-#use Kanopya::Test::Create;
-#use Entity::Component::KanopyaDeploymentManager;
 use AWS::API;
 use AWS::EC2;
 # This one can only get loaded after the Kanopya* stuff above!
@@ -40,7 +36,7 @@ use Entity::Component::Virtualization::AwsAccount;
 use Entity::Masterimage;
 use Entity::ServiceProvider::Cluster;
 
-my $testing = 0;
+my $testing = 1;
 
 main();
 
@@ -166,7 +162,7 @@ sub main {
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
     }
-    
+        
     Kanopya::Database::global_user_check(value => 1);
 }
 
