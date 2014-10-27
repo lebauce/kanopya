@@ -427,10 +427,17 @@ sub getStorageManagerParams {
     my ($self, %args) = @_;
 
     my $pp = $self->param_preset->load;
-    my $params = { volume_type => $self->getManagerParamsDef->{volume_type} };
+    my $params = {
+        volume_type => $self->getManagerParamsDef->{volume_type},
+        masterimage_id => Manager::StorageManager->getManagerParamsDef->{masterimage_id},
+    };
 
     for my $type_id (keys %{ $pp->{volume_types} }) {
         push @{ $params->{volume_type}->{options} }, $pp->{volume_types}->{$type_id}->{name};
+    }
+
+    for my $masterimage ($self->masterimages) {
+        push @{$params->{masterimage_id}->{options}}, $masterimage->toJSON();
     }
 
     return $params;

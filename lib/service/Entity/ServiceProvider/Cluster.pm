@@ -565,6 +565,12 @@ sub addManagerParameters {
         $log->info("Install network interfaces as described by the network manager");
         $self->configureInterfaces(interfaces => $args{params}->{interfaces});
     }
+
+    # TODO remove masterimage_id from cluster instance
+    # and use manager params in the workflow
+    if ($args{manager_type} eq 'StorageManager') {
+        $self->masterimage_id($args{params}->{masterimage_id});
+    }
 }
 
 

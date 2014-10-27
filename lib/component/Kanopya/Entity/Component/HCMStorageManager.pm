@@ -169,6 +169,12 @@ sub getStorageManagerParams {
                                   $export_manager->getExportManagerParams(params => $args{params}));
     }
 
+    $paramdef->{masterimage_id} = Manager::StorageManager->getManagerParamsDef->{masterimage_id};
+
+    for my $masterimage ($self->masterimages) {
+        push @{$paramdef->{masterimage_id}->{options}}, $masterimage->toJSON();
+    }
+
     return $paramdef;
 }
 

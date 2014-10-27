@@ -88,7 +88,7 @@ sub execute {
     my $tmpdir = tempdir(CLEANUP => 1);
     $log->debug("Unpack archive files from archive '$self->{params}->{file}' into $tmpdir");
     my $compress = $self->{params}->{compress_type} eq 'bzip2' ? 'j' : 'z';
-    $cmd = "tar -x -$compress -f $self->{params}->{file} -C $tmpdir"; 
+    $cmd = "tar -x -$compress -f $self->{params}->{file} -C $tmpdir";
     $cmd_res = $self->getEContext->execute(command => $cmd);
 
     # check metadata file exists
@@ -182,7 +182,8 @@ sub execute {
                           masterimage_os               => $metadata->{os},
                           masterimage_size             => $image_size,
                           masterimage_cluster_type_id  => $clustertype->id,
-                          masterimage_defaultkernel_id => $defaultkernel
+                          masterimage_defaultkernel_id => $defaultkernel,
+                          storage_manager_id       => Entity::Component::HCMStorageManager->find->id,
                       );
 
     # set components
