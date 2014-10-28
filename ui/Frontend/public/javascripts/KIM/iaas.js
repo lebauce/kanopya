@@ -201,24 +201,24 @@ function load_iaas_content (container_id) {
     function loadIaasCollection() {
 
         var iaasObject;
-        var index, map;
+        var index, map, num;
 
         var stateMap = {
             'up'       : {
                 'label': 'Up',
-                'icon' : 'glyphicon-thumbs-up'
+                'icon' : 'fa-thumbs-up'
             },
             'in'       : {
                 'label': 'Up',
-                'icon' : 'glyphicon-thumbs-up'
+                'icon' : 'fa-thumbs-up'
             },
             'down'     : {
                 'label': 'Down',
-                'icon' : 'glyphicon-thumbs-down'
+                'icon' : 'fa-thumbs-down'
             },
             'broken'   : {
                 'label': 'Broken',
-                'icon' : 'glyphicon-remove'
+                'icon' : 'fa-times'
             }
         };
 
@@ -258,7 +258,7 @@ function load_iaas_content (container_id) {
                         iaasObject.state = obj.service_provider.cluster_state;
                         index = iaasObject.state.indexOf(':');
                         if (index > -1) {
-                            iaasObject.state = iaasObject.state.substring(iaasObject.state, 0, index);
+                            iaasObject.state = iaasObject.state.substring(0, index);
                         }
                         if (iaasObject.state in stateMap) {
                             iaasObject.stateLabel = stateMap[iaasObject.state].label;
@@ -277,8 +277,10 @@ function load_iaas_content (container_id) {
 
                             $.each(data, function(i, obj) {
                                 // Total CPU and RAM
-                                iaasObject.cpuTotal += obj.host_core;
-                                iaasObject.ramTotal += obj.host_ram;
+                                num = parseInt(obj.host_core, 10);
+                                iaasObject.cpuTotal += num;
+                                num = parseInt(obj.host_ram, 10);
+                                iaasObject.ramTotal += num;
 
                                 // Virtual machines
                                 $.ajax({
@@ -291,8 +293,10 @@ function load_iaas_content (container_id) {
 
                                         $.each(data, function(i, obj) {
                                             // Used CPU and RAM
-                                            iaasObject.cpuUsed += obj.host_core;
-                                            iaasObject.ramUsed += obj.host_ram;
+                                            num = parseInt(obj.host_core, 10);
+                                            iaasObject.cpuUsed += num;
+                                            num = parseInt(obj.host_ram, 10);
+                                            iaasObject.ramUsed += num;
                                         });
                                     },
                                     error: function() {
@@ -312,14 +316,23 @@ function load_iaas_content (container_id) {
                         }
                     });
 
-                    if (!isNaN(iaasObject.ramUsed)) {
-                        if (iaasObject.ramUsed > 0) {
-                            map = getReadableSize(iaasObject.ramUsed, false);
-                            iaasObject.ramUnit = map.unit;
-                            iaasObject.ramUsed = map.value;
+                    if (!isNaN(iaasObject.ramUsed) && iaasObject.ramUsed > 0) {
+                        map = getReadableSize(iaasObject.ramUsed, false);
+                        iaasObject.ramUnit = map.unit;
+                        iaasObject.ramUsed = map.value;
+                        iaasObject.ramUsed = formatRam(iaasObject.ramUsed);
+                        if(!isNaN(iaasObject.ramTotal) && iaasObject.ramTotal > 0) {
+                            iaasObject.ramTotal = convertUnits(iaasObject.ramTotal, 'B', iaasObject.ramUnit.substr(0, 1));
+                            iaasObject.ramTotal = formatRam(iaasObject.ramTotal);
                         }
+                    } else if(!isNaN(iaasObject.ramTotal) && iaasObject.ramTotal > 0) {
+                        map = getReadableSize(iaasObject.ramTotal, false);
+                        iaasObject.ramUnit = map.unit;
+                        iaasObject.ramTotal = map.value;
+                        iaasObject.ramTotal = formatRam(iaasObject.ramTotal);
                     }
 
+                    iaasCollection.push(iaasObject);
                     iaasCollection.push(iaasObject);
                 });
                 renderHtml();
@@ -327,10 +340,36 @@ function load_iaas_content (container_id) {
         );
     }
 
+    function formatRam(value) {
+
+        var index;
+
+        if (value == parseInt(value)) {
+            value = value.toString().
+            index = value.indexOf('.');
+            if (index > -1) {
+                value = value.substring(0, index);
+            }
+        } else {
+            value = (Math.round(value * 10)) / 10; 
+            value = value.toString();
+        }
+
+        return value;
+    }
+
     function renderHtml() {
 
+        clear();
         renderRegisterButtons();
         renderTemplate();
+    }
+
+    function clear() {
+
+        $('.top-action-block').remove();
+        $('#' + container_id).empty();
+        $('#service_dashboard').remove();
     }
 
     function renderRegisterButtons() {
@@ -361,29 +400,35 @@ function load_iaas_content (container_id) {
 
     function renderTemplate() {
 
+        var i;
         var templateFile = '/templates/iaas-home.tmpl.html';
+
         $.get(templateFile, function(templateHtml) {
             var template = Handlebars.compile(templateHtml);
             $('#' + container_id).append(template({
                 'iaasCollection': iaasCollection
             }));
-            renderChart('cpu-chart', 'cpu', '#1D871B');
-            renderChart('ram-chart', 'ram', '#4E8FFF');
+            for (i = 0; i < iaasCollection.length; i++) {
+                renderChart(iaasCollection[i], 'cpu-chart', 'cpu', '#1D871B');
+                renderChart(iaasCollection[i], 'ram-chart', 'ram', '#4E8FFF');
+            }
             activateButtons();
         });
     }
 
-    function renderChart(containerId, infoType, infoColor) {
+    function renderChart(iaasObject, containerId, infoType, infoColor) {
 
         var value1, value2;
         var ratio;
         var serie;
 
-        if (isNaN(iaasCollection[infoType + 'Total']) || isNaN(iaasCollection[infoType + 'Used']) || iaasCollection[infoType + 'Total'] === 0) {
+        containerId += iaasObject.id;
+
+        if (isNaN(iaasObject[infoType + 'Total']) || isNaN(iaasObject[infoType + 'Used']) || iaasObject[infoType + 'Total'] === 0) {
             value1 = 0;
             ratio = '';
         } else {
-            value1 = Math.round(iaasCollection[infoType + 'Used'] / iaasCollection[infoType + 'Total'] * 100);
+            value1 = Math.round(iaasObject[infoType + 'Used'] / iaasObject[infoType + 'Total'] * 100);
             ratio = value1;
         }
         value2 = 100 - value1;
@@ -413,6 +458,7 @@ function load_iaas_content (container_id) {
                     diameter: 45,
                     innerDiameter: 20,
                     shadowAlpha: 0,
+                    highlightMouseOver: false
                 }
             }
         });
@@ -425,7 +471,7 @@ function load_iaas_content (container_id) {
         // Detail
         $('.list-item-info .name span').click(function() {
             $(this)
-                .parents('.list-item-box')
+                .parents('.list-item')
                 .find('.button-detail')
                 .trigger('click');
         });
@@ -496,7 +542,7 @@ function load_iaas_content (container_id) {
     function startButtonAnimation(button) {
         $(button)
             .addClass('transparent-text')
-            .append($('<i>', {'class': 'glyphicon glyphicon-refresh spin'}));
+            .append($('<i>', {'class': 'fa fa-spinner fa-spin'}));
     }
 
     function stopButtonAnimation(button) {
@@ -505,8 +551,6 @@ function load_iaas_content (container_id) {
     }
 
     function reloadList() {
-        $('.top-action-block').remove();
-        $('#' + container_id).empty();
         load_iaas_content(container_id);
     }
 
@@ -528,14 +572,13 @@ function load_iaas_content (container_id) {
             details['tabs'] = [hypervisors_tab];
         }
 
-        $('.top-action-block').remove();
-        $('#' + container_id)
-            .empty()
-            .append($('<div>', {
-                'id': 'content_hypervisors_' + iaasId
-        }));
+        clear();
 
-        display_row_details(iaasId, details, iaasObject, 'iaas_list');
+        // $('#' + container_id).append($('<div>', {
+        //     'id': 'content_hypervisors_' + iaasId
+        // }));
+
+        display_row_details(iaasId, details, iaasObject, 'content_iaas_static');
     }
 
     function getIaasObjectById(iaasId) {
@@ -612,7 +655,6 @@ function load_iaas_content (container_id) {
                     // tab hypervisors
                     details['tabs'] = tabs;
                     elem_id = row_data.service_provider_id;
-
                 } else {
                     details['tabs'] = [ hypervisors_tab ];
                 }

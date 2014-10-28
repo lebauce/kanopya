@@ -1,56 +1,52 @@
 
-<div id="iaas-home" class="list container">
-    <div class="list-container">
-        {{#iaasCollection}}
+<div id="iaas-home" class="list">
+    {{#iaasCollection}}
         <div class="list-item">
-            <div class="list-item-box">
-                <div class="list-item-info">
-                    <div class="name {{componentName}}"><span>{{label}}</span><br/><a href="{{url}}" class="ip" target="_blank">{{urlLabel}}</a></div>
-                    <div class="state">
-                        <div class="glyphicon {{stateIcon}}"></div>
-                        <div class="state-label">{{stateLabel}}</div>
-                    </div>
-                </div>
-                <div class="list-line"></div>
-                <div class="list-properties">
-                    <div class="vm first">
-                        <div class="title">VMs</div>
-                        <div class="value number">{{vmCount}}</div>
-                    </div>
-                    <div class="hypervisor">
-                        <div class="title">HYPERVISORS</div>
-                        <div class="value number">{{hypervisorCount}}</div>
-                    </div>
-                    <div class="cpu-ram cpu">
-                        <div class="title">CPU</div>
-                        <div class="detail">
-                            <div id="cpu-chart" class="donut-chart"></div>
-                            <div class="info">
-                                    <div class="total number">{{cpuTotal}}<span class="label">cores</span></div>
-                                    <div class="used number">{{cpuUsed}}<span class="label">used</span></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="cpu-ram ram">
-                        <div class="title">RAM</div>
-                        <div class="detail">
-                            <div id="ram-chart" class="donut-chart"></div>
-                            <div class="info">
-                                <div class="total number">{{ramTotal}}<span class="label">{{ramUnit}}</span></div>
-                                <div class="used number">{{ramUsed}}<span class="label">used</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="list-line"></div>
-                <div class="button-group" data-id="{{id}}">
-                    <button type="button" class="btn btn-action2 button-synchronize">Synchronize</button>
-                    <button type="button" class="btn btn-action2 button-optimize">Optimize</button>
-                    <button type="button" class="btn btn-action3 button-unregister">Unregister</button>
-                    <button type="button" class="btn btn-action1 button-detail">Detail</button>
+            <div class="list-item-info">
+                <div class="name {{componentName}}"><span>{{label}}</span><br/><a href="{{url}}" class="ip" target="_blank">{{urlLabel}}</a></div>
+                <div class="state">
+                    <div class="fa {{stateIcon}}"></div>
+                    <div class="state-label">{{stateLabel}}</div>
                 </div>
             </div>
+            <div class="list-line"></div>
+            <div class="list-properties">
+                <div class="vm first">
+                    <div class="title">VMs</div>
+                    <div class="value number">{{vmCount}}</div>
+                </div>
+                <div class="hypervisor">
+                    <div class="title">HYPERVISORS</div>
+                    <div class="value number">{{hypervisorCount}}</div>
+                </div>
+                <div class="cpu-ram cpu">
+                    <div class="title">CPU</div>
+                    <div class="detail">
+                        <div id="cpu-chart{{id}}" class="donut-chart"></div>
+                        <div class="info">
+                                <div class="total number">{{cpuTotal}}<span class="label">cores</span></div>
+                                <div class="used number">{{cpuUsed}}<span class="label">used</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cpu-ram ram">
+                    <div class="title">RAM</div>
+                    <div class="detail">
+                        <div id="ram-chart{{id}}" class="donut-chart"></div>
+                        <div class="info">
+                            <div class="total number">{{ramTotal}}<span class="label">{{ramUnit}}</span></div>
+                            <div class="used number">{{ramUsed}}<span class="label">used</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="list-line"></div>
+            <div class="button-group" data-id="{{id}}">
+                <button type="button" class="btn btn-action2 button-synchronize">Synchronize</button>
+                <button type="button" class="btn btn-action2 button-optimize">Optimize</button>
+                <button type="button" class="btn btn-action3 button-unregister">Unregister</button>
+                <button type="button" class="btn btn-action1 button-detail">Detail</button>
+            </div>
         </div>
-        {{/iaasCollection}}
-    </div>
+    {{/iaasCollection}}
 </div>

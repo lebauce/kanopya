@@ -8,25 +8,62 @@
 @import "../../components/bootstrap/less/variables.less";
 @import "../../components/bootstrap/less/mixins.less";
 
-.list.container {
-    width: 100%;
-    padding: 0;
-    font-weight: normal;
+// Copied from boostrasp
+.btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.btn:focus,
+.btn:active:focus,
+.btn.active:focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+.btn:hover,
+.btn:focus {
+  color: #333;
+  text-decoration: none;
+}
+.btn:active,
+.btn.active {
+  background-image: none;
+  outline: 0;
+  -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+          box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+}
+.btn.disabled,
+.btn[disabled],
+fieldset[disabled] .btn {
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: alpha(opacity=65);
+  -webkit-box-shadow: none;
+          box-shadow: none;
+  opacity: .65;
 }
 
-.list-container {
-    .make-row();
-    margin: -(@list-gutter / 2);
-}
+/////////////////////////////////////////////////////////////
 
 .list-item {
-    .make-lg-column(12);     
-    padding: (@list-gutter / 2);
-}
-
-.list-item-box {
     background-color: @list-background-color;
     padding: 15px;
+    margin: 0 5px 30px 5px;
 
     .button-group {
         .btn {
@@ -59,37 +96,6 @@
         .btn-action1 {
             .button-variant(#fff; @theme-color1; darken(@theme-color1, 5%));
             float: right;
-        }
-
-        .spin {
-          -webkit-animation: spin 2s infinite linear;
-          -moz-animation   : spin 2s infinite linear;
-          -o-animation     : spin 2s infinite linear;
-          animation        : spin 2s infinite linear;
-        }
-        @-moz-keyframes spin {
-            from {
-                -moz-transform: rotate(0deg);
-            }
-            to {
-                -moz-transform: rotate(360deg);
-            }
-        }
-        @-webkit-keyframes spin {
-            from {
-                -webkit-transform: rotate(0deg);
-            }
-            to {
-                -webkit-transform: rotate(360deg);
-            }
-        }
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
         }
     }
 }
@@ -125,17 +131,18 @@
         font-size: @font-size-xs;
         text-align: center;
 
-        .glyphicon {
+        .fa {
             font-size: 40px;
-        }
-        .glyphicon-thumbs-up {
-            color: @success-color;
-        }
-        .glyphicon-thumbs-down {
-            color: @error-color;
-        }
-        .glyphicon-remove {
-            color: @error-color;
+
+            &.fa-thumbs-up {
+                color: @success-color;
+            }
+            &.fa-thumbs-down {
+                color: @error-color;
+            }
+            &.fa-times {
+                color: @error-color;
+            }
         }
     }
 }
@@ -146,11 +153,13 @@
 }
 
 .list-properties {
-    .make-row();
     .padding-horizontal(15px);
     .clearfix;
 
     > div {
+      -webkit-box-sizing: border-box;
+         -moz-box-sizing: border-box;
+              box-sizing: border-box;
         border-left: 5px solid @lineColor;
         text-align: center;
         height: 75px;
@@ -174,18 +183,27 @@
     }
     
     .vm {
-        .make-xs-column(2);
+        position: relative;
+        float: left;
+        width: percentage((2 / @grid-columns));
+        min-height: 1px;
+        .padding-horizontal(15px);
     }
 
     .hypervisor {
-        .make-xs-column(2);
+        position: relative;
+        float: left;
+        width: percentage((2 / @grid-columns));
+        min-height: 1px;
         .padding-horizontal(5px);
     }
 
     .cpu-ram {
-        .make-xs-column(4);
-        padding-left: 5px;
-        padding-right: 5px;
+        position: relative;
+        float: left;
+        width: percentage((4 / @grid-columns));
+        min-height: 1px;
+        .padding-horizontal(5px);
 
         .detail {
             margin: 5px auto;
@@ -205,8 +223,7 @@
             }
 
             .info {
-                padding-left: 0px;
-                padding-right: 0;
+                .padding-horizontal(0);
 
                 margin-top: 15px;
                 line-height: 120%;
@@ -250,7 +267,7 @@
 
     .ram {
         .detail {
-            width: 220px;
+            width: 235px;
         }
         .used {
             border-left-color: #4E8FFF;

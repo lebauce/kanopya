@@ -5,7 +5,7 @@
 <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
 <title>HCM</title>
 
-<link rel="stylesheet" href="<% request.uri_base %>/components/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="<% request.uri_base %>/components/font-awesome/css/font-awesome.min.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/kanopya-theme04/jquery-ui-1.8.21.custom.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/layout.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
