@@ -78,7 +78,7 @@ sub getImages {
     
     my $response = $self->{api}->get(
         action => 'DescribeImages',
-        params => ['Owner.1', 'self']
+        params => ['Owner', ['self']]
     );
     
     # For the moment, we also add some generic images.
@@ -116,6 +116,34 @@ sub getImages {
     $log->debug("Found the following AWS images: ".Data::Dumper->Dump([ \@found_images ]));    
     return \@found_images;
 }
+
+
+=pod
+
+=begin classdoc
+
+Lists all available regions.
+
+@return (Arrayref) A list of hashes: { name, endpoint }
+
+=end classdoc
+=cut
+
+sub getRegions {
+    my ($self) = @_;    
+    my $response = $self->{api}->get( action => 'DescribeRegions' );
+    my $xpc = $self->{api}->xpc;
+
+    my @regions = ();
+    foreach my $item ($xpc->findnodes("//x:regionInfo/x:item", $response)) {
+        push @regions, {
+            name     => $xpc->findvalue('x:regionName', $item),
+            endpoint => $xpc->findvalue('x:regionEndpoint', $item) 
+        };
+    }
+    return \@regions;
+}
+
 
 =pod
 

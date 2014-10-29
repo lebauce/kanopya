@@ -48,6 +48,7 @@ use AwsInstanceType;
 use CapacityManagement;
 use ClassType::ServiceProviderType::ClusterType;
 use Entity::Masterimage::AwsMasterimage;
+use Kanopya::Database;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
@@ -134,22 +135,39 @@ the the related param preset.
 sub new {
     my ($class, %args) = @_;
     my $fields = ['api_access_key', 'api_secret_key'];
-
-    General::checkParams(args => \%args, required => $fields);
-                         
+    General::checkParams(args => \%args, required => $fields);                        
     unless (defined($args{region})) {
         $args{region} = 'eu-west-1';
     }
 
-    my $self = $class->SUPER::new(%args);
+    Kanopya::Database::beginTransaction();
 
-    # Initialize the param preset entry used to store available configuration
-    $self->param_preset(ParamPreset->new());
-    
+    my $self = $class->SUPER::new(%args); # among the args: the executor_component_id
     foreach my $key (@$fields, 'region') {
         $self->{key} = $args{key};
     }
+    
+    # Get available regions: this not only checks whether we are allowed in the given region,
+    # it also tests our access data !
+    my $available_regions;
+    try {
+        $available_regions = $self->_ec2->getRegions;
+    } catch ($ex) {
+        Kanopya::Database::rollbackTransaction();
+        throw Kanopya::Exception::Internal::WrongValue(
+             error => "Unable to connect to AWS, please check your access data."
+        );
+    }
+    
+    my %available_regions = map { $_->{name} => 1 } @$available_regions;
+    unless (exists $available_regions{$args{region}}) {
+        Kanopya::Database::rollbackTransaction();
+        throw Kanopya::Exception::Internal::WrongValue(
+             error => "The region ".$args{region}." is not available to you."
+        );
+    } 
 
+    Kanopya::Database::commitTransaction();
     return $self;
 }
 
@@ -190,12 +208,20 @@ sub _ec2 {
 }
 
 
+=pod
+=begin classdoc
 
-#sub remove {
-#    my ($self, %args) = @_;
-#    $self->unregister();
-#    $self->SUPER::remove();
-#}
+Remove this instance from the database.
+Called by a HTTP DELETE.
+=end classdoc
+=cut
+
+sub remove {
+    my ($self, %args) = @_;
+    $log->info("VHH DEBUG: API REMOVE called on AWS component, proceeding to unregister");
+    $self->unregister();
+    $self->SUPER::remove();
+}
 
 =pod
 =begin classdoc
