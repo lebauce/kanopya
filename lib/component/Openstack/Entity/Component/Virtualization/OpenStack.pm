@@ -1415,7 +1415,7 @@ sub _load {
         }
     }
 
-    # Fro each nodes, associate the IAAS component
+    # For each node, associate the IAAS component
     for my $hostname (keys %{ $endpoints }) {
         my $node = Entity::Node->findOrCreate(node_hostname => $hostname);
 

@@ -1377,7 +1377,7 @@ sub checkUserPerm {
             my @paramlist = @{ delete $args{params}->{$key} };
             $args{params}->{$key} = [];
             for my $paramitem (@paramlist) {
-                if ((ref $paramitem) eq "HASH" &&
+                if (ref($paramitem) eq "HASH" &&
                     defined ($paramitem->{pk}) && defined ($paramitem->{class_type_id})) {
                     # If an element of the list is an object, check permissions on
                     $paramitem = $self->checkUserParamPerm(key           => $key,
@@ -1427,6 +1427,12 @@ sub checkUserParamPerm {
     catch (Kanopya::Exception::Permission::Denied $err) {
         my $msg = "Permission denied to get parameter " . $args{pk};
         throw Kanopya::Exception::Permission::Denied(error => $msg);
+    }
+    catch(Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch($err) {
+        throw Kanopya::Exception(error => $msg);
     }
 
     # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
