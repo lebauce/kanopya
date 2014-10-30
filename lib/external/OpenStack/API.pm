@@ -20,6 +20,7 @@ use General;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
+use URI;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -97,6 +98,7 @@ sub _login {
         }
 
         $self->{config}->{$name}->{adminURL} = $service->{endpoints}->[0]->{adminURL};
+        $self->{config}->{$name}->{hostname} = URI->new($self->{config}->{$name}->{url})->host;
 
         if ($name eq 'identity') {
             my @endpoint_ids = map {$_->{id}} @{$service->{endpoints}};

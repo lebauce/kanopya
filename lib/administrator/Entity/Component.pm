@@ -272,9 +272,17 @@ sub registerNode {
                          required => [ 'node' ],
                          optional => { 'master_node' => 0 });
 
-    ComponentNode->new(component_id => $self->id,
-                       node_id      => $args{node}->id,
-                       master_node  => $args{master_node});
+    try {
+        ComponentNode->new(component_id => $self->id,
+                           node_id      => $args{node}->id,
+                           master_node  => $args{master_node});
+    }
+    catch(Kanopya::Exception::DB::DuplicateEntry $err) {
+        #pass
+    }
+    catch($err) {
+        $err->rethrow();
+    }
 }
 
 sub getMasterNode {

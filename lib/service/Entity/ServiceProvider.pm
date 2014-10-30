@@ -140,13 +140,23 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, optional => { 'nodes' => [] });
+
     if (! exists $args{service_provider_type_id}) {
         (my $type = $class) =~ s/^.*:://g;
         $args{service_provider_type_id}
             = ClassType::ServiceProviderType->find(hash => { service_provider_name => $type })->id;
     }
 
-    return $class->SUPER::new(%args);
+
+    my @nodes = @{ delete $args{nodes} };
+    my $self = $class->SUPER::new(%args);
+
+    # If existing nodes specified, enroll them
+    for my $node (@nodes) {
+        $self->enrollNode(node => $node);
+    }
+    return $self;
 }
 
 
