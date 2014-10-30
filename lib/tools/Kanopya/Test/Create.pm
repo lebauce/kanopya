@@ -200,6 +200,7 @@ sub createCluster {
                 vg_id             => 1,
                 systemimage_size  => 4 * 1024 * 1024 * 1024,
                 iscsi_portals     => \@iscsi_portal_ids,
+                masterimage_id => $args{cluster_conf}->{masterimage_id},
             },
         },
         deployment_manager => {

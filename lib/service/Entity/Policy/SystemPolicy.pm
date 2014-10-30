@@ -55,14 +55,6 @@ use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
 use constant POLICY_ATTR_DEF => {
-    masterimage_id => {
-        label        => 'Master image',
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-        reload       => 1,
-        order        => 1,
-    },
     cluster_si_persistent => {
         label        => 'Persistent system images',
         type         => 'boolean',
@@ -120,12 +112,6 @@ sub getPolicyDef {
         = defined $args{params}->{masterimage_id} ? 1 : 0;
 
     my $attributes = $self->SUPER::getPolicyDef(%args);
-
-    my @masterimages;
-    for my $masterimage (Entity::Masterimage->search(hash => {})) {
-        push @masterimages, $masterimage->toJSON();
-    }
-    $attributes->{attributes}->{masterimage_id}->{options} = \@masterimages;
 
     return $attributes;
 }

@@ -90,6 +90,13 @@ __PACKAGE__->table("masterimage");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 storage_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -118,6 +125,13 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "masterimage_defaultkernel_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "storage_manager_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -246,6 +260,26 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 storage_manager
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "storage_manager",
+  "Kanopya::Schema::Result::Component",
+  { component_id => "storage_manager_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
+);
+
 =head2 component_types
 
 Type: many_to_many
@@ -257,8 +291,8 @@ Composing rels: L</components_provided> -> component_type
 __PACKAGE__->many_to_many("component_types", "components_provided", "component_type");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-22 17:03:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bqO8gkxPnxIKlQIL5fzq+Q
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-10-29 16:17:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D7NX2DhWMVodMHzhjubjNA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -1121,7 +1121,7 @@ sub registerComponents {
             component_name         => 'OpenStack',
             component_version      => 6,
             deployable             => 1,
-            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager', 'CollectorManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
@@ -1539,7 +1539,21 @@ sub registerIndicators {
                 [ 'vsphere hv/total mem', 'hv_mem_total', 'summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
                 [ 'vsphere hv/mem usage', 'hv_mem_usage', 'summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
-        }
+        },
+        {
+            set => {
+                name      => 'ceilometer',
+                provider  => 'External',
+                type      => 'GAUGE',
+            },
+            indicators => [
+                [ 'CPU used', 'CPU Used', 'cpu_util', undef, undef, 'FF000099', '%', undef ],
+                [ 'Network income', 'Network income', 'network.incoming.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+                [ 'Network outcome', 'Network outcome', 'network.outgoing.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+                [ 'Disk write', 'Disk write', 'disk.write.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+                [ 'Disk read', 'Disk read', 'disk.read.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+            ]
+        },
     ];
 
     for my $set (@{$indicators}) {

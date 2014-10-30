@@ -22,7 +22,7 @@
 KanopyaDeploymentManager is the native deployment component of Kanopya.
 It implement the deployment interface by using other any given export and disk drivers,
 and other Kanopya components like dchpd and tfptd to achieve deploymement of nodes.
-It deploy diskless or on local disk nodes, install and configure the requested components. 
+It deploy diskless or on local disk nodes, install and configure the requested components.
 
 @since    2014-Apr-9
 @instance hash
@@ -227,7 +227,7 @@ sub releaseDeploymentManagerParams {
 =pod
 =begin classdoc
 
-@return the network manager parameters as an attribute definition. 
+@return the network manager parameters as an attribute definition.
 
 @see <package>Manager::DeploymentManager</package>
 

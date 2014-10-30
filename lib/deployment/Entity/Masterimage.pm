@@ -25,7 +25,7 @@ use ClassType::ComponentType;
 
 # Used to get the Kanopya cluster statically
 # TODO: Implement a component KanopyaMasterimage of type MasterimageManager,
-#       then the executor will be get by using the execution manager of 
+#       then the executor will be get by using the execution manager of
 #       the cluster on which is installed the component
 use Entity::ServiceProvider::Cluster;
 
@@ -70,6 +70,10 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
     },
+    storage_manager_id => {
+        pattern      => '^.+$',
+        is_mandatory => 0,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -81,6 +85,10 @@ sub create {
     General::checkParams(args     => \%args,
                          required => [ 'file_path' ],
                          optional => { 'keep_file' => 0 });
+
+    if (! defined $args{storage_manager_id}) {
+        $args{storage_manager_id} = Entity::Component::HCMStorageManager->find()->id;
+    }
 
     # Get the deployment component on kanopya
     # TODO: Move this methode on the KanopyaDeploymentManager
