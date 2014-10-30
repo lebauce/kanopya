@@ -1368,7 +1368,8 @@ sub checkUserPerm {
     foreach my $key (keys %{ $args{params} }) {
         my $param = $args{params}->{$key};
         if (ref($param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
-            $args{params}->{$key} = $self->checkUserParamPerm(pk            => $param->{pk},
+            $args{params}->{$key} = $self->checkUserParamPerm(key           => $key,
+                                                              pk            => $param->{pk},
                                                               class_type_id => $param->{class_type_id},
                                                               user_id       => $args{user_id});
         }
