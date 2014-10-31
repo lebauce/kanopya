@@ -125,10 +125,6 @@ sub getNetConf {
     return $net_conf;
 }
 
-sub getClusterizationType {
-    return 'loadbalanced';
-}
-
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 

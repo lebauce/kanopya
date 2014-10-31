@@ -16,7 +16,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'haproxy.t.log',
+    file=>'scaleout_apache.t.log',
     layout=>'%d [ %H - %P ] %p -> %M - %m%n'
 });
 
@@ -44,40 +44,21 @@ sub main {
     lives_ok {
         $cluster = Kanopya::Test::Create->createCluster(
                         cluster_conf => {
-                            cluster_name         => 'LoadBalancerService',
-                            cluster_basehostname => 'lbnode',
+                            cluster_name         => 'ApacheService',
+                            cluster_basehostname => 'apachenode',
                             masterimage_id       => $masterimage->id
                         },
                         components => {
-                            'mysql' => {},
-                            'haproxy' => {},
+                            'Apache' => {},
                         }
                     );
-    } 'Create LoadBalancerService cluster';
+    } 'Create Apache cluster';
 
-    my $mysql = $cluster->getComponent(name => 'Mysql');
-    my $haproxy = $cluster->getComponent(name => 'Haproxy');
-
-    diag('Configure haproxy');
-    
-    lives_ok {
-        $haproxy->setConf(conf => {
-            haproxy1_listens => [ { listen_name    => 'mysql',
-                                    listen_ip      => '0.0.0.0',
-                                    listen_port    => 33060,
-                                    listen_mode    => 'tcp',
-                                    listen_balance => 'roundrobin',
-                                    listen_component_id   => $mysql->id,
-                                    listen_component_port => 3306
-                                  }
-                                ]
-        });
-    } 'Configure haproxy';
-
+    my $apache = $cluster->getComponent(name => 'Apache');
     
     lives_ok {
         Kanopya::Test::Execution->startCluster(cluster => $cluster);
-    } 'Start LoadBalancerService cluster';
+    } 'Start Apache cluster';
 
     diag("Add a second node");
     $cluster->addNode();

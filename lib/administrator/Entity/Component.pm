@@ -462,8 +462,6 @@ sub getState {
 }
 
 
-sub getClusterizationType {}
-
 sub getExecToTest {}
 
 sub getNetConf {}
