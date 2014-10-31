@@ -73,9 +73,9 @@ use constant ATTR_DEF => {
     },
     api_secret_key => {
         label        => 'AWS secret key',
-        type         => 'password',
+        type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 0
+        is_mandatory => 1
     },
     region => {
         label        => 'AWS region',
@@ -359,27 +359,27 @@ sub unregister {
 #
 #    return $conf;
 #}
-#
-#
-#=pod
-#=begin classdoc
-#
-#@return the manager params definition.
-#
-#=end classdoc
-#=cut
-#
-#sub getManagerParamsDef {
-#    my ($self, %args) = @_;
-#
-#    return {
-#        %{ $self->SUPER::getManagerParamsDef },
-#        flavor => {
-#            label        => 'Flavor',
-#            type         => 'enum',
-#            pattern      => '^.*$',
-#            is_mandatory => 1
-#        },
+
+
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        %{ $self->SUPER::getManagerParamsDef },
+        instance_type => {
+            label        => 'Instance Type',
+            type         => 'enum',
+            pattern      => '^.*$',
+            is_mandatory => 1
+        },
 #        availability_zone => {
 #            label        => 'Availability Zone',
 #            type         => 'enum',
@@ -418,91 +418,74 @@ sub unregister {
 #            is_editable  => 1,
 #            options      => [],
 #        },
-#
-#    };
-#}
-#
-#
-#=pod
-#=begin classdoc
-#
-#Return the parameters definition available for the VirtualMachineManager api.
-#
-#@see <package>Manager::HostManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub getHostManagerParams {
-#    my $self = shift;
-#    my %args = @_;
-#
-#    my $params = $self->getManagerParamsDef;
-#    my $pp = $self->param_preset->load;
-#
-#    my $flavors = $params->{flavor};
-#    my @flavor_names = map {$pp->{flavors}->{$_}->{name}} keys %{$pp->{flavors}};
-#    $flavors->{options} = \@flavor_names;
-#
-#    my $zones = $params->{availability_zone};
-#    my @zone_names = keys %{$pp->{zones}};
-#    $zones->{options} = \@zone_names;
-#
-#    my @tenant_names = keys %{$pp->{tenants_name_id}};
-#    my $tenants = $params->{hosting_tenant};
-#    $tenants->{options} = \@tenant_names;
-#
-#    my $hash = {
-#        flavor => $flavors,
-#        availability_zone => $zones,
-#        hosting_tenant => $tenants,
-#    };
-#
-#    return $hash;
-#}
-#
-#
-#=pod
-#=begin classdoc
-#
-#Check parameters that will be given to the VirtualMachineManager api methods.
-#
-#@see <package>Manager::HostManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub checkHostManagerParams {
-#    my ($self, %args) = @_;
-#
-#    General::checkParams(args => \%args, required => [ 'flavor', 'availability_zone', 'hosting_tenant' ]);
-#}
-#
-#
-#=pod
-#=begin classdoc
-#
-#Return the parameters definition available for the DiskManager API.
-#
-#@see <package>Manager::StorageManager</package>
-#
-#=end classdoc
-#=cut
+    };
+}
 
-#sub getStorageManagerParams {
-#    my ($self, %args) = @_;
+
+=pod
+=begin classdoc
+
+Return the parameters definition available for the VirtualMachineManager api.
+
+@see <package>Manager::HostManager</package>
+
+=end classdoc
+=cut
+
+sub getHostManagerParams {
+    my ($self, %args) = @_;
+
+    my $params = $self->getManagerParamsDef;
+    my $instance_types = $params->{instance_type};
+    $instance_types->{options} = AwsInstanceType->getAllNames;
+
+    return {
+        instance_type => $instance_types
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Check parameters that will be given to the VirtualMachineManager api methods.
+
+@see <package>Manager::HostManager</package>
+
+=end classdoc
+=cut
+
+sub checkHostManagerParams {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'instance_type' ]);
+}
+
+
+=pod
+=begin classdoc
+
+Return the parameters definition available for the DiskManager API.
+
+@see <package>Manager::StorageManager</package>
+
+=end classdoc
+=cut
+
+sub getStorageManagerParams {
+    my ($self, %args) = @_;
+    # No parameter for AWS, everything systemimage-related is hosted there!
+
+#    my $pp = $self->param_preset->load;
+#    my $params = { volume_type => $self->getManagerParamsDef->{volume_type} };
 #
-##    my $pp = $self->param_preset->load;
-##    my $params = { volume_type => $self->getManagerParamsDef->{volume_type} };
-##
-##    for my $type_id (keys %{ $pp->{volume_types} }) {
-##        push @{ $params->{volume_type}->{options} }, $pp->{volume_types}->{$type_id}->{name};
-##    }
-##
-##    return $params;
+#    for my $type_id (keys %{ $pp->{volume_types} }) {
+#        push @{ $params->{volume_type}->{options} }, $pp->{volume_types}->{$type_id}->{name};
+#    }
 #
-#    return {};
-#}
+#    return $params;
+
+    return {};
+}
 
 
 =pod
@@ -531,17 +514,19 @@ sub checkStorageManagerParams {
 }
 
 
-#=pod
-#=begin classdoc
-#
-#@return the network manager parameters as an attribute definition.
-#
-#@see <package>Manager::NetworkManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub getNetworkManagerParams {
+=pod
+=begin classdoc
+
+@return the network manager parameters as an attribute definition.
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub getNetworkManagerParams {
+    # All AWS network stuff is still subject to discussion.
+    return {};
 #    my ($self, %args) = @_;
 #
 #    my $params = $self->getManagerParamsDef;
@@ -567,7 +552,7 @@ sub checkStorageManagerParams {
 #        $hash->{subnets} = $subnets;
 #    }
 #    return $hash;
-#}
+}
 
 
 =pod
@@ -602,9 +587,27 @@ sub releaseNetworkManagerParams {
 
     General::checkParams(args => \%args, required => [ "params" ]);
 
-    delete $args{params}->{network_tenant};
-    delete $args{params}->{subnets};
+#    delete $args{params}->{network_tenant};
+#    delete $args{params}->{subnets};
 }
+
+
+=pod
+=begin classdoc
+
+@return the boot manager parameters as an attribute definition.
+
+@see <package>Manager::BootManager</package>
+
+=end classdoc
+=cut
+
+sub getBootManagerParams {
+    my ($self, %args) = @_;
+
+    return {};
+}
+
 
 =pod
 =begin classdoc
@@ -652,11 +655,11 @@ sub getFreeHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args,
-                         required => [ 'type' ]); # subnets ?
+                         required => [ 'instance_type' ]); # subnets ?
 
     try {
         return $self->createAwsVirtualHost(
-            aws_instance_type => $args{type},
+            aws_instance_type => $args{instance_type},
             ifaces            => 1, # scalar(@{ [ $args{subnets} ] }),
             instance_id       => 'to be determined'
         );
@@ -706,7 +709,7 @@ sub startHost {
 
     General::checkParams(args  => \%args,
                          # required => [ 'host', 'flavor', 'hypervisor' ],
-                         required => [ 'host', 'type' ],
+                         required => [ 'host', 'instance_type' ],
                          optional => {hypervisor => undef});
 
     my $host = $args{host};
@@ -715,7 +718,7 @@ sub startHost {
     # We need the AWS Image ID, we get it through the systemimage description. 
     my $instance = $self->_ec2->createInstance(
         ImageId      => $self->_removeAwsPrefix( $node->systemimage->systemimage_desc ),
-        InstanceType => $args{type}
+        InstanceType => $args{instance_type}
     );
     my $vm_info = $instance->arrayref->[0];
     
@@ -1263,9 +1266,9 @@ do its work. This method is adapted to deal with AWS instance types.
 
 sub selectHypervisor {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'type' ]);
+    General::checkParams(args => \%args, required => [ 'instance_type' ]);
 
-    my $aws_type = AwsInstanceType->getType(name => $args{type});
+    my $aws_type = AwsInstanceType->getType(name => $args{instance_type});
     
     my $cm = CapacityManagement->new(cloud_manager => $self);
     return $cm->getHypervisorIdForVM(resources => {

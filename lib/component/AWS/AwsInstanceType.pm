@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use General;
+use Kanopya::Database;
 
 use constant ATTR_DEF => {
     name => {
@@ -84,5 +85,26 @@ sub getType {
 
 
 sub getAttrDef { return ATTR_DEF; }
+
+=pod
+=begin classdoc
+
+Class method for getting all type names.
+
+@return (Arrayref of Strings)
+
+=end classdoc
+=cut
+
+sub getAllNames {
+    my $dbh = Kanopya::Database::dbh;
+    
+    my @names = ();
+    my $results = $dbh->selectall_arrayref('SELECT name FROM aws_instance_type');
+    foreach my $data (@$results) {
+        push @names, $data->[0];
+    }
+    return \@names;
+}
 
 1;
