@@ -1432,7 +1432,7 @@ sub checkUserParamPerm {
         $err->rethrow();
     }
     catch($err) {
-        throw Kanopya::Exception(error => $msg);
+        throw Kanopya::Exception(error => $err);
     }
 
     # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
