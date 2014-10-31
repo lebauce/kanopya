@@ -95,4 +95,49 @@ sub applyBootConfiguration {
     throw Kanopya::Exception::NotImplemented();
 }
 
+
+=pod
+=begin classdoc
+
+Check params required for managing boot of nodes.
+
+=end classdoc
+=cut
+
+sub checkBootManagerParams {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+=begin classdoc
+
+Remove the boot manager params entry from a hash ref.
+
+=end classdoc
+=cut
+
+sub releaseBootManagerParams {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+=begin classdoc
+
+@return the boot manager parameters as an attribute definition.
+
+=end classdoc
+=cut
+
+sub getBootManagerParams {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
 1;

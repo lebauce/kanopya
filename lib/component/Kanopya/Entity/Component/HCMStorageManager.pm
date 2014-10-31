@@ -107,6 +107,7 @@ sub getManagerParamsDef {
             pattern      => '^[0-9\.]*$',
             is_mandatory => 1,
             is_editable  => 0,
+            order        => 1
         },
         export_manager_id => {
             label        => 'Export manager',
@@ -115,6 +116,7 @@ sub getManagerParamsDef {
             pattern      => '^[0-9\.]*$',
             is_mandatory => 1,
             is_editable  => 0,
+            order        => 2
         },
     };
 }
@@ -165,6 +167,12 @@ sub getStorageManagerParams {
         my $export_manager = Entity::Component->get(id => $args{params}->{export_manager_id});
         $paramdef = $merge->merge($paramdef,
                                   $export_manager->getExportManagerParams(params => $args{params}));
+    }
+
+    $paramdef->{masterimage_id} = Manager::StorageManager->getManagerParamsDef->{masterimage_id};
+
+    for my $masterimage ($self->masterimages) {
+        push @{$paramdef->{masterimage_id}->{options}}, $masterimage->toJSON();
     }
 
     return $paramdef;

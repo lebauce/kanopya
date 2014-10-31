@@ -22,18 +22,22 @@ my $testing = 1;
 use Kanopya::Database;
 use ClassType;
 use Entity::User;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
 use Entity::Policy;
 use Entity::Policy::StoragePolicy;
 use Lvm2Vg;
 use Entity::Policy::HostingPolicy;
+use Entity::Policy::OrchestrationPolicy;
 use Entity::Component::Physicalhoster0;
 use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::HCMStorageManager;
 use Entity::Component::HCMNetworkManager;
 use Entity::Component::KanopyaDeploymentManager;
+use Entity::Component::Kanopyacollector1;
+use Kanopya::Test::TestUtils 'expectedException';
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -52,6 +56,8 @@ sub main {
     test_service_template_json();
     test_service_template_creation();
     test_service_creation_from_service_template();
+    test_add_manager();
+    test_orchestration_policy();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
@@ -60,7 +66,6 @@ sub main {
 
 sub test_policies_json {
     for my $policy (Entity::Policy->search(hash => { -not => { policy_type => 'orchestration' } })) {
-
         my $json = $policy->toJSON();
         my $presets = $policy->getParams();
         lives_ok {
@@ -71,7 +76,21 @@ sub test_policies_json {
 
         my $class = ref($policy);
         my $baseattrdef = $class->_attributesDefinition();
-        my $attrdef = $class->toJSON(params => $json)->{attributes};
+        my $attrjson = $class->toJSON(params => $json);
+        my $attrdef = $attrjson->{attributes};
+
+        my @skiped = ('gps', 'time_periods', 'tags');
+        lives_ok {
+            for my $attr (keys %{ $attrdef }) {
+                if (scalar(grep { $_ eq $attr } @skiped) <= 0 && 
+                    $attrdef->{$attr}->{type} eq "relation" &&
+                    $attrdef->{$attr}->{relation} eq "single_multi" &&
+                    ! defined $attrjson->{relations}->{$attr}) {
+                    die "Attribute \"$attr\" should be in the relation definition";
+                }
+            }
+        } "Check if relations are in the relations fields";
+
         lives_ok {
             for my $attr (keys %{ $attrdef }) {
                 if (! defined $baseattrdef->{$attr} && ! $attrdef->{$attr}->{is_editable}) {
@@ -128,28 +147,39 @@ sub test_policies_hash_to_list {
     # Create a policy with presets containing arrays
     my $net_policy = Entity::Policy::NetworkPolicy->new(
                          policy_name        => "net_policy_tests_hash_to_list",
-                         policy_type        => "storage",
+                         policy_type        => "network",
                          cluster_nameserver1 => "8.8.8.8",
                          cluster_nameserver2 => "8.8.4.4",
                          cluster_domainname => "hedera-technology.com",
                          network_manager_id => Entity::Component::HCMNetworkManager->find->id,
-                         interfaces => [ { 
+                         interfaces => [ {
                             interface_name => "eth0",
                             netconfs => [ 123 ]
                          }, {
-                            interface_name => "eth0",
+                            interface_name => "eth1",
                             netconfs => [ 123, 5678 ]
                          } ],
                      );
 
     lives_ok {
         # Check if the jysonification is working
-        $net_policy->toJSON();
+        my $dynamic_attrdef = Entity::Policy::NetworkPolicy->toJSON(params => $net_policy->toJSON());
+        if (! defined $dynamic_attrdef->{attributes}->{interfaces}) {
+            die "Network policy dynamic attr def should contains attr \"interfaces\"";
+        }
+        if (! defined $dynamic_attrdef->{relations}->{interfaces}) {
+            die "Network policy dynamic relation def should contains relations \"interfaces\"";
+        }
+
+        my @displayed_relations = grep { ref($_) eq "HASH" } @{ $dynamic_attrdef->{displayed} };
+        if (scalar(grep { (keys %{ $_ })[0] eq "interfaces" } @displayed_relations) <= 0) {
+            die "Network policy dynamic attr def should contains attr \"interfaces\" in the displayed list";
+        }
     } "Check if the jysonification is working";
 
     my $sys_policy = Entity::Policy::SystemPolicy->new(
                          policy_name        => "sys_policy_tests_hash_to_list",
-                         policy_type        => "storage",
+                         policy_type        => "system",
                          cluster_si_persistent => 0,
                          systemimage_size => 5368709120,
                          deployment_manager_id => Entity::Component::KanopyaDeploymentManager->find->id,
@@ -165,7 +195,19 @@ sub test_policies_hash_to_list {
 
     lives_ok {
         # Check if the jysonification is working
-        $sys_policy->toJSON();
+        my $dynamic_attrdef = Entity::Policy::SystemPolicy->toJSON(params => $sys_policy->toJSON());
+
+        if (! defined $dynamic_attrdef->{attributes}->{components}) {
+            die "System policy dynamic attr def should contains attr \"components\"";
+        }
+        if (! defined $dynamic_attrdef->{relations}->{components}) {
+            die "System policy dynamic relation def should contains relations \"components\"";
+        }
+
+        my @displayed_relations = grep { ref($_) eq "HASH" } @{ $dynamic_attrdef->{displayed} };
+        if (scalar(grep { (keys %{ $_ })[0] eq "components" } @displayed_relations) <= 0) {
+            die "System policy dynamic attr def should contains attr \"components\" in the displayed list";
+        }
     } "Check if the jysonification is working";
 
     lives_ok {
@@ -257,7 +299,7 @@ sub test_service_template_json {
                 }
             }
         }
-    } "Check if the service template attrdef JSON with defined service_template_id params cnotains only non editable policies ids.";
+    } "Check if the service template attrdef JSON with defined service_template_id params contains only non editable policies ids.";
 }
 
 sub test_service_template_creation {
@@ -341,4 +383,67 @@ sub test_service_creation_from_service_template {
             %$additional_policy_aprams
         );
     } "Create service from service template.";
+}
+
+sub test_orchestration_policy {
+
+    my $sp = Entity::ServiceProvider->new();
+    my $collector_manager = Entity::Component::Kanopyacollector1->find();
+    $sp->addManager(manager_id => $collector_manager->id, manager_type => 'CollectorManager');
+
+    my $orchestration_policy = Entity::Policy::OrchestrationPolicy->create(
+                                   collector_manager_id => $collector_manager->id,
+                                   policy_name => 'Test orchestration',
+                                   policy_type => 'orchestration',
+                                   orchestration => {service_provider_id => $sp->id},
+                               );
+    $orchestration_policy->remove();
+    lives_ok {
+        expectedException { Entity->get(id => $sp->id) }
+            'Kanopya::Exception::Internal::NotFound',
+            'Service Provider has to be deleted';
+
+    } 'Remove orchestration policy service provider with policy deletion'
+}
+
+sub test_add_manager {
+    my $sp = Entity::ServiceProvider->new();
+    my $collector_manager_1 = Entity::Component::Kanopyacollector1->find();
+    my $collector_manager_2 = Entity::Component::Kanopyacollector1->new();
+
+    my $collector_manager;
+    lives_ok {
+        expectedException {
+            $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+        } 'Kanopya::Exception::Internal::NotFound',
+          'Service Provider should not have any Collector manager';
+
+        $sp->addManager(manager_id => $collector_manager_1->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_1->id) {
+            die 'Collector manager should be collector manager 1';
+        }
+
+        $sp->addManager(manager_id => $collector_manager_2->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_2->id) {
+            die 'Collector manager should be collector manager 2';
+        }
+
+        $sp->addManager(manager_id => $collector_manager_1->id,
+                        manager_type => 'CollectorManager');
+
+        $collector_manager = $sp->getManager(manager_type => 'CollectorManager');
+
+        if ($collector_manager->id ne $collector_manager_1->id) {
+            die 'Collector manager should be collector manager 1 (2nd time)';
+        }
+
+    } 'Add manager'
 }

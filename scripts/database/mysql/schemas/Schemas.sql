@@ -1628,11 +1628,13 @@ CREATE TABLE `masterimage` (
   `masterimage_size` bigint(16) unsigned NOT NULL,
   `masterimage_cluster_type_id` int(8) unsigned NOT NULL,
   `masterimage_defaultkernel_id` int(8) unsigned DEFAULT NULL,
+  `storage_manager_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`masterimage_id`),
   UNIQUE KEY (`masterimage_name`),
   UNIQUE KEY (`masterimage_file`),
   FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`masterimage_cluster_type_id`) REFERENCES `cluster_type` (`cluster_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`storage_manager_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`masterimage_defaultkernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

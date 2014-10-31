@@ -87,6 +87,15 @@ sub methods {
         registerNode => {
             description => 'add a node to this service provider.',
         },
+        unregisterNode => {
+            description => 'remove a node from this service provider.',
+        },
+        enrollNode => {
+            description => 'enroll an existing node to this service provider.',
+        },
+        unenrollNode => {
+            description => 'unenroll an existing node from this service provider.',
+        },
         addComponent => {
             description => 'add a component to this service provider.',
         },
@@ -131,13 +140,23 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    if (! defined $args{service_provider_type_id} && $class ne 'Entity::ServiceProvider') {
+    General::checkParams(args => \%args, optional => { 'nodes' => [] });
+
+    if (! exists $args{service_provider_type_id}) {
         (my $type = $class) =~ s/^.*:://g;
         $args{service_provider_type_id}
             = ClassType::ServiceProviderType->find(hash => { service_provider_name => $type })->id;
     }
 
-    return $class->SUPER::new(%args);
+
+    my @nodes = @{ delete $args{nodes} };
+    my $self = $class->SUPER::new(%args);
+
+    # If existing nodes specified, enroll them
+    for my $node (@nodes) {
+        $self->enrollNode(node => $node);
+    }
+    return $self;
 }
 
 
@@ -172,7 +191,6 @@ sub registerNode {
     }
 
     my $node = Entity::Node->new(
-                   service_provider_id => $self->id,
                    node_hostname       => $args{hostname},
                    host_id             => $args{host} ? $args{host}->id : undef,
                    node_state          => $args{state} . ':' . time(),
@@ -182,9 +200,74 @@ sub registerNode {
                    owner_id            => $self->owner_id,
                );
 
+    return $self->enrollNode(node => $node, components => $args{components});
+}
+
+
+=pod
+=begin classdoc
+
+Unregister the node from the servie provider, and free assigned ips.
+
+=end classdoc
+=cut
+
+sub unregisterNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    # Remove collector indicators if managed by a collector
+    $self->unenrollNode(node => $args{node});
+
+    if (defined $args{node}->host) {
+        # Free assigned ips
+        my @ifaces = $args{node}->host->getIfaces;
+        for my $iface (@ifaces) {
+            my @ips = $iface->ips;
+            for my $ip (@ips) {
+                $ip->delete();
+            }
+            # Remove the network connectivity
+            $iface->update(netconf_ifaces => [], override_relations => 1);
+        }
+    }
+    $args{node}->delete();
+}
+
+
+=pod
+=begin classdoc
+
+Add an exsiting node to the service provider.
+Also reconfigure the components about the node registration.
+
+@return the registered node
+
+=end classdoc
+=cut
+
+sub enrollNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args,
+                         required => [ 'node' ],
+                         optional => { 'components' => [ $self->components ] });
+
+    if (defined $args{node}->service_provider) {
+        # A node in many service providers ?
+        throw Kanopya::Exception::Internal::Inconsistency(
+                  error => "The node \"" . $args{node}->label .
+                           "\" is already linked the a service provider"
+              );
+    }
+
+    # Associate the node to the service provider
+    $args{node}->service_provider_id($self->id);
+
     # Enable the node if monitoring enabled
-    if ($node->monitoring_state eq 'enabled') {
-        $self->enableNode(node_id => $node->id);
+    if ($args{node}->monitoring_state eq 'enabled') {
+        $self->enableNode(node_id => $args{node}->id);
     }
 
     # Force to install required component if not defined
@@ -196,34 +279,32 @@ sub registerNode {
 
     # Link the service provider components to the new node
     for my $component (@{ $args{components} }) {
-        $log->info("Register component \"" . $component->label . "\" on node " . $node->label);
-        $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
+        $log->info("Register component \"" . $component->label . "\" on node " . $args{node}->label);
+        $component->registerNode(node => $args{node}, master_node => ($args{node}->node_number == 1) ? 1 : 0);
     }
 
     # Create the nodemetric for the new node from the existing clustermetrics indicators
     # Create Nodemetrics for all existing nodes fo the service provider
     for my $clustermetric ($self->clustermetrics) {
         Entity::Metric::Nodemetric->findOrCreate(
-            nodemetric_node_id      => $node->id,
+            nodemetric_node_id      => $args{node}->id,
             nodemetric_indicator_id => $clustermetric->clustermetric_indicator_id
         );
     }
 
-    return $node;
+    return $args{node};
 }
 
 
 =pod
 =begin classdoc
 
-Unregister the node from the servie provider, and free assigned ips.
-
-@return the registered node
+Remove the node from the servie provider.
 
 =end classdoc
 =cut
 
-sub unregisterNode {
+sub unenrollNode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'node' ]);
@@ -246,19 +327,8 @@ sub unregisterNode {
         $err->rethrow();
     }
 
-    if (defined $args{node}->host) {
-        # Free assigned ips
-        my @ifaces = $args{node}->host->getIfaces;
-        for my $iface (@ifaces) {
-            my @ips = $iface->ips;
-            for my $ip (@ips) {
-                $ip->delete();
-            }
-            # Remove the network connectivity
-            $iface->update(netconf_ifaces => [], override_relations => 1);
-        }
-    }
-    $args{node}->delete();
+    # Dissociate the node from the service provider
+    $args{node}->service_provider_id(undef);
 }
 
 
@@ -354,7 +424,51 @@ sub disableNode {
     return $node->disable();
 }
 
-sub getNodesMetrics {}
+
+=pod
+=begin classdoc
+
+Retrieve cluster nodes metrics values using the linked MonitoringService connector
+
+@param indicators array ref of indicator name (eg 'ObjectName/CounterName')
+@param time_span number of last seconds to consider when compute average on metric values
+@optional shortname bool node identified by their fqn or hostname in resulting struct
+
+=end classdoc
+=cut
+
+sub getNodesMetrics {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'indicators', 'time_span' ]);
+
+    my @hostnames = ();
+    for my $node ($self->nodes) {
+        if( ! ($node->monitoring_state eq 'disabled')) {
+            push @hostnames, $node->node_hostname
+        }
+    }
+
+    my $collector_manager = $self->getManager(manager_type => "CollectorManager");
+    my $mparams           = $self->getManagerParameters(manager_type => 'CollectorManager');
+
+    my $data = $collector_manager->retrieveData(nodelist => \@hostnames,
+                                                time_span  => $args{time_span},
+                                                indicators => $args{indicators},
+                                                %$mparams);
+
+    if (defined $args{shortname}) {
+        my %data_shortnodename;
+        while (my ($nodename, $metrics) = each %$data) {
+             $nodename =~ s/\..*//;
+             $data_shortnodename{$nodename} = $metrics;
+        }
+        return \%data_shortnodename;
+    }
+
+    return $data;
+}
+
 
 sub getState {
     throw Kanopya::Exception::NotImplemented();
@@ -427,6 +541,26 @@ sub addManager {
     my $category = ComponentCategory::ManagerCategory->find(hash => {
                        category_name => $args{manager_type}
                    });
+
+    try {
+        my $spm = ServiceProviderManager->find(
+                      hash => {
+                          service_provider_id => $self->id,
+                          manager_category_id => $category->id,
+                      }
+                  );
+
+        $log->debug('Service provider is already associated to a <'
+                    . $args{manager_type} . '>. Removing it first.');
+
+        $spm->delete();
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # Service provider is not yet associated, continue
+    }
+    catch($err) {
+        $err->rethrow;
+    }
 
     my $manager = ServiceProviderManager->new(
                       service_provider_id => $self->id,

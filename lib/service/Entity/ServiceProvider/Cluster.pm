@@ -467,11 +467,6 @@ sub configureManagers {
         $args{managers}->{workflow_manager} = { manager_id   => $workflow_manager->id,
                                                 manager_type => "WorkflowManager" };
 
-        # Add default collector manager
-        my $collector_manager = $kanopya->getComponent(name => "Kanopyacollector", version => "1");
-        $args{managers}->{collector_manager} = { manager_id   => $collector_manager->id,
-                                                 manager_type => "CollectorManager" };
-
         for my $manager (values %{ $args{managers} }) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
@@ -570,6 +565,12 @@ sub addManagerParameters {
         $log->info("Install network interfaces as described by the network manager");
         $self->configureInterfaces(interfaces => $args{params}->{interfaces});
     }
+
+    # TODO remove masterimage_id from cluster instance
+    # and use manager params in the workflow
+    if ($args{manager_type} eq 'StorageManager') {
+        $self->masterimage_id($args{params}->{masterimage_id});
+    }
 }
 
 
@@ -597,6 +598,9 @@ sub configureBillingLimits {
 
     if (defined $args{billing_limits}) {
         my @limits = values %{ $args{billing_limits} };
+        if (@limits eq 0) {
+            return;
+        }
         $self->_populateRelations(relations => { billinglimits => \@limits }, override => 1);
 
         my @indicators = qw(Memory Cores);
@@ -891,26 +895,6 @@ sub getNewNodeNumber {
     return $counter;
 }
 
-sub getNodesMetrics {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'time_span', 'indicators' ]);
-
-    my $collector_manager = $self->getManager(manager_type => "CollectorManager");
-    my $mparams           = $self->getManagerParameters(manager_type => 'CollectorManager');
-
-    my @nodelist;
-    for my $host (@{ $self->getHosts() }) {
-        push @nodelist, $host->node->node_hostname;
-    }
-
-    return $collector_manager->retrieveData(
-               nodelist   => \@nodelist,
-               time_span  => $args{'time_span'},
-               indicators => $args{'indicators'},
-               %$mparams
-           );
-}
 
 sub generateOverLoadNodemetricRules {
     my ($self, %args) = @_;

@@ -96,7 +96,7 @@ Check params required for managing deployment of nodes.
 =end classdoc
 =cut
 
-sub checkDeploymentkManagerParams {
+sub checkDeploymentManagerParams {
     my ($self, %args) = @_;
 
     throw Kanopya::Exception::NotImplemented();

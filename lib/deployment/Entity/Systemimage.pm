@@ -98,7 +98,7 @@ sub remove {
     $log->debug("New Operation RemoveSystemimage with id : <" . $self->id . ">");
 
     # Use the executor of the the disk manager
-    $self->getContainer->disk_manager->executor_component->enqueue(
+    $self->storage_manager->executor_component->enqueue(
         type     => 'RemoveSystemimage',
         params   => {
             context => {

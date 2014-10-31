@@ -70,6 +70,7 @@ use constant ATTR_DEF => {
     param_presets => {
         is_virtual   => 1,
         is_editable  => 1,
+        on_demand    => 1,
     },
     priority => {
         is_virtual => 1
@@ -271,9 +272,17 @@ sub registerNode {
                          required => [ 'node' ],
                          optional => { 'master_node' => 0 });
 
-    ComponentNode->new(component_id => $self->id,
-                       node_id      => $args{node}->id,
-                       master_node  => $args{master_node});
+    try {
+        ComponentNode->new(component_id => $self->id,
+                           node_id      => $args{node}->id,
+                           master_node  => $args{master_node});
+    }
+    catch(Kanopya::Exception::DB::DuplicateEntry $err) {
+        #pass
+    }
+    catch($err) {
+        $err->rethrow();
+    }
 }
 
 sub getMasterNode {
@@ -452,8 +461,6 @@ sub getState {
     return $self->getMasterNode->getState();
 }
 
-
-sub getClusterizationType {}
 
 sub getExecToTest {}
 

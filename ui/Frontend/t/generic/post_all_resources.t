@@ -111,9 +111,7 @@ my %POST_expected_status = (
 
 );
 
-my %DELETE_expected_status = (
-    'systemimage' => 404, # No container access found
-);
+my %DELETE_expected_status = ();
 
 my @skip_resources = (
 
@@ -269,6 +267,10 @@ sub fillMissingFixedAttr {
     # Do not understand why the executor_component_id is NON mandatory in attributes
     # Force to add this param.
     $attribute_fixed_value{fileimagemanager0}{executor_component_id} = $executor->{pk};
+
+    $resp = dancer_response(GET => "/api/hcmstoragemanager", {});
+    my $storage_manager = Dancer::from_json($resp->{content})->[0];
+    $attribute_fixed_value{systemimage}{storage_manager_id} = $storage_manager->{pk};
 }
 
 

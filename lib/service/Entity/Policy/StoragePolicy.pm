@@ -58,6 +58,7 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^\d*$',
         reload       => 1,
         is_mandatory => 1,
+        order        => 1,
     },
 };
 
@@ -70,85 +71,5 @@ sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
 sub getPolicySelectorMap { return POLICY_SELECTOR_MAP; }
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
-
-
-=pod
-=begin classdoc
-
-Build the dynamic attributes definition depending on attributes
-values given in parameters.
-
-@return the dynamic attributes definition.
-
-=end classdoc
-=cut
-
-sub getPolicyDef {
-    my $self  = shift;
-    my $class = ref($self) || $self;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'attributes' ],
-                         optional => { 'params' => {}, 'trigger' => undef });
-
-    # Add the dynamic attributes to displayed
-    push @{ $args{attributes}->{displayed} }, 'storage_manager_id';
-
-    # Build the list of storage managers
-    my $manager_options = {};
-    for my $component (Entity::Component->search(custom => { category => 'StorageManager' })) {
-        $manager_options->{$component->id} = $component->toJSON;
-        $manager_options->{$component->id}->{label} = $component->label;
-    }
-    my @manageroptions = values %{$manager_options};
-    $args{attributes}->{attributes}->{storage_manager_id}->{options} = \@manageroptions;
-
-    # If storage_manager_id defined but do not corresponding to a available value,
-    # it is an old value, so delete it.
-    if (not $manager_options->{$args{params}->{storage_manager_id}}) {
-        delete $args{params}->{storage_manager_id};
-    }
-    # If no disk_manager_id defined and and attr is mandatory, use the first one as value
-    if (! $args{params}->{storage_manager_id} && $args{set_mandatory}) {
-        $self->setFirstSelected(name       => 'storage_manager_id',
-                                attributes => $args{attributes}->{attributes},
-                                params     => $args{params});
-    }
-
-    if ($args{params}->{storage_manager_id}) {
-        # Get the storage manager params from the selected storage manager
-        my $storagemanager = Entity->get(id => $args{params}->{storage_manager_id});
-        my $managerparams = $storagemanager->getStorageManagerParams(params => $args{params});
-
-        for my $attrname (keys %{ $managerparams }) {
-            $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
-            # If no value defined in params, use the first one
-            if (! $args{params}->{$attrname} && $args{set_mandatory}) {
-                $self->setFirstSelected(name       => $attrname,
-                                        attributes => $args{attributes}->{attributes},
-                                        params     => $args{params});
-            }
-
-            # If the attribute is a manager, set it as reload trigger as
-            # it probably hav specific params too
-            if ($attrname =~ m/.*_manager_id/) {
-                $args{attributes}->{attributes}->{$attrname}->{reload} = 1;
-            }
-
-            # Add the attribute to the displayed list
-            push @{ $args{attributes}->{displayed} }, $attrname;
-        }
-    }
-    # Remove possibly defined value of attributes that depends on disk_manager_id.
-    # (It is probably a first implementation of the full generic version of
-    # manager management in policies...)
-    else {
-        for my $dependency (@{ $self->getPolicySelectorMap->{storage_manager_id} }) {
-            delete $args{params}->{$dependency};
-        }
-    }
-    return $args{attributes};
-}
 
 1;

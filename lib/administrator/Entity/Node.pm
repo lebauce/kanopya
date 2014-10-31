@@ -299,14 +299,15 @@ sub isLoadBalanced {
     my $self = shift;
 
     # Search for a potential 'loadbalanced' component
-    my $is_loadbalanced = 0;
-    foreach my $component ($self->components) {
-        my $clusterization_type = $component->getClusterizationType();
-        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
-            $is_loadbalanced = 1;
-            last;
-        }
+    my $is_loadbalanced = 1;
+
+    try {
+        $self->getComponent(category => 'LoadBalancer');
     }
+    catch {
+        $is_loadbalanced = 0;
+    }
+    
     return $is_loadbalanced;
 }
 

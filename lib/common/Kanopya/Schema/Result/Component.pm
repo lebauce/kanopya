@@ -797,6 +797,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 masterimages
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Masterimage>
+
+=cut
+
+__PACKAGE__->has_many(
+  "masterimages",
+  "Kanopya::Schema::Result::Masterimage",
+  { "foreign.storage_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 memcached1
 
 Type: might_have
@@ -1283,8 +1298,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-08-26 16:00:13
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bdrDExDBzTez7ox+DDGvVg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-10-29 16:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hzDqMhF13g3tXITkJvvtqA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

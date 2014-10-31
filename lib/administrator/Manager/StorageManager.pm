@@ -177,6 +177,14 @@ sub getManagerParamsDef {
             pattern      => '^\d*$',
             is_mandatory => 0,
         },
+        masterimage_id => {
+            label        => 'Master image',
+            type         => 'relation',
+            relation     => 'single',
+            pattern      => '^\d*$',
+            is_mandatory => 1,
+            option       => [],
+        },
     };
 }
 
@@ -199,7 +207,7 @@ sub checkStorageManagerParams {
 =pod
 =begin classdoc
 
-@return the storage manager parameters as an attribute definition. 
+@return the storage manager parameters as an attribute definition.
 
 =end classdoc
 =cut

@@ -117,8 +117,8 @@ sub addManager {
 
     my $manager = $self->SUPER::addManager( %args );
 
-    if ($args{"manager_type"} eq 'CollectorManager') {
-        $self->monitoringDefaultInit( no_default_conf => $args{no_default_conf} );
+    if ($args{"manager_type"} eq 'CollectorManager' && ! $args{no_default_conf}) {
+        $self->monitoringDefaultInit();
     }
 
     return $manager;
@@ -330,53 +330,6 @@ sub updateNodes {
     };
 }
 
-=pod
-=begin classdoc
-
-Retrieve cluster nodes metrics values using the linked MonitoringService connector
-
-@param indicators array ref of indicator name (eg 'ObjectName/CounterName')
-@param time_span number of last seconds to consider when compute average on metric values
-@optional shortname bool node identified by their fqn or hostname in resulting struct
-
-=end classdoc
-=cut
-
-sub getNodesMetrics {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicators', 'time_span']);
-
-    my $shortname = defined $args{shortname};
-    my $ms_connector    = $self->getManager(manager_type => 'CollectorManager');
-    my $mparams         = $self->getManagerParameters( manager_type => 'CollectorManager' );
-
-    my @hostnames = ();
-    my @nodes = $self->nodes;
-
-    for my $node (@nodes) {
-        if( ! ($node->monitoring_state eq 'disabled')) {
-            push @hostnames, $node->node_hostname
-        }
-    }
-
-    my $data = $ms_connector->retrieveData(
-        nodelist => \@hostnames,
-        %args,
-        %$mparams
-    );
-
-    if ($shortname) {
-        my %data_shortnodename;
-        while (my ($nodename, $metrics) = each %$data) {
-             $nodename =~ s/\..*//;
-             $data_shortnodename{$nodename} = $metrics;
-        }
-        return \%data_shortnodename;
-    }
-
-    return $data;
-}
 
 sub generateClustermetricAndCombination{
     my ($self,%args)  = @_;
@@ -421,8 +374,6 @@ TODO : default init must be done when instanciating data collector.
 
 sub monitoringDefaultInit {
     my ($self, %args) = @_;
-
-    return if ($args{no_default_conf});
 
     my $service_provider_id = $self->id;
     my @collector_indicators = $self->getManager(manager_type => "CollectorManager")->collector_indicators;
@@ -612,152 +563,6 @@ sub ruleGeneration{
 
    return $low_mean_cond->getAttr(name => 'aggregate_condition_id');
 }
-
-# CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
-sub generateAOutOfRangeRule {
-    my ($self,%args) = @_;
-    my $ndoor_comb_id            = $args{ndoor_comb_id};
-    my $extcluster_id            = $args{extcluster_id};
-
-    my $condition_params = {
-        aggregate_condition_service_provider_id => $extcluster_id,
-        left_combination_id                     => $ndoor_comb_id,
-        comparator                              => '>',
-        threshold                               => 0,
-    };
-
-    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
-    my $label = 'Isolated data - '.$aggregate_condition->left_combination->toString();
-
-    my $params_rule = {
-        service_provider_id  => $extcluster_id,
-        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        state                => 'enabled',
-        rule_name            => $label,
-        description          => 'Check the indicators of the nodes generating isolated datas',
-    };
-    Entity::Rule::AggregateRule->new(%$params_rule);
-};
-
-sub generateOverRules {
-    my ($self,%args) = @_;
-    my $mean_percent_comb_id     = $args{mean_percent_comb_id};
-    my $extcluster_id            = $args{extcluster_id};
-
-    my $condition_params = {
-        aggregate_condition_service_provider_id => $extcluster_id,
-        left_combination_id                     => $mean_percent_comb_id,
-    };
-
-   $condition_params->{comparator} = '>';
-   $condition_params->{threshold}  = 70;
-
-   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
-
-   my $params_rule = {
-        service_provider_id  => $extcluster_id,
-        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        state                => 'enabled',
-    };
-
-    $params_rule->{rule_name}       = 'Cluster '.$aggregate_condition->left_combination->toString().' overloaded';
-    $params_rule->{description} = 'You may add a node';
-
-    Entity::Rule::AggregateRule->new(%$params_rule);
-};
-
-
-sub generateUnderRules {
-    my ($self,%args) = @_;
-    my $mean_percent_comb_id     = $args{mean_percent_comb_id};
-    my $extcluster_id            = $args{extcluster_id};
-
-    my $condition_params = {
-        aggregate_condition_service_provider_id => $extcluster_id,
-        left_combination_id                     => $mean_percent_comb_id,
-    };
-
-   $condition_params->{comparator} = '<';
-   $condition_params->{threshold}  = 10;
-
-   my $aggregate_condition = Enity::AggregateCondition->new(%$condition_params);
-
-   my $params_rule = {
-        service_provider_id  => $extcluster_id,
-        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        state                => 'enabled',
-    };
-
-    $params_rule->{rule_name}       = 'Cluster '.$aggregate_condition->left_combination->toString().' underloaded';
-    $params_rule->{description} = 'You may add a node';
-
-    Entity::Rule::AggregateRule->new(%$params_rule);
-};
-
-# CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
-sub generateCoefficientOfVariationRules {
-    my ($self,%args) = @_;
-    my $id_mean        = $args{id_mean},
-    my $id_std         = $args{id_std},
-    my $extcluster_id  = $args{extcluster_id};
-
-    my $combination_params = {
-        service_provider_id             => $extcluster_id,
-        aggregate_combination_formula   => 'id'.($id_std).'/ id'.($id_mean),
-    };
-
-    my $aggregate_combination = Entity::Metric::Combination::AggregateCombination->new(%$combination_params);
-
-    my $condition_params = {
-        aggregate_condition_service_provider_id => $extcluster_id,
-        left_combination_id                     => $aggregate_combination->id,
-        comparator                              => '>',
-        threshold                               => 0.2,
-    };
-
-   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
-
-   my $params_rule = {
-        service_provider_id  => $extcluster_id,
-        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        state                => 'enabled',
-        rule_name            => 'Heterogeneity detected with '.$aggregate_combination->toString(),
-        description          => 'All the datas seems homogenous please check the loadbalancer configuration',
-    };
-    Entity::Rule::AggregateRule->new(%$params_rule);
-};
-
-# CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
-sub generateStandardDevRuleForNormalizedIndicatorsRules {
-    my ($self,%args) = @_;
-    my $id_std         = $args{id_std},
-    my $extcluster_id  = $args{extcluster_id};
-
-    my $combination_params = {
-        service_provider_id             => $extcluster_id,
-        aggregate_combination_formula   => 'id'.($id_std),
-    };
-
-    my $aggregate_combination = Entity::Metric::Combination::AggregateCombination->new(%$combination_params);
-
-    my $condition_params = {
-        aggregate_condition_service_provider_id => $extcluster_id,
-        left_combination_id                => $aggregate_combination->id,
-        comparator                              => '>',
-        threshold                               => 0.15,
-    };
-
-   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
-
-   my $params_rule = {
-        service_provider_id  => $extcluster_id,
-        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        state                => 'enabled',
-        rule_name            => 'Data homogeneity',
-        description          => 'All the datas seems homogenous please check the loadbalancer configuration',
-    };
-    Entity::Rule::AggregateRule->new(%$params_rule);
-};
 
 
 sub generateNodeMetricRules{

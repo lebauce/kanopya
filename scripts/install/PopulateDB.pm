@@ -797,6 +797,11 @@ sub registerServiceProviders {
         service_provider_name => 'Cluster',
     );
 
+    ClassType::ServiceProviderType->promote(
+        promoted              => ClassType->find(hash => { class_type => 'Entity::ServiceProvider' }),
+        service_provider_name => 'ServiceProvider',
+    );
+
     for my $cluster_type (@{ $clusters }) {
         my $class_type = ClassType->find(hash => {
                              class_type => {
@@ -1116,7 +1121,7 @@ sub registerComponents {
             component_name         => 'OpenStack',
             component_version      => 6,
             deployable             => 1,
-            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager', 'CollectorManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
@@ -1320,6 +1325,10 @@ sub registerComponents {
                 push @categories, ComponentCategory->new(category_name => $category);
             }
         }
+
+        # Workaround: Add the generic service type ServiceProvider fro all components
+        # TODO: Specify wich kind of components we can install on a generix ServiceProvider
+        push @{ $component_type->{service_provider_types} }, "ServiceProvider";
 
         my @servicetypes;
         for my $servicetype (@{ $component_type->{service_provider_types} }) {
@@ -1530,7 +1539,21 @@ sub registerIndicators {
                 [ 'vsphere hv/total mem', 'hv_mem_total', 'summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
                 [ 'vsphere hv/mem usage', 'hv_mem_usage', 'summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
-        }
+        },
+        {
+            set => {
+                name      => 'ceilometer',
+                provider  => 'External',
+                type      => 'GAUGE',
+            },
+            indicators => [
+                [ 'CPU used', 'CPU Used', 'cpu_util', undef, undef, 'FF000099', '%', undef ],
+                [ 'Network income', 'Network income', 'network.incoming.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+                [ 'Network outcome', 'Network outcome', 'network.outgoing.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+                [ 'Disk write', 'Disk write', 'disk.write.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+                [ 'Disk read', 'Disk read', 'disk.read.bytes.rate', undef, undef, 'FF000099', 'B/s', undef ],
+            ]
+        },
     ];
 
     for my $set (@{$indicators}) {
@@ -2276,7 +2299,7 @@ sub populate_policies {
 sub configureDefaultOrchestrationPolicyService {
     my %args = @_;
 
-    my $sp = Entity::ServiceProvider->new();
+    my $sp = Entity::ServiceProvider->new(service_provider_type_id => undef);
 
      # Add default workflow manager
     my $workflow_manager = $args{admin_cluster}->getComponent(name => "Kanopyaworkflow", version => "0");
@@ -2492,7 +2515,7 @@ sub populateDB {
     print "\t- Registering workflow definitions...\n";
     populate_workflow_def(kanopya_master => $kanopya_master);
 
-    print "\t- Create default orchestration policy...\n";
+    print "\t- Create default orchestration policies...\n";
     populate_policies(kanopya_master => $kanopya_master);
 
     print "\t- Populating DB done.\n";

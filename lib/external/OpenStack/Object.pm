@@ -141,15 +141,34 @@ sub request {
         }
     }
 
-    $log->debug("curl -X $method_type $request $url");
-    my $response = `curl -X $method_type $request $url`;
-    my $returncode = $?;
-    if($returncode != 0) {
-        throw Kanopya::Exception::Execution::Command(
-              error       => 'Openstack API call with curl failed',
-              command     => "curl -X $method_type $request $url",
-              return_code => $returncode,
-	)
+    my $response;
+    my $returncode;
+    my $pid;
+    eval {
+        local $SIG{ALRM} = sub {die 'Timeout!'};
+        alarm 60; # Set 60 sec timeout
+        $pid = open RES, "curl -X $method_type $request $url |";
+        $response = <RES>;
+        close RES;
+        $returncode = $?;
+        alarm 0;
+    };
+    if ($@) {
+        kill(9, $pid);
+        waitpid($pid, 0); # Avoid zombification
+        throw Kanopya::Exception::Execution::Command (
+                  command => "curl -X $method_type $request $url",
+                  error => 'Openstack API call with curl timeout, '
+                           . "process curl with PID = $pid has been killed",
+              );
+    }
+
+    if ($returncode != 0) {
+        throw Kanopya::Exception::Execution::Command (
+                  error       => 'Openstack API call with curl failed',
+                  command     => "curl -X $method_type $request $url",
+                  return_code => $returncode,
+              );
     }
 
     my $json;

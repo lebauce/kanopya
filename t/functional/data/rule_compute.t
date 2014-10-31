@@ -51,13 +51,9 @@ eval{
     $rulesengine->_component->time_step(2);
     $rulesengine  = Daemon::RulesEngine->new();
 
-    $service_provider = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Service Provider'.time(),
-    );
+    $service_provider = Entity::ServiceProvider->new();
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Monitor'.time(),
-    );
+    my $external_cluster_mockmonitor = Entity::ServiceProvider->new();
 
     my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
@@ -73,16 +69,17 @@ eval{
     # Create node
     $node = Entity::Node->new(
         node_hostname => 'node_1',
-        service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
     # Create node
     $node2 = Entity::Node->new(
         node_hostname => 'node_2',
-        service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
+
+    $service_provider->enrollNode(node=> $node);
+    $service_provider->enrollNode(node=> $node2);
 
     # Get indicators
     $indic1 = Entity::CollectorIndicator->find (

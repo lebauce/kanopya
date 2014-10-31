@@ -20,6 +20,7 @@ use General;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
+use URI;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -84,12 +85,20 @@ sub _login {
 
         $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL};
 
+        # If url is not http://XXX/vZ, http://XXX/vZ/ or http://XXX/vZ/ZZZ
+        # add api version manually
         if (! ($self->{config}->{$name}->{url} =~ /^http:\/\/.*\/v\d(\.\d)?(\/.*)?$/)) {
-            $self->{config}->{$name}->{url} .= ((defined $api_version->{$name}) ? '/' . $api_version->{$name}
-                                                                                : '/v1');
+            # If url does not finish with '/', add '/'
+            if (! ($self->{config}->{$name}->{url} =~ /^.*\/$/)) {
+                $self->{config}->{$name}->{url} .= '/';
+            }
+
+            $self->{config}->{$name}->{url} .= ((defined $api_version->{$name}) ? $api_version->{$name}
+                                                                                : 'v1');
         }
 
         $self->{config}->{$name}->{adminURL} = $service->{endpoints}->[0]->{adminURL};
+        $self->{config}->{$name}->{hostname} = URI->new($self->{config}->{$name}->{url})->host;
 
         if ($name eq 'identity') {
             my @endpoint_ids = map {$_->{id}} @{$service->{endpoints}};
@@ -131,9 +140,15 @@ sub faults {
 
 sub handleOutput {
     my ($self, %args) = @_;
-    # sometime api call return nothing (e.g. delete)
+
+    # Sometimes api call return nothing (e.g. delete)
     if (! defined $args{output}) {
         return;
+    }
+
+    # Sometimes api call return a list (e.g. ceilometer resources list)
+    if (ref $args{output} eq ref []) {
+        return $args{output};
     }
 
     for my $f (OpenStack::API->faults) {

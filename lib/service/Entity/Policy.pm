@@ -287,7 +287,6 @@ sub toJSON {
             attributes => $merge->merge(clone($class->getPolicySelectorAttrDef),
                                         clone($class->getPolicyAttrDef)),
         };
-        $attributes = $merge->merge(clone($class->SUPER::toJSON()), $attributes);
 
         # Merge params with existing values
         # If the policy if is defined in params, instanciate it to merge params
@@ -304,6 +303,7 @@ sub toJSON {
         # Merge with the dynamic attribute definition built from params
         my $policydef = $class->getPolicyDef(attributes => $attributes, %args);
         # Set the values of attributes from params and fixed values
+        $policydef = $merge->merge(clone($class->SUPER::toJSON()), $policydef);
         $class->setValues(attributes    => $policydef,
                           values        => $args{params},
                           set_mandatory => delete $args{set_mandatory},
@@ -342,7 +342,129 @@ sub getPolicyDef {
                          required => [ 'attributes' ],
                          optional => { 'params' => {}, 'trigger' => undef });
 
+    # Push all attributes to the displayed fiels according the extra tag "order"
+    my $attrdef = $args{attributes}->{attributes};
+
+    my @sorted = sort { ($attrdef->{$a}->{order} || 0) <=> ($attrdef->{$b}->{order} || 0) }
+                     keys (%{ $attrdef });
+    for my $attrname (@sorted) {
+        $class->handlePolicyDefAttribute(attrname => $attrname, %args);
+    }
     return $args{attributes};
+}
+
+
+=pod
+=begin classdoc
+
+Recursivly handle policy attributes, so handle as the same way
+static policy attrs and dynamic attrs that depends of the managers.
+
+=end classdoc
+=cut
+
+sub handlePolicyDefAttribute {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'attrname', 'attributes', 'params' ]);
+
+    # Handle list of complex elements
+    my $attrdef = $args{attributes}->{attributes};
+    if ($attrdef->{$args{attrname}}->{type} eq 'relation' &&
+        $attrdef->{$args{attrname}}->{relation} eq 'single_multi') {
+
+        # Get the attribute definition of the related element
+        my $relation_attrdef = $attrdef->{$args{attrname}}->{attributes}->{attributes};
+
+        # Add the relation attributes to the displayed ones
+        my @displayed = grep { $_ ne "policy_id" } keys %{ $relation_attrdef };
+        push @{ $args{attributes}->{displayed} }, { $args{attrname} => \@displayed };
+
+        # Add the relation to the relations definition
+        $args{attributes}->{relations}->{$args{attrname}} = {
+            attrs    => { accessor => 'multi' },
+            cond     => { 'foreign.policy_id' => 'self.policy_id' },
+            resource => $args{attrname}
+        };
+    }
+    else {
+        # Add the attribute to displayed
+        push @{ $args{attributes}->{displayed} }, $args{attrname};
+    }
+
+    # If the attribute correspond to a manager id, fill the options,
+    # handle the dynamic attrs of the manager.
+    if ($attrdef->{$args{attrname}}->{type} eq 'relation' &&
+        $attrdef->{$args{attrname}}->{relation} eq 'single' &&
+        $args{attrname} =~ m/_manager_id/) {
+
+        # Deduce the manager type from the attr name...
+        (my $manager_key = $args{attrname}) =~ s/_id$//g;
+        my $manager_type = join('', map { ucfirst($_) } split('_', $manager_key));
+
+        # Build the list of available managers of this type
+        my $manager_options = {};
+        for my $component (Entity::Component->search(custom => { category => $manager_type })) {
+            $manager_options->{$component->id} = $component->toJSON;
+            $manager_options->{$component->id}->{label} = $component->label;
+        }
+        my @manageroptions = values %{ $manager_options };
+        $attrdef->{$args{attrname}}->{options} = \@manageroptions;
+        $attrdef->{$args{attrname}}->{reload} = 1;
+
+        # If the id of the manager defined but do not corresponding to a available value,
+        # it is an old value, so delete it.
+        if (not $manager_options->{$args{params}->{$args{attrname}}}) {
+            delete $args{params}->{$args{attrname}};
+        }
+        # If no manager id defined and and attr is mandatory, use the first one as value
+        if (! $args{params}->{$args{attrname}} && $args{set_mandatory}) {
+            $self->setFirstSelected(name       => $args{attrname},
+                                    attributes => $attrdef,
+                                    params     => $args{params});
+        }
+
+        # If a value defined for the manager id, handle dynamic attributes of the managers
+        if ($args{params}->{$args{attrname}}) {
+            # Get the manager params from the selected manager
+            my $manager = Entity::Component->get(id => $args{params}->{$args{attrname}});
+
+            # Build the name of the method to call from the manager type to get the params
+            # of the proper type.
+            my $paramsmethod = "get" . $manager_type . "Params";
+            my $managerparams = $manager->$paramsmethod(params => $args{params});
+
+            # Add the dynamic attr of the manager to the policy attr def
+            my @dynamic_attrs = sort { $managerparams->{$a}->{order} <=> $managerparams->{$b}->{order} }
+                                    keys (%{ $managerparams });
+            for my $dynamic_attrname (@dynamic_attrs) {
+                $attrdef->{$dynamic_attrname} = $managerparams->{$dynamic_attrname};
+
+                # If no value defined in params, use the first one
+                if (! $args{params}->{$dynamic_attrname} && $args{set_mandatory}) {
+                    $self->setFirstSelected(name       => $dynamic_attrname,
+                                            attributes => $attrdef,
+                                            params     => $args{params});
+                }
+
+                # Handle the dynamic attr as the static ones, if not done by a manager
+                # TODO: With the folliwing grep, we do not detect relations single_multi
+                #       handle at the beguining of the merthod
+                if (! scalar(grep { $_ eq $dynamic_attrname } @{ $args{attributes}->{displayed} })) {
+                    $class->handlePolicyDefAttribute(%args, attrname => $dynamic_attrname);
+                }
+            }
+        }
+        # Remove possibly defined value of attributes that depends on the manager id.
+        else {
+            for my $dependency (@{ $self->getPolicySelectorMap->{$args{attrname}} }) {
+                delete $args{params}->{$dependency};
+            }
+        }
+    }
 }
 
 
@@ -453,15 +575,18 @@ sub getPatternFromParams {
 
     General::checkParams(args => \%args, optional => { 'params' => {} });
 
-    my $pattern = {};
-    my $attrdef = $class->getPolicyAttrDef;
+    my $attrdef = $class->toJSON(params => $args{params})->{attributes};
     my %paramscopy = %{ $args{params} };
 
+    # Firstly move all array values to hashes as a configuration pattern could be merged
+    # without duplicating array values.
+    my $params = $self->relationsListToHash(params => $args{params}, attrdef => $attrdef);
+
     # Transform the policy form params to a cluster configuration pattern
-    for my $name (keys %{ $args{params} }) {
+    my $pattern = {};
+    for my $name (keys %{ $class->getPolicyAttrDef }) {
         # Handle defined values that belongs to the attrdef of the policy only
-        if (defined $args{params}->{$name} && $args{params}->{$name} ne '' && exists $attrdef->{$name} &&
-            ! ($attrdef->{$name}->{type} eq 'relation' && $attrdef->{$name}->{relation} eq 'single_multi')) {
+        if (defined $params->{$name} && $params->{$name} ne '') {
             # Handle managers
             if ($name =~ m/_manager_id/) {
                 my $manager_key = $name;
@@ -470,30 +595,31 @@ sub getPatternFromParams {
                 my $manager_type = join('', map { ucfirst($_) } split('_', $manager_key));
 
                 # Set the manager infos
-                $pattern->{managers}->{$manager_key}->{manager_id}   = delete $args{params}->{$name};
+                $pattern->{managers}->{$manager_key}->{manager_id}   = delete $params->{$name};
                 $pattern->{managers}->{$manager_key}->{manager_type} = $manager_type;
 
                 # Set the manager params if required.
                 # Build the method name that return the managers params in funtion of the type
                 # of the manager, and call it on the manager instance.
-                my $manager = Entity->get(id => $pattern->{managers}->{$manager_key}->{manager_id});
+                my $managerdef = $pattern->{managers}->{$manager_key};
+                my $manager = Entity::Component->get(id => $managerdef->{manager_id});
                 my $method = 'get' . $manager_type . 'Params';
 
-                my @params = keys % { $manager->$method(params => \%paramscopy) };
-                for my $param (@params) {
-                    if (defined $args{params}->{$param} and $args{params}->{$param}) {
-                        $pattern->{managers}->{$manager_key}->{manager_params}->{$param} = delete $args{params}->{$param};
+                my @managerparams = keys % { $manager->$method(params => \%paramscopy) };
+                for my $param (@managerparams) {
+                    if (defined $params->{$param} and $params->{$param}) {
+                        $managerdef->{manager_params}->{$param} = delete $params->{$param};
                     }
                 }
             }
             # Handle cluster attributtes.
             else {
                 # TODO: checkAttr
-                $pattern->{$name} = delete $args{params}->{$name};
+                $pattern->{$name} = delete $params->{$name};
             }
+
         }
     }
-
     return $pattern;
 }
 
@@ -721,26 +847,57 @@ sub relationsHashToList {
 
     General::checkParams(args => \%args, required => [ 'params', 'attrdef' ]);
 
-    for my $name (keys %{ $args{params} }) {
+    for my $name (grep { ref($args{params}->{$_}) eq "HASH" } keys %{ $args{params} }) {
         # If the param is a multi relation, make the value as a list
         if (defined $args{attrdef}->{$name} &&
             $args{attrdef}->{$name}->{type} eq 'relation' &&
             $args{attrdef}->{$name}->{relation} =~ m/^(single_multi|multi)$/) {
-            my $value_type = ref($args{params}->{$name});
 
-            # The stored value should be a hash
-            if ($value_type ne "HASH") {
-                throw Kanopya::Exception::Internal::Inconsistency(
-                          error => "Value for param \"$name\" should be a HASH, not " .
-                                   (defined $value_type ? $value_type : "SCALAR")
-                      );
-            }
             my @values = values %{ delete $args{params}->{$name} };
             my $rel_attrdef = $args{attrdef}->{$name}->{attributes}->{attributes};
             if (defined $rel_attrdef) {
                 @values = map { $self->relationsHashToList(params => $_, attrdef => $rel_attrdef) } @values;
             }
             $args{params}->{$name} = \@values;
+        }
+    }
+    return $args{params};
+}
+
+
+=pod
+=begin classdoc
+
+Check if the given attr trigger the reload ofattr def
+by setting it to an undef value.
+
+=end classdoc
+=cut
+
+sub relationsListToHash {
+    my $self = shift;
+    my %args = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'params', 'attrdef' ]);
+
+    for my $name (grep { ref($args{params}->{$_}) eq "ARRAY" } keys %{ $args{params} }) {
+        # If the param is a multi relation, make the value as a list
+        if (defined $args{attrdef}->{$name} &&
+            $args{attrdef}->{$name}->{type} eq 'relation' &&
+            $args{attrdef}->{$name}->{relation} =~ m/^(single_multi|multi)$/) {
+
+            # Firstly handle the list values
+            my @values = @{ delete $args{params}->{$name} };
+            my $rel_attrdef = $args{attrdef}->{$name}->{attributes}->{attributes};
+            if (defined $rel_attrdef) {
+                @values = map { $self->relationsListToHash(params => $_, attrdef => $rel_attrdef) } @values;
+            }
+
+            # And move the list to a hash
+            my $index = 0;
+            my %hash = map { $name . "_" . $index++ => $_ } @values;
+            $args{params}->{$name} = \%hash;
         }
     }
     return $args{params};

@@ -138,7 +138,8 @@ sub prerequisites {
     }
     catch (Kanopya::Exception::NotImplemented $err) {
         # Physical
-        $log->warn($err);
+        $log->warn('Method <selectHypervisor> is not implemented by the host manager'
+                   . '. This may be normal for a physical deployment');
         return 0;
     }
 
@@ -412,15 +413,16 @@ sub cancel {
         $self->{context}->{vm_cluster}->setState(state => 'up');
     }
 
-    if (defined $self->{context}->{host}->node) {
-        my $dir = $self->_executor->getConf->{clusters_directory};
-        $dir .= '/' . $self->{context}->{host}->node->node_hostname;
-        $self->getEContext->execute(command => "rm -r $dir");
-
-        $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
-    }
-
     if (defined $self->{context}->{host}) {
+
+        if (defined $self->{context}->{host}->node) {
+            my $dir = $self->_executor->getConf->{clusters_directory};
+            $dir .= '/' . $self->{context}->{host}->node->node_hostname;
+            $self->getEContext->execute(command => "rm -r $dir");
+
+            $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
+        }
+
         eval {
             $self->{context}->{host}->release();
         };
