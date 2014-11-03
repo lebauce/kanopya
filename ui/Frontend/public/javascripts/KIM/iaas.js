@@ -333,7 +333,6 @@ function load_iaas_content (container_id) {
                     }
 
                     iaasCollection.push(iaasObject);
-                    iaasCollection.push(iaasObject);
                 });
                 renderHtml();
             }

@@ -12,7 +12,7 @@ module.exports = function(grunt) {
                     //     // Use the new "reference" directive, e.g.
                     //     // @import (reference) "variables.less";
                     //     reference: [
-                    //         "less/variables.less" 
+                    //         "src/less/variables.less" 
                     //     ]
                     // },
                     compress: true,
@@ -23,7 +23,8 @@ module.exports = function(grunt) {
                     {
                       expand: true,
                       cwd: 'src/less', // Source folder
-                      src: ['*.less', '!{var,mix}*.less'],
+                      // src: ['*.less', '!{var,mix}*.less'],
+                      src: 'import.less',
                       dest: 'src/css',
                       ext: '.css'
                     }
