@@ -1696,20 +1696,19 @@ sub _synchronizeMasterimages {
 sub _load {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'infra' ]);
+    General::checkParams(args => \%args, required => [ 'infra' ], optional => { 'config' => {} });
 
     # Firstly create the IAAS infrastructure, the nodes where are ditributed the IAAS service
     my $endpoints = {};
-    my $config = $self->_api->{config};
-    my @services = grep { ref($config->{$_}) eq "HASH" && defined $config->{$_}->{hostname} }
-                       keys %{ $config };
+    my @services = grep { ref($args{config}->{$_}) eq "HASH" && defined $args{config}->{$_}->{hostname} }
+                       keys %{ $args{config} };
 
     for my $service (@services) {
-        if (! defined $endpoints->{$config->{$service}->{hostname}}) {
-            $endpoints->{$config->{$service}->{hostname}} = [$service];
+        if (! defined $endpoints->{$args{config}->{$service}->{hostname}}) {
+            $endpoints->{$args{config}->{$service}->{hostname}} = [$service];
         }
         else {
-            push @{ $endpoints->{$config->{$service}->{hostname}} }, $service;
+            push @{ $endpoints->{$args{config}->{$service}->{hostname}} }, $service;
         }
     }
 
