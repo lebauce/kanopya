@@ -915,7 +915,7 @@ sub registerComponents {
             component_version      => 5,
             deployable             => 1,
             component_categories   => [ 'DBMS' ],
-            component_template     => 'components/nfsd3',
+            component_template     => 'components/mysql5',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
