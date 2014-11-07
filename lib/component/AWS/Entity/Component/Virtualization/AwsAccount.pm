@@ -146,16 +146,19 @@ sub new {
     foreach my $key (@$fields, 'region') {
         $self->{key} = $args{key};
     }
+
+    $self->{api} = AWS::API->new(aws_account => $self);
+    $self->{ec2} = AWS::EC2->new(api => $self->{api});
     
     # Get available regions: this not only checks whether we are allowed in the given region,
     # it also tests our access data !
     my $available_regions;
     try {
-        $available_regions = $self->_ec2->getRegions;
+        $available_regions = $self->{ec2}->getRegions;
     } catch ($ex) {
         Kanopya::Database::rollbackTransaction();
         throw Kanopya::Exception::Internal::WrongValue(
-             error => "Unable to connect to AWS, please check your access data."
+            error => "Unable to connect to AWS, please check your access data."
         );
     }
     
@@ -163,7 +166,7 @@ sub new {
     unless (exists $available_regions{$args{region}}) {
         Kanopya::Database::rollbackTransaction();
         throw Kanopya::Exception::Internal::WrongValue(
-             error => "The region ".$args{region}." is not available to you."
+            error => "The region ".$args{region}." is not available to you."
         );
     } 
 
@@ -171,39 +174,33 @@ sub new {
     return $self;
 }
 
+
 =pod
 =begin classdoc
-
-Lazily load an API object, so that it can be available for this instance. 
 
 @return AWS::API instance for this account
 
 =end classdoc
 =cut
 
+# Formerly lazily loaded, but now we use it already in the constructor.
 sub _api {
     my ($self) = @_;
-    
-    $self->{api} ||= AWS::API->new(aws_account => $self);
-    
     return $self->{api};
 }
 
+
 =pod
 =begin classdoc
-
-Lazily load an EC2 object, so that it can be available for this instance. 
 
 @return AWS::EC2 instance for this account
 
 =end classdoc
 =cut
 
+# Formerly lazily loaded, but now we use it already in the constructor.
 sub _ec2 {
-    my ($self) = @_;
-    
-    $self->{ec2} ||= AWS::EC2->new(api => $self->_api);
-    
+    my ($self) = @_;   
     return $self->{ec2};
 }
 
@@ -222,6 +219,7 @@ sub remove {
     $self->unregister();
     $self->SUPER::remove();
 }
+
 
 =pod
 =begin classdoc
@@ -291,75 +289,6 @@ sub unregister {
     $self->delete;
 }
 
-#sub hostType {
-#    my $self = shift;
-#    return $self->label;
-#}
-#
-#
-#sub label {
-#    my $self = shift;
-#    return $self->SUPER::label . " " . $self->keystone_url  . " (" . $self->tenant_name . ")";
-#}
-#
-#
-#=pod
-#=begin classdoc
-#
-#@return the network configuration used to check the availability of the openstack apis.
-#
-#=end classdoc
-#=cut
-#
-#sub getNetConf {
-#    my $self = shift;
-#
-#    my $conf = {
-#        novncproxy => {
-#            port => 6080,
-#            protocols => ['tcp']
-#        },
-#        ec2 => {
-#            port => 8773,
-#            protocols => ['tcp']
-#        },
-#        compute_api => {
-#            port => 8774,
-#            protocols => ['tcp']
-#        },
-#        metadata_api => {
-#            port => 8775,
-#            protocols => ['tcp']
-#        },
-#        volume_api => {
-#            port => 8776,
-#            protocols => ['tcp']
-#        },
-#        glance_registry => {
-#            port => 9191,
-#            protocols => ['tcp']
-#        },
-#        image_api => {
-#            port => 9292,
-#            protocols => ['tcp']
-#        },
-#        keystone_service => {
-#            port => 5000,
-#            protocols => ['tcp']
-#        },
-#        keystone_admin => {
-#            port => 35357,
-#            protocols => ['tcp']
-#        },
-#        neutron => {
-#            port => 9696,
-#            protocols => ['tcp']
-#        }
-#    };
-#
-#    return $conf;
-#}
-
 
 =pod
 =begin classdoc
@@ -379,45 +308,7 @@ sub getManagerParamsDef {
             type         => 'enum',
             pattern      => '^.*$',
             is_mandatory => 1
-        },
-#        availability_zone => {
-#            label        => 'Availability Zone',
-#            type         => 'enum',
-#            pattern      => '^.*$',
-#            is_mandatory => 1
-#        },
-#        hosting_tenant => {
-#            label        => 'Project',
-#            type         => 'enum',
-#            pattern      => '^.*$',
-#            is_mandatory => 1
-#        },
-#        network_tenant => {
-#            label        => 'Project',
-#            type         => 'enum',
-#            pattern      => '^.*$',
-#            is_mandatory => 1
-#        },
-#        volume_type => {
-#            label        => 'Volume type',
-#            type         => 'enum',
-#            is_mandatory => 1,
-#            # TODO:  Get the enum options from the available synchronized backend
-#            options      => []
-#        },
-#        repository   => {
-#            is_mandatory => 1,
-#            label        => 'Repository',
-#            type         => 'enum',
-#        },
-#        subnets => {
-#            label        => 'Subnets',
-#            is_mandatory => 1,
-#            type         => 'relation',
-#            relation     => 'multi',
-#            is_editable  => 1,
-#            options      => [],
-#        },
+        }
     };
 }
 
@@ -474,16 +365,6 @@ Return the parameters definition available for the DiskManager API.
 sub getStorageManagerParams {
     my ($self, %args) = @_;
     # No parameter for AWS, everything systemimage-related is hosted there!
-
-#    my $pp = $self->param_preset->load;
-#    my $params = { volume_type => $self->getManagerParamsDef->{volume_type} };
-#
-#    for my $type_id (keys %{ $pp->{volume_types} }) {
-#        push @{ $params->{volume_type}->{options} }, $pp->{volume_types}->{$type_id}->{name};
-#    }
-#
-#    return $params;
-
     return {};
 }
 
@@ -501,7 +382,6 @@ Check parameters that will be given to the DiskManager API methods.
 # NOTE MERGE : nearly the same as OpenStack
 sub checkStorageManagerParams {
     my ($self, %args) = @_;
-
     General::checkParams(args => \%args, required => []);
 
     # Workaround: Add a dummy boot_policy to fix missing boot_policy when
@@ -510,7 +390,6 @@ sub checkStorageManagerParams {
     $args{boot_policy} = 'Boot from AWS image';
 
     return \%args;
-
 }
 
 
@@ -527,31 +406,6 @@ sub checkStorageManagerParams {
 sub getNetworkManagerParams {
     # All AWS network stuff is still subject to discussion.
     return {};
-#    my ($self, %args) = @_;
-#
-#    my $params = $self->getManagerParamsDef;
-#    my $pp = $self->param_preset->load;
-#
-#    my @tenant_names = keys %{$pp->{tenants_name_id}};
-#    my $tenants = $params->{network_tenant};
-#    $tenants->{options} = \@tenant_names;
-#    $tenants->{reload} = 1;
-#
-#    my $hash = { network_tenant => $tenants };
-#    if (defined $args{params}->{network_tenant}) {
-#        my $tenant_id = $pp->{tenants_name_id}->{$args{params}->{network_tenant}};
-#
-#        my $subnets = $self->getManagerParamsDef->{subnets};
-#        for my $network_id (@{ $pp->{tenants}->{$tenant_id}->{networks} }) {
-#            my $network_name = $pp->{networks}->{$network_id}->{name};
-#
-#            for my $subnet_id (@{ $pp->{networks}->{$network_id}->{subnets} }) {
-#                push @{ $subnets->{options} }, $pp->{subnets}->{$subnet_id}->{cidr} . " ($network_name)";
-#            }
-#        }
-#        $hash->{subnets} = $subnets;
-#    }
-#    return $hash;
 }
 
 
@@ -567,8 +421,6 @@ Check params required for managing network connectivity.
 
 sub checkNetworkManagerParams {
     my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => []); # was: 'subnets'
 }
 
 
@@ -584,11 +436,6 @@ Remove the network manager params entry from a hash ref.
 
 sub releaseNetworkManagerParams {
     my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ "params" ]);
-
-#    delete $args{params}->{network_tenant};
-#    delete $args{params}->{subnets};
 }
 
 
@@ -604,7 +451,6 @@ sub releaseNetworkManagerParams {
 
 sub getBootManagerParams {
     my ($self, %args) = @_;
-
     return {};
 }
 
@@ -623,6 +469,7 @@ sub _getHypervisorDescription {
     return 'AWS infrastructure for account '.$self->id; 
 }
 
+
 =pod
 =begin classdoc
 
@@ -638,6 +485,7 @@ sub getTheHypervisor {
     my ($self) = @_;
     return Entity::Host->find(hash => { host_serial_number => $self->_getHypervisorDescription });
 }
+
 
 =pod
 =begin classdoc
@@ -667,30 +515,13 @@ sub getFreeHost {
     catch ($err) {
         # We can't create virtual host for some reasons (e.g can't meet constraints)
         throw Kanopya::Exception::Internal(
-            error => "Virtual machine manager <" . $self->label . "> has not capabilities " .
-                     "to host this VM of type with type <$args{type}>:\n" . $err
-        );
+                  error => "Virtual machine manager <" . $self->label . "> has not capabilities " .
+                           "to host this VM of type with type <$args{type}>:\n" . $err
+              );
     }
 }
 
 
-#=pod
-#=begin classdoc
-#
-#Return the boot policies for the host ruled by this host manager
-#
-#@see <package>Manager::HostManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub getBootPolicies {
-#    my $self = shift;
-#
-#    return (Manager::HostManager->BOOT_POLICIES->{virtual_disk});
-#}
-#
-#
 =pod
 =begin classdoc
 
@@ -708,7 +539,6 @@ sub startHost {
     my ($self, %args) = @_;
 
     General::checkParams(args  => \%args,
-                         # required => [ 'host', 'flavor', 'hypervisor' ],
                          required => [ 'host', 'instance_type' ],
                          optional => {hypervisor => undef});
 
@@ -717,9 +547,9 @@ sub startHost {
 
     # We need the AWS Image ID, we get it through the systemimage description. 
     my $instance = $self->_ec2->createInstance(
-        ImageId      => $self->_removeAwsPrefix( $node->systemimage->systemimage_desc ),
-        InstanceType => $args{instance_type}
-    );
+                       ImageId      => $self->_removeAwsPrefix( $node->systemimage->systemimage_desc ),
+                       InstanceType => $args{instance_type}
+                   );
     my $vm_info = $instance->arrayref->[0];
     
     # Only NOW we know some data: MAC address, instance ID...
@@ -729,7 +559,6 @@ sub startHost {
     $node->update(node_hostname => $serial_number);
     
     $self->setNodeState(node => $node, vm_info => $vm_info);
-    
     return;
 }
 
@@ -757,154 +586,6 @@ sub stopHost {
 }
 
 
-#=pod
-#=begin classdoc
-#
-#Sclar cpu or ram of the virtual machine by calling the nova api.
-#
-#@param host_id Host instance id to scale
-#@param scalein_value Wanted value
-#@param scalein_type Selectsthe metric to scale in either 'ram' or 'cpu'
-#
-#@see <package>Manager::HostManager::VirtualMachineManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub scaleHost {
-#    my ($self,%args) = @_;
-#
-#    General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
-#
-#    throw Kanopya::Exception::NotImplemented();
-#}
-#
-#
-#=pod
-#=begin classdoc
-#
-#Migrate a host to the destination hypervisor by calling the nova api.
-#
-#@see <package>Manager::HostManager::VirtualMachineManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub migrateHost {
-#    my ($self, %args) = @_;
-#    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
-#
-#    OpenStack::Server->migrate(
-#        api => $self->_api,
-#        id => $args{host}->openstack_vm_uuid,
-#        hypervisor_hostname => $args{hypervisor}->node->node_hostname,
-#    );
-#
-#    return;
-#}
-#
-#
-#=pod
-#=begin classdoc
-#
-#Promote host into OpenstackVm and set its hypervisor id
-#
-#@return the promoted host
-#
-#@see <package>Manager::HostManager::VirtualMachineManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub promoteVm {
-#    my ($self, %args) = @_;
-#
-#    General::checkParams(args     => \%args,
-#                         required => [ 'host', 'vm_uuid' ],
-#                         optional => { 'hypervisor_id' => undef });
-#
-#     $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
-#                       promoted           => $args{host},
-#                       nova_controller_id => $self->id,
-#                       openstack_vm_uuid  => $args{vm_uuid},
-#                   );
-#
-#    $args{host}->hypervisor_id($args{hypervisor_id});
-#    return $args{host};
-#}
-#
-#
-#=pod
-#=begin classdoc
-#
-#Get the detail of a vm
-#
-#@params host vm
-#
-#=end classdoc
-#=cut
-#
-#sub getVMDetails {
-#    my ($self, %args) = @_;
-#    General::checkParams(args => \%args, required => [ 'host' ]);
-#
-#    my $details = OpenStack::Server->detail(
-#                      api => $self->_api,
-#                      id => $args{host}->openstack_vm_uuid,
-#                      flavor_detail => 1,
-#                  );
-#
-#    if (defined $details->{itemNotFound}) {
-#        throw Kanopya::Exception(error => $details->{itemNotFound});
-#    }
-#
-#    return {
-#        hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
-#        state => $details->{server}->{status},
-#        ram => $details->{server}->{flavor}->{ram} * 1024 * 1024, #MB to B
-#        cpu => $details->{server}->{flavor}->{vcpus},
-#    };
-#}
-#
-#
-#=pod
-#
-#=begin classdoc
-#
-#Retrieve the state of a given VM
-#
-#@return state
-#
-#=end classdoc
-#
-#=cut
-#
-#sub getVMState {
-#    my ($self, %args) = @_;
-#    General::checkParams(args => \%args, required => [ 'host' ]);
-#
-#    try {
-#        my $details =  $self->getVMDetails(%args);
-#
-#        my $state_map = {
-#            'MIGRATING' => 'migr',
-#            'BUILD'     => 'pend',
-#            'REBUILD'   => 'pend',
-#            'ACTIVE'    => 'runn',
-#            'ERROR'     => 'fail',
-#            'SHUTOFF'   => 'shut'
-#        };
-#
-#        return {
-#            state      => $state_map->{$details->{state}} || 'fail',
-#            hypervisor => $details->{hypervisor},
-#        };
-#    }
-#    catch ($err) {
-#        $log->warn($err);
-#    }
-#}
-
 =pod
 =begin classdoc
 
@@ -930,14 +611,12 @@ sub createSystemImage {
     # other (subclass) field, a ParamPreset, or something else.
     
     return Entity::Systemimage->new(
-        storage_manager_id => $self->id,
-        # names must be unique, descriptions not
-        systemimage_name => $args{systemimage_name},
-        systemimage_desc => $self->_addAwsPrefix($args{masterimage}->masterimage_file)
-    );
+               storage_manager_id => $self->id,
+               # names must be unique, descriptions not
+               systemimage_name => $args{systemimage_name},
+               systemimage_desc => $self->_addAwsPrefix($args{masterimage}->masterimage_file)
+           );
 }
-
-# RHEL-7.0_GA_HVM-x86_64-3-Hourly2_1413821822
 
 
 =pod
@@ -978,21 +657,6 @@ sub attachSystemImage {
     $log->debug('No system image to attach');
     return;
 }
-
-
-#=pod
-#=begin classdoc
-#
-#@return the name of the type of storage provided by this storage manager.
-#
-#@see <package>Manager::StorageManager</package>
-#
-#=end classdoc
-#=cut
-#
-#sub storageType {
-#    return "OpenStack Cinder";
-#}
 
 
 =pod
@@ -1048,58 +712,9 @@ sub configureNetworkInterfaces {
     my ($self, %args) = @_;
     
     # For AWS, we leave the network aside for the moment.
-#    General::checkParams(args => \%args, required => [ 'subnets', 'node' ]);
-    
-#    $log->debug("network configuration: ".Data::Dumper->Dump([ \%args ]));
-#
-#    my $pp = $self->param_preset->load;
-#    my @ifaces = $args{node}->host->getIfaces;
-#    my $port_macs = {};
-#    for my $subnet (@{ $args{subnets} }) {
-#        (my $subnet_addr = $subnet) =~ s/ \(.*\)$//g;
-#        (my $network_name = $subnet) =~ s/^.* \(//g;
-#        $network_name =~ s/\)$//g;
-#
-#        my $subnet_id;
-#        my $network_id = $pp->{networks_name_id}->{$network_name};
-#        try {
-#            my @uuids = grep { $pp->{subnets}->{$_}->{cidr} eq $subnet_addr }
-#                            @{ $pp->{networks}->{$network_id}->{subnets} };
-#            $subnet_id = pop(@uuids);
-#        }
-#        catch ($err) {
-#            throw Kanopya::Exception::Internal::Inconsistency(
-#                      error => "Unable to retrieve network and subnet id for $subnet:$err"
-#                  );
-#        }
-#
-#        $log->info("Found network $network_id and subnet $subnet_id for $subnet.");
-#        my $port = OpenStack::Port->create(api        => $self->_api,
-#                                           network_id => $network_id,
-#                                           subnet_id  =>  $subnet_id);
-#
-#        $port_macs->{$port->{port}->{mac_address}} = $port->{port}->{id};
-#
-#        # Assign the resulting ip the the next iface
-#        my $iface = shift(@ifaces);
-#        $log->info('Assign iface ' . $iface->iface_name . ' with ip <' .
-#                   $port->{port}->{fixed_ips}->[0]->{ip_address} . '> and mac <' .
-#                   $port->{port}->{mac_address} . '>');
-#
-#        $iface->assignIp(ip_addr => $port->{port}->{fixed_ips}->[0]->{ip_address});
-#        $iface->iface_mac_addr($port->{port}->{mac_address});
-#
-#        # If the node admin ip not set, use the first one
-#        if (! defined $args{node}->admin_ip_addr) {
-#            $args{node}->admin_ip_addr($port->{port}->{fixed_ips}->[0]->{ip_address});
-#        }
-#    }
-#
-#    # TODO store information elsewhere
-#    $self->param_preset->update(params => { port_macs => $port_macs });
-
     return;
 }
+
 
 =pod
 =begin classdoc
@@ -1113,36 +728,12 @@ Remove the network configurations.
 
 sub unconfigureNetworkInterface {
     my ($self, %args) = @_;
-#    my @mac_addresses = map {$_->reload->iface_mac_addr} $args{node}->host->getIfaces;
-#
-#    my $params = $self->param_preset->load;
-#
-#    for my $addr (@mac_addresses) {
-#        if (! defined $params->{port_macs}->{$addr}) {
-#            $log->warn('Cannot find port_uuid and delete OpenStack Port. '
-#                       . ' this can happened when the port creation and the '
-#                       . ' exception occurs during the same transaction');
-#        }
-#        else {
-#            try {
-#                OpenStack::Port->delete(
-#                    api => $self->_api,
-#                    id => $params->{port_macs}->{$addr}
-#                );
-#            }
-#            catch($err) {
-#                $log->warn('Error when deleting port:' . $err);
-#            }
-#            delete $params->{port_macs}->{$addr};
-#        }
-#    }
-#    $self->param_preset->update(params => $params, override => 1);
     return;
 }
 
+
 =pod
 =begin classdoc
-
 
 Query AWS to register a "virtual" hypervisor, existing virtual machines
 and all available options.
@@ -1177,7 +768,6 @@ Stop a host.
 =cut
 
 # TODO: is it not useless to call this right before calling stopHost ?
-
 sub halt {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
@@ -1187,14 +777,8 @@ sub halt {
     if (@$errors > 0) {
         $log->warn('Errors during AWS node halt: '.Data::Dumper->Dump($errors));
     }
-    
-#    try {
-#        OpenStack::Server->stop(api => $self->_api, id => $args{host}->openstack_vm_uuid);
-#    }
-#    catch($err) {
-#        $log->warn('Error during openstack node halt ' . $err);
-#    }
 }
+
 
 =pod
 =begin classdoc
@@ -1204,13 +788,13 @@ Release a host, delete the Entity::Host object.
 =end classdoc
 =cut
 
-
 sub releaseHost {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     return $args{host}->delete();
 }
+
 
 =pod
 =begin classdoc
@@ -1235,8 +819,8 @@ sub getHypervisorVMs {
 
     # Let's try to do this in one single DB request.
     my @hosts = Entity::Host::VirtualMachine->search(hash => {
-       host_serial_number => \@infra_vm_sn_list 
-    });
+                    host_serial_number => \@infra_vm_sn_list 
+                });
      
     my %sn_found = map { $_ => 0 } @infra_vm_sn_list; 
     foreach my $host (@hosts) {
@@ -1244,12 +828,10 @@ sub getHypervisorVMs {
     }
     my @unk_vm_uuids = grep { $sn_found{$_} == 0 } keys(%sn_found);
     
-    my $result = {
-        vms          => \@hosts,
-        unk_vm_uuids => \@unk_vm_uuids
-    };
-    $log->debug("VHH DEBUG: result is: ".Data::Dumper->Dump([ $result ]));
-    return $result;
+    return {
+               vms          => \@hosts,
+               unk_vm_uuids => \@unk_vm_uuids
+           };
 }
 
 
@@ -1272,10 +854,11 @@ sub selectHypervisor {
     
     my $cm = CapacityManagement->new(cloud_manager => $self);
     return $cm->getHypervisorIdForVM(resources => {
-        ram => $aws_type->ram, 
-        cpu => $aws_type->cpu
-    });
+               ram => $aws_type->ram, 
+               cpu => $aws_type->cpu
+           });
 }
+
 
 =pod
 =begin classdoc
@@ -1285,13 +868,10 @@ Actions to do after the successful start of a node.
 =end classdoc
 =cut
 
-
 sub postStart {
-    # my ($self, %args) = @_;
-    # General::checkParams(args => \%args, required => [ 'host' ]);
-    
     # Nothing left to do for AWS! The Host already knows its "hypervisor".
 }
+
 
 =pod
 =begin classdoc
@@ -1326,6 +906,7 @@ sub increaseConsumers {
     );
 }
 
+
 =pod
 =begin classdoc
 
@@ -1357,51 +938,15 @@ sub removeMasterimages {
     # TODO TODO TODO
     # use TGE's new relation to find the Storage Managers from Masterimages
     
-    # right now, a gross estimation:
+    # right now, a gross estimation, daring even if there is only one AWS account:
     
     my @masterimages = Entity::Masterimage->search(hash => {
-       masterimage_file => { 'LIKE' => 'ami-%' } 
-    });
+                           masterimage_file => { 'LIKE' => 'ami-%' } 
+                       });
     foreach my $masterimage (@masterimages) {
         $masterimage->delete();
     }
 }
-
-#=pod
-#=begin classdoc
-#
-#Ovveride the vmms relation to raise an execption as the OpenStack iaas do not manage the hypervisors.
-#
-#=end classdoc
-#=cut
-#
-#sub vmms {
-#    my ($self, %args) = @_;
-#
-#    throw Kanopya::Exception::Internal(error => "Hypervisors not managerd by iaas " . $self->label);
-#}
-#
-#
-#sub _api {
-#    my ($self, %args) = @_;
-#
-#    if (defined $self->{_api}) {
-#        return $self->{_api};
-#    }
-#
-#    General::checkParams(args => \%args,
-#                         optional => { api_username => $self->api_username || 'admin',
-#                                       api_password => $self->api_password || 'keystone',
-#                                       keystone_url => $self->keystone_url || 'localhost',
-#                                       tenant_name  => $self->tenant_name  || 'openstack' } );
-#
-#    $self->{_api} = OpenStack::API->new(user         => $args{api_username},
-#                                        password     => $args{api_password},
-#                                        tenant_name  => $args{tenant_name},
-#                                        keystone_url => $args{keystone_url});
-#
-#    return $self->{_api}
-#}
 
 
 =pod
@@ -1494,8 +1039,8 @@ sub _removeAwsPrefix {
         return $1;
     } else {
         throw Kanopya::Exception::Internal::WrongValue(
-            error => "The serial number '$serial_number' does not contain a valid AWS Instance ID"
-        )
+                  error => "The serial number '$serial_number' does not contain a valid AWS Instance ID"
+              );
     }
 }
 
@@ -1517,65 +1062,6 @@ sub _load {
 
     General::checkParams(args => \%args, required => [ 'infra' ]);
 
-#    my $tenants_name_id = {};
-#    my $tenants = {};
-#    for my $tenant (@{$args{infra}->{tenants}}) {
-#        $tenants_name_id->{$tenant->{name}} = $tenant->{id};
-#        $tenants->{$tenant->{id}} = $tenant;
-#        $tenants->{$tenant->{id}}->{networks} = [];
-#    }
-#
-#    my $zones = {};
-#    for my $zone (@{$args{infra}->{availability_zones}}) {
-#        # A zone has no id
-#        $zones->{$zone->{zoneName}} = $zone;
-#    }
-#
-#    my $flavors = {};
-#    for my $flavor (@{$args{infra}->{flavors}}) {
-#        $flavors->{$flavor->{id}} = $flavor;
-#    }
-#
-#    my $subnets = {};
-#    for my $subnet (@{$args{infra}->{subnets}}) {
-#        $subnets->{$subnet->{id}} = $subnet;
-#    }
-#
-#    my $volume_types = {};
-#    for my $volume_type (@{ $args{infra}->{volume_types} }) {
-#        $volume_types->{delete $volume_type->{id}} = $volume_type;
-#    }
-
-#    my $images = {};
-#    for my $image (@{$args{infra}->{images}}) {
-#        $images->{$image->{id}} = $image;
-#    }
-
-#    my $networks_name_id = {};
-#    my $networks = {};
-#    for my $network (@{$args{infra}->{networks}}) {
-#        push @{$tenants->{$network->{tenant_id}}->{networks}}, $network->{id};
-#        $networks_name_id->{$network->{name}} = $network->{id};
-#        $networks->{$network->{id}} = $network
-#    }
-#
-#    my $pp = $self->param_preset;
-#    $pp->update(
-#        params => {
-#            tenants => $tenants,
-#            networks => $networks,
-#            subnets => $subnets,
-#            volume_types => $volume_types,
-#            flavors => $flavors,
-#            zones => $zones,
-#            images => $images,
-#            # TODO Remove following and find better method
-#            networks_name_id => $networks_name_id,
-#            tenants_name_id => $tenants_name_id,
-#        },
-#        override => 1,
-#    );
-#
     # Manage images
     my $cluster_type_id = ClassType::ServiceProviderType::ClusterType->find(
                               service_provider_name => 'Cluster'
@@ -1602,15 +1088,15 @@ sub _load {
     # Manage hypervisors
     # TODO: this must correspond to our "quota", defined by AWS or defined by the HCM admin!
     my $hypervisor = Entity::Host->createOrUpdate(
-        find => {
-            host_serial_number => $self->_getHypervisorDescription
-        },
-        update => {
-            active => 1,
-            host_ram => 100 * 1024**3,  # enough !
-            host_core => 3, # not more than three simultaneous instances on the Free Tier
-        }
-    );
+                         find => {
+                             host_serial_number => $self->_getHypervisorDescription
+                         },
+                         update => {
+                             active => 1,
+                             host_ram => 100 * 1024**3,  # enough !
+                             host_core => 3, # not more than three simultaneous instances on the Free Tier
+                         }
+                     );
     my $hypervisor_id = $hypervisor->id;
     
     # NOTE MERGE: from here on, large blocks are identical with the code in OpenStack.pm
@@ -1638,7 +1124,6 @@ sub _load {
     for my $vm_info (@{$args{infra}->{instances}->arrayref}) {
         $vm_count++;
         
-        # my $network_info = $vm_info->{addresses};
         my $serial_number = $self->_addAwsPrefix($vm_info->{instance_id}); 
         my $aws_type      = AwsInstanceType->getType(name => $vm_info->{type});
         my $vm;
@@ -1647,55 +1132,33 @@ sub _load {
         );
         try {
             $vm = Entity::Host::VirtualMachine->find(hash => {
-                %hyp_hash,
-                serial_number     => $serial_number
-            });
+                      %hyp_hash,
+                      serial_number     => $serial_number
+                  });
 
         } catch (Kanopya::Exception::Internal::NotFound $err) {
             $vm = $self->createAwsVirtualHost(
-                %hyp_hash,
-                instance_id       => $vm_info->{instance_id},
-                aws_instance_type => $vm_info->{type},
-                ifaces            => 1, # scalar (keys %$network_info),
-                mac_address       => $vm_info->{mac_addr}
-            );
+                      %hyp_hash,
+                      instance_id       => $vm_info->{instance_id},
+                      aws_instance_type => $vm_info->{type},
+                      ifaces            => 1, # scalar (keys %$network_info),
+                      mac_address       => $vm_info->{mac_addr}
+                  );
         }
                 
         # Create the corresponding node if not exist
         my $node = Entity::Node->createOrUpdate(
-            find => {
-                host_id => $vm->id
-            },
-            update => {
-                node_hostname  => $serial_number,
-                node_number    => $vm_count,
-                systemimage_id => undef, # TODO ?
-                admin_ip_addr  => $vm_info->{ip}  
-            }
-        );
-
+                       find => {
+                           host_id => $vm->id
+                       },
+                       update => {
+                           node_hostname  => $serial_number,
+                           node_number    => $vm_count,
+                           systemimage_id => undef, # TODO ?
+                           admin_ip_addr  => $vm_info->{ip}  
+                       }
+                   );
         $self->setNodeState(node => $node, vm_info => $vm_info);
-
-#            my @ifaces = $vm->ifaces;
-#            while(my ($name, $ip_infos) = each(%$network_info)) {
-#
-#                # TODO Manage floating ips
-#
-#                my $ip_info;
-#                # '=' is ok, we assign first and then we test
-#                while(($ip_info = (pop @$ip_infos)) && ($ip_info->{'OS-EXT-IPS:type'} ne 'fixed')) {}
-#
-#                if (defined $ip_info) {
-#                    my $iface = (pop @ifaces);
-#                    $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
-#                    Ip->new(
-#                        ip_addr  => $ip_info->{addr},
-#                        iface_id => $iface->id,
-#                    );
-#                    $node->admin_ip_addr($ip_info->{addr});
-#                }
-#            }
-#        }
     }
 }
 
