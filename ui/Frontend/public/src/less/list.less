@@ -1,0 +1,232 @@
+//
+// list
+//
+
+.list {
+    margin-top: -15px;
+    margin-left: -15px;
+    .clearfix;
+}
+
+.list-item {
+    float: left;
+    background-color: @list-background-color;
+    padding: 15px;
+    margin: 15px;
+    min-width: 450px;
+
+    .button-group {
+        min-width: 450px;
+
+        .btn {
+            position: relative;
+
+            i {
+                position: absolute;
+                top: 10px;
+                left: 50%;
+                margin-left: -8px;
+                color: #ffffff;
+            }
+        }
+        .btn-action3 {
+            .button-variant(@btn-danger-color; @btn-danger-bg; @btn-danger-border);
+            margin-left: 30px;
+        }
+        .btn-action2 {
+            .button-variant(@btn-primary-color; @btn-primary-bg; @btn-primary-border);
+
+            &.transparent-text {
+                color: @btn-primary-bg;
+            }
+            &.transparent-text:hover,
+            &.transparent-text:focus {
+                color: darken(@btn-primary-bg, 10%);
+            }
+        }
+
+        .btn-action1 {
+            .button-variant(#fff; @theme-color1; darken(@theme-color1, 5%));
+            float: right;
+        }
+    }
+}
+
+.list-item-info {
+    .clearfix;
+    margin-bottom: 20px;
+
+    .name {
+        float: left;
+        font-size: @font-size-h3;
+        font-weight: bold;
+
+        > span {
+            display: inline-block;
+        }
+        > span:hover {
+            cursor: pointer;
+        }
+
+        .ip {
+        font-size: @font-size-xs;
+        font-weight: normal;
+        text-decoration: none;
+        }
+    }
+    .name.openstack {
+        background: url(/images/iaas-openstack-64.png) no-repeat top left;
+        height: 64px;
+        padding-left: 74px;
+    }
+
+    .state {
+        float: right;
+        font-size: @font-size-xs;
+        text-align: center;
+
+        .fa {
+            font-size: 40px;
+
+            &.fa-thumbs-up {
+                color: @success-color;
+            }
+            &.fa-thumbs-down {
+                color: @error-color;
+            }
+            &.fa-times {
+                color: @error-color;
+            }
+        }
+    }
+}
+
+.list-line {
+    .margin-vertical(15px);
+    .make-line
+}
+
+.list-properties {
+    .padding-horizontal(15px);
+    min-width: 720px;
+    .clearfix;
+
+    > div {
+      -webkit-box-sizing: border-box;
+         -moz-box-sizing: border-box;
+              box-sizing: border-box;
+        border-left: 5px solid @lineColor;
+        text-align: center;
+        height: 75px;
+
+        .title {
+            font-size: @font-size-base;
+            font-weight: bold;
+            color: @theme-color1;
+        }
+        .number {
+            font-family: @font-family-sans-serif;
+            font-weight: bold;
+            color: black;
+        }
+        .value {
+            font-size: @font-size-h1;
+        }
+    }
+    > div.first {
+        border-left-width: 0;
+    }
+    
+    .vm {
+        position: relative;
+        float: left;
+        width: percentage((2 / @grid-columns));
+        min-height: 1px;
+        .padding-horizontal(15px);
+    }
+
+    .hypervisor {
+        position: relative;
+        float: left;
+        width: percentage((2 / @grid-columns));
+        min-width: 120px;
+        min-height: 1px;
+        .padding-horizontal(5px);
+    }
+
+    .cpu-ram {
+        position: relative;
+        float: left;
+        width: percentage((4 / @grid-columns));
+        min-height: 1px;
+        .padding-horizontal(5px);
+
+        .detail {
+            margin: 5px auto;
+
+            > div {
+                float: left;
+            }
+
+            .donut-chart {
+                .size(66px, 86px);
+                margin-top: -18px;
+                margin-left: -10px;
+
+                .jqplot-title {
+                    top: 34px !important;
+                }
+            }
+
+            .info {
+                .padding-horizontal(0);
+
+                margin-top: 15px;
+                line-height: 120%;
+
+                > div {
+                    float: left;
+                }
+
+                .total {
+                    font-size: @font-size-h3;
+                    padding-right: 0;
+                    margin-right: 0;
+                }
+
+                .used {
+                    font-size: @font-size-h3;
+                    border-left-width: 5px;
+                    border-left-style: solid;
+                    padding-left: 10px;
+                }
+
+                .label {
+                    font-size: @font-size-xs;
+                    font-weight: normal;
+                    color: black;
+                    padding-left: 5px;
+                    padding-right: 10px;
+                }
+            }
+        }
+    }
+
+    .cpu {
+        .detail {
+            width: 210px;
+        }
+        .used {
+            border-left-color: #1D871B;
+        }
+    }
+
+    .ram {
+        .detail {
+            width: 260px;
+        }
+        .used {
+            border-left-color: #4E8FFF;
+        }
+    }
+}
