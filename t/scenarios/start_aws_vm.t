@@ -89,13 +89,13 @@ sub main {
                         cluster_nameserver1   => '208.67.222.222',
                         cluster_nameserver2   => '127.0.0.1',
                         owner_id              => Entity::User->find(hash => { user_login => 'admin' })->id,
-                        masterimage_id        => $masterimage->id,
+                        # masterimage_id        => $masterimage->id,
                         managers => {
                             host_manager => {
                                 manager_id     => $aws->id,
                                 manager_type   => "HostManager",
                                 manager_params => {
-                                    type => 't2.micro'
+                                    instance_type => 't2.micro'
                                     # flavor => "m1.tiny",
                                     # availability_zone => "nova",
                                     # tenant => "Doc",
@@ -105,6 +105,7 @@ sub main {
                                 manager_id     => $aws->id,
                                 manager_type   => "StorageManager",
                                 manager_params => {
+                                    masterimage_id => $masterimage->id
                                     # volume_type => "dummy",
                                     # systemimage_size => $masterimage->masterimage_size + (1024 * 1024 * 1024),
                                 },

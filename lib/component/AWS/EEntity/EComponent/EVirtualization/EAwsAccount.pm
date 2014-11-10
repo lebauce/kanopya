@@ -208,7 +208,7 @@ sub checkUp {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
     my $node = $args{host}->node;
-    return if defined $node->admin_ip_addr;
+    return 0 if defined $node->admin_ip_addr;
     
     my $aws = $self->_entity;
     

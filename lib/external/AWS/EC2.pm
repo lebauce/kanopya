@@ -94,7 +94,6 @@ sub getImages {
             'ami-d02386a7'  # Windows Server 2012 R2
         ]]
     );
-    $log->debug("VHH DEBUG: first XML document is: ".$response->toString(0));
     
     my @found_images = ();
     my $xpc = $self->{api}->xpc;
@@ -113,7 +112,6 @@ sub getImages {
         }
     }
     
-    $log->debug("Found the following AWS images: ".Data::Dumper->Dump([ \@found_images ]));    
     return \@found_images;
 }
 
@@ -268,8 +266,6 @@ sub createInstance {
             'InstanceType',    $args{InstanceType}
         ]
     );
-    
-    $log->debug("VHH DEBUG: after call to createInstance: \n$response");
     
     return $self->_parseInstances($response);
 }

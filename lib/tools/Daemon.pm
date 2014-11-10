@@ -404,8 +404,16 @@ sub runningDaemons {
     my ($class)= @_;
     
     my @all_services = @{ $class->daemonsToRun() };
-    my $ps_auxww; 
-    IPC::Cmd::run(command => "ps auxww", buffer  => \$ps_auxww);
+    my $ps_auxww;
+    { 
+        my ($ok, $err, $full_buf, $stdout_buff, $stderr_buff) 
+            = IPC::Cmd::run(command => "ps auxww", buffer  => \$ps_auxww);
+        if (! $ok) {
+            throw Kanopya::Exception::Internal(
+                      error => 'Could not execute "ps auxww": '.$err
+                  );
+        }
+    }
     
     my @found_services = ();
     foreach my $service (@all_services) {

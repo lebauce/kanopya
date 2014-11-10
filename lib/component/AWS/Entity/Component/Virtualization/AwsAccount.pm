@@ -146,15 +146,12 @@ sub new {
     foreach my $key (@$fields, 'region') {
         $self->{key} = $args{key};
     }
-
-    $self->{api} = AWS::API->new(aws_account => $self);
-    $self->{ec2} = AWS::EC2->new(api => $self->{api});
     
     # Get available regions: this not only checks whether we are allowed in the given region,
     # it also tests our access data !
     my $available_regions;
     try {
-        $available_regions = $self->{ec2}->getRegions;
+        $available_regions = $self->_ec2->getRegions;
     } catch ($ex) {
         Kanopya::Database::rollbackTransaction();
         throw Kanopya::Exception::Internal::WrongValue(
@@ -183,9 +180,11 @@ sub new {
 =end classdoc
 =cut
 
-# Formerly lazily loaded, but now we use it already in the constructor.
+# We want this already in the constructor, but the object might have been reconstructed
+# from the database, without passing by new().
 sub _api {
     my ($self) = @_;
+    $self->{api} ||= AWS::API->new(aws_account => $self);
     return $self->{api};
 }
 
@@ -198,9 +197,11 @@ sub _api {
 =end classdoc
 =cut
 
-# Formerly lazily loaded, but now we use it already in the constructor.
+# We want this already in the constructor, but the object might have been reconstructed
+# from the database, without passing by new().
 sub _ec2 {
-    my ($self) = @_;   
+    my ($self) = @_;
+    $self->{ec2} ||= AWS::EC2->new(api => $self->_api);
     return $self->{ec2};
 }
 
@@ -215,7 +216,6 @@ Called by a HTTP DELETE.
 
 sub remove {
     my ($self, %args) = @_;
-    $log->info("VHH DEBUG: API REMOVE called on AWS component, proceeding to unregister");
     $self->unregister();
     $self->SUPER::remove();
 }
@@ -602,6 +602,7 @@ There is no separate step for creating a system volume.
 
 sub createSystemImage {
     my ($self, %args) = @_;
+
     General::checkParams(args     => \%args,
                          required => [ 'masterimage', 'systemimage_name' ]);
     

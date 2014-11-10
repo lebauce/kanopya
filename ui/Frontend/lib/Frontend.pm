@@ -121,7 +121,6 @@ hook 'before_error_init' => sub {
     $error->{code}    = exception_to_status($error->exception);
     $error->{message} = $error->exception->user_message;
     $error->{exception} = undef; # otherwise, Dancer might try to convert the backtrace into JSON, and fail.
-    $log->info("VHH DEBUG: before_error_init. Error message will be: ".$error->message);
 };
 
 hook on_handler_exception => sub {
@@ -135,7 +134,6 @@ hook on_route_exception => sub {
 };
 
 hook 'after_error_render' => sub {
-    $log->info("VHH DEBUG: after_error_render");
     status request->{status};
 };
 
