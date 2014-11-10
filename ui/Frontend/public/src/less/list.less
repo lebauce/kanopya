@@ -13,10 +13,183 @@
     background-color: @list-background-color;
     padding: 15px;
     margin: 15px;
-    min-width: 450px;
+
+    .list-item-info {
+        .clearfix;
+
+        .identifier {
+            float: left;
+        }
+
+        .name {
+            font-weight: bold;
+
+            > span {
+                display: inline-block;
+            }
+            > span:hover {
+                cursor: pointer;
+            }
+
+            .ip {
+                font-size: @font-size-xs;
+                font-weight: normal;
+                text-decoration: none;
+            }
+        }
+        .name.openstack {
+            background: url(/images/iaas-openstack-64.png) no-repeat top left;
+            height: 64px;
+            padding-left: 74px;
+        }
+
+        .state {
+            float: right;
+            font-size: @font-size-xs;
+            text-align: center;
+            font-weight: normal;
+
+            .fa {
+                &.fa-thumbs-up {
+                    color: green;
+                }
+                &.fa-thumbs-down {
+                    color: red;
+                }
+                &.fa-times {
+                    color: red;
+                }
+                &.fa-power-off {
+                    color: lightgrey;
+                }
+            }
+        }
+    }
+
+    .list-line {
+        .make-line
+    }
+
+    .list-properties {
+        .clearfix;
+
+        > div {
+            border-left: 5px solid @line-color;
+            text-align: center;
+
+            .title {
+                font-size: @font-size-base;
+                font-weight: bold;
+                color: @theme-color1;
+            }
+            .number {
+                font-family: @font-family-sans-serif;
+                font-weight: bold;
+                color: black;
+            }
+            .value {
+                font-size: @font-size-h1;
+            }
+        }
+        > div.first {
+            border-left-width: 0;
+        }
+        
+        .vm {
+            position: relative;
+            float: left;
+            width: percentage((2 / @grid-columns));
+            min-height: 1px;
+            .padding-horizontal(15px);
+        }
+
+        .hypervisor {
+            position: relative;
+            float: left;
+            width: percentage((2 / @grid-columns));
+            min-width: 120px;
+            min-height: 1px;
+            .padding-horizontal(5px);
+        }
+
+        .cpu-ram {
+            position: relative;
+            float: left;
+            width: percentage((4 / @grid-columns));
+            min-height: 1px;
+            .padding-horizontal(5px);
+
+            .detail {
+                margin: 5px auto;
+
+                > div {
+                    float: left;
+                }
+
+                .donut-chart {
+                    .size(66px, 86px);
+                    margin-top: -18px;
+                    margin-left: -10px;
+
+                    .jqplot-title {
+                        top: 34px !important;
+                    }
+                }
+
+                .info {
+                    .padding-horizontal(0);
+
+                    margin-top: 15px;
+                    line-height: 120%;
+
+                    > div {
+                        float: left;
+                    }
+
+                    .total {
+                        font-size: @font-size-h3;
+                        padding-right: 0;
+                        margin-right: 0;
+                    }
+
+                    .used {
+                        font-size: @font-size-h3;
+                        border-left-width: 5px;
+                        border-left-style: solid;
+                        padding-left: 10px;
+                    }
+
+                    .label {
+                        font-size: @font-size-xs;
+                        font-weight: normal;
+                        color: black;
+                        padding-left: 5px;
+                        padding-right: 10px;
+                    }
+                }
+            }
+        }
+
+        .cpu {
+            .detail {
+                width: 210px;
+            }
+            .used {
+                border-left-color: #1D871B;
+            }
+        }
+
+        .ram {
+            .detail {
+                width: 260px;
+            }
+            .used {
+                border-left-color: #4E8FFF;
+            }
+        }
+    }
 
     .button-group {
-        min-width: 450px;
 
         .btn {
             position: relative;
@@ -52,181 +225,229 @@
     }
 }
 
-.list-item-info {
-    .clearfix;
-    margin-bottom: 20px;
+//
+// IAAS home
+//
 
-    .name {
-        float: left;
-        font-size: @font-size-h3;
-        font-weight: bold;
+#iaas-home {
 
-        > span {
-            display: inline-block;
-        }
-        > span:hover {
-            cursor: pointer;
-        }
+    .list-item {
+        min-width: 450px;
 
-        .ip {
-        font-size: @font-size-xs;
-        font-weight: normal;
-        text-decoration: none;
-        }
-    }
-    .name.openstack {
-        background: url(/images/iaas-openstack-64.png) no-repeat top left;
-        height: 64px;
-        padding-left: 74px;
-    }
+        .list-item-info {
+            margin-bottom: 20px;
 
-    .state {
-        float: right;
-        font-size: @font-size-xs;
-        text-align: center;
-
-        .fa {
-            font-size: 40px;
-
-            &.fa-thumbs-up {
-                color: @success-color;
+            .name {
+                font-size: @font-size-h3;
             }
-            &.fa-thumbs-down {
-                color: @error-color;
-            }
-            &.fa-times {
-                color: @error-color;
+            .state {
+                .fa {
+                    font-size: 40px;
+                }
             }
         }
-    }
-}
 
-.list-line {
-    .margin-vertical(15px);
-    .make-line
-}
-
-.list-properties {
-    .padding-horizontal(15px);
-    min-width: 720px;
-    .clearfix;
-
-    > div {
-      -webkit-box-sizing: border-box;
-         -moz-box-sizing: border-box;
-              box-sizing: border-box;
-        border-left: 5px solid @lineColor;
-        text-align: center;
-        height: 75px;
-
-        .title {
-            font-size: @font-size-base;
-            font-weight: bold;
-            color: @theme-color1;
+        .list-line {
+            .margin-vertical(15px);
         }
-        .number {
-            font-family: @font-family-sans-serif;
-            font-weight: bold;
-            color: black;
-        }
-        .value {
-            font-size: @font-size-h1;
-        }
-    }
-    > div.first {
-        border-left-width: 0;
-    }
-    
-    .vm {
-        position: relative;
-        float: left;
-        width: percentage((2 / @grid-columns));
-        min-height: 1px;
-        .padding-horizontal(15px);
-    }
 
-    .hypervisor {
-        position: relative;
-        float: left;
-        width: percentage((2 / @grid-columns));
-        min-width: 120px;
-        min-height: 1px;
-        .padding-horizontal(5px);
-    }
-
-    .cpu-ram {
-        position: relative;
-        float: left;
-        width: percentage((4 / @grid-columns));
-        min-height: 1px;
-        .padding-horizontal(5px);
-
-        .detail {
-            margin: 5px auto;
+        .list-properties {
+            min-width: 720px;
+            .padding-horizontal(15px);
 
             > div {
-                float: left;
+              -webkit-box-sizing: border-box;
+                 -moz-box-sizing: border-box;
+                      box-sizing: border-box;
+                height: 75px;
+
+                .title {
+                    font-size: @font-size-base;
+                }
+                .value {
+                    font-size: @font-size-h1;
+                }
             }
+        }
 
-            .donut-chart {
-                .size(66px, 86px);
-                margin-top: -18px;
-                margin-left: -10px;
+        .button-group {
+            min-width: 450px;
+            
+        }
+    }
+}
 
-                .jqplot-title {
-                    top: 34px !important;
+//
+// Instances home
+//
+
+#view_Instances {
+}
+
+#graphs_container {
+    font-weight: normal;
+    margin-bottom: 20px;
+}
+
+#instance-home {
+
+    .list-item {
+        padding: 0;
+        background-color: white;
+
+        .list-item-box {
+            padding: 15px 15px 5px 15px;
+        }
+
+        .up,
+        .in {
+            background-color: @success-background-color;
+        }
+        .down,
+        .broken {
+            background-color: @error-background-color;
+        }
+
+        .list-item-info {
+            margin-bottom: 0;
+
+            .identifier {
+                margin-right: 15px;
+
+                > div {
+                    width: 200px;
+                    overflow: hidden;
                 }
             }
 
-            .info {
-                .padding-horizontal(0);
+            .service {
+                font-size: @font-size-xs;
+                font-weight: normal;
+            }
 
-                margin-top: 15px;
-                line-height: 120%;
+            .state {
+                .fa {
+                    font-size: 24px;
+                }
+                .label {
+                    width: 30px;
+                }
+            }
+        }
+
+        .list-line {
+            .margin-vertical(5px);
+        }
+
+        .list-properties {
+            position: relative;
+
+            .node,
+            .rule {
+              -webkit-box-sizing: border-box;
+                 -moz-box-sizing: border-box;
+                      box-sizing: border-box;
+                float: left;
+                width: 50%;
+
+                .title {
+                    font-size: @font-size-xs;
+                }
+                .value {
+                    font-size: @font-size-base;
+                }
+            }
+
+            .rule .value {
+                display: inline-block; // Force to center horizontally
+                height: 20px;
+                margin-left: -10px;
 
                 > div {
                     float: left;
-                }
-
-                .total {
-                    font-size: @font-size-h3;
-                    padding-right: 0;
-                    margin-right: 0;
-                }
-
-                .used {
-                    font-size: @font-size-h3;
-                    border-left-width: 5px;
-                    border-left-style: solid;
-                    padding-left: 10px;
-                }
-
-                .label {
                     font-size: @font-size-xs;
                     font-weight: normal;
-                    color: black;
-                    padding-left: 5px;
-                    padding-right: 10px;
+                    padding-top: 3px;
+                    margin-left: 10px;
+
+                    &.ok,
+                    &.verified,
+                    &.undef {
+                        position:relative;
+                        padding-left: 15px;
+
+                        &:before {
+                            position: absolute;
+                            font-family: FontAwesome;
+                            font-size: @font-size-base;
+                            top: 0;
+                            left: 0;
+                            content: @fa-var-circle;
+                        }
+                    }
+                    &.ok:before {
+                        color: green;
+                    }
+                    &.verified:before {
+                        color: orange;
+                    }
+                    &.undef:before {
+                        color: lightgrey;
+                    }
+                }
+            }
+
+            .expander {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+
+                .icon {
+                    display: inline-block;
+                    padding: 3px 5px;
+                    margin-top: -3px;
+                    margin-left: -5px;
+                    background-color: transparent;
+                    font-size: @font-size-large;
+                    cursor: pointer;
+
+                    &:hover {
+                        background-color: lightgrey;
+                    }
                 }
             }
         }
-    }
 
-    .cpu {
-        .detail {
-            width: 210px;
-        }
-        .used {
-            border-left-color: #1D871B;
-        }
-    }
+        .button-group {
+            margin-left: -5px;
 
-    .ram {
-        .detail {
-            width: 260px;
+            > button {
+                font-size: @font-size-small;
+            }
+
+            .button-icon {
+                margin-left: 5px;
+                padding: 2px;
+                height: 24px;
+                width: 24px;
+                cursor: pointer;
+                border-radius: O;
+
+                .fa-remove {
+                    color:  @error-color;
+                }
+            }
+
+            .button-text {
+                padding: 0;
+                margin-top: 2px;
+            }
         }
-        .used {
-            border-left-color: #4E8FFF;
+
+        .panel {
+            margin-top: -5px;
+            padding: 0 15px 5px 15px;
+            display: none;
         }
     }
 }

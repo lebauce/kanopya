@@ -21,49 +21,446 @@ var Service = (function(_super) {
     return Service;
 })(Model);
 
-function servicesList (container_id, elem_id) {
-    var container = $('#' + container_id);
+function servicesList(container_id, elem_id) {
 
-    $('a[href=#content_services_overview_static]').text('Service instances');
+    var instanceCollection;
+    var isRunning = false;
 
-    if($('#services_list') !=  undefined) {
-        $('#services_list').jqGrid('GridDestroy');
+    clearHtml();
+    loadInstanceCollection();
+
+    function loadInstanceCollection() {
+
+        var instanceObject;
+        var filter;
+        var index, value;
+
+        instanceCollection = [];
+
+        filter = '&cluster_id=<>,' + kanopya_cluster;
+        // If the logged user is a customer, filter the list of service
+        if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
+            filter += '&service_provider.owner_id=' + current_user.user_id;
+        }
+        if (elem_id) {
+            filter += '&service_template.service_template_id=' + elem_id;
+        }
+
+        $.getJSON(
+            '/api/cluster?expand=service_template,nodes' + filter, function(data) {
+            $.each(data, function(i, obj) {
+                instanceObject = createInstanceObject(obj);
+                instanceCollection.push(instanceObject);
+            });
+            renderHtml();
+        });
     }
 
-    var kanopya_filter = '&cluster_id=<>,' + kanopya_cluster;
+    function createInstanceObject(obj) {
 
-    // If the logged user is a customer, filter the list of service
-    var customer_filter = '';
-    if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-        customer_filter = '&service_provider.owner_id=' + current_user.user_id;
+        var stateMap = {
+            'up'       : {
+                'label': 'Up',
+                'icon' : 'fa-thumbs-up',
+                'canStart' : false,
+                'canStop' : true
+            },
+            'in'       : {
+                'label': 'Up',
+                'icon' : 'fa-thumbs-up',
+                'canStart' : false,
+                'canStop' : true
+            },
+            'down'     : {
+                'label': 'Down',
+                'icon' : 'fa-thumbs-down',
+                'canStart' : true,
+                'canStop' : false
+            },
+            'broken'   : {
+                'label': 'Broken',
+                'icon' : 'fa-times',
+                'canStart' : false,
+                'canStop' : false
+            },
+            'off'      : {
+                'label': 'Inactive',
+                'icon' : 'fa-power-off',
+                'canStart' : false,
+                'canStop' : false
+            }
+        };
+
+        var instanceObject = {
+            'id'               : obj.pk,
+            'serviceName'      : 'Internal',
+            'instanceName'     : obj.cluster_name,
+            'active'           : obj.active,
+            'activeIcon'       : '',
+            'state'            : obj.cluster_state,
+            'stateCanStart'    : false,
+            'stateCanStop'     : false,
+            'ruleStateOk'      : 0,
+            'ruleStateVerified': 0,
+            'ruleStateUndef'   : 0,
+            'nodeNumber'       : 0
+        };
+
+        if (obj.service_template) {
+            instanceObject.serviceName = obj.service_template.service_name;
+        }
+        if (obj.nodes) {
+            instanceObject.nodeNumber = obj.nodes.length;
+        }
+        index = instanceObject.state.indexOf(':');
+        if (index > -1) {
+            instanceObject.state = instanceObject.state.substring(0, index);
+        }
+        if (!instanceObject.state && instanceObject.active == '0') {
+            instanceObject.state = 'off';
+        }
+        if (instanceObject.state in stateMap) {
+            instanceObject.stateLabel = stateMap[instanceObject.state].label;
+            instanceObject.stateIcon = stateMap[instanceObject.state].icon;
+            instanceObject.stateCanStart = stateMap[instanceObject.state].canStart;
+            instanceObject.stateCanStop = stateMap[instanceObject.state].canStop;
+        }
+
+        // Rule state
+        $.ajax({
+            url     : '/api/aggregaterule?service_provider_id=' + instanceObject.id,
+            type    : 'GET',
+            dataType: 'json',
+            async   : false,
+            success : function(data) {
+                $.each(data, function(i, obj) {
+                    if (obj.hasOwnProperty('aggregate_rule_last_eval')) {
+                        value = obj.aggregate_rule_last_eval;
+                        if (value === '1') {
+                            ++instanceObject.ruleStateVerified;
+                        } else if (value === null) {
+                            ++instanceObject.ruleStateUndef;
+                        } else if (value === '0') {
+                            ++instanceObject.ruleStateOk;
+                        }
+                    }
+                });
+            }
+        });
+
+        return instanceObject;
     }
 
-    var grid = create_grid( {
-        url: '/api/cluster?expand=service_template,nodes' + kanopya_filter + customer_filter,
-        content_container_id: container_id,
-        grid_id: 'services_list',
-        afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-            addServiceExtraData(grid, rowid, rowdata, rowelem);
-        },
-        rowNum : 25,
-        colNames: [ 'ID', 'Service', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
-            { name: 'service_template.service_name', index: 'service_template_name', width: 200 },
-            { name: 'cluster_name', index: 'service_name', width: 200 },
-            { name: 'active', index: 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
-            { name: 'cluster_state', index: 'service_state', width: 90, align : 'center', formatter:StateFormatter },
-            { name: 'rulesstate', index : 'rulesstate' },
-            { name: 'node_number', index: 'node_number', width: 150 }
-        ],
-        elem_name   : 'service',
-        details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
-        deactivate  : true
-    });
+    function renderHtml() {
 
-    //$("#services_list").on('gridChange', reloadServices);
+        // clearHtml();
 
-    function createAddServiceButton(cid, grid) {
+        // Hardcoded stuff...
+        // TODO: Get the permitted actions list from /api/attributes
+        if (current_user_has_any_profiles([ "Administrator", "Sales" ])) {
+            createAddServiceButton(container_id);
+        }
+
+        createServiceGraphs(container_id, elem_id);
+        renderTemplate();
+    }
+
+    function clearHtml() {
+        if($('#services_list') !=  undefined) {
+            $('#services_list').jqGrid('GridDestroy');
+        }
+        $('#instance-home').remove();
+    }
+
+    function renderTemplate() {
+
+        var i;
+        var templateFile = '/templates/instance-home.tmpl.html';
+
+        $.get(templateFile, function(templateHtml) {
+            var template = Handlebars.compile(templateHtml);
+            $('#' + container_id).append(template({
+                'instanceCollection': instanceCollection
+            }));
+            activateEvents();
+        });
+    }
+
+    function activateEvents() {
+
+        // Expander
+        $('.panel').css('visibility', 'hidden');
+
+        $('.expander .icon').click(function() {
+
+            var toCollapse;
+            var $item = $(this).parents('.list-item');
+            var $panel = $item.find('.panel');
+
+            if ($panel.css('display') === 'none' || $panel.css('visibility') === 'hidden') {
+                $item.siblings().each( function () {
+                    if ($(this).position().top === $item.position().top) {
+                        $(this).find('.panel')
+                            .css('display', 'block');
+                    }
+                });
+                $panel
+                    .css('display', 'block')
+                    .css('visibility', 'visible');
+                $(this)
+                    .removeClass('fa-angle-double-down')
+                    .addClass('fa-angle-double-up');
+            } else {
+                toCollapse = true;
+                $item.siblings().each( function () {
+                    if ($(this).position().top === $item.position().top) {
+                        if ($(this).find('.panel').css('visibility') === 'visible') {
+                            toCollapse = false;
+                            return false;
+                        }
+                    }
+                });
+                if (toCollapse === true) {
+                    $panel.css('display', 'none');
+                    $item.siblings().each( function () {
+                        if ($(this).position().top === $item.position().top) {
+                            $(this).find('.panel')
+                                .css('display', 'none');
+                        }
+                    });
+                }
+                $panel.css('visibility', 'hidden');
+                $(this)
+                    .removeClass('fa-angle-double-up')
+                    .addClass('fa-angle-double-down');
+            }
+        });
+
+        // Detail
+        $('.list-item-info .name span').click(function() {
+            $(this)
+                .parents('.list-item')
+                .find('.button-detail')
+                .trigger('click');
+        });
+        $('.button-detail').click(function() {
+            var id = $(this).parent().data('id');
+            displayDetail(id);
+        });
+
+        // Stop
+        $('.button-stop').click(function() {
+            stopInstance(this);
+        });
+
+        // Start
+        $('.button-start').click(function() {
+            startInstance(this);
+        });
+
+        // Scale out
+        $('.button-scale-out').click(function() {
+            executeAction('addNode', this);
+        });
+    }
+
+    function getInstanceObjectById(id) {
+
+        var instanceObject = {};
+
+        for (var i = 0; i < instanceCollection.length; i++) {
+            if (instanceCollection[i].id == id) {
+                instanceObject = instanceCollection[i];
+                break;
+            }
+        }
+
+        return instanceObject;
+    }
+
+    function displayDetail(id) {
+
+        var instanceObject = getInstanceObjectById(id);
+
+        displayDetailLink(instanceObject);
+
+        show_detail(
+            'services_list',
+            'services_list',
+            id,
+            {
+                'cluster_name': instanceObject.instanceName
+            },
+            {
+                'link_to_menu': 'yes',
+                'label_key': 'cluster_name'
+            }
+        );
+    }
+
+    function displayDetailLink(instanceObject) {
+
+        var detailLinkId = 'link_view_' + instanceObject.instanceName.replace(/ /g, '_') + '_' + instanceObject.id;
+        var $detailLink = $('#' + detailLinkId);
+        if ($detailLink.length) {
+            $detailLink.parent('ul').css('display', 'block');
+        }
+    }
+
+    function startButtonAnimation(button) {
+
+        var $elt = $(button).children('i');
+        var iconClass = $elt.attr('class');
+        $elt.attr('class', 'fa fa-spinner fa-spin');
+
+        return iconClass;
+    }
+
+    function stopButtonAnimation(button, iconClass) {
+        $(button).children('i').attr('class', iconClass);
+    }
+
+    function startInstance(element) {
+        executeAction('start', element, 'This will start your instance.\nDo you want to continue?');
+    }
+
+    function stopInstance(element) {
+        executeAction('stop', element, 'This will stop all your running instances.\nDo you want to continue?');
+    }
+
+    function executeAction(action, element, confirmationMessage) {
+
+        if (isRunning === true) {
+            return;
+        }
+
+       if (confirmationMessage) {
+           if (confirm(confirmationMessage) === false) {
+                return false;
+            }
+       }
+
+        isRunning = true;
+
+        var id = $(element).parent().data('id');
+        var iconClass = startButtonAnimation(element);
+        $.ajax({
+            type: "POST",
+            url: '/api/cluster/' + id + '/' + action,
+            success: function() {
+                refreshItem(id);
+            },
+            complete: function() {
+                stopButtonAnimation(element, iconClass);
+                isRunning = false;
+                // refreshItem(id);
+            }
+        });
+    }
+
+    function refreshItem(id) {
+
+        $.getJSON(
+            '/api/cluster/' + id + '?expand=service_template,nodes',
+            function(data) {
+                var instanceObject = createInstanceObject(data);
+                var $item = $('#list-item' + id);
+                var $elt, $child;
+
+                $item.children('.list-item-box').attr('class', 'list-item-box ' + instanceObject.state);
+
+                $elt = $item.find('.state');
+                $elt.children('.fa').attr('class', 'fa ' + instanceObject.stateIcon);
+                $elt.children('.label').text(instanceObject.stateLabel);
+
+                $item
+                    .find('.node')
+                    .children('.value')
+                    .text(instanceObject.nodeNumber);
+
+                $elt = $item.children('.panel');
+                $elt.attr('class', 'panel ' + instanceObject.state);
+
+                $elt = $elt.children('.button-group');
+                $child = $elt.children('.button-start');
+                if (instanceObject.stateCanStart) {
+                    if ($child.length === 0) {
+                        $elt.prepend('<button type="button" class="button-icon button-start" title="Start"><i class="fa fa-play"></i></button>');
+
+                            $elt.children('.button-start').click(function() {
+                                startInstance(this);
+                            });
+
+                    }
+                } else {
+                    if ($child.length) {
+                        $child.remove();
+                    }
+                }
+
+                $child = $elt.children('.button-stop');
+                if (instanceObject.stateCanStop) {
+                    if ($child.length === 0) {
+                        $elt.prepend('<button type="button" class="button-icon button-stop" title="Stop"><i class="fa fa-stop"></i></button>');
+
+                            $elt.children('.button-stop').click(function() {
+                                stopInstance(this);
+                            });
+                    }
+                } else {
+                    if ($child.length) {
+                        $child.remove();
+                    }
+                }
+            }
+        );
+    }
+
+    function renderList() {
+
+        var container = $('#' + container_id);
+
+        $('a[href=#content_services_overview_static]').text('Service instances');
+
+        var kanopya_filter = '&cluster_id=<>,' + kanopya_cluster;
+        // If the logged user is a customer, filter the list of service
+        var customer_filter = '';
+        if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
+            customer_filter = '&service_provider.owner_id=' + current_user.user_id;
+        }
+
+        var grid = create_grid  ( {
+            url: '/api/cluster?expand=service_template,nodes' + kanopya_filter + customer_filter,
+            content_container_id: container_id,
+            grid_id: 'services_list',
+            afterInsertRow: function (grid, rowid, rowdata, rowelem) {
+                addServiceExtraData(grid, rowid, rowdata, rowelem);
+            },
+            rowNum : 25,
+            colNames: [ 'ID', 'Service', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],
+            colModel: [
+                { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
+                { name: 'service_template.service_name', index: 'service_template_name', width: 200 },
+                { name: 'cluster_name', index: 'service_name', width: 200 },
+                { name: 'active', index: 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
+                { name: 'cluster_state', index: 'service_state', width: 90, align : 'center', formatter:StateFormatter },
+                { name: 'rulesstate', index : 'rulesstate' },
+                { name: 'node_number', index: 'node_number', width: 150 }
+            ],
+            elem_name   : 'service',
+            // details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
+            details     : {onSelectRow: regis},
+            deactivate  : true
+        });
+
+    }
+
+    function createAddServiceButton(cid) {
+
+        if ($('#instantiate_service_button').length) {
+            return;
+        }
+
         var button = $("<button>", { id : 'instantiate_service_button', text : 'Instantiate a service'}).button({
             icons   : { primary : 'ui-icon-plusthick' }
         });
@@ -191,16 +588,10 @@ function servicesList (container_id, elem_id) {
             })).start();
         });
         
-        $('#' + cid).append(button);
+        // $('#' + cid).append(button);
+        var action_div = $('#' + cid).prevAll('.action_buttons');
+        action_div.append(button);
     };
-	
-    // Hardcoded stuff...
-    // TODO: Get the permitted actions list from /api/attributes
-    if (current_user_has_any_profiles([ "Administrator", "Sales" ])) {
-        createAddServiceButton(container_id, grid);
-    }
-
-    createServiceGraphs(container_id);
 }
 
 /*
@@ -220,7 +611,7 @@ function createServiceGraphs(cid, service_template_id) {
             $('<div>', {id : graph_cont_id})
             .append($('<span>', {text : 'Resources usage', class : 'clickable'}).prepend($('<span>', {class:'ui-icon ui-icon-triangle-1-e'}))
                     //.css({'font-size': '0.83em', 'font-weight': 'bold', 'display':'inline-block'})
-                    .css({'font-weight': 'normal', 'color' : '#555'})
+                    // .css({'font-weight': 'normal', 'color' : '#555'})
                     .click(function() {
                         $(this).find('span').toggleClass('ui-icon-triangle-1-e ui-icon-triangle-1-s');
                         $(this).next().slideToggle();

@@ -3,7 +3,13 @@
     {{#iaasCollection}}
         <div class="list-item">
             <div class="list-item-info">
-                <div class="name {{componentName}}"><span>{{label}}</span><br/><a href="{{url}}" class="ip" target="_blank">{{urlLabel}}</a></div>
+                <div class="identifier">
+                    <div class="name {{componentName}}"><span>{{label}}</span><br/><a href="{{url}}" class="ip" target="_blank">{{urlLabel}}</a></div>
+
+{{!--                     <div class="name {{componentName}}"><span>{{label}}</span></div>
+                    <div class="ip"><a href="{{url}}" target="_blank">{{urlLabel}}</a></div>
+ --}}
+                </div>
                 <div class="state">
                     <div class="fa {{stateIcon}}"></div>
                     <div class="state-label">{{stateLabel}}</div>
