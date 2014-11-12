@@ -56,6 +56,8 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use TryCatch;
 
+########## ENTITY::COMPONENT::VIRTUALIZATION METHODS ##########################
+
 use constant ATTR_DEF => {
     executor_component_id => {
         label        => 'Workflow manager',
@@ -96,27 +98,6 @@ my $vm_states = { running         => 'in',
                   terminated      => 'out',
                   stopping        => 'out',
                   stopped         => 'out'  };
-
-
-=begin classdoc
-
-Set the state for the node according to its AWS state
-
-@param node (Entity::Node)
-@param vm_info (Hashref) VM information hashref, including "state"
-
-@return Hashref
-
-=end classdoc
-=cut
-
-sub setNodeState {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['node', 'vm_info']);
-    
-    my $aws_state = $args{vm_info}{'state'};
-    $args{node}->setState('state' => $vm_states->{$aws_state} . ':' . time());
-}
 
 
 =pod
@@ -172,37 +153,24 @@ sub new {
 }
 
 
-=pod
 =begin classdoc
 
-@return AWS::API instance for this account
+Set the state for the node according to its AWS state
+
+@param node (Entity::Node)
+@param vm_info (Hashref) VM information hashref, including "state"
+
+@return Hashref
 
 =end classdoc
 =cut
 
-# We want this already in the constructor, but the object might have been reconstructed
-# from the database, without passing by new().
-sub _api {
-    my ($self) = @_;
-    $self->{api} ||= AWS::API->new(aws_account => $self);
-    return $self->{api};
-}
-
-
-=pod
-=begin classdoc
-
-@return AWS::EC2 instance for this account
-
-=end classdoc
-=cut
-
-# We want this already in the constructor, but the object might have been reconstructed
-# from the database, without passing by new().
-sub _ec2 {
-    my ($self) = @_;
-    $self->{ec2} ||= AWS::EC2->new(api => $self->_api);
-    return $self->{ec2};
+sub setNodeState {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['node', 'vm_info']);
+    
+    my $aws_state = $args{vm_info}{'state'};
+    $args{node}->setState('state' => $vm_states->{$aws_state} . ':' . time());
 }
 
 
@@ -224,70 +192,70 @@ sub remove {
 =pod
 =begin classdoc
 
-Forget everything about this infrastructure in the database
-(i.e. undo all that _load() has done). 
-
-Only runs when no HCM services depend on the platform any longer.
-
-Does nothing on the remote platform. 
+Query AWS to register a "virtual" hypervisor, existing virtual machines
+and all available options.
 
 =end classdoc
 =cut
 
-sub unregister {
+# NOTE MERGE: code is the same as in OpenStack.pm
+sub synchronize {
     my ($self, %args) = @_;
-    my @spms = $self->service_provider_managers;
-    my @spms_left;
-    if (@spms) {
-        # there might be phantoms from our own tests
-        foreach my $spm (@spms) {
-            my $sp;
-            try {
-                $sp = $spm->service_provider;
-                push @spms_left, $sp;
-            } catch (Kanopya::Exception::Internal::NotFound $ex) {
-                $log->info("Deleting empty Service Provider Manager #".$spm->id);
-                $spm->remove;
-            }
-        }
-    }
-    if (@spms_left) {
-        $log->info("still found ".scalar(@spms_left)." non-empty Service Provider Managers:");
-        my $spm_left = $spms_left[0];
-        my $error = 'Cannot unregister AWS: Still used as "'
-                    . $spm_left->manager_category->category_name
-                    . '" by cluster "' . $spm_left->service_provider->label . '"';
-        throw Kanopya::Exception::Internal(error => $error);
-    }
 
-    # No services running any longer? then purge system images from our DB.
-    foreach my $systemimage ($self->systemimages) {
-        $log->info('Unregistering AWS: deleting left-over systemimage <'.$systemimage->systemimage_name.'>');
-        $systemimage->delete;
-    }
+    General::checkParams(args => \%args, optional => { 'workflow' => undef });
 
-    for my $vm ($self->hosts) {
-        my $node = $vm->node;
-        if (defined $node) {
-            $log->info('Unregistering AWS: deleting left-over node <'.$node->node_hostname.'>');
-            $node->delete;
-        }
-        $log->info('Unregistering AWS: deleting left-over host <'.$vm->host_desc.'>');
-        $vm->delete;
-    }
-
-    for my $host ($self->hypervisors) {
-        if (defined $host->node) {
-            $host->node->delete; # no log message - this one should actually exist
-        }
-        $host->delete;
-    }
-
-    $self->removeMasterimages();
-    
-    # TODO: why not in OpenStack ? is this too daring ?
-    $self->delete;
+    return $self->executor_component->run(
+               name   => 'Synchronize',
+               workflow => delete $args{workflow},
+               params => {
+                   context => {
+                       entity => $self
+                   }
+               }
+           );
 }
+
+
+=pod
+=begin classdoc
+
+Get all the VMs of an hypervisor. Ask directly AWS.
+Our caller, EVirtualMachineManager::checkHypervisorVMPlacementIntegrity(),
+will compare the results with what is stored in the DB.
+
+Our caller expects a hashref with two keys:
+* "vms" with all VMs (Host instances) known by AWS;
+* "unk_vm_uuids" with the VMs known by AWS but unknown by the database.
+
+=end classdoc
+=cut
+
+sub getHypervisorVMs {
+    my ($self, %args) = @_;
+    # General::checkParams(args => \%args, required => []);
+    
+    my $infra_vms = $self->_ec2->getInstances();
+    my @infra_vm_sn_list = map { $self->_addAwsPrefix($_->{instance_id}) } @{$infra_vms->arrayref};
+
+    # Let's try to do this in one single DB request.
+    my @hosts = Entity::Host::VirtualMachine->search(hash => {
+                    host_serial_number => \@infra_vm_sn_list 
+                });
+     
+    my %sn_found = map { $_ => 0 } @infra_vm_sn_list; 
+    foreach my $host (@hosts) {
+        $sn_found{$host->host_serial_number} = 1;
+    }
+    my @unk_vm_uuids = grep { $sn_found{$_} == 0 } keys(%sn_found);
+    
+    return {
+               vms          => \@hosts,
+               unk_vm_uuids => \@unk_vm_uuids
+           };
+}
+
+
+########## MANAGER METHODS, AND METHODS OF SEVERAL INTERFACES #################
 
 
 =pod
@@ -311,6 +279,60 @@ sub getManagerParamsDef {
         }
     };
 }
+
+
+=pod
+=begin classdoc
+
+Increase the number of current consumers of the manager.
+(HostManager, StorageManager)
+
+=end classdoc
+=cut
+
+# NOTE MERGE: identical with the code in OpenStack.pm
+sub increaseConsumers {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'operation' ]);
+
+    my @states = $self->entity_states;
+
+    for my $state (@states) {
+        if ($state->consumer_id eq $args{operation}->workflow_id) {
+            next;
+        }
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "Entity state <" . $state->state
+                           . "> already set by consumer <"
+                           . $state->consumer->label . ">"
+              );
+    }
+
+    $self->setConsumerState(
+        state => $args{operation}->operationtype->operationtype_name,
+        consumer => $args{operation}->workflow,
+    );
+}
+
+
+=pod
+=begin classdoc
+
+Decrease the number of current consumers of the manager.
+(HostManager, StorageManager)
+
+=end classdoc
+=cut
+
+# NOTE MERGE: identical with the code in OpenStack.pm
+sub decreaseConsumers {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'operation' ]);
+    $self->removeState(consumer => $args{operation}->workflow);
+}
+
+
+######### MANAGER::HOSTMANAGER::VIRTUALMACHINEMANAGER METHODS #################
 
 
 =pod
@@ -355,135 +377,25 @@ sub checkHostManagerParams {
 =pod
 =begin classdoc
 
-Return the parameters definition available for the DiskManager API.
+There is only one hypervisor, but we still let the Capacity Manager
+do its work. This method is adapted to deal with AWS instance types.
 
-@see <package>Manager::StorageManager</package>
+(HostManager interface)
 
 =end classdoc
 =cut
 
-sub getStorageManagerParams {
+sub selectHypervisor {
     my ($self, %args) = @_;
-    # No parameter for AWS, everything systemimage-related is hosted there!
-    return {};
-}
+    General::checkParams(args => \%args, required => [ 'instance_type' ]);
 
-
-=pod
-=begin classdoc
-
-Check parameters that will be given to the DiskManager API methods.
-
-@see <package>Manager::StorageManager</package>
-
-=end classdoc
-=cut
-
-# NOTE MERGE : nearly the same as OpenStack
-sub checkStorageManagerParams {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => []);
-
-    # Workaround: Add a dummy boot_policy to fix missing boot_policy when
-    #             when storage manager is not the HCMStorageManager.
-    # TODO: Make the param boot_policy required for the HCMDeploymentManager boot manager params
-    $args{boot_policy} = 'Boot from AWS image';
-
-    return \%args;
-}
-
-
-=pod
-=begin classdoc
-
-@return the network manager parameters as an attribute definition.
-
-@see <package>Manager::NetworkManager</package>
-
-=end classdoc
-=cut
-
-sub getNetworkManagerParams {
-    # All AWS network stuff is still subject to discussion.
-    return {};
-}
-
-
-=pod
-=begin classdoc
-
-Check params required for managing network connectivity.
-
-@see <package>Manager::NetworkManager</package>
-
-=end classdoc
-=cut
-
-sub checkNetworkManagerParams {
-    my ($self, %args) = @_;
-}
-
-
-=pod
-=begin classdoc
-
-Remove the network manager params entry from a hash ref.
-
-@see <package>Manager::NetworkManager</package>
-
-=end classdoc
-=cut
-
-sub releaseNetworkManagerParams {
-    my ($self, %args) = @_;
-}
-
-
-=pod
-=begin classdoc
-
-@return the boot manager parameters as an attribute definition.
-
-@see <package>Manager::BootManager</package>
-
-=end classdoc
-=cut
-
-sub getBootManagerParams {
-    my ($self, %args) = @_;
-    return {};
-}
-
-
-=pod
-=begin classdoc
-
-Internal method to give the hypervisor description
-(used in more than one place). Helps finding the hypervisor.
-
-=end classdoc
-=cut
-
-sub _getHypervisorDescription {
-    my ($self) = @_;
-    return 'AWS infrastructure for account '.$self->id; 
-}
-
-
-=pod
-=begin classdoc
-
-Get the (only) hypervisor for this Component.
-Throws an exception if the hypervisor has not been registered yet.
-
-@return An Entity::Host instance.
-
-=end classdoc
-=cut
-
-sub getTheHypervisor {
-    my ($self) = @_;
-    return Entity::Host->find(hash => { host_serial_number => $self->_getHypervisorDescription });
+    my $aws_type = AwsInstanceType->getType(name => $args{instance_type});
+    
+    my $cm = CapacityManagement->new(cloud_manager => $self);
+    return $cm->getHypervisorIdForVM(resources => {
+               ram => $aws_type->ram, 
+               cpu => $aws_type->cpu
+           });
 }
 
 
@@ -566,6 +478,19 @@ sub startHost {
 =pod
 =begin classdoc
 
+Actions to do after the successful start of a node.
+
+=end classdoc
+=cut
+
+sub postStart {
+    # Nothing left to do for AWS! The Host already knows its "hypervisor".
+}
+
+
+=pod
+=begin classdoc
+
 Terminate the VM.
 
 @see <package>Manager::HostManager</package>
@@ -583,6 +508,98 @@ sub stopHost {
     if (@$errors > 0) {
         $log->warn('Errors during AWS node termination: '.Data::Dumper->Dump($errors));
     }
+}
+
+
+=pod
+=begin classdoc
+
+Stop a host.
+
+=end classdoc
+=cut
+
+# TODO: is it not useless to call this right before calling stopHost ?
+sub halt {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+    my $instance_id = $self->_removeAwsPrefix($args{host}->host_serial_number);
+    my $errors = $self->_ec2->stopInstance(InstanceId => [$instance_id]);
+    
+    if (@$errors > 0) {
+        $log->warn('Errors during AWS node halt: '.Data::Dumper->Dump($errors));
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Release a host, delete the Entity::Host object.
+
+=end classdoc
+=cut
+
+sub releaseHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return $args{host}->delete();
+}
+
+
+######### MANAGER::STORAGEMANAGER METHODS #####################################
+
+
+=pod
+=begin classdoc
+
+Return the parameters definition available for the DiskManager API.
+
+@see <package>Manager::StorageManager</package>
+
+=end classdoc
+=cut
+
+sub getStorageManagerParams {
+    my ($self, %args) = @_;
+
+    my $params = {
+        masterimage_id => Manager::StorageManager->getManagerParamsDef->{masterimage_id}
+    };
+
+    my @masterimages = Entity::Masterimage->search(hash => {
+                           storage_manager_id => $self->id 
+                       });
+    foreach my $masterimage (@masterimages) {
+        push @{$params->{masterimage_id}->{options}}, $masterimage->toJSON();
+    }
+
+    return $params;
+}
+
+
+=pod
+=begin classdoc
+
+Check parameters that will be given to the DiskManager API methods.
+
+@see <package>Manager::StorageManager</package>
+
+=end classdoc
+=cut
+
+# NOTE MERGE : nearly the same as OpenStack
+sub checkStorageManagerParams {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['masterimage_id']);
+
+    # Workaround: Add a dummy boot_policy to fix missing boot_policy when
+    #             when storage manager is not the HCMStorageManager.
+    # TODO: Make the param boot_policy required for the HCMDeploymentManager boot manager params
+    $args{boot_policy} = 'Boot from AWS image';
+
+    return \%args;
 }
 
 
@@ -660,41 +677,52 @@ sub attachSystemImage {
 }
 
 
+######### MANAGER::NETWORKMANAGER METHODS #####################################
+
+
 =pod
 =begin classdoc
 
-Do the required configuration/actions to provides the boot mechanism for the node.
+@return the network manager parameters as an attribute definition.
 
-@see <package>Manager::BootManager</package>
+@see <package>Manager::NetworkManager</package>
 
 =end classdoc
 =cut
 
-sub configureBoot {
-    my ($self, %args) = @_;
-    $log->debug('No boot configuration');
-    return;
+sub getNetworkManagerParams {
+    # All AWS network stuff is still subject to discussion.
+    return {};
 }
 
 
 =pod
 =begin classdoc
 
-Workaround for the native HCM boot manager that requires the configuration
-of the boot made in 2 steps.
+Check params required for managing network connectivity.
 
-Apply the boot configuration set at configureBoot
-
-@see <package>Manager::BootManager</package>
+@see <package>Manager::NetworkManager</package>
 
 =end classdoc
 =cut
 
-# NOTE MERGE: same as in OpenStack
-sub applyBootConfiguration {
+sub checkNetworkManagerParams {
     my ($self, %args) = @_;
-    $log->debug('No boot configuration to apply');
-    return;
+}
+
+
+=pod
+=begin classdoc
+
+Remove the network manager params entry from a hash ref.
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub releaseNetworkManagerParams {
+    my ($self, %args) = @_;
 }
 
 
@@ -733,275 +761,64 @@ sub unconfigureNetworkInterface {
 }
 
 
+######### MANAGER::BOOTMANAGER METHODS ########################################
+
+
 =pod
 =begin classdoc
 
-Query AWS to register a "virtual" hypervisor, existing virtual machines
-and all available options.
+@return the boot manager parameters as an attribute definition.
+
+@see <package>Manager::BootManager</package>
 
 =end classdoc
 =cut
 
-# NOTE MERGE: code is the same as in OpenStack.pm
-sub synchronize {
+sub getBootManagerParams {
     my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, optional => { 'workflow' => undef });
-
-    return $self->executor_component->run(
-               name   => 'Synchronize',
-               workflow => delete $args{workflow},
-               params => {
-                   context => {
-                       entity => $self
-                   }
-               }
-           );
+    return {};
 }
 
 
 =pod
 =begin classdoc
 
-Stop a host.
+Do the required configuration/actions to provides the boot mechanism for the node.
+
+@see <package>Manager::BootManager</package>
 
 =end classdoc
 =cut
 
-# TODO: is it not useless to call this right before calling stopHost ?
-sub halt {
+sub configureBoot {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host' ]);
-    my $instance_id = $self->_removeAwsPrefix($args{host}->host_serial_number);
-    my $errors = $self->_ec2->stopInstance(InstanceId => [$instance_id]);
-    
-    if (@$errors > 0) {
-        $log->warn('Errors during AWS node halt: '.Data::Dumper->Dump($errors));
-    }
+    $log->debug('No boot configuration');
+    return;
 }
 
 
 =pod
 =begin classdoc
 
-Release a host, delete the Entity::Host object.
+Workaround for the native HCM boot manager that requires the configuration
+of the boot made in 2 steps.
+
+Apply the boot configuration set at configureBoot
+
+@see <package>Manager::BootManager</package>
 
 =end classdoc
 =cut
 
-sub releaseHost {
+# NOTE MERGE: same as in OpenStack
+sub applyBootConfiguration {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    return $args{host}->delete();
+    $log->debug('No boot configuration to apply');
+    return;
 }
 
 
-=pod
-=begin classdoc
-
-Get all the VMs of an hypervisor. Ask directly AWS.
-Our caller, EVirtualMachineManager::checkHypervisorVMPlacementIntegrity(),
-will compare the results with what is stored in the DB.
-
-Our caller expects a hashref with two keys:
-* "vms" with all VMs (Host instances) known by AWS;
-* "unk_vm_uuids" with the VMs known by AWS but unknown by the database.
-
-=end classdoc
-=cut
-
-sub getHypervisorVMs {
-    my ($self, %args) = @_;
-    # General::checkParams(args => \%args, required => []);
-    
-    my $infra_vms = $self->_ec2->getInstances();
-    my @infra_vm_sn_list = map { $self->_addAwsPrefix($_->{instance_id}) } @{$infra_vms->arrayref};
-
-    # Let's try to do this in one single DB request.
-    my @hosts = Entity::Host::VirtualMachine->search(hash => {
-                    host_serial_number => \@infra_vm_sn_list 
-                });
-     
-    my %sn_found = map { $_ => 0 } @infra_vm_sn_list; 
-    foreach my $host (@hosts) {
-        $sn_found{$host->host_serial_number} = 1;
-    }
-    my @unk_vm_uuids = grep { $sn_found{$_} == 0 } keys(%sn_found);
-    
-    return {
-               vms          => \@hosts,
-               unk_vm_uuids => \@unk_vm_uuids
-           };
-}
-
-
-=pod
-=begin classdoc
-
-There is only one hypervisor, but we still let the Capacity Manager
-do its work. This method is adapted to deal with AWS instance types.
-
-(HostManager interface)
-
-=end classdoc
-=cut
-
-sub selectHypervisor {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'instance_type' ]);
-
-    my $aws_type = AwsInstanceType->getType(name => $args{instance_type});
-    
-    my $cm = CapacityManagement->new(cloud_manager => $self);
-    return $cm->getHypervisorIdForVM(resources => {
-               ram => $aws_type->ram, 
-               cpu => $aws_type->cpu
-           });
-}
-
-
-=pod
-=begin classdoc
-
-Actions to do after the successful start of a node.
-
-=end classdoc
-=cut
-
-sub postStart {
-    # Nothing left to do for AWS! The Host already knows its "hypervisor".
-}
-
-
-=pod
-=begin classdoc
-
-Increase the number of current consumers of the manager.
-(HostManager, StorageManager)
-
-=end classdoc
-=cut
-
-# NOTE MERGE: identical with the code in OpenStack.pm
-sub increaseConsumers {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'operation' ]);
-
-    my @states = $self->entity_states;
-
-    for my $state (@states) {
-        if ($state->consumer_id eq $args{operation}->workflow_id) {
-            next;
-        }
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "Entity state <" . $state->state
-                           . "> already set by consumer <"
-                           . $state->consumer->label . ">"
-              );
-    }
-
-    $self->setConsumerState(
-        state => $args{operation}->operationtype->operationtype_name,
-        consumer => $args{operation}->workflow,
-    );
-}
-
-
-=pod
-=begin classdoc
-
-Decrease the number of current consumers of the manager.
-(HostManager, StorageManager)
-
-=end classdoc
-=cut
-
-# NOTE MERGE: identical with the code in OpenStack.pm
-sub decreaseConsumers {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'operation' ]);
-    $self->removeState(consumer => $args{operation}->workflow);
-}
-
-
-=pod
-=begin classdoc
-
-Remove AWS master images
-
-=end classdoc
-=cut
-
-sub removeMasterimages {    
-    my ($self, %args) = @_;
-    
-    # TODO TODO TODO
-    # use TGE's new relation to find the Storage Managers from Masterimages
-    
-    # right now, a gross estimation, daring even if there is only one AWS account:
-    
-    my @masterimages = Entity::Masterimage->search(hash => {
-                           masterimage_file => { 'LIKE' => 'ami-%' } 
-                       });
-    foreach my $masterimage (@masterimages) {
-        $masterimage->delete();
-    }
-}
-
-
-=pod
-=begin classdoc
-
-A variant of VirtualMachineManager::createVirtualHost that is more appropriated for us.
-
-@param aws_instance_type (AwsInstanceType or String) The instance type for which we need a "Host" instance.
-@param instance_id (String) Used for construction of the host's serial number.
-@param ifaces (Integer) Number of interfaces.
-
-=end classdoc
-=cut
-
-sub createAwsVirtualHost {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'aws_instance_type', 'instance_id' ],
-                         optional => { 'hypervisor_id' => undef, 'mac_address' => undef,
-                                       'ifaces' => 1 });
-
-    # Only make these calls if necessary
-    $args{hypervisor_id} = $self->getTheHypervisor->id unless defined $args{hypervisor_id};
-    $args{mac_address}   = $self->generateMacAddress() unless defined $args{mac_address};
-
-    my $aws_it = $args{aws_instance_type};
-    if (ref($aws_it) eq '') {
-        $aws_it = AwsInstanceType->getType(name => $aws_it);
-    }
-
-    # Use the first kernel found...
-    my $kernel = Entity::Kernel->find(hash => {});
-
-    my $vm = Entity::Host::VirtualMachine->new(
-                 host_manager_id    => $self->id,
-                 hypervisor_id      => $args{hypervisor_id},
-                 host_serial_number => $self->_addAwsPrefix($args{instance_id}),
-                 kernel_id          => $kernel->id,
-                 host_ram           => $aws_it->ram, 
-                 host_core          => $aws_it->cpu,
-                 active             => 1,
-             );
-
-    foreach (0 .. $args{ifaces}-1) {
-        $vm->addIface(
-            iface_name     => 'eth' . $_,
-            iface_mac_addr => $args{mac_address},
-            iface_pxe      => $_ == 0 ? 1 : 0,
-        );
-    }
-
-    return $vm;
-}
+########## OWN METHODS ########################################################
 
 
 =pod
@@ -1046,8 +863,6 @@ sub _removeAwsPrefix {
 }
 
 
-
-
 =pod
 =begin classdoc
 
@@ -1068,10 +883,8 @@ sub _load {
                               service_provider_name => 'Cluster'
                           )->id;
 
-    # TODO: Master images (and system images) should be managed by a dedicated component 
-    # with its dedicated tables. With more and more different external infrastructures,
-    # it makes no sense any more to throw them all together.
-    # But this will need quite a bit of refactoring.
+    $log->info("VHH DEBUG: our ID that we put into storage_manager_id is ".$self->id);
+    
     foreach my $image_info (@{$args{infra}->{images}}) {
         Entity::Masterimage::AwsMasterimage->createOrUpdate(
             find => {
@@ -1081,7 +894,8 @@ sub _load {
                 masterimage_name => $image_info->{name},
                 masterimage_size => $image_info->{size},
                 masterimage_desc => $image_info->{desc},
-                masterimage_cluster_type_id => $cluster_type_id
+                masterimage_cluster_type_id => $cluster_type_id,
+                storage_manager_id => $self->id
             }
         );
     }
@@ -1160,6 +974,214 @@ sub _load {
                        }
                    );
         $self->setNodeState(node => $node, vm_info => $vm_info);
+    }
+}
+
+
+=pod
+=begin classdoc
+
+@return AWS::API instance for this account
+
+=end classdoc
+=cut
+
+# We want this already in the constructor, but the object might have been reconstructed
+# from the database, without passing by new().
+sub _api {
+    my ($self) = @_;
+    $self->{api} ||= AWS::API->new(aws_account => $self);
+    return $self->{api};
+}
+
+
+=pod
+=begin classdoc
+
+@return AWS::EC2 instance for this account
+
+=end classdoc
+=cut
+
+# We want this already in the constructor, but the object might have been reconstructed
+# from the database, without passing by new().
+sub _ec2 {
+    my ($self) = @_;
+    $self->{ec2} ||= AWS::EC2->new(api => $self->_api);
+    return $self->{ec2};
+}
+
+
+=pod
+=begin classdoc
+
+Internal method to give the hypervisor description
+(used in more than one place). Helps finding the hypervisor.
+
+=end classdoc
+=cut
+
+sub _getHypervisorDescription {
+    my ($self) = @_;
+    return 'AWS infrastructure for account '.$self->id; 
+}
+
+
+=pod
+=begin classdoc
+
+Get the (only) hypervisor for this Component.
+Throws an exception if the hypervisor has not been registered yet.
+
+@return An Entity::Host instance.
+
+=end classdoc
+=cut
+
+sub getTheHypervisor {
+    my ($self) = @_;
+    return Entity::Host->find(hash => { host_serial_number => $self->_getHypervisorDescription });
+}
+
+
+=pod
+=begin classdoc
+
+A variant of VirtualMachineManager::createVirtualHost that is more appropriated for us.
+
+@param aws_instance_type (AwsInstanceType or String) The instance type for which we need a "Host" instance.
+@param instance_id (String) Used for construction of the host's serial number.
+@param ifaces (Integer) Number of interfaces.
+
+=end classdoc
+=cut
+
+sub createAwsVirtualHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'aws_instance_type', 'instance_id' ],
+                         optional => { 'hypervisor_id' => undef, 'mac_address' => undef,
+                                       'ifaces' => 1 });
+
+    # Only make these calls if necessary
+    $args{hypervisor_id} = $self->getTheHypervisor->id unless defined $args{hypervisor_id};
+    $args{mac_address}   = $self->generateMacAddress() unless defined $args{mac_address};
+
+    my $aws_it = $args{aws_instance_type};
+    if (ref($aws_it) eq '') {
+        $aws_it = AwsInstanceType->getType(name => $aws_it);
+    }
+
+    # Use the first kernel found...
+    my $kernel = Entity::Kernel->find(hash => {});
+
+    my $vm = Entity::Host::VirtualMachine->new(
+                 host_manager_id    => $self->id,
+                 hypervisor_id      => $args{hypervisor_id},
+                 host_serial_number => $self->_addAwsPrefix($args{instance_id}),
+                 kernel_id          => $kernel->id,
+                 host_ram           => $aws_it->ram, 
+                 host_core          => $aws_it->cpu,
+                 active             => 1,
+             );
+
+    foreach (0 .. $args{ifaces}-1) {
+        $vm->addIface(
+            iface_name     => 'eth' . $_,
+            iface_mac_addr => $args{mac_address},
+            iface_pxe      => $_ == 0 ? 1 : 0,
+        );
+    }
+
+    return $vm;
+}
+
+
+=pod
+=begin classdoc
+
+Forget everything about this infrastructure in the database
+(i.e. undo all that _load() has done). 
+
+Only runs when no HCM services depend on the platform any longer.
+
+Does nothing on the remote platform. 
+
+=end classdoc
+=cut
+
+sub unregister {
+    my ($self, %args) = @_;
+    my @spms = $self->service_provider_managers;
+    my @spms_left;
+    if (@spms) {
+        # there might be phantoms from our own tests
+        foreach my $spm (@spms) {
+            my $sp;
+            try {
+                $sp = $spm->service_provider;
+                push @spms_left, $sp;
+            } catch (Kanopya::Exception::Internal::NotFound $ex) {
+                $log->info("Deleting empty Service Provider Manager #".$spm->id);
+                $spm->remove;
+            }
+        }
+    }
+    if (@spms_left) {
+        $log->info("still found ".scalar(@spms_left)." non-empty Service Provider Managers:");
+        my $spm_left = $spms_left[0];
+        my $error = 'Cannot unregister AWS: Still used as "'
+                    . $spm_left->manager_category->category_name
+                    . '" by cluster "' . $spm_left->service_provider->label . '"';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    # No services running any longer? then purge system images from our DB.
+    foreach my $systemimage ($self->systemimages) {
+        $log->info('Unregistering AWS: deleting left-over systemimage <'.$systemimage->systemimage_name.'>');
+        $systemimage->delete;
+    }
+
+    for my $vm ($self->hosts) {
+        my $node = $vm->node;
+        if (defined $node) {
+            $log->info('Unregistering AWS: deleting left-over node <'.$node->node_hostname.'>');
+            $node->delete;
+        }
+        $log->info('Unregistering AWS: deleting left-over host <'.$vm->host_desc.'>');
+        $vm->delete;
+    }
+
+    for my $host ($self->hypervisors) {
+        if (defined $host->node) {
+            $host->node->delete; # no log message - this one should actually exist
+        }
+        $host->delete;
+    }
+
+    $self->removeMasterimages();
+    
+    # TODO: why not in OpenStack ? is this too daring ?
+    $self->delete;
+}
+
+
+=pod
+=begin classdoc
+
+Remove AWS master images
+
+=end classdoc
+=cut
+
+sub removeMasterimages {    
+    my ($self, %args) = @_;
+    my @masterimages = Entity::Masterimage->search(hash => {
+                           storage_manager_id => $self->id 
+                       });
+    foreach my $masterimage (@masterimages) {
+        $masterimage->delete();
     }
 }
 
