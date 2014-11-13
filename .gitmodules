@@ -1,107 +1,107 @@
 [submodule "templates/components/puppetmaster/modules/glance"]
 	path = templates/components/puppetmaster/modules/glance
-	url = git://github.com/stackforge/puppet-glance.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-glance.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/keystone"]
 	path = templates/components/puppetmaster/modules/keystone
-	url = git://github.com/stackforge/puppet-keystone.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-keystone.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/nova"]
 	path = templates/components/puppetmaster/modules/nova
-	url = git://github.com/stackforge/puppet-nova.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-nova.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/openstack"]
 	path = templates/components/puppetmaster/modules/openstack
-	url = git://github.com/stackforge/puppet-openstack.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-openstack.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/cinder"]
 	path = templates/components/puppetmaster/modules/cinder
-	url = git://github.com/stackforge/puppet-cinder.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-cinder.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/apache"]
 	path = templates/components/puppetmaster/modules/apache
-	url = https://github.com/puppetlabs/puppetlabs-apache.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-apache.git
 [submodule "templates/components/puppetmaster/modules/apt"]
 	path = templates/components/puppetmaster/modules/apt
-	url = https://github.com/puppetlabs/puppetlabs-apt.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-apt.git
 [submodule "templates/components/puppetmaster/modules/inifile"]
 	path = templates/components/puppetmaster/modules/inifile
-	url = https://github.com/puppetlabs/puppetlabs-inifile.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-inifile.git
 [submodule "templates/components/puppetmaster/modules/dhcp"]
 	path = templates/components/puppetmaster/modules/dhcp
 	url = git://repository.intranet.hederatech.com/kanopya/puppetlabs-dhcp.git
 	branch = master
 [submodule "templates/components/puppetmaster/modules/firewall"]
 	path = templates/components/puppetmaster/modules/firewall
-	url = https://github.com/puppetlabs/puppetlabs-firewall.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-firewall.git
 [submodule "templates/components/puppetmaster/modules/haproxy"]
 	path = templates/components/puppetmaster/modules/haproxy
-	url = https://github.com/puppetlabs/puppetlabs-haproxy.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-haproxy.git
 [submodule "templates/components/puppetmaster/modules/horizon"]
 	path = templates/components/puppetmaster/modules/horizon
-	url = git://github.com/stackforge/puppet-horizon.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-horizon.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/keepalived"]
 	path = templates/components/puppetmaster/modules/keepalived
-	url = https://github.com/luxflux/puppet-keepalived.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-keepalived.git
 [submodule "templates/components/puppetmaster/modules/memcached"]
 	path = templates/components/puppetmaster/modules/memcached
-	url = https://github.com/saz/puppet-memcached
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-memcached.git
 [submodule "templates/components/puppetmaster/modules/lvm"]
 	path = templates/components/puppetmaster/modules/lvm
-	url = https://github.com/puppetlabs/puppetlabs-lvm.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-lvm.git
 [submodule "templates/components/puppetmaster/modules/mysql"]
 	path = templates/components/puppetmaster/modules/mysql
-	url = https://github.com/puppetlabs/puppetlabs-mysql.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-mysql.git
 [submodule "templates/components/puppetmaster/modules/ntp"]
 	path = templates/components/puppetmaster/modules/ntp
-	url = https://github.com/puppetlabs/puppetlabs-ntp.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-ntp.git
 [submodule "templates/components/puppetmaster/modules/rabbitmq"]
 	path = templates/components/puppetmaster/modules/rabbitmq
-	url = https://github.com/puppetlabs/puppetlabs-rabbitmq.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-rabbitmq.git
 	branch = 2.x
 [submodule "templates/components/puppetmaster/modules/stdlib"]
 	path = templates/components/puppetmaster/modules/stdlib
-	url = https://github.com/puppetlabs/puppetlabs-stdlib.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-stdlib.git
 [submodule "templates/components/puppetmaster/modules/sysctl"]
 	path = templates/components/puppetmaster/modules/sysctl
-	url = https://github.com/duritong/puppet-sysctl
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-sysctl.git
 [submodule "templates/components/puppetmaster/modules/neutron"]
 	path = templates/components/puppetmaster/modules/neutron
-	url = git://github.com/stackforge/puppet-quantum.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-quantum.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/vswitch"]
 	path = templates/components/puppetmaster/modules/vswitch
-	url = https://github.com/bodepd/puppet-vswitch
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-vswitch.git
 [submodule "templates/components/puppetmaster/modules/tftp"]
 	path = templates/components/puppetmaster/modules/tftp
-	url = https://github.com/puppetlabs/puppetlabs-tftp.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-tftp.git
 [submodule "templates/components/puppetmaster/modules/postgresql"]
 	path = templates/components/puppetmaster/modules/postgresql
-	url = https://github.com/puppetlabs/puppetlabs-postgresql.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-postgresql.git
 [submodule "templates/components/puppetmaster/modules/puppetdb"]
 	path = templates/components/puppetmaster/modules/puppetdb
-	url = https://github.com/puppetlabs/puppetlabs-puppetdb.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-puppetdb.git
 [submodule "templates/components/puppetmaster/modules/xinetd"]
 	path = templates/components/puppetmaster/modules/xinetd
-	url = https://github.com/puppetlabs/puppetlabs-xinetd
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-xinetd.git
 [submodule "templates/components/puppetmaster/modules/concat"]
 	path = templates/components/puppetmaster/modules/concat
-	url = https://github.com/puppetlabs/puppetlabs-concat.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-concat.git
 [submodule "templates/components/puppetmaster/modules/ceph"]
 	path = templates/components/puppetmaster/modules/ceph
-	url = https://github.com/enovance/puppet-ceph.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-ceph.git
 [submodule "templates/components/puppetmaster/modules/ssh"]
 	path = templates/components/puppetmaster/modules/ssh
-	url = https://github.com/saz/puppet-ssh.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-ssh.git
 [submodule "templates/components/puppetmaster/modules/rsync"]
 	path = templates/components/puppetmaster/modules/rsync
-	url = https://github.com/puppetlabs/puppetlabs-rsync.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-rsync.git
 [submodule "templates/components/puppetmaster/modules/swift"]
 	path = templates/components/puppetmaster/modules/swift
-	url = git://github.com/stackforge/puppet-swift.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-swift.git
 	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/snmp"]
 	path = templates/components/puppetmaster/modules/snmp
-	url = https://github.com/razorsedge/puppet-snmp.git
+	url = git://repository.intranet.hederatech.com/puppet-labs/puppetlabs-snmp.git
 	branch = master
