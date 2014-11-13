@@ -348,7 +348,7 @@ sub getNodeMonitoringData {
     General::checkParams(args => \%args, required => [ 'node_id', 'indicator_ids' ]);
 
     my $node = Entity::Node->get(id => $args{node_id});
-    my $manager = $self>getManager(manager_type => 'CollectorManager');
+    my $manager = $self->getManager(manager_type => 'CollectorManager');
 
     # Construst indicators params as expected by CollectorManager
     my %indicators;
