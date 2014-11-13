@@ -149,7 +149,7 @@ sub prerequisites {
 =pod
 =begin classdoc
 
-Here is the real job of the operation. Keep ti as simple as possible,
+Here is the real job of the operation. Keep it as simple as possible,
 ideally a call to a method of an execution entity of the context only.
 
 Do nothing if not overriden in the concrete operation.

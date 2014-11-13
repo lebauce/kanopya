@@ -43,7 +43,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant BOOT_POLICIES => {
-    pxe_nfs      => 'PXE Boot via NFS',
+    pxe_nfs      => 'PXE Boot via NFS', 
     pxe_iscsi    => 'PXE Boot via ISCSI',
     root_iscsi   => 'Boot on root ISCSI',
     virtual_disk => 'BootOnVirtualDisk',

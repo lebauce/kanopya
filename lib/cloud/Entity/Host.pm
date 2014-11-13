@@ -165,23 +165,18 @@ sub methods {
     return {
         activate => {
             description => 'activate this host',
-            perm_holder => 'entity',
         },
         deactivate => {
             description => 'deactivate this host',
-            perm_holder => 'entity',
         },
         resubmit => {
             description => 'resubmit the corresponding node',
-            perm_holder => 'entity',
         },
         removeIface => {
             description => 'remove an interface from this host',
-            perm_holder => 'entity',
         },
         addIface => {
             description => 'add one or more interface to  this host',
-            perm_holder => 'entity',
         },
     };
 }
