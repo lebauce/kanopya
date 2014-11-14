@@ -15,9 +15,10 @@ use Test::Pod;
 use Data::Dumper;
 use DataCache;
 DataCache::cacheActive(0);
-
+use File::Basename;
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__ . '.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>basename(__FILE__) . '.log',
+                          layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
 

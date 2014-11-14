@@ -24,9 +24,10 @@ use Kanopya::Test::TestUtils 'expectedException';
 
 use TimeData::RRDTimeData;
 
+use File::Basename;
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => __FILE__ . '.log',
+    file   => basename(__FILE__) . '.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 

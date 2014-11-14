@@ -22,10 +22,10 @@ use Log::Log4perl qw(:easy get_logger);
 use Kanopya::Database; Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 use Kanopya::Test::TestUtils 'expectedException';
 
-
+use File::Basename;
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => __FILE__ . '.log',
+    file   => basename(__FILE__) . '.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
