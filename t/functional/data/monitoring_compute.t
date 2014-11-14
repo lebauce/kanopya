@@ -646,6 +646,39 @@ sub testNodemetricCombination {
             }
         }
     } 'Evaluate time serie nodemetric combination formula';
+
+    lives_ok {
+        my $data = $service_provider->getNodeMonitoringData(
+                       node_id => $node_1->id,
+                       indicator_ids => [$indic1->indicator->id, $indic2->indicator->id],
+                   );
+
+        if (! defined $data->{$indic1->indicator->id} ||
+            ! defined $data->{$indic2->indicator->id}) {
+
+               die 'Missing data';
+        }
+
+        if (scalar keys %$data ne 2) {
+            die 'Unexpected data';
+        }
+
+        my @val1 = values %{$data->{$indic1->indicator->id}};
+        my @val2 = values %{$data->{$indic2->indicator->id}};
+
+        for my $v (@val1) {
+            if ($v ne 5) {
+                die 'Wrong value expected 5 got ' . $v;
+            }
+        }
+
+        for my $v (@val2) {
+            if ($v ne 7) {
+                die 'Wrong value expected 7 got ' . $v;
+            }
+        }
+
+    } 'getNodeMonitoringData';
 }
 
 sub testBigAggregation {

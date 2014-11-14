@@ -52,6 +52,7 @@ use OpenStack::Port;
 use OpenStack::Volume;
 use OpenStack::Server;
 use OpenStack::Infrastructure;
+use OpenStack::Ceilometer;
 
 use KeystoneEndpoint;
 use Hash::Merge;
@@ -1369,7 +1370,7 @@ sub vmms {
 
 sub retrieveData {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['nodelist', 'indicators', 'time_span']);
+    General::checkParams(args => \%args, required => ['nodelist', 'indicators']);
 
     my $output = {};
     my @oids = keys %{$args{indicators}};
