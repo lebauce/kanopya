@@ -17,7 +17,7 @@
 
 =begin classdoc
 
-Base class to manage internal pooling daemon that loop in function
+Base class to manage internal polling daemon that loop in function
 of a defined time step.
 
 @since    2013-Mar-28
@@ -28,7 +28,7 @@ of a defined time step.
 
 =cut
 
-package Daemon::Pooling;
+package Daemon::Polling;
 use base Daemon;
 
 use strict;
@@ -104,7 +104,7 @@ sub oneRun {
         $method->($self);
     };
     if ($@) {
-        $log->error("(Deamon $self->{name}) Pooling method failled:\n$@");
+        $log->error("(Deamon $self->{name}) Polling method failled:\n$@");
     }
 
     # Get the end time

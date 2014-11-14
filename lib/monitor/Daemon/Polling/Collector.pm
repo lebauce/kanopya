@@ -19,8 +19,8 @@ TODO
 =end classdoc
 =cut
 
-package Daemon::Pooling::Collector;
-use base Daemon::Pooling;
+package Daemon::Polling::Collector;
+use base Daemon::Polling;
 
 use strict;
 use warnings;
