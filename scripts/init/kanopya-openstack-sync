@@ -37,7 +37,8 @@ PERL5LIB=\
 /opt/kanopya/lib/external/NetApp:\
 /opt/kanopya/lib/orchestrator:\
 /opt/kanopya/lib/mock:\
-/opt/kanopya/lib/tools
+/opt/kanopya/lib/tools:\
+/opt/kanopya/lib/component/Openstack
 
 export PERL5LIB
 KANOPYA_OPENSTACK_SYNC_RUN=yes
