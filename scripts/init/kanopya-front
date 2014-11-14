@@ -27,7 +27,7 @@ RETVAL=0
 test -x "$DAEMON" || exit 1
 
 # Defaults
-PERL5LIB=\
+export PERL5LIB=\
 /opt/kanopya/lib/common:\
 /opt/kanopya/lib/hcm:\
 /opt/kanopya/lib/cloud:\
