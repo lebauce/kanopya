@@ -19,17 +19,21 @@
 
         .identifier {
             float: left;
+
+            div {
+                > span {
+                    display: inline-block;
+                }
+                > span:hover {
+                    cursor: pointer;
+                }
+            }
         }
 
         .name {
+            font-size: @font-size-base;
             font-weight: bold;
-
-            > span {
-                display: inline-block;
-            }
-            > span:hover {
-                cursor: pointer;
-            }
+            height: ceil((@font-size-base * 1.2));
 
             .ip {
                 font-size: @font-size-xs;
@@ -202,10 +206,11 @@
                 color: #ffffff;
             }
         }
-        .btn-action3 {
-            .button-variant(@btn-danger-color; @btn-danger-bg; @btn-danger-border);
-            margin-left: 30px;
+
+        .btn-action1 {
+            .button-variant(#fff; @theme-color1; darken(@theme-color1, 5%));
         }
+
         .btn-action2 {
             .button-variant(@btn-primary-color; @btn-primary-bg; @btn-primary-border);
 
@@ -218,9 +223,12 @@
             }
         }
 
-        .btn-action1 {
-            .button-variant(#fff; @theme-color1; darken(@theme-color1, 5%));
-            float: right;
+        .btn-action3 {
+            .button-variant(@btn-danger-color; @btn-danger-bg; @btn-danger-border);
+        }
+
+        .btn-action4 {
+            .button-variant(@btn-success-color; @btn-success-bg; @btn-success-border);
         }
     }
 }
@@ -272,7 +280,14 @@
 
         .button-group {
             min-width: 450px;
-            
+
+            .btn-action3 {
+                margin-left: 30px;
+            }
+
+            .btn-action1 {
+                float: right;
+            }
         }
     }
 }
@@ -289,14 +304,14 @@
     margin-bottom: 20px;
 }
 
-#instance-home {
+.list-sm {
 
     .list-item {
         padding: 0;
         background-color: white;
 
         .list-item-box {
-            padding: 15px 15px 5px 15px;
+            padding: 10px 15px 5px 15px;
         }
 
         .up,
@@ -320,9 +335,12 @@
                 }
             }
 
-            .service {
+            .service,
+            .ip,
+            .description {
                 font-size: @font-size-xs;
                 font-weight: normal;
+                height: ceil((@font-size-xs * 1.2));
             }
 
             .state {
@@ -342,20 +360,26 @@
         .list-properties {
             position: relative;
 
-            .node,
-            .rule {
+            .title {
+                font-size: @font-size-xs;
+            }
+
+            .value {
+                font-size: @font-size-base;
+
+                .label {
+                    font-size: @font-size-xs;
+                    padding-left: 5px;
+                    padding-right: 10px;
+                }
+            }
+
+            .property {
               -webkit-box-sizing: border-box;
                  -moz-box-sizing: border-box;
                       box-sizing: border-box;
                 float: left;
                 width: 50%;
-
-                .title {
-                    font-size: @font-size-xs;
-                }
-                .value {
-                    font-size: @font-size-base;
-                }
             }
 
             .rule .value {
@@ -420,6 +444,7 @@
 
         .button-group {
             margin-left: -5px;
+            height: 28px;
 
             > button {
                 font-size: @font-size-small;
@@ -441,6 +466,10 @@
             .button-text {
                 padding: 0;
                 margin-top: 2px;
+            }
+
+            .btn-action1 {
+                float: right;
             }
         }
 

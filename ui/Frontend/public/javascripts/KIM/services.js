@@ -353,7 +353,6 @@ function servicesList(container_id, elem_id) {
             complete: function() {
                 stopButtonAnimation(element, iconClass);
                 isRunning = false;
-                // refreshItem(id);
             }
         });
     }
@@ -385,7 +384,7 @@ function servicesList(container_id, elem_id) {
                 $child = $elt.children('.button-start');
                 if (instanceObject.stateCanStart) {
                     if ($child.length === 0) {
-                        $elt.prepend('<button type="button" class="button-icon button-start" title="Start"><i class="fa fa-play"></i></button>');
+                        $elt.prepend('<button type="button" class="btn btn-action4 button-text button-start">Start</button>');
 
                             $elt.children('.button-start').click(function() {
                                 startInstance(this);
@@ -401,7 +400,7 @@ function servicesList(container_id, elem_id) {
                 $child = $elt.children('.button-stop');
                 if (instanceObject.stateCanStop) {
                     if ($child.length === 0) {
-                        $elt.prepend('<button type="button" class="button-icon button-stop" title="Stop"><i class="fa fa-stop"></i></button>');
+                        $elt.prepend('<button type="button" class="btn btn-action3 button-text button-stop">Stop</button>');
 
                             $elt.children('.button-stop').click(function() {
                                 stopInstance(this);
@@ -822,7 +821,8 @@ function loadServicesResources (container_id, elem_id) {
     } );
 }
 
-function runScaleWorkflow(type, eid, spid) {
+function runScaleWorkflow(type, eid, spid, successCallback) {
+
     var cont    = $('<div>');
     $('<label>', { text : type + ' amount : ', for : type }).appendTo(cont);
     var inp         = $('<input>', { id : type }).appendTo(cont);
@@ -854,7 +854,12 @@ function runScaleWorkflow(type, eid, spid) {
                                     scalein_value   : amount,
                                     scalein_type    : type.toLowerCase()
                                 }),
-                                success     : function() { $(cont).dialog('close'); }
+                                success     : function() {
+                                    $(cont).dialog('close');
+                                    if (successCallback && typeof successCallback == 'function') {
+                                        successCallback(eid);
+                                    }
+                                }
                             });
                         }
                     });

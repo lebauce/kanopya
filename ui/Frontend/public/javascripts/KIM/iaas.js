@@ -343,7 +343,7 @@ function load_iaas_content (container_id) {
         var index;
 
         if (value == parseInt(value)) {
-            value = value.toString().
+            value = value.toString();
             index = value.indexOf('.');
             if (index > -1) {
                 value = value.substring(0, index);
@@ -571,10 +571,6 @@ function load_iaas_content (container_id) {
         }
 
         clear();
-
-        // $('#' + container_id).append($('<div>', {
-        //     'id': 'content_hypervisors_' + iaasId
-        // }));
 
         display_row_details(iaasId, details, iaasObject, 'content_iaas_static');
     }
