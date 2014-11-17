@@ -1622,6 +1622,25 @@ sub _synchronizeVirtualMachines {
         }
         $node->setState(state => $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time());
         my @ifaces = $vm->ifaces;
+
+        if (scalar @ifaces < scalar keys %$network_info) {
+            # create new ifaces if missing
+            for my $i (1..((scalar keys{%$network_info}) - scalar @ifaces)) {
+                $vm->addIface(
+                    iface_name     => 'eth' . (scalar @ifaces) + $i - 1,
+                    iface_mac_addr => $self->generateMacAddress(),
+                    iface_pxe      => 0,
+                );
+            }
+            @ifaces = $vm->ifaces;
+        }
+        elsif (scalar @ifaces > scalar keys %$network_info) {
+            for my $i (1..(scalar @ifaces - (scalar keys{%$network_info}))) {
+                (pop @ifaces)->delete();
+            }
+            @ifaces = $vm->ifaces;
+        }
+
         # Reaffect all mac/ip
         for my $iface (@ifaces) {
             $iface->iface_mac_addr(undef);

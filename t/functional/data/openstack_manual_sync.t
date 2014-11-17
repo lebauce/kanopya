@@ -279,6 +279,14 @@ sub infra2 {
                                         'version' => 4 }]},
     },
 
+    # Add a new network to the first vm
+    $infra->{hypervisors}->[0]->{servers}->[0]->{addresses}->{network3} = [{
+        'OS-EXT-IPS:type' => 'fixed',
+        'addr' => '192.168.2.1',
+        'OS-EXT-IPS-MAC:mac_addr' => 'fa:16:3e:6e:d8:13',
+        'version' => 4
+    }];
+
     # modify an image
     $infra->{images}->[0]->{size} = 12345678;
 
