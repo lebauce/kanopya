@@ -340,8 +340,7 @@ sub getManagerParamsDef {
         volume_type => {
             label        => 'Volume type',
             type         => 'enum',
-            is_mandatory => 1,
-            # TODO:  Get the enum options from the available synchronized backend
+            is_mandatory => 0,
             options      => []
         },
         repository   => {
@@ -464,7 +463,7 @@ Check parameters that will be given to the DiskManager api methods.
 sub checkStorageManagerParams {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'volume_type' ]);
+    General::checkParams(args => \%args);
 
     # Workaround: Add a dummy boot_policy to fix missing boot_policy when
     #             when storage manager is not the HCMStorageManager.
