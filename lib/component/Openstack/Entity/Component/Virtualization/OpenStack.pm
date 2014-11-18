@@ -341,8 +341,7 @@ sub getManagerParamsDef {
         volume_type => {
             label        => 'Volume type',
             type         => 'enum',
-            is_mandatory => 1,
-            # TODO:  Get the enum options from the available synchronized backend
+            is_mandatory => 0,
             options      => []
         },
         repository   => {
@@ -465,7 +464,7 @@ Check parameters that will be given to the DiskManager api methods.
 sub checkStorageManagerParams {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'volume_type' ]);
+    General::checkParams(args => \%args);
 
     # Workaround: Add a dummy boot_policy to fix missing boot_policy when
     #             when storage manager is not the HCMStorageManager.
@@ -1624,6 +1623,25 @@ sub _synchronizeVirtualMachines {
         }
         $node->setState(state => $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time());
         my @ifaces = $vm->ifaces;
+
+        if (scalar @ifaces < scalar keys %$network_info) {
+            # create new ifaces if missing
+            for my $i (1..((scalar keys{%$network_info}) - scalar @ifaces)) {
+                $vm->addIface(
+                    iface_name     => 'eth' . (scalar @ifaces) + $i - 1,
+                    iface_mac_addr => $self->generateMacAddress(),
+                    iface_pxe      => 0,
+                );
+            }
+            @ifaces = $vm->ifaces;
+        }
+        elsif (scalar @ifaces > scalar keys %$network_info) {
+            for my $i (1..(scalar @ifaces - (scalar keys{%$network_info}))) {
+                (pop @ifaces)->delete();
+            }
+            @ifaces = $vm->ifaces;
+        }
+
         # Reaffect all mac/ip
         for my $iface (@ifaces) {
             $iface->iface_mac_addr(undef);
