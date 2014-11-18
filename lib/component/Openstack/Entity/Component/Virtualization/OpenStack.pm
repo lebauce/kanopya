@@ -1659,7 +1659,30 @@ sub _synchronizeVirtualMachines {
 
             if (defined $ip_info) {
                 my $iface = (pop @ifaces);
-                $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
+                try {
+                    $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
+                }
+                catch (Kanopya::Exception::DB $err) {
+                    # Check if VM is the HCM Master Node
+                    my $iface = Entity::Iface->find(hash => {
+                                    iface_mac_addr => $ip_info->{'OS-EXT-IPS-MAC:mac_addr'}
+                                });
+
+                    # Warning works only when vm hostname corresponds to
+                    # Openstack Instance Name (converted in lower case)
+                    if (lc($vm_info->{name}) eq $iface->host->node->node_hostname) {
+                        # VM is the HCM Master Node !
+                        $log->warn('HCM Master node is in the openstack'
+                                   . 'Skip iface configuration');
+                        next;
+                    }
+                    else {
+                        $err->rethrow;
+                    }
+                }
+                catch ($err) {
+                    $err->rethrow;
+                }
 
                 Ip->new(
                     ip_addr  => $ip_info->{addr},
