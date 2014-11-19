@@ -467,6 +467,27 @@ sub configureManagers {
         $args{managers}->{workflow_manager} = { manager_id   => $workflow_manager->id,
                                                 manager_type => "WorkflowManager" };
 
+        my $masterimage_id = $args{managers}->{storage_manager}->{manager_params}->{masterimage_id};
+
+        if (defined $masterimage_id && defined $args{managers}->{deployment_manager}) {
+            # TODO remove masterimage_id from cluster instance
+            # and use manager params in the workflow
+            $self->masterimage_id($masterimage_id);
+
+            # Firstly set the service provider type from masterimage
+            $self->service_provider_type_id($self->masterimage->masterimage_cluster_type->id);
+            my $params = $args{managers}->{deployment_manager}->{manager_params};
+            foreach my $component ($self->masterimage->components_provided) {
+                $params->{components}->{$component->component_type->component_name} = {
+                    component_type => $component->component_type_id
+                };
+            }
+
+            if ($self->masterimage->masterimage_defaultkernel && ! $self->kernel) {
+                $self->kernel_id($self->masterimage->masterimage_defaultkernel->id);
+            }
+        }
+
         for my $manager (values %{ $args{managers} }) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
@@ -564,12 +585,6 @@ sub addManagerParameters {
     if ($args{params}->{interfaces}) {
         $log->info("Install network interfaces as described by the network manager");
         $self->configureInterfaces(interfaces => $args{params}->{interfaces});
-    }
-
-    # TODO remove masterimage_id from cluster instance
-    # and use manager params in the workflow
-    if ($args{manager_type} eq 'StorageManager') {
-        $self->masterimage_id($args{params}->{masterimage_id});
     }
 }
 
