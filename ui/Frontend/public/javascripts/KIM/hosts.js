@@ -1,6 +1,7 @@
 require('common/formatters.js');
 require('common/general.js');
 require('KIM/services.js');
+require('common/lib_list.js');
 
 function hosts_list(containerId, hostManagerId) {
 
@@ -189,53 +190,7 @@ function hosts_list(containerId, hostManagerId) {
 
     function activateEvents() {
 
-        // Expander
-        $('.panel').css('visibility', 'hidden');
-
-        $('.expander .icon').click(function() {
-
-            var toCollapse;
-            var $item = $(this).parents('.list-item');
-            var $panel = $item.find('.panel');
-
-            if ($panel.css('display') === 'none' || $panel.css('visibility') === 'hidden') {
-                $item.siblings().each( function () {
-                    if ($(this).position().top === $item.position().top) {
-                        $(this).find('.panel')
-                            .css('display', 'block');
-                    }
-                });
-                $panel
-                    .css('display', 'block')
-                    .css('visibility', 'visible');
-                $(this)
-                    .removeClass('fa-angle-double-down')
-                    .addClass('fa-angle-double-up');
-            } else {
-                toCollapse = true;
-                $item.siblings().each( function () {
-                    if ($(this).position().top === $item.position().top) {
-                        if ($(this).find('.panel').css('visibility') === 'visible') {
-                            toCollapse = false;
-                            return false;
-                        }
-                    }
-                });
-                if (toCollapse === true) {
-                    $panel.css('display', 'none');
-                    $item.siblings().each( function () {
-                        if ($(this).position().top === $item.position().top) {
-                            $(this).find('.panel')
-                                .css('display', 'none');
-                        }
-                    });
-                }
-                $panel.css('visibility', 'hidden');
-                $(this)
-                    .removeClass('fa-angle-double-up')
-                    .addClass('fa-angle-double-down');
-            }
-        });
+        activateExpander();
 
         // Detail
         $('.list-item-info .identifier span').click(function() {
@@ -283,19 +238,6 @@ function hosts_list(containerId, hostManagerId) {
         return hostObject;
     }
 
-    function startButtonAnimation(button) {
-
-        var $elt = $(button).children('i');
-        var iconClass = $elt.attr('class');
-        $elt.attr('class', 'fa fa-spinner fa-spin');
-
-        return iconClass;
-    }
-
-    function stopButtonAnimation(button, iconClass) {
-        $(button).children('i').attr('class', iconClass);
-    }
-
     function stopHost(element) {
 
         var id = $(element).parent().data('id');
@@ -333,7 +275,7 @@ function hosts_list(containerId, hostManagerId) {
         isRunning = true;
 
         var id = $(element).parent().data('id');
-        var iconClass = startButtonAnimation(element);
+        startTextButtonAnimation(element);
         $.ajax({
             type: "POST",
             url: url,
@@ -342,7 +284,7 @@ function hosts_list(containerId, hostManagerId) {
                 refreshItem(id);
             },
             complete: function() {
-                stopButtonAnimation(element, iconClass);
+                stopTextButtonAnimation(element);
                 isRunning = false;
             }
         });

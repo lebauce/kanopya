@@ -1,4 +1,5 @@
 require('KIM/services.js');
+require('common/lib_list.js');
 
 function iaas_registerbutton_action(e, grid) {
     (new KanopyaFormWizard({
@@ -264,6 +265,9 @@ function load_iaas_content (container_id) {
                             iaasObject.stateIcon = stateMap[iaasObject.state].icon;
                         }
                     }
+                    if (!iaasObject.state) {
+                        iaasObject.state = 'undefined';
+                    }
 
                     // Hypervisors
                     $.ajax({
@@ -427,8 +431,8 @@ function load_iaas_content (container_id) {
             ratio = '';
         } else {
             value1 = Math.round(iaasObject[infoType + 'Used'] / iaasObject[infoType + 'Total'] * 100);
-            ratio = value1;
         }
+            ratio = value1;
         value2 = 100 - value1;
 
         serie = [[1, value1], [2, value2]];
@@ -436,12 +440,14 @@ function load_iaas_content (container_id) {
         // serie = [[1, 75], [2, 25]];
         // ratio = 75;
 
+        console.debug(serie);
+
         $.jqplot(containerId, [serie], {
             title: {
                 text: (ratio === '') ? '' : ratio + '%',
                 fontSize: '9px',
             },
-            seriesColors: [infoColor, '#e1e1e1'],
+            seriesColors: [infoColor, '#cccccc'],
             grid: {
                 shadow: false,
                 background: 'transparent',
@@ -453,9 +459,9 @@ function load_iaas_content (container_id) {
                     sliceMargin: 0,
                     startAngle: -90,
                     showDatatabels: false,
-                    diameter: 45,
-                    innerDiameter: 20,
-                    shadowAlpha: 0,
+                    diameter: 30,
+                    innerDiameter: 15,
+                    shadowAlpha: 0, 
                     highlightMouseOver: false
                 }
             }
@@ -465,6 +471,8 @@ function load_iaas_content (container_id) {
     function activateButtons() {
 
         var isRunning = false;
+
+        activateExpander();
 
         // Detail
         $('.list-item-info .name span').click(function() {
@@ -488,12 +496,12 @@ function load_iaas_content (container_id) {
 
             var id = $(this).parent().data('id');
             var _this = this;
-            startButtonAnimation(_this);
+            startTextButtonAnimation(_this);
             $.ajax({
                 type: "POST",
                 url: '/api/component/' + id + '/synchronize',
                 complete: function() {
-                    stopButtonAnimation(_this);
+                    stopTextButtonAnimation(_this);
                     isRunning = false;
                 }
             });
@@ -509,12 +517,12 @@ function load_iaas_content (container_id) {
 
             var id = $(this).parent().data('id');
             var _this = this;
-            startButtonAnimation(_this);
+            startTextButtonAnimation(_this);
             $.ajax({
                 type: "POST",
                 url: '/api/component/' + id + '/optimiaas',
                 complete: function() {
-                    stopButtonAnimation(_this);
+                    stopTextButtonAnimation(_this);
                     isRunning = false;
                 }
             });
@@ -535,17 +543,6 @@ function load_iaas_content (container_id) {
                 }
             );
         });
-    }
-
-    function startButtonAnimation(button) {
-        $(button)
-            .addClass('transparent-text')
-            .append($('<i>', {'class': 'fa fa-spinner fa-spin'}));
-    }
-
-    function stopButtonAnimation(button) {
-        $(button).children('i').remove();
-        $(button).removeClass('transparent-text');
     }
 
     function reloadList() {

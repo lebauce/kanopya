@@ -1,5 +1,4 @@
-
-<div id="host-home" class="list list-sm">
+<div id="host-home" class="list">
     {{#hostCollection}}
         <div class="list-item" id="list-item{{id}}">
             <div class="list-item-box {{state}}">
@@ -16,18 +15,18 @@
                 </div>
                 <div class="list-line"></div>
                 <div class="list-properties">
-                    <div class="property cpu first">
+                    <div class="property property-50 cpu first">
                         <div class="title">CPU</div>
                         <div class="value">{{cpu}}<span class="label">cores</span></div>
                     </div>
-                    <div class="property ram">
+                    <div class="property property-50 ram">
                         <div class="title">RAM</div>
                         <div class="value">{{ram}}<span class="label">{{ramUnit}}</span></div>
                         <div class="expander"><i class="icon fa fa-angle-double-down"></i></div>
                     </div>
                 </div>
             </div>
-            <div class="panel {{state}}">
+            <div class="list-panel {{state}}">
                 <div class="list-line"></div>
                 <div class="button-group" data-id="{{id}}">
                     {{#if hostCanStop}}

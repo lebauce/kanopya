@@ -4,6 +4,7 @@ require('common/model.js');
 require('common/general.js');
 require('widgets/widget_common.js');
 require('jquery/jqplot/jqplot.donutRenderer.min.js');
+require('common/lib_list.js');
 
 // Must progressively move functions in the Service class
 var Service = (function(_super) {
@@ -188,53 +189,7 @@ function servicesList(container_id, elem_id) {
 
     function activateEvents() {
 
-        // Expander
-        $('.panel').css('visibility', 'hidden');
-
-        $('.expander .icon').click(function() {
-
-            var toCollapse;
-            var $item = $(this).parents('.list-item');
-            var $panel = $item.find('.panel');
-
-            if ($panel.css('display') === 'none' || $panel.css('visibility') === 'hidden') {
-                $item.siblings().each( function () {
-                    if ($(this).position().top === $item.position().top) {
-                        $(this).find('.panel')
-                            .css('display', 'block');
-                    }
-                });
-                $panel
-                    .css('display', 'block')
-                    .css('visibility', 'visible');
-                $(this)
-                    .removeClass('fa-angle-double-down')
-                    .addClass('fa-angle-double-up');
-            } else {
-                toCollapse = true;
-                $item.siblings().each( function () {
-                    if ($(this).position().top === $item.position().top) {
-                        if ($(this).find('.panel').css('visibility') === 'visible') {
-                            toCollapse = false;
-                            return false;
-                        }
-                    }
-                });
-                if (toCollapse === true) {
-                    $panel.css('display', 'none');
-                    $item.siblings().each( function () {
-                        if ($(this).position().top === $item.position().top) {
-                            $(this).find('.panel')
-                                .css('display', 'none');
-                        }
-                    });
-                }
-                $panel.css('visibility', 'hidden');
-                $(this)
-                    .removeClass('fa-angle-double-up')
-                    .addClass('fa-angle-double-down');
-            }
-        });
+        activateExpander();
 
         // Detail
         $('.list-item-info .name span').click(function() {
@@ -307,19 +262,6 @@ function servicesList(container_id, elem_id) {
         }
     }
 
-    function startButtonAnimation(button) {
-
-        var $elt = $(button).children('i');
-        var iconClass = $elt.attr('class');
-        $elt.attr('class', 'fa fa-spinner fa-spin');
-
-        return iconClass;
-    }
-
-    function stopButtonAnimation(button, iconClass) {
-        $(button).children('i').attr('class', iconClass);
-    }
-
     function startInstance(element) {
         executeAction('start', element, 'This will start your instance.\nDo you want to continue?');
     }
@@ -343,7 +285,7 @@ function servicesList(container_id, elem_id) {
         isRunning = true;
 
         var id = $(element).parent().data('id');
-        var iconClass = startButtonAnimation(element);
+        startTextButtonAnimation(element);
         $.ajax({
             type: "POST",
             url: '/api/cluster/' + id + '/' + action,
@@ -351,7 +293,7 @@ function servicesList(container_id, elem_id) {
                 refreshItem(id);
             },
             complete: function() {
-                stopButtonAnimation(element, iconClass);
+                stopTextButtonAnimation(element);
                 isRunning = false;
             }
         });

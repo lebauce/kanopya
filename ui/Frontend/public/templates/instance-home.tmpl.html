@@ -1,5 +1,4 @@
-
-<div id="instance-home" class="list list-sm">
+<div id="instance-home" class="list">
     {{#instanceCollection}}
         <div class="list-item" id="list-item{{id}}">
             <div class="list-item-box {{state}}">
@@ -15,11 +14,11 @@
                 </div>
                 <div class="list-line"></div>
                 <div class="list-properties">
-                    <div class="property node first">
+                    <div class="property property-50 node first">
                         <div class="title">NODES</div>
                         <div class="value">{{nodeNumber}}</div>
                     </div>
-                    <div class="property rule">
+                    <div class="property property-50 rule">
                         <div class="title">RULES</div>
                         <div class="value">
                             {{#if ruleStateOk}}
@@ -36,7 +35,7 @@
                     </div>
                 </div>
             </div>
-            <div class="panel {{state}}">
+            <div class="list-panel {{state}}">
                 <div class="list-line"></div>
                 <div class="button-group" data-id="{{id}}">
                     {{#if stateCanStart}}
