@@ -1255,10 +1255,10 @@ sub selectHypervisor {
         if ($flavor->{name} eq $args{flavor}) {
             $ram = $flavor->{ram} * 1024 * 1024;
             $core = $flavor->{vcpus};
+            last;
         }
     }
-    my $cm = CapacityManagement->new(cloud_manager => $self);
-    return $cm->getHypervisorIdForVM(resources => {ram => $ram, cpu => $core});
+    return $self->SUPER::selectHypervisor(ram => $ram, core => $core, %args);
 }
 
 sub postStart {
@@ -1271,7 +1271,7 @@ sub postStart {
                  );
 
     my $hypervisor_id;
-    my $hypervisor_name = $detail->{server}->{'OS-EXT-SRV-ATTR:hypervisor_hostname'};
+    my $hypervisor_name = $detail->{server}->{'OS-EXT-SRV-ATTR:host'};
     try {
         $hypervisor_id = $self->findRelated(
                              filters => ['hypervisors'],
@@ -1472,7 +1472,7 @@ sub _synchronizeHypervisors {
             $hypervisor = $self->_createHypervisor(
                               ram => $hypervisor_info->{memory_mb} * (1024 ** 2),
                               core => $hypervisor_info->{vcpus},
-                              hostname =>$hypervisor_info->{hypervisor_hostname},
+                              hostname => $hypervisor_info->{hypervisor_hostname},
                           );
         }
         catch ($err) {
@@ -1484,9 +1484,11 @@ sub _synchronizeHypervisors {
         # Create the corresponding node if not exist
         # Can not use findOrCreate here as the node number should differs
         my $node = $hypervisor->node;
+        my @fqdn = split('\.', $hypervisor_info->{hypervisor_hostname});
+
         if (! defined $node) {
             $node = Entity::Node->new(
-                node_hostname => $hypervisor_info->{hypervisor_hostname},
+                node_hostname => $fqdn[0],
                 host_id       => $hypervisor->id,
                 node_state    => 'in:' . time(), #TODO manage disabled hv
                 node_number   => $hv_count,
@@ -1494,7 +1496,7 @@ sub _synchronizeHypervisors {
         }
         else {
             $node->update(
-                node_hostname => $hypervisor_info->{hypervisor_hostname},
+                node_hostname => $fqdn[0],
                 node_number => $hv_count,
             );
         }
@@ -1588,7 +1590,7 @@ sub _synchronizeVirtualMachines {
                  ram => $vm_info->{flavor}->{ram} * (1024 ** 2), # MB to B
                  core => $vm_info->{flavor}->{vcpus},
                  hostname => $vm_info->{name},
-                 hypervisor_name => $vm_info->{'OS-EXT-SRV-ATTR:hypervisor_hostname'},
+                 hypervisor_name => $vm_info->{'OS-EXT-SRV-ATTR:host'},
             );
         }
         catch (Kanopya::Exception::Internal::NotFound $err) {
@@ -1598,7 +1600,7 @@ sub _synchronizeVirtualMachines {
                       vm_uuid => $vm_info->{id},
                       hostname => $vm_info->{name},
                       num_ifaces => scalar (keys %$network_info),
-                      hypervisor_name => $vm_info->{'OS-EXT-SRV-ATTR:hypervisor_hostname'},
+                      hypervisor_name => $vm_info->{'OS-EXT-SRV-ATTR:host'},
                   );
         }
         catch ($err) {
@@ -1659,7 +1661,30 @@ sub _synchronizeVirtualMachines {
 
             if (defined $ip_info) {
                 my $iface = (pop @ifaces);
-                $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
+                try {
+                    $iface->iface_mac_addr($ip_info->{'OS-EXT-IPS-MAC:mac_addr'});
+                }
+                catch (Kanopya::Exception::DB $err) {
+                    # Check if VM is the HCM Master Node
+                    my $iface = Entity::Iface->find(hash => {
+                                    iface_mac_addr => $ip_info->{'OS-EXT-IPS-MAC:mac_addr'}
+                                });
+
+                    # Warning works only when vm hostname corresponds to
+                    # Openstack Instance Name (converted in lower case)
+                    if (lc($vm_info->{name}) eq $iface->host->node->node_hostname) {
+                        # VM is the HCM Master Node !
+                        $log->warn('HCM Master node is in the openstack'
+                                   . 'Skip iface configuration');
+                        next;
+                    }
+                    else {
+                        $err->rethrow;
+                    }
+                }
+                catch ($err) {
+                    $err->rethrow;
+                }
 
                 Ip->new(
                     ip_addr  => $ip_info->{addr},
