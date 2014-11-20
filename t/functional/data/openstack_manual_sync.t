@@ -114,8 +114,14 @@ sub verify {
         if (! defined $hv->node) {
             die 'Node is missing';
         }
-        if ($hv->node->node_hostname ne $hypervisor->{hypervisor_hostname}) {
-            die 'Wrong node_hostname';
+
+        if ($hv->host_serial_number ne $hypervisor->{hypervisor_hostname}) {
+            die 'Wrong hypervisor host_serial_number';
+        }
+
+        my @fqdn = split('\.', $hypervisor->{hypervisor_hostname});
+        if ($hv->node->node_hostname ne $fqdn[0]) {
+            die 'Wrong hypervisor node_hostname';
         }
     }
 
@@ -142,9 +148,9 @@ sub verify {
         if ($vm->host_ram ne $infra_vm->{flavor}->{ram} * 1024 * 1024) {
             die 'Wrong ram amount';
         }
-        if ($vm->hypervisor->host_serial_number
-            ne $infra_vm->{'OS-EXT-SRV-ATTR:host'}) {
 
+        if ($vm->hypervisor->node->node_hostname
+            ne $infra_vm->{'OS-EXT-SRV-ATTR:host'}) {
             die 'Wrong hypervisor'
         }
 
@@ -225,7 +231,7 @@ sub infra2 {
         'vcpus' => 8,
         'servers' => [{
             'name' => 'vm_test_4',
-            'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_2',
+            'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_2.domain',
             'OS-EXT-SRV-ATTR:host' => 'hv_test_2',
             'OS-EXT-STS:power_state' => 1,
             'id' => '455a1f76-5814-4d7b-9b65-1a3d9efcc611',
@@ -241,7 +247,7 @@ sub infra2 {
         'id' => 1,
         'status' => 'enabled',
         'state' => 'up',
-        'hypervisor_hostname' => 'hv_test_2',
+        'hypervisor_hostname' => 'hv_test_2.domain',
         'host_ip' => '192.168.122.2',
         'memory_mb' => 5872,
     };
@@ -256,7 +262,7 @@ sub infra2 {
 
     $vm->{flavor}->{ram} = 32;
     $vm->{flavor}->{vcpus} = 2;
-    $vm->{'OS-EXT-SRV-ATTR:hypervisor_hostname'} = 'hv_test_2';
+    $vm->{'OS-EXT-SRV-ATTR:hypervisor_hostname'} = 'hv_test_2.domain';
     $vm->{'OS-EXT-SRV-ATTR:host'} = 'hv_test_2';
     $vm->{'addresses'}->{network1}->[0]->{'OS-EXT-IPS-MAC:mac_addr'} = '12:34:56:78:90:ab';
     $vm->{'addresses'}->{network1}->[0]->{'addr'} = '192.168.66.66';
@@ -266,7 +272,7 @@ sub infra2 {
     # Add new vm on hypervisor 1
     $infra->{hypervisors}->[0]->{servers}->[1] = {
         'name' => 'vm_test_5',
-        'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1',
+        'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1.domain',
         'OS-EXT-SRV-ATTR:host' => 'hv_test_1',
         'OS-EXT-STS:power_state' => 1,
         'id' => '555a1f76-5814-4d7b-9b65-1a3d9efcc611',
@@ -307,7 +313,7 @@ sub infra1 {
                      'vcpus' => 8,
                      'servers' => [{
                           'name' => 'vm_test_1',
-                          'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1',
+                          'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1.domain',
                           'OS-EXT-SRV-ATTR:host' => 'hv_test_1',
                           'OS-EXT-STS:power_state' => 1,
                           'id' => '155a1f76-5814-4d7b-9b65-1a3d9efcc611',
@@ -326,7 +332,7 @@ sub infra1 {
                           },
                           {
                           'name' => 'vm_test_2',
-                          'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1',
+                          'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1.domain',
                           'OS-EXT-SRV-ATTR:host' => 'hv_test_1',
                           'OS-EXT-STS:power_state' => 1,
                           'id' => '255a1f76-5814-4d7b-9b65-1a3d9efcc611',
@@ -340,7 +346,7 @@ sub infra1 {
                           },
                           {
                           'name' => 'vm_test_3',
-                          'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1',
+                          'OS-EXT-SRV-ATTR:hypervisor_hostname' => 'hv_test_1.domain',
                           'OS-EXT-SRV-ATTR:host' => 'hv_test_1',
                           'OS-EXT-STS:power_state' => 1,
                           'id' => '355a1f76-5814-4d7b-9b65-1a3d9efcc611',
@@ -356,7 +362,7 @@ sub infra1 {
                      'id' => 1,
                      'status' => 'enabled',
                      'state' => 'up',
-                     'hypervisor_hostname' => 'hv_test_1',
+                     'hypervisor_hostname' => 'hv_test_1.domain',
                      'host_ip' => '192.168.122.1',
                      'memory_mb' => 5872,
                 }],
