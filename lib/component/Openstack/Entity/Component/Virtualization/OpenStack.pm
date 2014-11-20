@@ -1258,7 +1258,8 @@ sub selectHypervisor {
             last;
         }
     }
-    return $self->SUPER::selectHypervisor(ram => $ram, core => $core, %args);
+   my $cm = CapacityManagement->new(cloud_manager => $self);
+   return $cm->getHypervisorIdForVM(resources => {ram => $ram, cpu => $core});
 }
 
 sub postStart {
