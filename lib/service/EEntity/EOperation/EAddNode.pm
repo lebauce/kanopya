@@ -134,7 +134,10 @@ sub prerequisites {
     my $hypervisor_id = undef;
 
     try {
-        $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(%{ $params })
+        $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(
+                             cluster => $self->{context}->{cluster},
+                             %{ $params },
+                         );
     }
     catch (Kanopya::Exception::NotImplemented $err) {
         # Physical

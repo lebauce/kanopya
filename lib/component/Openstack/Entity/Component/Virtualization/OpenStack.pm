@@ -393,13 +393,10 @@ sub getHostManagerParams {
     $tenants->{options} = \@tenant_names;
     $tenants->{order} = 1;
 
-    my $hash = {
-        flavor => $flavors,
-        availability_zone => $zones,
-        hosting_tenant => $tenants,
-    };
-
-    return $hash;
+    return { %{ $self->SUPER::getHostManagerParams },
+             flavor => $flavors,
+             availability_zone => $zones,
+             hosting_tenant => $tenants,};
 }
 
 
@@ -1258,8 +1255,8 @@ sub selectHypervisor {
             last;
         }
     }
-   my $cm = CapacityManagement->new(cloud_manager => $self);
-   return $cm->getHypervisorIdForVM(resources => {ram => $ram, cpu => $core});
+
+    return $self->SUPER::selectHypervisor(ram => $ram, core => $core, %args);
 }
 
 sub postStart {
