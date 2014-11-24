@@ -40,12 +40,13 @@ use Entity::Host::Hypervisor;
 use Entity::ContainerAccess;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
+use Kanopya::Database;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 =pod
@@ -929,7 +930,45 @@ sub isUp {
 }
 
 
+sub synchronize {
+    my ($self, %args) = @_;
+
+    my @datacenters;
+    for my $dc (@{ $self->retrieveDatacenters() }) {
+        $log->info("Registering vSphere datacenter $dc->{name}");
+        my $vspheredc = $self->registerDatacenter(name => $dc->{name});
+
+        my @hypervisors;
+        for my $child (@{ $self->retrieveClustersAndHypervisors(datacenter_name => $dc->{name}) }) {
+            $log->info("Registering $child->{type} $child->{name}");
+            if ($child->{type} eq 'cluster') {
+                $self->registerCluster(name => $child->{name}, parent => $vspheredc);
+                for my $hypervisor (@{ $self->retrieveClusterHypervisors(datacenter_name => $dc->{name}, cluster_name => $child->{name}) }) {
+                    push @hypervisors, $hypervisor;
+                }
+            }
+            elsif ($child->{type} eq 'hypervisor') {
+                push @hypervisors, $child;
+            }
+        }
+
+        for my $hv (@hypervisors) {
+            $log->info("Registering $hv->{type} $hv->{name} ($hv->{uuid})");
+            my $vspherehv = $self->registerHypervisor(name => $hv->{name}, uuid => $hv->{uuid}, parent => $vspheredc);
+
+            for my $vm (@{ $self->retrieveHypervisorVms(datacenter_name => $dc->{name}, hypervisor_uuid => $hv->{uuid}) }) {
+                $log->info("Registering virtual machine $vm->{name} ($vm->{uuid})");
+                $self->registerVm(name => $vm->{name}, uuid => $vm->{uuid}, parent => $vspherehv);
+            }
+        }
+    }
+
+    return;
+}
+
+
 sub isInfrastructureSynchronized {
     return 1;
 }
+
 1;

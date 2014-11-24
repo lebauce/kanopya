@@ -46,6 +46,7 @@ use VMware::VIRuntime;
 
 use General;
 use Kanopya::Exceptions;
+use Kanopya::Database;
 use Entity::Repository::Vsphere5Repository;
 use Vsphere5Datacenter;
 use Entity::User;
@@ -57,6 +58,7 @@ use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
 use Entity::Host;
 
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -140,6 +142,46 @@ sub methods {
         },
     };
 }
+
+
+sub new {
+    my ($class, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => [ 'vsphere5_login', 'vsphere5_pwd', 'vsphere5_url' ]);
+
+    # Initialize the param preset entry used to store available configuration
+    my $self = $class->SUPER::new(%args);
+    my $pp = ParamPreset->new();
+    $self->param_preset_id($pp->id);
+    return $self;
+}
+
+
+
+sub create {
+    my ($class, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => [ 'vsphere5_login', 'vsphere5_pwd', 'vsphere5_url' ]);
+
+    Kanopya::Database::beginTransaction();
+    my $self = $class->new(%args);
+
+    # Try to connect to the api to do not register the componnet if connexion infos are eroneous
+    try {
+        $self->negociateConnection();
+    }
+    catch ($err) {
+        Kanopya::Database::rollbackTransaction();
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Unable to connect to the vSphere IAAS, " .
+                           "please check your connexion informations."
+              );
+    }
+
+    Kanopya::Database::commitTransaction();
+    return $self;
+}
+
 
 =pod
 =begin classdoc
@@ -325,8 +367,34 @@ sub negociateConnection {
     }
 }
 
-=pod
 
+=pod
+=begin classdoc
+
+Register existing hypervisors, virtual machines
+and all options available in the existing vSphere.
+
+=end classdoc
+=cut
+
+sub synchronize {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'workflow' => undef });
+
+    return $self->executor_component->run(
+               name   => 'Synchronize',
+               workflow => delete $args{workflow},
+               params => {
+                   context => {
+                       entity => $self
+                   }
+               }
+           );
+}
+
+
+=pod
 =begin classdoc
 
 Retrieve a list of all datacenters
@@ -336,7 +404,6 @@ Retrieve a list of all datacenters
 @return: \@datacenter_infos
 
 =end classdoc
-
 =cut
 
 sub retrieveDatacenters {
@@ -374,8 +441,8 @@ sub retrieveDatacenters {
     return $response;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Retrieve a list of Clusters and Hypervisors (that are not in a cluster)
@@ -387,7 +454,6 @@ hosted in a given Datacenter
 @return \@clusters_and_hypervisors_infos
 
 =end classdoc
-
 =cut
 
 sub retrieveClustersAndHypervisors {
@@ -451,7 +517,6 @@ sub retrieveClustersAndHypervisors {
 }
 
 =pod
-
 =begin classdoc
 
 Retrieve a cluster's hypervisors
@@ -463,7 +528,6 @@ Retrieve a cluster's hypervisors
 @return \@hypervisors_infos
 
 =end classdoc
-
 =cut
 
 sub retrieveClusterHypervisors {
@@ -511,8 +575,8 @@ sub retrieveClusterHypervisors {
     return $response;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Retrieve all the VM from a vsphere hypervisor
@@ -524,7 +588,6 @@ Retrieve all the VM from a vsphere hypervisor
 @return \@vms_infos
 
 =end classdoc
-
 =cut
 
 sub retrieveHypervisorVms {
@@ -574,8 +637,8 @@ sub retrieveHypervisorVms {
     return $response;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Get a vsphere managed object view
@@ -585,7 +648,6 @@ Get a vsphere managed object view
 @return $view
 
 =end classdoc
-
 =cut
 
 sub getView {
@@ -607,8 +669,8 @@ sub getView {
     return $view;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Get views of vsphere managed objects
@@ -618,7 +680,6 @@ Get views of vsphere managed objects
 @return views of managed objects
 
 =end classdoc
-
 =cut
 
 sub getViews {
@@ -640,8 +701,8 @@ sub getViews {
     return $views;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Find a view of a specified managed object type
@@ -663,7 +724,6 @@ Find a view of a specified managed object type
 @return view a managed entity view
 
 =end classdoc
-
 =cut
 
 sub findEntityView {
@@ -700,8 +760,8 @@ sub findEntityView {
     return $view;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Find some views of a specified managed object type
@@ -723,7 +783,6 @@ Find some views of a specified managed object type
 @return views a list of managed entity views
 
 =end classdoc
-
 =cut
 
 sub findEntityViews {
@@ -758,8 +817,8 @@ sub findEntityViews {
     return $views;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Register vSphere items into kanopya service providers
@@ -771,7 +830,6 @@ Register vSphere items into kanopya service providers
 @return registered_items a list of the registered items. Can be service providers or datacenters
 
 =end classdoc
-
 =cut
 
 sub register {
@@ -821,8 +879,8 @@ sub register {
     return \@registered_items;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Register a new vsphere datacenter into Kanopya.
@@ -833,7 +891,6 @@ Check if the datacenter is already registered and linked to this component
 @return datacenter the registered datacenter or an already existing one
 
 =end classdoc
-
 =cut
 
 sub registerDatacenter {
@@ -850,6 +907,7 @@ sub registerDatacenter {
     };
     if ($@) {
         eval {
+            $log->info("Registering Vsphere5Datacenter $args{name}.");
             $datacenter = Vsphere5Datacenter->new(
                               vsphere5_datacenter_name => $args{name},
                               vsphere5_id              => $self->id
@@ -870,8 +928,8 @@ sub registerDatacenter {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Register a new virtual machine to match a vsphere vm
@@ -883,7 +941,6 @@ One cluster is created by vm registered. If a cluster with vm's name, that means
 @return service_provider
 
 =end classdoc
-
 =cut
 
 sub registerVm {
@@ -917,7 +974,8 @@ sub registerVm {
     my $service_provider;
     eval {
         $service_provider = Entity::ServiceProvider::Cluster->find(hash => {
-                                         cluster_name => $sp_renamed,});
+                                cluster_name => $sp_renamed,
+                            });
     };
     if ($@) {
         # connected state : the fact that host is available or not for management
@@ -998,8 +1056,8 @@ sub registerVm {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Register a new host to match a vsphere hypervisor
@@ -1012,7 +1070,6 @@ instead of creating a new one
 @return service_provider
 
 =end classdoc
-
 =cut
 
 sub registerHypervisor {
@@ -1027,11 +1084,14 @@ sub registerHypervisor {
 
     my $vsphere_hyp;
     eval {
+        $log->debug("Try to find existing hypervisor with $hv_uuid");
         $vsphere_hyp = Entity::Host::Hypervisor::Vsphere5Hypervisor->find(
             hash => { vsphere5_uuid => $hv_uuid }
         );
+        $log->debug("Found existing hypervisor with $hv_uuid, " . $vsphere_hyp->label);
     };
     if ($@) {
+        $log->debug("Not found, register a new one");
         my $datacenter_view = $self->findEntityView(
                                   view_type   => 'Datacenter',
                                   hash_filter => {
@@ -1046,18 +1106,29 @@ sub registerHypervisor {
                                   begin_entity => $datacenter_view,
                               );
 
-        my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
+        my $sp_name = $self->_formatName(name => $dc_name, type => 'cluster');
 
-        my $service_provider = $self->service_provider;
+        $log->debug("Try to find the service $sp_name corresponding to the datacenter $dc_name");
+        my $service_provider;
+        try {
+            $service_provider = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => $sp_name });
+        }
+        catch {
+            my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 
-        # Now set this manager as host manager for service provider (if not yet done)
-        eval {
-            $service_provider->getHostManager();
-        };
-        if ($@) {
-            $service_provider->addManager(
-                manager_type => 'HostManager',
-                manager_id   => $self->id
+            (my $hostname = $sp_name) =~ s/_/-/;
+            $service_provider = Entity::ServiceProvider::Cluster->new(
+                active                 => 1,
+                cluster_name           => $sp_name,
+                cluster_min_node       => 1,
+                cluster_max_node       => 1,
+                cluster_priority       => 500,
+                cluster_si_persistent  => 1,
+                cluster_domainname     => 'my.domain',
+                cluster_basehostname   => 'vsphere-datacenter-' . lc($hostname),
+                cluster_nameserver1    => '127.0.0.1',
+                cluster_nameserver2    => '127.0.0.1',
+                owner_id               => $admin_user->id,
             );
         }
 
@@ -1067,7 +1138,6 @@ sub registerHypervisor {
                              ? 'up' : 'broken';
 
         my $hv = Entity::Host->new(
-                     host_manager_id    => $self->id,
                      host_serial_number => '',
                      host_desc          => $dc_name . ' hypervisor',
                      active             => 1,
@@ -1078,6 +1148,8 @@ sub registerHypervisor {
 
         # TODO : add MAC addresses for vSphere registered hosts
 
+        $log->debug("Add host " . $hv->label . " as hypervisor on vSphere " . $self->label);
+
         # promote new hypervisor class to a vsphere5Hypervisor one
         $vsphere_hyp = $self->addHypervisor(
                               host => $hv,
@@ -1085,11 +1157,15 @@ sub registerHypervisor {
                               uuid => $hv_uuid
                           );
 
+
+        $log->debug("Register hypervisor " . $vsphere_hyp->label . " as node on service " . $service_provider->label);
+
         # Register the node
+        my @nodes = $service_provider->nodes;
         $service_provider->registerNode(
-            host => $hv,
+            host     => $hv,
             hostname => $node_renamed,
-            number   => 1,
+            number   => scalar(@nodes),
             state    => 'in'
         );
 
@@ -1109,8 +1185,8 @@ sub registerHypervisor {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Allow registering of hypervisors of a vsphere Cluster
@@ -1121,7 +1197,6 @@ Allow registering of hypervisors of a vsphere Cluster
 @return service_provider
 
 =end classdoc
-
 =cut
 
 sub registerCluster {
@@ -1159,6 +1234,7 @@ sub scaleHost {
     $self->SUPER::scaleHost(%args);
 }
 
+
 =pod
 =begin classdoc
 
@@ -1179,7 +1255,6 @@ sub generateMacAddress {
 
 
 =pod
-
 =begin classdoc
 
 Register a new repository in kanopya for vSphere usage
@@ -1190,7 +1265,6 @@ Register a new repository in kanopya for vSphere usage
 @return $repository
 
 =end classdoc
-
 =cut
 
 sub addRepository {
@@ -1205,8 +1279,8 @@ sub addRepository {
            );
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Get one or all the datacenters attached to this vsphere component
@@ -1216,7 +1290,6 @@ Get one or all the datacenters attached to this vsphere component
 @return $datacenters
 
 =end classdoc
-
 =cut
 
 sub getDatacenters {
@@ -1241,8 +1314,8 @@ sub getDatacenters {
     return $datacenters;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Get a repository corresponding to a container access
@@ -1252,7 +1325,6 @@ Get a repository corresponding to a container access
 @return $repository
 
 =end classdoc
-
 =cut
 
 sub getRepository {
@@ -1271,8 +1343,8 @@ sub getRepository {
     return $repository;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Promote a virtual machine object to a Vsphere5Vm one
@@ -1284,7 +1356,6 @@ Promote a virtual machine object to a Vsphere5Vm one
 @return vsphere5vm the promoted virtual machine
 
 =end classdoc
-
 =cut
 
 sub promoteVm {
@@ -1337,8 +1408,8 @@ sub _registerTemplate {
     return $st;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Promote an Hypervisor class into a Vsphere5Hypervisor one
@@ -1349,7 +1420,6 @@ Promote an Hypervisor class into a Vsphere5Hypervisor one
 @return vsphere5Hypervisor the promoted hypervisor
 
 =end classdoc
-
 =cut
 
 sub addHypervisor {
@@ -1366,13 +1436,11 @@ sub addHypervisor {
 
 
 =pod
-
 =begin classdoc
 
 Format a name that will be used for clusters and nodes creation
 
 =end classdoc
-
 =cut
 
 sub _formatName {
@@ -1391,14 +1459,68 @@ sub _formatName {
     return $name;
 }
 
-=pod
+sub remove {
+    my ($self, %args) = @_;
+    $self->unregister();
+    $self->SUPER::remove();
+}
 
+sub unregister {
+    my ($self, %args) = @_;
+
+    my @sis = $self->systemimages;
+    if (@sis) {
+        my $error = 'Cannot unregister vSphere: Still linked to a systemimage "'
+                    . $sis[0]->label . '"';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    my @hypervisors = $self->hypervisors;
+
+    $log->info($self->label . " is managing " . scalar(@hypervisors) . " hypervisors, removing its.");
+    for my $hypervisor (@hypervisors) {
+        $log->info("Removing hypervisor " . $hypervisor->label);
+
+        my @vms = $hypervisor->virtual_machines;
+
+        $log->info("Hypervisor " . $hypervisor->label . " is hosting " . scalar(@vms) . " virtual machines, removing its.");
+        for my $vm (@vms) {
+            $log->info("Removing virtual machine $vm");
+            if (defined $vm->node) {
+                $vm->node->delete;
+            }
+            $vm->delete;
+        }
+
+        if (defined $hypervisor->node) {
+            $hypervisor->node->delete;
+        }
+        $hypervisor->delete;
+    }
+
+    $self->removeMasterimages();
+}
+
+
+=pod
+=begin classdoc
+
+Remove related master images
+
+=end classdoc
+=cut
+
+sub removeMasterimages {
+    my ($self, %args) = @_;
+}
+
+
+=pod
 =begin classdoc
 
 override DESTROY to disconnect any open session toward a vSphere instance
 
 =end classdoc
-
 =cut
 
 sub DESTROY {
