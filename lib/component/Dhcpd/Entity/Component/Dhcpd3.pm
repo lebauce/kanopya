@@ -204,20 +204,25 @@ sub getHostsEntries {
     # Add the host entry for all nodes
     my $entries = {};
     for my $node (Entity::Node->search()) {
-        my $adminip = $node->adminIp;
-        if (! defined $adminip) {
-            $log->warn("Skipping node <" .  $node->label . "> as it has not admin ip.");
-            next;
+        try {
+            my $adminip = $node->adminIp;
+            if (! defined $adminip) {
+                $log->warn("Skipping node <" .  $node->label . "> as it has not admin ip.");
+                next;
+            }
+            my $system = $node->getComponent(category => "System");
+            $entries->{$adminip} = {
+                fqdn    => $node->fqdn,
+                # Use a hash to store aliases as Hash::Marge module do not merge arrays
+                aliases => {
+                    'hostname.domainname' => $node->node_hostname . "." . $system->domainname,
+                    'hostname'            => $node->node_hostname,
+                },
+            };
         }
-        my $system = $node->getComponent(category => "System");
-        $entries->{$adminip} = {
-            fqdn    => $node->fqdn,
-            # Use a hash to store aliases as Hash::Marge module do not merge arrays
-            aliases => {
-                'hostname.domainname' => $node->node_hostname . "." . $system->domainname,
-                'hostname'            => $node->node_hostname,
-            },
-        };
+        catch ($err){
+            $log->error("Unable to generate entry for node <" .  $node->label . "> :\n$err");
+        }
     }
     return $entries;
 }
