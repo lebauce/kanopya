@@ -57,15 +57,15 @@ function hosts_list(containerId, hostManagerId) {
         var stateMap = {
             'up'       : {
                 'label': 'Up',
-                'icon' : 'fa-thumbs-up'
+                'icon' : 'fa-check '
             },
             'in'       : {
                 'label': 'Up',
-                'icon' : 'fa-thumbs-up'
+                'icon' : 'fa-check '
             },
             'down'     : {
                 'label': 'Down',
-                'icon' : 'fa-thumbs-down'
+                'icon' : 'fa-times'
             },
             'broken'   : {
                 'label': 'Broken',
@@ -90,7 +90,10 @@ function hosts_list(containerId, hostManagerId) {
             'activeIcon'       : '',
             'state'            : obj.host_state,
             'hostCanStop'      : false,
-            'hostCanScale'     : false
+            'hostCanScale'     : false,
+            'hostCanActivate'  : false,
+            'hostCanDeactivate': false,
+            'hostCanRemove'    : false
         };
 
         if (obj.node) {
@@ -102,7 +105,7 @@ function hosts_list(containerId, hostManagerId) {
         if (index > -1) {
             hostObject.state = hostObject.state.substring(0, index);
         }
-        if (!hostObject.state && hostObject.active == '0') {
+        if (!hostObject.state && hostObject.active != undefined && hostObject.active == '0') {
             hostObject.state = 'off';
         }
         if (hostObject.state in stateMap) {
@@ -110,8 +113,8 @@ function hosts_list(containerId, hostManagerId) {
             hostObject.stateLabel = state.label;
             hostObject.stateIcon = state.icon;
             hostObject.hostCanStop = (hostObject.serviceProviderId);
-            // hostObject.hostCanScale = (hostObject.serviceProviderId && hostManagerType === 'virtual');
-            hostObject.hostCanScale = (hostObject.serviceProviderId);
+            hostObject.hostCanScale = (hostObject.serviceProviderId && hostManagerType === 'virtual');
+            hostObject.hostCanScale = true;
         }
 
         if (!isNaN(hostObject.ram) && hostObject.ram > 0) {
@@ -119,6 +122,16 @@ function hosts_list(containerId, hostManagerId) {
             hostObject.ramUnit = map.unit;
             hostObject.ram = map.value;
             hostObject.ram = formatMemory(hostObject.ram);
+        }
+
+        if (hostObject.active === undefined) {
+            hostObject.hostCanRemove = true;
+        } else {
+            if (hostObject.active === '1') {
+                hostObject.hostCanDeactivate = true;
+            } else {
+                hostObject.hostCanActivate = true;
+            }
         }
 
         return hostObject;
@@ -219,6 +232,16 @@ function hosts_list(containerId, hostManagerId) {
             scaleHost('Memory', this);
         });
 
+        // Activate host
+        $('.button-activate').click(function() {
+            activateHost(true, this);
+        });
+
+        // Deactivate host
+        $('.button-deactivate').click(function() {
+            activateHost(false, this);
+        });
+
         $(document).on("kanopiaformwizardLoaded", function(event) {
             $('*').removeClass('cursor-wait');
         });
@@ -258,7 +281,21 @@ function hosts_list(containerId, hostManagerId) {
 
         // function from services.js
         runScaleWorkflow(scaleType, id, hostObject.serviceProviderId, refreshItem);
-        }
+    }
+
+    function activateHost(toActivate, element) {
+
+        var id = $(element).parent().data('id');
+        var action = (toActivate === true) ? 'activate' : 'deactivate';
+        var url = '/api/host/' + id + '/' + action;
+
+        executeAction(
+            url,
+            '',
+            element,
+            'Do you want to ' + action + ' the host?'
+        );
+    }
 
     function executeAction(url, data, element, confirmationMessage) {
 
@@ -318,8 +355,6 @@ function hosts_list(containerId, hostManagerId) {
                 $elt = $item.children('.panel');
                 $elt.attr('class', 'panel ' + hostObject.state);
 
-                return;
-
                 $elt = $elt.children('.button-group');
 
                 $child = $elt.children('.button-stop');
@@ -329,6 +364,32 @@ function hosts_list(containerId, hostManagerId) {
 
                             $elt.children('.button-stop').click(function() {
                                 stopHost(this);
+                            });
+                    }
+                } else if ($child.length) {
+                    $child.remove();
+                }
+
+                $child = $elt.children('.button-activate');
+                if (hostObject.hostCanActivate) {
+                    if ($child.length === 0) {
+                        $elt.prepend('<button type="button" class="btn btn-action4 button-text button-activate">Activate</button>');
+
+                            $elt.children('.button-activate').click(function() {
+                                activateHost(true, this);
+                            });
+                    }
+                } else if ($child.length) {
+                    $child.remove();
+                }
+
+                $child = $elt.children('.button-deactivate');
+                if (hostObject.hostCanDeactivate) {
+                    if ($child.length === 0) {
+                        $elt.prepend('<button type="button" class="btn btn-action5 button-text button-deactivate">Deactivate</button>');
+
+                            $elt.children('.button-deactivate').click(function() {
+                                activateHost(false, this);
                             });
                     }
                 } else if ($child.length) {
