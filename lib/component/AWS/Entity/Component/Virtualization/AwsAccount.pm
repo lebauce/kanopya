@@ -45,7 +45,7 @@ use warnings;
 use AWS::API;
 use AWS::EC2;
 use AwsInstanceType;
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 use ClassType::ServiceProviderType::ClusterType;
 use Entity::Masterimage::AwsMasterimage;
 use Kanopya::Database;
@@ -391,8 +391,9 @@ sub selectHypervisor {
 
     my $aws_type = AwsInstanceType->getType(name => $args{instance_type});
     
-    my $cm = CapacityManagement->new(cloud_manager => $self);
-    return $cm->getHypervisorIdForVM(resources => {
+    my $cm = CapacityManager::HCMCapacityManager->new(cloud_manager => $self);
+    
+    return $cm->selectHypervisor(resources => { 
                ram => $aws_type->ram, 
                cpu => $aws_type->cpu
            });
@@ -882,8 +883,6 @@ sub _load {
     my $cluster_type_id = ClassType::ServiceProviderType::ClusterType->find(
                               service_provider_name => 'Cluster'
                           )->id;
-
-    $log->info("VHH DEBUG: our ID that we put into storage_manager_id is ".$self->id);
     
     foreach my $image_info (@{$args{infra}->{images}}) {
         Entity::Masterimage::AwsMasterimage->createOrUpdate(

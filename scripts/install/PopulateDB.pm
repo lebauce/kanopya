@@ -1130,10 +1130,8 @@ sub registerComponents {
             component_name         => 'AwsAccount',
             component_version      => 6,
             deployable             => 1,
-#            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
-#            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
-            component_categories   => [],
-            service_provider_types => []
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
             component_name         => 'Keystone',
