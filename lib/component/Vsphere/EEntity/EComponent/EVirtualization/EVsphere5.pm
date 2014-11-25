@@ -943,7 +943,10 @@ sub synchronize {
             $log->info("Registering $child->{type} $child->{name}");
             if ($child->{type} eq 'cluster') {
                 $self->registerCluster(name => $child->{name}, parent => $vspheredc);
-                for my $hypervisor (@{ $self->retrieveClusterHypervisors(datacenter_name => $dc->{name}, cluster_name => $child->{name}) }) {
+
+                my @cluster_hvs = $self->retrieveClusterHypervisors(datacenter_name => $dc->{name},
+                                                                    cluster_name    => $child->{name});
+                for my $hypervisor (@cluster_hvs) {
                     push @hypervisors, $hypervisor;
                 }
             }
@@ -954,9 +957,12 @@ sub synchronize {
 
         for my $hv (@hypervisors) {
             $log->info("Registering $hv->{type} $hv->{name} ($hv->{uuid})");
-            my $vspherehv = $self->registerHypervisor(name => $hv->{name}, uuid => $hv->{uuid}, parent => $vspheredc);
+            my $vspherehv = $self->registerHypervisor(name   => $hv->{name},
+                                                      uuid   => $hv->{uuid},
+                                                      parent => $vspheredc);
 
-            for my $vm (@{ $self->retrieveHypervisorVms(datacenter_name => $dc->{name}, hypervisor_uuid => $hv->{uuid}) }) {
+            for my $vm (@{ $self->retrieveHypervisorVms(datacenter_name => $dc->{name},
+                                                        hypervisor_uuid => $hv->{uuid}) }) {
                 $log->info("Registering virtual machine $vm->{name} ($vm->{uuid})");
                 $self->registerVm(name => $vm->{name}, uuid => $vm->{uuid}, parent => $vspherehv);
             }

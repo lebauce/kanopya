@@ -1158,7 +1158,8 @@ sub registerHypervisor {
                           );
 
 
-        $log->debug("Register hypervisor " . $vsphere_hyp->label . " as node on service " . $service_provider->label);
+        $log->debug("Register hypervisor " . $vsphere_hyp->label .
+                    " as node on service " . $service_provider->label);
 
         # Register the node
         my @nodes = $service_provider->nodes;
@@ -1483,7 +1484,9 @@ sub unregister {
 
         my @vms = $hypervisor->virtual_machines;
 
-        $log->info("Hypervisor " . $hypervisor->label . " is hosting " . scalar(@vms) . " virtual machines, removing its.");
+        $log->info("Hypervisor " . $hypervisor->label . " is hosting " . scalar(@vms) .
+                   " virtual machines, removing its.");
+
         for my $vm (@vms) {
             $log->info("Removing virtual machine $vm");
             if (defined $vm->node) {
