@@ -21,7 +21,6 @@ use base "EEntity::EHost::EHypervisor";
 use strict;
 use warnings;
 
-use CapacityManagement;
 use Entity::Workflow;
 
 use Data::Dumper;

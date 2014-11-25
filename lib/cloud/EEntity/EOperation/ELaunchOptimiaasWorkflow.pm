@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -72,7 +72,9 @@ sub prerequisites {
 
 
 
-    my $cm  = CapacityManagement->new(cloud_manager => $self->{context}->{cloudmanager_comp});
+    my $cm  = CapacityManager::HCMCapacityManager->new(
+                  cloud_manager => $self->{context}->{cloudmanager_comp},
+              );
 
     my $operation_plan = $cm->optimIaas(policy => $self->{params}->{policy});
 

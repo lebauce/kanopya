@@ -32,8 +32,7 @@ number of hypervisors used by the infra.
 
 =cut
 
-package ChocoCapacityManagement;
-
+package CapacityManager::ChocoCapacityManager;
 use base CapacityManager;
 
 use strict;

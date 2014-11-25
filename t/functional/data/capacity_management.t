@@ -19,8 +19,8 @@ my $testing = 1;
 use Kanopya::Database;
 use Entity::Component;
 use Entity::ServiceProvider::Externalcluster;
-use CapacityManagement;
-use ChocoCapacityManagement;
+use CapacityManager::HCMCapacityManager;
+use CapacityManager::ChocoCapacityManager;
 use Entity::Component::Virtualization::OpenStack;
 use Entity::Component::KanopyaExecutor;
 use ClassType::ComponentType;
@@ -75,7 +75,7 @@ sub main {
         manager_type => 'HostManager',
     );
 
-    $cm_class = 'CapacityManagement';
+    $cm_class = 'CapacityManager::HCMCapacityManager';
     diag($cm_class);
 
     test_hypervisor_selection_multi();
@@ -92,7 +92,7 @@ sub main {
     test_flushhypervisor_need_csp();
     test_scale_in_need_csp();
 
-    $cm_class = 'ChocoCapacityManagement';
+    $cm_class = 'CapacityManager::ChocoCapacityManager';
     diag($cm_class);
 
     test_hypervisor_selection_multi();
@@ -118,12 +118,12 @@ sub test_flushhypervisor_need_csp {
         my $result = $cm->flushHypervisor(hv_id => 3);
 
         # Flush fails for KanopyaCM but successes with ChocoCM
-        if ( $cm_class eq 'CapacityManagement' && ! ($result->{num_failed} == 1)) {
-            die "CapacityManagement had to fail flushing ($cm_class, ".$result->{num_failed}.")";
+        if ( $cm_class eq 'CapacityManager::HCMCapacityManager' && ! ($result->{num_failed} == 1)) {
+            die "CapacityManager::HCMCapacityManager had to fail flushing ($cm_class, ".$result->{num_failed}.")";
         }
 
-        if ( $cm_class eq 'ChocoCapacityManagement' && ! ($result->{num_failed} == 0)) {
-            die "ChocoCapacityManagement had to success flushing ($cm_class, ".$result->{num_failed}.")";
+        if ( $cm_class eq 'CapacityManager::ChocoCapacityManager' && ! ($result->{num_failed} == 0)) {
+            die "CapacityManager::ChocoCapacityManager had to success flushing ($cm_class, ".$result->{num_failed}.")";
         }
 
     } 'Flush Hypervisor need CSP';
@@ -137,8 +137,9 @@ sub test_scale_in_need_csp {
         my $operations = $cm->scaleMemoryHost(host_id => $vms[2]->id, memory => 10*$coef);
 
         my $waited_operations = {
-            CapacityManagement      => ['AddNode', 'PreStartNode', 'StartNode', 'PostStartNode', 'MigrateHost', 'ScaleMemoryHost'],
-            ChocoCapacityManagement => ['MigrateHost', 'MigrateHost', 'ScaleMemoryHost'],
+            'CapacityManager::HCMCapacityManager' => ['AddNode', 'PreStartNode', 'StartNode',
+                                                      'PostStartNode', 'MigrateHost', 'ScaleMemoryHost'],
+            'CapacityManager::ChocoCapacityManager' => ['MigrateHost', 'MigrateHost', 'ScaleMemoryHost'],
         };
 
         if ((scalar @$operations) != (scalar @{$waited_operations->{$cm_class}})) {

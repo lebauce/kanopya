@@ -37,7 +37,6 @@ use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
 use Entity::Host;
-use CapacityManagement;
 use Entity::Workflow;
 use ClassType::ComponentType;
 

@@ -19,7 +19,6 @@ my $testing = 1;
 
 use Kanopya::Database;
 use Entity::Component;
-use CapacityManagement;
 use Entity::Component::Virtualization::OpenStack;
 use Entity::Component::KanopyaExecutor;
 use ClassType::ComponentType;

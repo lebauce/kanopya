@@ -34,7 +34,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Host;
 use EntityState;
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 use TryCatch;
 
 my $log = get_logger("");
@@ -137,7 +137,7 @@ sub execute {
         # Check if there is enough resource in destination host
         my $vm_id = $self->{context}->{vm}->getAttr(name => 'entity_id');
         my $hv_id = $self->{context}->{'host'}->id();
-        my $cm = CapacityManagement->new(
+        my $cm = CapacityManager::HCMCapacityManager->new(
                      cloud_manager => $self->{context}->{cloudmanager_comp},
                  );
 

@@ -30,6 +30,7 @@ use Entity::Host::Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
 use Entity::Workflow;
+use CapacityManager::HCMCapacityManager;
 use Kanopya::Exceptions;
 
 use TryCatch;
@@ -357,7 +358,7 @@ sub selectHypervisor {
         # specific parameters
     }
 
-    my $cm = CapacityManagement->new(cloud_manager => $self);
+    my $cm = CapacityManager::HCMCapacityManager->new(cloud_manager => $self);
 
     return $cm->selectHypervisor(
                resources => {ram => $args{ram}, cpu => $args{core}},

@@ -21,7 +21,7 @@ use base EEntity::EOperation;
 use strict;
 use warnings;
 
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 use Kanopya::Exceptions;
 use Entity::Host;
 use EEntity;
@@ -46,7 +46,7 @@ sub execute {
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->id;
-    my $cm    = CapacityManagement->new(
+    my $cm    = CapacityManager::HCMCapacityManager->new(
         cloud_manager => $self->{context}->{cloudmanager_comp},
     );
 

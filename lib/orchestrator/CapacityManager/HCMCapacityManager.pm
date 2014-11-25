@@ -32,8 +32,7 @@ number of hypervisors used by the infra.
 
 =cut
 
-package CapacityManagement;
-
+package CapacityManager::HCMCapacityManager;
 use base CapacityManager;
 
 use strict;

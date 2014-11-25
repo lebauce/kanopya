@@ -26,7 +26,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Host;
 use EEntity;
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 
 my $log = get_logger("");
 my $errmsg;
@@ -45,7 +45,7 @@ sub execute {
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->id;
-    my $cm = CapacityManagement->new(
+    my $cm = CapacityManager::HCMCapacityManager->new(
                  cloud_manager => $self->{context}->{cloudmanager_comp},
              );
 
@@ -113,7 +113,7 @@ sub postrequisites {
         return 0;
     }
     elsif ($time < 3*10) {
-        return 5; 
+        return 5;
     }
     else {
         my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(vm => $self->{context}->{host});
