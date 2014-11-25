@@ -30,6 +30,7 @@ use Entity::Host::Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
 use Entity::Workflow;
+use CapacityManager::HCMCapacityManager;
 use Kanopya::Exceptions;
 
 use TryCatch;
@@ -39,6 +40,40 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        %{ $self->SUPER::getManagerParamsDef },
+        affinity => {
+            label => 'Placement Policy',
+            is_mandatory => 0,
+            type => 'enum',
+            options => {
+                most_loaded => 'Most loaded hypervisor',
+                least_loaded => 'Least loaded hypervisor',
+                anti_affinity => 'AntiAffinity',
+                affinity => 'Affinity',
+            },
+            description => "Virtual Machine placement strategy: \n"
+                           . "AntiAffinity will try to spread "
+                           . "virtual machines on different hypervisors \n"
+                           . "Affinity will try to stack virtual machines "
+                           . "on the same hypervisor \n"
+                           . "Least/Most loaded hypervisor will choose "
+                           . "an hypervisor independently of existing other vms"
+                           . "(from candidate hypervisors with enough capacities)",
+        },
+    }
+}
 
 sub methods {
     return {
@@ -54,6 +89,10 @@ sub methods {
     };
 }
 
+sub getHostManagerParams {
+    my ($self, %args) = @_;
+    return {affinity_policy => $self->getManagerParamsDef->{affinity}};
+}
 
 sub createVirtualHost {
     my ($self, %args) = @_;
@@ -286,10 +325,45 @@ sub promoteVm {
 
 sub selectHypervisor {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
+    General::checkParams(args => \%args,
+                         optional => {
+                             cluster => undef,
+                             affinity => 'default',
+                         },
+                         required => [ 'ram', 'core' ]);
 
-    my $cm = CapacityManagement->new(cloud_manager => $self);
-    return $cm->getHypervisorIdForVM(resources => {ram => $args{ram}, cpu => $args{core}});
+    my %cm_params = ();
+    if ($args{affinity_policy} eq 'anti_affinity') {
+        $log->debug('Configure anti affinity placement policy');
+        my %affinity_weights = map {$_->host_id, 1} $args{cluster}->nodes;
+        $cm_params{affinity_weights} = \%affinity_weights,
+        $cm_params{cpu_multiplier} = 0;
+        $cm_params{ram_multiplier} = 0;
+    }
+    elsif ($args{affinity_policy} eq 'affinity') {
+        $log->debug('Configure affinity placement policy');
+        my %affinity_weights = map {$_->host_id, -1} $args{cluster}->nodes;
+        $cm_params{affinity_weights} = \%affinity_weights,
+        $cm_params{cpu_multiplier} = 0;
+        $cm_params{ram_multiplier} = 0;
+    }
+    elsif ($args{affinity_policy} eq 'least_loaded') {
+        $log->debug('Configure least loaded placement policy');
+        $cm_params{cpu_multiplier} = -1;
+        $cm_params{ram_multiplier} = -1;
+    }
+    else {
+        $log->debug('Configure most loaded placement policy');
+        # by default we use the most loaded hypervisor which does not need
+        # specific parameters
+    }
+
+    my $cm = CapacityManager::HCMCapacityManager->new(cloud_manager => $self);
+
+    return $cm->selectHypervisor(
+               resources => {ram => $args{ram}, cpu => $args{core}},
+               %cm_params,
+           );
 }
 
 

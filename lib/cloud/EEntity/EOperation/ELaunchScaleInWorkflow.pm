@@ -25,7 +25,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use EEntity;
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 
 my $log = get_logger("");
 my $errmsg;
@@ -66,7 +66,7 @@ sub execute{
     delete $self->{params}->{scalein_value};
     delete $self->{params}->{scalein_type};
 
-    my $cm = CapacityManagement->new(
+    my $cm = CapacityManager::HCMCapacityManager->new(
                  cloud_manager => $self->{context}->{cloudmanager_comp},
              );
 

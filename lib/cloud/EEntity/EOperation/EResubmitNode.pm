@@ -23,7 +23,7 @@ use strict;
 use warnings;
 
 use Entity;
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 
 use Log::Log4perl "get_logger";
 
@@ -86,7 +86,7 @@ sub execute {
         $self->{context}->{host}->updateMemory(memory => $host_manager_params->{ram});
         $self->{context}->{host}->updateCPU(cpu_number => $host_manager_params->{core});
 
-        my $cm = CapacityManagement->new(
+        my $cm = CapacityManager::HCMCapacityManager->new(
                      cloud_manager => $self->{context}->{cloudmanager_comp},
         );
 
@@ -98,7 +98,7 @@ sub execute {
                                     ram_effective => 1*1024*1024*1024
                                 }
                             );
-    
+
         #TODO implement remediation like in EAddNode
         if (! defined $hypervisor_id) {
             my $error = 'Cannot find free hypervisor to resubmit node';

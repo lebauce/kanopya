@@ -14,14 +14,14 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'capacity_management.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
 my $log = get_logger("");
 
-my $testing = 0;
+my $testing = 1;
 
 use Kanopya::Database;
 use Entity::Component;
 use Entity::ServiceProvider::Externalcluster;
-use CapacityManagement;
-use ChocoCapacityManagement;
-use Entity::Component::Virtualization::Opennebula3;
+use CapacityManager::HCMCapacityManager;
+use CapacityManager::ChocoCapacityManager;
+use Entity::Component::Virtualization::OpenStack;
 use Entity::Component::KanopyaExecutor;
 use ClassType::ComponentType;
 
@@ -49,12 +49,13 @@ sub main {
 
     $service_provider_hypervisors = Entity::ServiceProvider->new();
 
-    $one = $service_provider_hypervisors->addComponent(
-        component_type_id => ClassType::ComponentType->find(hash => { component_name => 'Opennebula' })->id,
-        component_configuration => {
-            executor_component_id => Entity::Component::KanopyaExecutor->find()->id
-        }
-    );
+    my $iaas = Entity::Component::Virtualization::OpenStack->new(
+                   executor_component_id => Entity::Component::KanopyaExecutor->find()->id,
+                   api_username => 'user',
+                   api_password => 'password',
+                   tenant_name => 'tenant',
+                   keystone_url => 'localhost',
+               );
 
     # Create entity with random arguments because only used for their ids
     @vms = ();
@@ -70,12 +71,11 @@ sub main {
     }
 
     $service_provider->addManager(
-        manager_id   => $one->id,
+        manager_id   => $iaas->id,
         manager_type => 'HostManager',
     );
 
-
-    $cm_class = 'CapacityManagement';
+    $cm_class = 'CapacityManager::HCMCapacityManager';
     diag($cm_class);
 
     test_hypervisor_selection_multi();
@@ -92,7 +92,7 @@ sub main {
     test_flushhypervisor_need_csp();
     test_scale_in_need_csp();
 
-    $cm_class = 'ChocoCapacityManagement';
+    $cm_class = 'CapacityManager::ChocoCapacityManager';
     diag($cm_class);
 
     test_hypervisor_selection_multi();
@@ -118,12 +118,12 @@ sub test_flushhypervisor_need_csp {
         my $result = $cm->flushHypervisor(hv_id => 3);
 
         # Flush fails for KanopyaCM but successes with ChocoCM
-        if ( $cm_class eq 'CapacityManagement' && ! ($result->{num_failed} == 1)) {
-            die "CapacityManagement had to fail flushing ($cm_class, ".$result->{num_failed}.")";
+        if ( $cm_class eq 'CapacityManager::HCMCapacityManager' && ! ($result->{num_failed} == 1)) {
+            die "CapacityManager::HCMCapacityManager had to fail flushing ($cm_class, ".$result->{num_failed}.")";
         }
 
-        if ( $cm_class eq 'ChocoCapacityManagement' && ! ($result->{num_failed} == 0)) {
-            die "ChocoCapacityManagement had to success flushing ($cm_class, ".$result->{num_failed}.")";
+        if ( $cm_class eq 'CapacityManager::ChocoCapacityManager' && ! ($result->{num_failed} == 0)) {
+            die "CapacityManager::ChocoCapacityManager had to success flushing ($cm_class, ".$result->{num_failed}.")";
         }
 
     } 'Flush Hypervisor need CSP';
@@ -137,8 +137,9 @@ sub test_scale_in_need_csp {
         my $operations = $cm->scaleMemoryHost(host_id => $vms[2]->id, memory => 10*$coef);
 
         my $waited_operations = {
-            CapacityManagement      => ['AddNode', 'PreStartNode', 'StartNode', 'PostStartNode', 'MigrateHost', 'ScaleMemoryHost'],
-            ChocoCapacityManagement => ['MigrateHost', 'MigrateHost', 'ScaleMemoryHost'],
+            'CapacityManager::HCMCapacityManager' => ['AddNode', 'PreStartNode', 'StartNode',
+                                                      'PostStartNode', 'MigrateHost', 'ScaleMemoryHost'],
+            'CapacityManager::ChocoCapacityManager' => ['MigrateHost', 'MigrateHost', 'ScaleMemoryHost'],
         };
 
         if ((scalar @$operations) != (scalar @{$waited_operations->{$cm_class}})) {
@@ -326,7 +327,7 @@ sub test_hypervisor_selection_multi {
             1983 => { cpu => 1, ram => 2*$coef },
         };
 
-        my $rep = $cm_class->new(infra => $infra)->getHypervisorIdsForVMs(vms_resources_hash => $vms_wanted_values);
+        my $rep = $cm_class->new(infra => $infra)->selectHypervisors(vms_resources_hash => $vms_wanted_values);
 
         if ($rep->{2101} != 2) { die 'Error in placement of vm1 (memory)';}
         if ($rep->{1983} != 1) { die 'Error in placement of vm2 (memory)';}
@@ -337,7 +338,7 @@ sub test_hypervisor_selection_multi {
         };
 
         $rep = $cm_class->new(infra => getTestInfraForScaling())
-                        ->getHypervisorIdsForVMs(vms_resources_hash => $vms_wanted_values);
+                        ->selectHypervisors(vms_resources_hash => $vms_wanted_values);
 
         if ($rep->{2101} != 1) { die 'Error in placement of vm1 (cpu)';}
         if ($rep->{1983} != 2) { die 'Error in placement of vm2 (cpu)';}
@@ -352,7 +353,7 @@ sub test_hypervisor_selection_multi {
         };
 
         $rep = $cm_class->new(infra => getTestInfraForScaling())
-                                 ->getHypervisorIdsForVMs(vms_resources_hash => $vms_wanted_values);
+                                 ->selectHypervisors(vms_resources_hash => $vms_wanted_values);
 
         if (defined $rep->{2101}) {die 'Wrong check ram/cpu placement';}
         if (defined $rep->{1983}) {die 'Wrong check ram/cpu placement';}
@@ -375,28 +376,28 @@ sub test_hypervisor_selection {
         my %wanted_values;
         %wanted_values = (cpu => 1, ram => 6*$coef);
 
-        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 2) {
+        if ($cm->selectHypervisor(resources => \%wanted_values) != 2) {
             die 'wrong vm placement';
         }
 
         %wanted_values = (cpu => 1, ram => 8*$coef);
-        if (defined $cm->getHypervisorIdForVM(resources => \%wanted_values)) {
+        if (defined $cm->selectHypervisor(resources => \%wanted_values)) {
             die 'wrong vm placement';
         }
 
         %wanted_values = (cpu => 6, ram => 1*$coef);
-        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 2) {
+        if ($cm->selectHypervisor(resources => \%wanted_values) != 2) {
             die 'wrong vm placement';
         }
 
         %wanted_values = (cpu => 1, ram => 1*$coef);
 
-        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 1) {
+        if ($cm->selectHypervisor(resources => \%wanted_values) != 1) {
             die 'wrong vm placement';
         }
 
         %wanted_values = (cpu => 8, ram => 1*$coef);
-        if (defined $cm->getHypervisorIdForVM(resources => \%wanted_values)) {
+        if (defined $cm->selectHypervisor(resources => \%wanted_values)) {
             die 'wrong vm placement';
         }
     } 'Hypervisor selection for a Vm';
@@ -715,7 +716,7 @@ sub test_optimiaas_spread {
 
         my $operations = $cm->optimIaas(policy => "spread");
 
-        my $hv_selected_ids = $cm->_separateEmptyHvIds()->{hv_ids};
+        my $hv_selected_ids = $cm->_separateEmptyHypervisors()->{hv_ids};
         for my $hv_index_s (@{$hv_selected_ids}) {
             if ($cm->_getOccupancyRate(hv_index => $hv_index_s) != 0.25) {
                 die 'Wrong occupation ratio after optimiaas (spread)'
@@ -740,8 +741,9 @@ sub test_strict_affinity {
             push @hv_ids, $hv_index;
         }
 
+        # AFFINITY
         my @strict_affinity = ($vms[0]->id);
-        my $result = $cm->_findMinHVidRespectCapa(
+        my $result = $cm->_findBestHypervisor(
                             hv_selection_ids => \@hv_ids,
                             resources        => {cpu => 1, ram => 1*$coef},
                             strict_affinity  => \@strict_affinity,
@@ -751,8 +753,52 @@ sub test_strict_affinity {
             die 'Wrong placement under strict affinity constraint'
         }
 
-        my @strict_anti_affinity = ($vms[1]->id);
-        $result = $cm->_findMinHVidRespectCapa(
+        @strict_affinity = ($vms[1]->id);
+        $result = $cm->_findBestHypervisor(
+                      hv_selection_ids => \@hv_ids,
+                      resources        => {cpu => 1, ram => 1 * $coef},
+                      strict_affinity  => \@strict_affinity,
+                  );
+
+        if ($result->{hv_id} != 2) {
+            die 'Wrong placement under strict affinity constraint'
+        }
+
+        @strict_affinity = ($vms[1]->id);
+        $result = $cm->_findBestHypervisor(
+                      hv_selection_ids => \@hv_ids,
+                      resources        => {cpu => 9, ram => 1 * $coef},
+                  );
+
+        if ($result->{hv_id} != 1) {
+            die 'Only placement without strict affinity'
+        }
+
+        $result = $cm->_findBestHypervisor(
+                      hv_selection_ids => \@hv_ids,
+                      resources        => {cpu => 9, ram => 1 * $coef},
+                      strict_affinity  => \@strict_affinity,
+                  );
+
+        if (defined $result->{hv_id}) {
+            die 'No placement with strict affinity'
+        }
+
+
+        # ANTI - AFFINITY
+        my @strict_anti_affinity = ($vms[0]->id);
+        $result = $cm->_findBestHypervisor(
+                            hv_selection_ids     => \@hv_ids,
+                            resources            => {cpu => 1, ram => 1*$coef},
+                            strict_anti_affinity => \@strict_anti_affinity,
+                        );
+
+        if ($result->{hv_id} != 2) {
+            die 'Wrong placement under strict anti-affinity constraint'
+        }
+
+        @strict_anti_affinity = ($vms[1]->id);
+        $result = $cm->_findBestHypervisor(
                             hv_selection_ids     => \@hv_ids,
                             resources            => {cpu => 1, ram => 1*$coef},
                             strict_anti_affinity => \@strict_anti_affinity,
@@ -760,6 +806,26 @@ sub test_strict_affinity {
 
         if ($result->{hv_id} != 1) {
             die 'Wrong placement under strict anti-affinity constraint'
+        }
+
+
+        $result = $cm->_findBestHypervisor(
+                            hv_selection_ids     => \@hv_ids,
+                            resources            => {cpu => 9, ram => 1*$coef},
+                         );
+
+        if ($result->{hv_id} != 1) {
+            die 'Only placement without strict anti-affinity'
+        }
+
+        $result = $cm->_findBestHypervisor(
+                            hv_selection_ids     => \@hv_ids,
+                            resources            => {cpu => 9, ram => 1*$coef},
+                            strict_anti_affinity => $vms[0]->id,
+                        );
+
+        if ($result->{hv_id} != 1) {
+            die 'No placement with strict anti-affinity'
         }
 
     } 'Strict affinity/anti-affinity';
@@ -779,30 +845,128 @@ sub test_affinity_weights {
         for my $hv_index (keys %{$infra->{hvs}}) {
             push @hv_ids, $hv_index;
         }
+        my $vm_hv1 = (keys %{$infra->{hvs}->{1}->{vm_ids}})[0];
+        my $vm_hv2 = (keys %{$infra->{hvs}->{2}->{vm_ids}})[0];
 
-        my %affinity_weights = ($vms[0]->id => -1);
-        my $result = $cm->_findMinHVidRespectCapa(
-                            hv_selection_ids => \@hv_ids,
-                            resources        => {cpu => 1, ram => 1*$coef},
-                            affinity_weights => \%affinity_weights,
-                        );
+        my $result = $cm->_findBestHypervisor(
+                        hv_selection_ids => \@hv_ids,
+                        resources => {cpu => 1, ram => 1*$coef},
+                     );
 
-        if ($result->{hv_id} != 1) {
-            die 'Wrong placement under soft affinity constraint'
+        if (! $result->{hv_id} eq 2) {
+            die 'Wrong placement without affinity weights';
         }
 
-        %affinity_weights = ($vms[1]->id => 1);
-        $result = $cm->_findMinHVidRespectCapa(
-                            hv_selection_ids => \@hv_ids,
-                            resources        => {cpu => 1, ram => 1*$coef},
-                            affinity_weights => \%affinity_weights,
-                        );
+        $result = $cm->_findBestHypervisor(
+                      hv_selection_ids => \@hv_ids,
+                      resources => {cpu => 1, ram => 1*$coef},
+                      affinity_weights => {$vm_hv2 => 1}
+                  );
 
-        if ($result->{hv_id} != 1) {
-            die 'Wrong placement under soft anti-affinity constraint'
+        if (! $result->{hv_id} eq 1) {
+            die 'Wrong placement with large anti affinity weights';
         }
 
+        $result = $cm->_findBestHypervisor(
+                      hv_selection_ids => \@hv_ids,
+                      resources => {cpu => 1, ram => 1*$coef},
+                      affinity_weights => {$vm_hv1 => -1}
+                  );
+
+        if (! $result->{hv_id} eq 1) {
+            die 'Wrong placement with large affinity weights';
+        }
     } 'Affinity weights';
+
+    lives_ok {
+        my $infra = {
+            hvs => {
+                1 => {resources => {cpu => 3, ram => 3 * $coef}, vm_ids => {}},
+                2 => {resources => {cpu => 3, ram => 3 * $coef}, vm_ids => {}},
+            },
+            vms => {}
+        };
+        my $cm = $cm_class->new(infra => $infra);
+
+        my @vms = map {{cpu => 1, ram => $coef}} (1..6);
+        my $affinity_weights = {};
+
+        my $i = 0;
+        for my $vm (@vms) {
+            my $place = $cm->_findBestHypervisor(
+                            hv_selection_ids => [1,2],
+                            resources => $vm,
+                            affinity_weights => $affinity_weights,
+                        );
+            $cm->{_infra}->{vms}->{++$i} = {resources => $vm};
+            $cm->_addVm(vm_id => $i, hv_id => $place->{hv_id});
+            $affinity_weights->{$i} = 1;
+        }
+
+        if ($cm->{_infra}->{vms}->{1}->{hv_id} eq
+            $cm->{_infra}->{vms}->{2}->{hv_id}) {
+            die 'VMs 1 and 2 should not be on same hypervisor'
+        }
+
+        if ($cm->{_infra}->{vms}->{1}->{hv_id} ne
+            $cm->{_infra}->{vms}->{3}->{hv_id} and
+            $cm->{_infra}->{vms}->{3}->{hv_id} ne
+            $cm->{_infra}->{vms}->{5}->{hv_id}) {
+            die 'VMs 1, 3 and 5 should be on same hypervisor'
+        }
+
+        if ($cm->{_infra}->{vms}->{2}->{hv_id} ne
+            $cm->{_infra}->{vms}->{4}->{hv_id} and
+            $cm->{_infra}->{vms}->{4}->{hv_id} ne
+            $cm->{_infra}->{vms}->{6}->{hv_id}) {
+            die 'VMs 2, 4 and 6 should be on same hypervisor'
+        }
+    } 'Anti affinity group placement';
+
+    lives_ok {
+        my $infra = {
+            hvs => {
+                1 => {resources => {cpu => 3, ram => 3 * $coef}, vm_ids => {}},
+                2 => {resources => {cpu => 3, ram => 3 * $coef}, vm_ids => {}},
+            },
+            vms => {}
+        };
+        my $cm = $cm_class->new(infra => $infra);
+
+        my @vms = map {{cpu => 1, ram => $coef}} (1..6);
+        my $affinity_weights = {};
+
+        my $i = 0;
+        for my $vm (@vms) {
+            my $place = $cm->_findBestHypervisor(
+                            hv_selection_ids => [1,2],
+                            resources => $vm,
+                            affinity_weights => $affinity_weights,
+                        );
+            $cm->{_infra}->{vms}->{++$i} = {resources => $vm};
+            $cm->_addVm(vm_id => $i, hv_id => $place->{hv_id});
+            $affinity_weights->{$i} = -1;
+        }
+
+        if ($cm->{_infra}->{vms}->{1}->{hv_id} eq
+            $cm->{_infra}->{vms}->{4}->{hv_id}) {
+            die 'VMs 1 and 4 should not be on same hypervisor'
+        }
+
+        if ($cm->{_infra}->{vms}->{1}->{hv_id} ne
+            $cm->{_infra}->{vms}->{2}->{hv_id} and
+            $cm->{_infra}->{vms}->{2}->{hv_id} ne
+            $cm->{_infra}->{vms}->{3}->{hv_id}) {
+            die 'VMs 1, 2 and 3 should be on same hypervisor'
+        }
+
+        if ($cm->{_infra}->{vms}->{4}->{hv_id} ne
+            $cm->{_infra}->{vms}->{5}->{hv_id} and
+            $cm->{_infra}->{vms}->{5}->{hv_id} ne
+            $cm->{_infra}->{vms}->{6}->{hv_id}) {
+            die 'VMs 4, 5 and 6 should be on same hypervisor'
+        }
+    } 'Anti affinity group placement'
 }
 
 sub test_scale_memory {

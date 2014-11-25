@@ -30,7 +30,7 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 use Entity;
-use CapacityManagement;
+use CapacityManager::HCMCapacityManager;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -87,7 +87,7 @@ sub prerequisites {
         return -1;
     }
 
-    my $cm = CapacityManagement->new(
+    my $cm = CapacityManager::HCMCapacityManager->new(
                  cloud_manager => $self->{context}->{cloud_manager},
              );
 

@@ -34,7 +34,6 @@ use Entity::ContainerAccess;
 use EEntity;
 use Entity::Repository::Opennebula3Repository;
 use General;
-use CapacityManagement;
 
 use TryCatch;
 use XML::Simple;

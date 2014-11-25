@@ -26,6 +26,7 @@ package CapacityManager;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
+use List::Util qw(max);
 
 =pod
 
@@ -215,14 +216,15 @@ Find hypervisors for a list of vm with their ressources
 
 @param resources hash resource values of the the VMs
 
-@return hash associating a hypervisor id to each vm id. The hypervisor id is undef when no hypervisor
+@return hash associating a hypervisor id to each vm id.
+        The hypervisor id is undef when no hypervisor
         has been found for the vm
 
 =end classdoc
 
 =cut
 
-sub getHypervisorIdsForVMs {
+sub selectHypervisors {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['vms_resources_hash']);
     throw Kanopya::Exception::NotImplemented();
@@ -244,7 +246,7 @@ with minimum size (in order to optimize infrastructure usage)
 
 =cut
 
-sub getHypervisorIdForVM {
+sub selectHypervisor {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['resources']);
     throw Kanopya::Exception::NotImplemented();
@@ -393,7 +395,7 @@ Add a migration Operation in internal operation plan
 
 =cut
 
-sub _migrateVmOrder {
+sub _enqueueMigration {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'vm_id', 'hv_id' ]);
 
@@ -426,13 +428,13 @@ Return the id of the HV in which the VM runs
 
 =cut
 
-sub _getHvIdFromVmId{
+sub _hypervisorId {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'vm_id' ]);
     return $self->{_infra}->{vms}->{$args{vm_id}}->{hv_id};
 }
 
-sub _addVmInHV {
+sub _addVm {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'vm_id', 'hv_id' ]);
 
@@ -454,17 +456,17 @@ Modify the internal infrastructure when the algorithms plan a migration operatio
 
 =cut
 
-sub _migrateVmModifyInfra{
+sub _applyVmMigration{
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'vm_id', 'hv_id' ]);
 
     my $vm_id      = $args{vm_id};
     my $hv_dest_id = $args{hv_id};
 
-    my $hv_from_id = $self->_getHvIdFromVmId(vm_id => $vm_id);
+    my $hv_from_id = $self->_hypervisorId(vm_id => $vm_id);
 
     $self->_removeVmFromHV(vm_id => $vm_id, hv_id => $hv_from_id);
-    $self->_addVmInHV(vm_id => $vm_id, hv_id => $hv_dest_id);
+    $self->_addVm(vm_id => $vm_id, hv_id => $hv_dest_id);
 
     $log->debug("Infra modified => migration <$vm_id> (ram: "
                 .($self->{_infra}->{vms}->{$vm_id}->{resources}->{ram})
@@ -496,13 +498,16 @@ sub _migrateVmModifyInfra{
 
 sub _removeVmFromHV {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => [ 'vm_id' ], optional => {hv_id => undef, infra => undef});
+    General::checkParams(args => \%args,
+                         required => [ 'vm_id' ],
+                         optional => {hv_id => undef, infra => undef});
 
-    $args{hv_id} = $args{hv_id} || $self->_getHvIdFromVmId(vm_id => $args{vm_id});
+    $args{hv_id} = $args{hv_id} || $self->_hypervisorId(vm_id => $args{vm_id});
     $args{infra} = $args{infra} || $self->{_infra};
 
     if ($args{infra}->{vms}->{$args{vm_id}}->{hv_id} != $args{hv_id}) {
-        my $error = "Hypervisor <$args{hv_id}> does not match vm <$args{vm_id}> hv id (<".$args{infra}->{vms}->{$args{vm_id}}->{hv_id}.">)";
+        my $error = "Hypervisor <$args{hv_id}> does not match vm <$args{vm_id}> hv id (<"
+                    . $args{infra}->{vms}->{$args{vm_id}}->{hv_id} . ">)";
         throw Kanopya::Exception(error => $error);
     }
 
@@ -564,7 +569,7 @@ sub getHypervisorIdResubmitVM {
 
     # Remove me from present vm
     $self->_removeVmfromInfra(vm_id => $args{vm_id});
-    return $self->getHypervisorIdForVM(vm_id => $args{vm_id}, resources => $args{wanted_values});
+    return $self->selectHypervisor(vm_id => $args{vm_id}, resources => $args{wanted_values});
 }
 
 
@@ -593,7 +598,8 @@ sub isMigrationAuthorized {
     if (! defined $self->{_infra}->{hvs}->{$hv_id}) {
         return {
             authorization => 0,
-            error         => "Hypervisor [$hv_id] is either not up or not an active host of the cloud manager",
+            error         => "Hypervisor [$hv_id] is either not up "
+                             . "or not an active host of the cloud manager",
         };
     }
 
@@ -736,7 +742,8 @@ sub _computeInfraChargeStat {
             my $size = $self->_getHvSizeOccupied(hv_id => $hv_id);
             $stat->{cpu_p} += $size->{cpu_p};
             $stat->{ram_p} += $size->{ram_p};
-            $log->debug("HV $hv_id : CPU [".($size->{cpu_p}*100)." %] RAM [".($size->{ram_p} * 100)." %]");
+            $log->debug("HV $hv_id : CPU [" . ($size->{cpu_p}*100) . " %] "
+                        . "RAM [" . ($size->{ram_p} * 100) . " %]");
         }
     }
 
@@ -781,14 +788,20 @@ sub _convertRelativetoAbsoluteScaleCpuValues {
         $cpu = $vcpu_input;
     }
     else {
-        throw Kanopya::Exception::Integer::WrongValue(error => "Wrong format for scale in memory value (typed : $args{vcpu_number})");
+        throw Kanopya::Exception::Integer::WrongValue(
+                  error => "Wrong format for scale in memory value (typed : $args{vcpu_number})"
+              );
     }
 
     if ($cpu =~ /\D/) {
-        throw Kanopya::Exception::Integer::WrongValue(error => "Wrong format for scale in memory value (typed : $args{vcpu_number})");
+        throw Kanopya::Exception::Integer::WrongValue(
+                  error => "Wrong format for scale in memory value (typed : $args{vcpu_number})"
+              );
     }
     elsif ($cpu <= 0) {
-        throw Kanopya::Exception::Integer::WrongValue(error => "Cannot scale CPU to a negative value (typed : $args{vcpu_number})");
+        throw Kanopya::Exception::Integer::WrongValue(
+                  error => "Cannot scale CPU to a negative value (typed : $args{vcpu_number})"
+              );
     }
     else {
         return $cpu;
@@ -812,7 +825,9 @@ sub _convertRelativetoAbsoluteScaleMemoryValues {
     }
 
     if ($mem_input =~ /\D/) {
-        throw Kanopya::Exception::Internal::WrongValue(error => "Wrong format for scale in memory value (typed : $args{memory})");
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Wrong format for scale in memory value (typed : $args{memory})"
+              );
     }
 
     # Compute absolute memory instead of relative
@@ -827,11 +842,15 @@ sub _convertRelativetoAbsoluteScaleMemoryValues {
         $memory = $mem_input;
     }
     else {
-        throw Kanopya::Exception::Internal::WrongValue(error => "Wrong format for scale in memory value (typed : $args{memory})");
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Wrong format for scale in memory value (typed : $args{memory})"
+              );
     }
 
     if ($memory <= 0) {
-        throw Kanopya::Exception::Internal::WrongValue(error => "Scale in memory value must be strictly positive (typed : $args{memory}");
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Scale in memory value must be strictly positive (typed : $args{memory}"
+              );
     }
 
     return $memory;
@@ -1019,15 +1038,18 @@ sub isScalingAuthorized {
         $remaining_resource = $remaining->{cpu};
     }
 
-    my $delta    = $wanted_resource - $current_resource;
-    $log->debug("**** [scale-in $resource_type]  Remaining <$remaining_resource> in HV <$hv_id>, need <$delta> more to have <$wanted_resource> ****");
+    my $delta = $wanted_resource - $current_resource;
+    $log->debug("[scale-in $resource_type]  Remaining <$remaining_resource> in HV <$hv_id>,"
+                . " need <$delta> more to have <$wanted_resource>");
 
     if ($remaining_resource < $delta) {
-        $log->info('Scaling refused : not enough resource ' . $resource_type . ' for VM ' . $vm_id . ' on hv ' . $hv_id);
+        $log->info('Scaling refused : not enough resource ' . $resource_type . ' for VM ' . $vm_id
+              . ' on hv ' . $hv_id);
         return 0;
     }
 
-    $log->info('scaling authorized by capacity management : ' . $resource_type . ' for VM ' . $vm_id . ' on hv ' . $hv_id);
+    $log->info('scaling authorized by capacity management : ' . $resource_type . ' for VM ' . $vm_id
+               . ' on hv ' . $hv_id);
     return 1;
 
 }
@@ -1063,7 +1085,7 @@ sub _migrateVmToScale {
     my $wanted_metrics = Clone::clone($self->{_infra}->{vms}->{$vm_id}->{resources});
     $wanted_metrics->{$args{scale_metric}} = $args{new_value};
 
-    my $hv_dest_id = $self->_findMinHVidRespectCapa(
+    my $hv_dest_id = $self->_findBestHypervisor(
         hv_selection_ids => $args{hv_selection_ids},
         resources        => $wanted_metrics,
     );
@@ -1072,10 +1094,10 @@ sub _migrateVmToScale {
         return 0;
     }
 
-    $self->_migrateVmModifyInfra(vm_id => $vm_id,
+    $self->_applyVmMigration(vm_id => $vm_id,
                                  hv_id => $hv_dest_id->{hv_id});
 
-    $self->_migrateVmOrder(vm_id => $vm_id,
+    $self->_enqueueMigration(vm_id => $vm_id,
                            hv_id => $hv_dest_id->{hv_id});
 
     return 1;
@@ -1111,7 +1133,7 @@ sub _scaleMetric {
     my $old_value = $self->{_infra}->{vms}->{$vm_id}->{resources}->{$scale_metric};
     my $delta     = $new_value - $old_value;
 
-    my $hv_id = $self->_getHvIdFromVmId(vm_id => $vm_id);
+    my $hv_id = $self->_hypervisorId(vm_id => $vm_id);
 
     if ($delta < 0 && $new_value > 0) {
         # No scaling problem when size is decreasing
@@ -1172,9 +1194,11 @@ sub _scaleMetric {
                     Message->send(
                         from    => 'Capacity Management',
                         level   => 'info',
-                        content => "Not enough place to change $scale_metric OF $vm_id TO VALUE $new_value",
+                        content => "Not enough place to change $scale_metric of <$vm_id>"
+                                   . " to value <$new_value>",
                     );
-                    $log->info("Not enough place to change $scale_metric OF $vm_id TO VALUE $new_value");
+                    $log->info("Not enough place to change $scale_metric of <$vm_id>"
+                               . " to value <$new_value>");
 
                     $self->_scaleOnNewHV(
                          vm_id        => $vm_id,
@@ -1200,7 +1224,8 @@ Find the HV id which can accept the resources under policy and affinity constrai
 @param ram_multiplier set between -1 (spread) and 1 (stack) to reflect policy
 @param strict_affinity ids of VMs to be set with
 @param strict_anti_affinity ids of VMs not to be set with
-@param affinity_weights hash table linking VM ids to affinity weights between -1 (affinity) and 1 (anti-affinity)
+@param affinity_weights hash table linking VM ids to affinity weights
+       between -1 (affinity) and 1 (anti-affinity)
 
 @return a hash with keys : hv_id => the hypervisor id, min_size_remaining => the 'score' used to
 compare 2 hypervisors
@@ -1209,7 +1234,7 @@ compare 2 hypervisors
 
 =cut
 
-sub _findMinHVidRespectCapa {
+sub _findBestHypervisor {
     my ($self,%args) = @_;
 
     General::checkParams(
@@ -1254,8 +1279,10 @@ sub _findMinHVidRespectCapa {
     for my $hv_id (@hv_selection_ids) {
         $hv_affinity_weights{$hv_id} = 0;
     }
+
     for my $vm_id (@vm_affinity_ids) {
-        $hv_affinity_weights{$self->{_infra}->{vms}->{$vm_id}->{hv_id}} = $args{affinity_weights}{$vm_id};
+        $hv_affinity_weights{$self->{_infra}->{vms}->{$vm_id}->{hv_id}}
+            += $args{affinity_weights}{$vm_id};
     }
 
     my $result = {};
@@ -1281,7 +1308,8 @@ sub _findMinHVidRespectCapa {
         my $condition = 1;
         for my $metric (keys %$wanted_metrics) {
             if (defined $size_remaining->{$metric}) {
-                $log->debug("Check $metric, ok if $wanted_metrics->{$metric} <= $size_remaining->{$metric}");
+                $log->debug("Check $metric, ok if"
+                            . " $wanted_metrics->{$metric} <= $size_remaining->{$metric}");
                 $condition &&= $wanted_metrics->{$metric} <= $size_remaining->{$metric};
             }
         }
