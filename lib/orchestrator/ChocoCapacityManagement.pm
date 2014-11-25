@@ -50,10 +50,10 @@ my $log = get_logger("");
 my $JAR = '/opt/kanopya/tools/constraint_engine/capacity_manager/capacity_manager.jar';
 my $TIME_LIMIT_IN_MS = 20000;
 
-sub getHypervisorIdForVM {
+sub selectHypervisor {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'resources' ]);
-    my $result = $self->getHypervisorIdsForVMs(vms_resources_hash => {0 => $args{resources}});
+    my $result = $self->selectHypervisors(vms_resources_hash => {0 => $args{resources}});
     return $result->{0};
 }
 
@@ -71,7 +71,7 @@ sub flushHypervisorPlan {
             delete $migration_hash->{$vm_id};
         }
         else {
-            $self->_migrateVmModifyInfra(
+            $self->_applyVmMigration(
                 vm_id => $vm_id,
                 hv_id => $hv_id,
             );
@@ -89,7 +89,8 @@ sub flushHypervisor {
     General::checkParams(args => \%args, required => ['hv_id']);
 
     if (not defined $self->{_infra}->{hvs}->{$args{hv_id}}) {
-        my $error = "Hypervisor <$args{hv_id}> is not managed by the capacity manager (may be not active or not up)";
+        my $error = "Hypervisor <$args{hv_id}> is not managed by the capacity manager"
+                    . " (may be not active or not up)";
         throw Kanopya::Exception(error => $error);
     }
 
@@ -98,7 +99,7 @@ sub flushHypervisor {
     $self->{_operationPlan} = [];
 
     while (my ($vm_id, $hv_id) = each (%{$plan->{migrations}})) {
-        $self->_migrateVmOrder(
+        $self->_enqueueMigration(
             vm_id => $vm_id,
             hv_id => $hv_id,
         );
@@ -127,7 +128,7 @@ sub resubmitHypervisor {
 }
 
 
-sub getHypervisorIdsForVMs {
+sub selectHypervisors {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['vms_resources_hash']);
 
@@ -152,7 +153,7 @@ sub getHypervisorIdsForVMs {
                           vm_ids        => \@vm_ids);
 
     for my $vm_id (@vm_ids) {
-        $self->_addVmInHV(hv_id => $virtual_hv_id, vm_id => $vm_id)
+        $self->_addVm(hv_id => $virtual_hv_id, vm_id => $vm_id)
     }
 
     my $hypervisor_assignment = $self->_executeFlushHypervisor(hv_id => $virtual_hv_id);
@@ -244,8 +245,10 @@ sub _executeFlushHypervisor {
         throw Kanopya::Exception::Internal(error => 'Cannot flush hypervisor');
     }
     else {
-        throw Kanopya::Exception::(error => 'Error executing Choco constraint engine GetHypervisorIdsForVms: '.
-                                           $result->{stderr});
+        throw Kanopya::Exception(
+                  error => 'Error executing Choco constraint engine selectHypervisors: '
+                           . $result->{stderr}
+              );
     }
 }
 
@@ -307,8 +310,10 @@ sub _executeAddVmInHvMinMigrations {
         throw Kanopya::Exception::Internal(error => 'Cannot force vm on the hypervisor');
     }
     else {
-        throw Kanopya::Exception(error => 'Error executing Choco constraint engine AddVmInHvMinMigrations: '.
-                                           $result->{stderr});
+        throw Kanopya::Exception(
+                  error => 'Error executing Choco constraint engine AddVmInHvMinMigrations: '
+                           . $result->{stderr}
+              );
     }
 }
 
@@ -330,24 +335,27 @@ sub _migrateOtherVmsToScale {
 
     my $result;
     try {
-        $result = $self->_executeAddVmInHvMinMigrations(hv_id => $old_hv_id, infra => $infra_simplified);
+        $result = $self->_executeAddVmInHvMinMigrations(
+                      hv_id => $old_hv_id,
+                      infra => $infra_simplified
+                  );
     }
     catch (Kanopya::Exception::Internal $err) {
         return 0;
     }
 
-    $self->_addVmInHV(
+    $self->_addVm(
         vm_id => $args{vm_id},
         hv_id => $old_hv_id,
     );
 
     while (my ($vm_id, $hv_id) = each(%$result)) {
-        $self->_migrateVmModifyInfra(
+        $self->_applyVmMigration(
             vm_id => $vm_id,
             hv_id => $hv_id,
         );
 
-        $self->_migrateVmOrder(
+        $self->_enqueueMigration(
             vm_id => $vm_id,
             hv_id => $hv_id,
         );
