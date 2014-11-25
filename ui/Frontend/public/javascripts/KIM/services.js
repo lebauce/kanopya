@@ -62,19 +62,19 @@ function servicesList(container_id, elem_id) {
         var stateMap = {
             'up'       : {
                 'label': 'Up',
-                'icon' : 'fa-thumbs-up',
+                'icon' : 'fa-check',
                 'canStart' : false,
                 'canStop' : true
             },
             'in'       : {
                 'label': 'Up',
-                'icon' : 'fa-thumbs-up',
+                'icon' : 'fa-check',
                 'canStart' : false,
                 'canStop' : true
             },
             'down'     : {
                 'label': 'Down',
-                'icon' : 'fa-thumbs-down',
+                'icon' : 'fa-times',
                 'canStart' : true,
                 'canStop' : false
             },

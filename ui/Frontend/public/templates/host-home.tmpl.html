@@ -5,7 +5,7 @@
                 <div class="list-item-info">
                     <div class="identifier">
                         <div class="description"><span>{{description}}</span></div>
-                        <div class="name"><span>{{name}} {{id}}</span></div>
+                        <div class="name"><span>{{name}}</span></div>
                         <div class="ip">{{adminIp}}</div>
                     </div>
                     <div class="state">
@@ -31,11 +31,20 @@
                 <div class="button-group" data-id="{{id}}">
                     {{#if hostCanStop}}
                         <button type="button" class="btn btn-action3 button-text button-stop">Stop</button>
-                    {{/if}}                    
+                    {{/if}}
+                    {{#if hostCanActivate}}
+                        <button type="button" class="btn btn-action4 button-text button-activate">Activate</button>
+                    {{/if}}
+                    {{#if hostCanDeactivate}}
+                        <button type="button" class="btn btn-action5 button-text button-deactivate">Deactivate</button>
+                    {{/if}}
+                    {{#if hostCanRemove}}
+                        <button type="button" class="btn btn-action3 button-text button-remove">Remove</button>
+                    {{/if}}
                     {{#if hostCanScale}}
                         <button type="button" class="btn btn-action2 button-text button-scale-cpu">Scale CPU</button>
                         <button type="button" class="btn btn-action2 button-text button-scale-ram">Scale RAM</button>
-                    {{/if}}                    
+                    {{/if}}
                     <button type="button" class="btn btn-action1 button-text button-detail">Detail</button>
                 </div>
             </div>

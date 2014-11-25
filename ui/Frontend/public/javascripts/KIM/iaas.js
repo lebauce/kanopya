@@ -207,15 +207,15 @@ function load_iaas_content (container_id) {
         var stateMap = {
             'up'       : {
                 'label': 'Up',
-                'icon' : 'fa-thumbs-up'
+                'icon' : 'fa-check'
             },
             'in'       : {
                 'label': 'Up',
-                'icon' : 'fa-thumbs-up'
+                'icon' : 'fa-check'
             },
             'down'     : {
                 'label': 'Down',
-                'icon' : 'fa-thumbs-down'
+                'icon' : 'fa-times'
             },
             'broken'   : {
                 'label': 'Broken',
@@ -437,11 +437,6 @@ function load_iaas_content (container_id) {
 
         serie = [[1, value1], [2, value2]];
 
-        // serie = [[1, 75], [2, 25]];
-        // ratio = 75;
-
-        console.debug(serie);
-
         $.jqplot(containerId, [serie], {
             title: {
                 text: (ratio === '') ? '' : ratio + '%',
@@ -507,25 +502,14 @@ function load_iaas_content (container_id) {
             });
         });
 
-        // Optimize
-        $('.button-optimize').click(function() {
+        // Stack
+        $('.button-stack').click(function() {
+            executeAction('optimiaas', '', this);
+        });
 
-            if (isRunning === true) {
-                return;
-            }
-            isRunning = true;
-
-            var id = $(this).parent().data('id');
-            var _this = this;
-            startTextButtonAnimation(_this);
-            $.ajax({
-                type: "POST",
-                url: '/api/component/' + id + '/optimiaas',
-                complete: function() {
-                    stopTextButtonAnimation(_this);
-                    isRunning = false;
-                }
-            });
+        // Spread
+        $('.button-spread').click(function() {
+            executeAction('optimiaas', {'policy': 'spread'}, this);
         });
 
         // Unregister
@@ -543,6 +527,26 @@ function load_iaas_content (container_id) {
                 }
             );
         });
+
+        function executeAction(action, data, element) {
+
+            if (isRunning === true) {
+                return;
+            }
+            isRunning = true;
+
+            var id = $(element).parent().data('id');
+            startTextButtonAnimation(element);
+            $.ajax({
+                type: "POST",
+                url: '/api/component/' + id + '/' + action,
+                data: data,
+                complete: function() {
+                    stopTextButtonAnimation(element);
+                    isRunning = false;
+                }
+            });
+        }
     }
 
     function reloadList() {
