@@ -478,7 +478,7 @@ sub retrieveClustersAndHypervisors {
 
     #We only gather ClusterComputeResource or ComputeResource
     CHILD:
-    foreach my $child (@{ $host_folder->childEntity }) {
+    foreach my $child (@{ $host_folder->childEntity || [] }) {
 
         my $child_view = $self->getView(mo_ref => $child);
         my $compute_resource_infos;
@@ -489,7 +489,7 @@ sub retrieveClustersAndHypervisors {
                 type => 'cluster',
             };
         }
-        elsif (ref ($child_view) eq 'ComputeResource') {
+        elsif (ref ($child_view) eq 'ComputeResource' && defined $child_view->host) {
             my $view = $self->getView(mo_ref => $child_view->host->[0]);
             my $uuid = $view->hardware->systemInfo->uuid;
 
@@ -962,98 +962,85 @@ sub registerVm {
                           );
 
     #get the VM view from vSphere
-    my $vm_view = $self->findEntityView(
-                      view_type    => 'VirtualMachine',
-                      hash_filter  => {
-                          'config.uuid' => $vm_uuid,
-                      },
-                      begin_entity => $hypervisor_view,
-                  );
+    my $vm_view = $self->findEntityView(view_type    => 'VirtualMachine',
+                                        hash_filter  => { 'config.uuid' => $vm_uuid },
+                                        begin_entity => $hypervisor_view);
 
-    # one cluster created by vm registered
+    # One cluster created by vm registered
     my $service_provider;
-    eval {
+    try {
         $service_provider = Entity::ServiceProvider::Cluster->find(hash => {
                                 cluster_name => $sp_renamed,
                             });
-    };
-    if ($@) {
-        # connected state : the fact that host is available or not for management
-        # power state will be managed by state-manager
-        my $host_state = $vm_view->runtime->connectionState->val eq 'connected'
-                             ? 'up' : 'broken';
-        eval {
-            my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
+    }
+    catch {
+        my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 
-            $service_provider = Entity::ServiceProvider::Cluster->new(
-                active                 => 1,
-                cluster_name           => $sp_renamed,
-                cluster_state          => $host_state eq 'up' ? 'up:' . time() : 'down:' . time(),
-                cluster_min_node       => 1,
-                cluster_max_node       => 1,
-                cluster_priority       => 500,
-                cluster_si_persistent  => 1,
-                cluster_domainname     => 'my.domain',
-                cluster_basehostname   => 'vsphere-registered-vm' . $vm_view->summary->vm->value,
-                cluster_nameserver1    => '127.0.0.1',
-                cluster_nameserver2    => '127.0.0.1',
-                owner_id               => $admin_user->id,
-            );
+        $service_provider = Entity::ServiceProvider::Cluster->new(
+            active                 => 1,
+            cluster_name           => $sp_renamed,
+            cluster_min_node       => 1,
+            cluster_max_node       => 1,
+            cluster_priority       => 500,
+            cluster_si_persistent  => 1,
+            cluster_domainname     => 'my.domain',
+            cluster_basehostname   => 'vsphere-registered-vm' . $vm_view->summary->vm->value,
+            cluster_nameserver1    => '127.0.0.1',
+            cluster_nameserver2    => '127.0.0.1',
+            owner_id               => $admin_user->id,
+        );
 
-            # policy and service template
-            my $st = $self->_registerTemplate(
-                policy_name  => 'vsphere_vm_policy',
-                service_name => 'vSphere registered VMs'
-            );
-            $service_provider->applyPolicies(pattern => { 'service_template_id' => $st->id });
+        # policy and service template
+        my $st = $self->_registerTemplate(policy_name  => 'vsphere_vm_policy',
+                                          service_name => 'vSphere registered VMs');
 
-            # Now set this manager as host manager for the new service provider
-            $service_provider->addManager(
-                manager_type => 'HostManager',
-                manager_id   => $self->id
-            );
-        };
-        if ($@) {
-            $errmsg = 'Could not create new service provider to register vsphere vm: '. $@;
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
+        $service_provider->applyPolicies(pattern => { 'service_template_id' => $st->id });
 
-        my $vm = Entity::Host->new(
-                     host_manager_id    => $self->id,
-                     host_serial_number => '',
-                     host_desc          => $hypervisor_view->name . ' vm',
-                     active             => 1,
-                     host_ram           => $vm_view->config->hardware->memoryMB * 1024 * 1024,
-                     host_core          => $vm_view->config->hardware->numCPU,
-                     host_state         => $host_state . ':' . time(),
-                 );
+        # Now set this manager as host manager for the new service provider
+        $service_provider->addManager(manager_type => 'HostManager',
+                                      manager_id   => $self->id);
+    }
+
+    my $virtual_machine;
+    try {
+        # Assuming we have one vm by service
+        my @nodes = $service_provider->nodes;
+        $virtual_machine = (pop(@nodes))->host;
+    }
+    catch {
+        $virtual_machine = Entity::Host->new(
+                               host_manager_id    => $self->id,
+                               host_serial_number => '',
+                               host_desc          => $hypervisor_view->name . ' vm',
+                               active             => 1,
+                               host_ram           => $vm_view->config->hardware->memoryMB * 1024 * 1024,
+                               host_core          => $vm_view->config->hardware->numCPU,
+                           );
 
         # TODO : add MAC addresses for vSphere registered hosts
 
         #promote new virtual machine class to a vsphere5Vm one
-        $self->promoteVm(
-            host          => $vm,
-            vm_uuid       => $vm_uuid,
-            hypervisor_id => $hosting_hypervisor->id,
-            guest_id      => $vm_view->config->guestId,
-        );
+        $self->promoteVm(host          => $virtual_machine,
+                         vm_uuid       => $vm_uuid,
+                         hypervisor_id => $hosting_hypervisor->id,
+                         guest_id      => $vm_view->config->guestId);
 
         # Register the node
-        $service_provider->registerNode(
-            host     => $vm,
-            hostname => $node_renamed,
-            number   => 1,
-            state    => 'in'
-        );
-
-        return $service_provider;
+        $service_provider->registerNode(host     => $virtual_machine,
+                                        hostname => $node_renamed,
+                                        number   => 1,
+                                        state    => 'in');
     }
-    else {
-        $errmsg  = 'VM ' . $args{name} . 'already registered';
-        $log->info($errmsg);
 
-        return $service_provider;
-    }
+    # connected state : the fact that host is available or not for management
+    # power state will be managed by state-manager
+    my $host_state = $vm_view->runtime->connectionState->val eq 'connected'
+                         ? 'up' : 'broken';
+
+    $service_provider->cluster_state($host_state eq 'up' ? 'up:' . time() : 'down:' . time());
+    $virtual_machine->host_state($host_state . ':' . time());
+
+    return $service_provider;
 }
 
 
@@ -1085,9 +1072,9 @@ sub registerHypervisor {
     my $vsphere_hyp;
     eval {
         $log->debug("Try to find existing hypervisor with $hv_uuid");
-        $vsphere_hyp = Entity::Host::Hypervisor::Vsphere5Hypervisor->find(
-            hash => { vsphere5_uuid => $hv_uuid }
-        );
+        $vsphere_hyp = Entity::Host::Hypervisor::Vsphere5Hypervisor->find(hash => {
+                           vsphere5_uuid => $hv_uuid }
+                       );
         $log->debug("Found existing hypervisor with $hv_uuid, " . $vsphere_hyp->label);
     };
     if ($@) {
@@ -1476,32 +1463,86 @@ sub unregister {
         throw Kanopya::Exception::Internal(error => $error);
     }
 
-    my @hypervisors = $self->hypervisors;
-
-    $log->info($self->label . " is managing " . scalar(@hypervisors) . " hypervisors, removing its.");
-    for my $hypervisor (@hypervisors) {
-        $log->info("Removing hypervisor " . $hypervisor->label);
-
-        my @vms = $hypervisor->virtual_machines;
-
-        $log->info("Hypervisor " . $hypervisor->label . " is hosting " . scalar(@vms) .
-                   " virtual machines, removing its.");
-
-        for my $vm (@vms) {
-            $log->info("Removing virtual machine $vm");
-            if (defined $vm->node) {
-                $vm->node->delete;
-            }
-            $vm->delete;
-        }
-
-        if (defined $hypervisor->node) {
-            $hypervisor->node->delete;
-        }
-        $hypervisor->delete;
+    for my $datacenter ($self->vsphere5_datacenters) {
+        $self->unregisterDatacenter(datacenter => $datacenter);
     }
 
     $self->removeMasterimages();
+}
+
+
+sub unregisterDatacenter {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'datacenter' ]);
+
+    my @hypervisors = $args{datacenter}->vsphere5_hypervisors;
+
+    $log->info($self->label . ", datacenter " . $args{datacenter}->label . " is managing " .
+               scalar(@hypervisors) . " hypervisors, removing its.");
+
+    my @services;
+    for my $hypervisor (@hypervisors) {
+        # If the hypervisor is linked to a service provider yet,
+        # add it to the list of services to delete
+        if (defined $hypervisor->node) {
+            my $sp = $hypervisor->node->service_provider;
+            if (defined $sp && scalar(grep { $_->id eq $sp->id } @services) <= 0) {
+                push @services, $sp;
+            }
+        }
+
+        $self->unregisterHypervisor(hypervisor => $hypervisor);
+    }
+
+    for my $service (@services) {
+        $log->info("Removing service " . $service->label);
+        $service->delete;
+    }
+
+    $args{datacenter}->delete;
+}
+
+
+sub unregisterHypervisor {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'hypervisor' ]);
+
+    $log->info("Removing hypervisor " . $args{hypervisor}->label);
+
+    my @vms = $args{hypervisor}->virtual_machines;
+
+    $log->info("Hypervisor " . $args{hypervisor}->label . " is hosting " . scalar(@vms) .
+               " virtual machines, removing its.");
+
+    for my $vm (@vms) {
+        $self->unregisterVm(vm => $vm);
+    }
+
+    if (defined $args{hypervisor}->node) {
+        $args{hypervisor}->node->delete;
+    }
+    $args{hypervisor}->delete;
+}
+
+
+sub unregisterVm {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'vm' ]);
+
+    $log->info("Removing virtual machine $args{vm}");
+    if (defined $args{vm}->node) {
+        my $service = $args{vm}->node->service_provider;
+        $args{vm}->node->delete;
+
+        if (defined $service) {
+            $log->info("Removing service " . $service->label);
+            $service->delete;
+        }
+    }
+    $args{vm}->delete;
 }
 
 

@@ -933,10 +933,15 @@ sub isUp {
 sub synchronize {
     my ($self, %args) = @_;
 
-    my @datacenters;
+    # Keep the existing datacenter to delete ones that disappears
+    my %existing_dcs = map { $_->vsphere5_datacenter_name => $_ } $self->vsphere5_datacenters;
+
     for my $dc (@{ $self->retrieveDatacenters() }) {
         $log->info("Registering vSphere datacenter $dc->{name}");
         my $vspheredc = $self->registerDatacenter(name => $dc->{name});
+
+        # Keep the existing hypervisors to delete ones that disappears
+        my %existing_hvs = map { $_->vsphere5_uuid => $_ } $vspheredc->vsphere5_hypervisors;
 
         my @hypervisors;
         for my $child (@{ $self->retrieveClustersAndHypervisors(datacenter_name => $dc->{name}) }) {
@@ -961,12 +966,39 @@ sub synchronize {
                                                       uuid   => $hv->{uuid},
                                                       parent => $vspheredc);
 
+            # Keep the existing hypervisors to delete ones that disappears
+            my %existing_vms = map { $_->vsphere5_uuid => $_ } $vspherehv->virtual_machines;
+
             for my $vm (@{ $self->retrieveHypervisorVms(datacenter_name => $dc->{name},
                                                         hypervisor_uuid => $hv->{uuid}) }) {
                 $log->info("Registering virtual machine $vm->{name} ($vm->{uuid})");
                 $self->registerVm(name => $vm->{name}, uuid => $vm->{uuid}, parent => $vspherehv);
+
+                # Remove the vm from the list to delete as it existe any more.
+                delete $existing_vms{$vm->{uuid}};
             }
+
+            # Remove vms that have disappears
+            for my $vm (values %existing_vms) {
+                $self->unregisterVm(vm => $vm);
+            }
+
+            # Remove the hypervisor from the list to delete as it existe any more.
+            delete $existing_hvs{$hv->{uuid}};
         }
+
+        # Remove hypervisors that have disappears
+        for my $hypervisor (values %existing_hvs) {
+            $self->unregisterHypervisor(hypervisor => $hypervisor);
+        }
+
+        # Remove the datacenter from the list to delete as it existe any more.
+        delete $existing_dcs{$dc->{name}};
+    }
+
+    # Remove datacenters that have disappears
+    for my $datacenter (values %existing_dcs) {
+        $self->unregisterDatacenter(datacenter => $datacenter);
     }
 
     return;
