@@ -96,11 +96,6 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
-    cluster_priority => {
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
     cluster_state => {
         label        => 'State',
         pattern      => '^up:\d*|down:\d*|updating:\d*|starting:\d*|stopping:\d*|warning:\d*|migrating:\d*|optimizing:\d*|flushing:\d*',

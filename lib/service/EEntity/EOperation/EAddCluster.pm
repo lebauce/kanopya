@@ -67,7 +67,7 @@ sub check {
     # Check required params within cluster params
     General::checkParams(args     => $self->{params}->{cluster_params},
                          required => [ "cluster_name", "cluster_si_persistent",
-                                       "cluster_min_node", "cluster_max_node", "cluster_priority" ]);
+                                       "cluster_min_node", "cluster_max_node" ]);
 
     # Check required params within managers
     General::checkParams(args     => $self->{params}->{managers},

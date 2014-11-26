@@ -337,7 +337,6 @@
             "policy_name": "PMS One Node",
             "policy_type": "scalability",
             "policy_desc": "",
-            "cluster_priority": "100"
         },
         "PMS HA Nodes" : {
             "cluster_min_node": "2",
@@ -345,7 +344,6 @@
             "policy_name": "PMS HA Nodes",
             "policy_type": "scalability",
             "policy_desc": "",
-            "cluster_priority": "100"
         }
     },
     "services" : {

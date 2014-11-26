@@ -206,7 +206,7 @@ sub unregisterNode {
         $log->debug($err);
     }
 
-    $args{node}->host->setAttr(name => "host_initiatorname", value => undef, save => 1);
+    $args{node}->host->host_initiatorname(undef);
 
     return $self->_entity->unregisterNode(%args);
 }

@@ -197,7 +197,6 @@ sub _create_and_configure_cluster {
         kernel_id              => Entity::Kernel->find()->id,
         cluster_min_node       => "1",
         cluster_max_node       => "3",
-        cluster_priority       => "100",
         cluster_si_persistent  => 1,
         cluster_domainname     => 'my.domain',
         cluster_basehostname   => $random->randpattern("nnccnnncnncnn"),
