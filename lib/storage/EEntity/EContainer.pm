@@ -84,7 +84,11 @@ sub copy {
     # When we copy to a loopback of a file on a NFS mountpoint
     # where the server and the client are the same machine
     # we encounter a kernel crash.
-    my $export_manager = $args{dest}->container_access->export_manager;
+    my $export_manager;
+    eval {
+        $export_manager = $args{dest}->container_access->export_manager;
+    };
+
     if ($args{dest}->isa("EEntity::EContainer::EFileContainer") and defined $export_manager ) {
         my $eexport_manager = EEntity->new(entity => $export_manager);
 
