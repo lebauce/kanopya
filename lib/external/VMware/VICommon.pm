@@ -546,11 +546,6 @@ sub query_server_version {
       my $xml_parser = XML::LibXML->new;   
       my $result;
 
-      open VHH_DEBUG, '>>/tmp/vhh.debug';
-      print VHH_DEBUG "GET $url\n";
-      print VHH_DEBUG $response->content."\n\n";
-      close VHH_DEBUG;
-
       eval { $result = $xml_parser->parse_string($response->content) };
       if ($@) {
          die "Server version unavailable at '$url'";
