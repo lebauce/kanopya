@@ -70,7 +70,6 @@
             "policy_type" : "scalability",
             "cluster_min_node" : 1,
             "cluster_max_node" : 10,
-            "cluster_priority" : 1
         },
         "Generic scalability" : {
             "policy_name" : "Generic scalability",

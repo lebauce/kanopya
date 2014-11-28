@@ -1601,7 +1601,6 @@ sub registerKanopyaMaster {
                             cluster_type          => 0,
                             cluster_min_node      => 1,
                             cluster_max_node      => 10,
-                            cluster_priority      => 500,
                             cluster_si_persistent => 0,
                             cluster_domainname    => $args{admin_domainname},
                             cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '8.8.8.8',

@@ -40,12 +40,13 @@ use Entity::Host::Hypervisor;
 use Entity::ContainerAccess;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
+use Kanopya::Database;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 =pod
@@ -929,7 +930,83 @@ sub isUp {
 }
 
 
+sub synchronize {
+    my ($self, %args) = @_;
+
+    # Keep the existing datacenter to delete ones that disappears
+    my %existing_dcs = map { $_->vsphere5_datacenter_name => $_ } $self->vsphere5_datacenters;
+
+    for my $dc (@{ $self->retrieveDatacenters() }) {
+        $log->info("Registering vSphere datacenter $dc->{name}");
+        my $vspheredc = $self->registerDatacenter(name => $dc->{name});
+
+        # Keep the existing hypervisors to delete ones that disappears
+        my %existing_hvs = map { $_->vsphere5_uuid => $_ } $vspheredc->vsphere5_hypervisors;
+
+        my @hypervisors;
+        for my $child (@{ $self->retrieveClustersAndHypervisors(datacenter_name => $dc->{name}) }) {
+            $log->info("Registering $child->{type} $child->{name}");
+            if ($child->{type} eq 'cluster') {
+                $self->registerCluster(name => $child->{name}, parent => $vspheredc);
+
+                my @cluster_hvs = $self->retrieveClusterHypervisors(datacenter_name => $dc->{name},
+                                                                    cluster_name    => $child->{name});
+                for my $hypervisor (@cluster_hvs) {
+                    push @hypervisors, $hypervisor;
+                }
+            }
+            elsif ($child->{type} eq 'hypervisor') {
+                push @hypervisors, $child;
+            }
+        }
+
+        for my $hv (@hypervisors) {
+            $log->info("Registering $hv->{type} $hv->{name} ($hv->{uuid})");
+            my $vspherehv = $self->registerHypervisor(name   => $hv->{name},
+                                                      uuid   => $hv->{uuid},
+                                                      parent => $vspheredc);
+
+            # Keep the existing hypervisors to delete ones that disappears
+            my %existing_vms = map { $_->vsphere5_uuid => $_ } $vspherehv->virtual_machines;
+
+            for my $vm (@{ $self->retrieveHypervisorVms(datacenter_name => $dc->{name},
+                                                        hypervisor_uuid => $hv->{uuid}) }) {
+                $log->info("Registering virtual machine $vm->{name} ($vm->{uuid})");
+                $self->registerVm(name => $vm->{name}, uuid => $vm->{uuid}, parent => $vspherehv);
+
+                # Remove the vm from the list to delete as it existe any more.
+                delete $existing_vms{$vm->{uuid}};
+            }
+
+            # Remove vms that have disappears
+            for my $vm (values %existing_vms) {
+                $self->unregisterVm(vm => $vm);
+            }
+
+            # Remove the hypervisor from the list to delete as it existe any more.
+            delete $existing_hvs{$hv->{uuid}};
+        }
+
+        # Remove hypervisors that have disappears
+        for my $hypervisor (values %existing_hvs) {
+            $self->unregisterHypervisor(hypervisor => $hypervisor);
+        }
+
+        # Remove the datacenter from the list to delete as it existe any more.
+        delete $existing_dcs{$dc->{name}};
+    }
+
+    # Remove datacenters that have disappears
+    for my $datacenter (values %existing_dcs) {
+        $self->unregisterDatacenter(datacenter => $datacenter);
+    }
+
+    return;
+}
+
+
 sub isInfrastructureSynchronized {
     return 1;
 }
+
 1;

@@ -1,7 +1,7 @@
 require('KIM/services.js');
 require('common/lib_list.js');
 
-function iaas_registerbutton_action(e, grid) {
+function iaas_openstack_registerbutton_action(e, grid) {
     (new KanopyaFormWizard({
         title      : 'Register an OpenStack',
         type       : 'openstack',
@@ -15,6 +15,22 @@ function iaas_registerbutton_action(e, grid) {
         }
     })).start();
 }
+
+function iaas_vsphere_registerbutton_action(e, grid) {
+    (new KanopyaFormWizard({
+        title      : 'Register a vSphere IAAS',
+        type       : 'vsphere5',
+        id         : (!(e instanceof Object)) ? e : undefined,
+        displayed  : [ 'vsphere5_login', 'vsphere5_pwd', 'vsphere5_url', 'executor_component_id' ],
+        callback   : function (iaas) {
+            handleCreate(grid);
+
+            // Raise the Iaas component synchronisation
+            ajax('POST', '/api/component/' + iaas.pk + '/synchronize');
+        }
+    })).start();
+}
+
 
 /* Temporary redefinition of a nested function of KIM/services.js */
 function NodeIndicatorDetailsHistorical(cid, node_id, elem_id) {
@@ -381,14 +397,14 @@ function load_iaas_content (container_id) {
                 text: 'Register an OpenStack',
                 class: 'top-action openstack',
                 click: function(e) {
-                    iaas_registerbutton_action(e, grid);
+                    iaas_openstack_registerbutton_action(e, grid);
                 }
             }))
             .append($('<a>', {
                 text: 'Register a vCenter',
                 class: 'top-action vcenter',
                 click: function(e) {
-                    // iaas_registerbutton_action(e, grid);
+                    iaas_vsphere_registerbutton_action(e, grid);
                 }
             }))
             .append($('<div>', {
@@ -516,7 +532,7 @@ function load_iaas_content (container_id) {
         $('.button-unregister').click(function() {
             var id = $(this).parent().data('id');
             confirmDelete(
-                '/api/openstack/',
+                '/api/virtualization/',
                 id,
                 null,
                 {

@@ -62,13 +62,6 @@ use constant POLICY_ATTR_DEF => {
         is_mandatory => 1,
         order        => 2,
     },
-    cluster_priority => {
-        label        => 'Cluster priority',
-        type         => 'integer',
-        pattern      => '^[1-9][0-9]*$',
-        is_mandatory => 1,
-        order        => 3,
-    },
 };
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }

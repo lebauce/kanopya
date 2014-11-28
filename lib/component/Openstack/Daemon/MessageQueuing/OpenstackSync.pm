@@ -339,7 +339,6 @@ sub computeInstanceCreateEnd {
                        cluster_name          => $cluster_name,
                        cluster_min_node      => 1,
                        cluster_max_node      => 1,
-                       cluster_priority      => 500,
                        cluster_si_persistent => 1,
                        cluster_domainname    => 'my.domain',
                        cluster_nameserver1   => '127.0.0.1',
