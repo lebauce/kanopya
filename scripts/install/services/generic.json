@@ -69,7 +69,7 @@
             "policy_desc" : "Manual scalability",
             "policy_type" : "scalability",
             "cluster_min_node" : 1,
-            "cluster_max_node" : 10,
+            "cluster_max_node" : 10
         },
         "Generic scalability" : {
             "policy_name" : "Generic scalability",

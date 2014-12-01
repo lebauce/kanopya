@@ -336,14 +336,14 @@
             "cluster_max_node": "1",
             "policy_name": "PMS One Node",
             "policy_type": "scalability",
-            "policy_desc": "",
+            "policy_desc": ""
         },
         "PMS HA Nodes" : {
             "cluster_min_node": "2",
             "cluster_max_node": "2",
             "policy_name": "PMS HA Nodes",
             "policy_type": "scalability",
-            "policy_desc": "",
+            "policy_desc": ""
         }
     },
     "services" : {
