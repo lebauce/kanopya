@@ -188,7 +188,7 @@ sub hasRole {
 sub getVlans {
     my ($self, %args) = @_;
 
-    my @vlans;
+    my @vlans = ();
     for my $netconf ($self->netconfs) {
         @vlans = (@vlans, $netconf->vlans);
     }
