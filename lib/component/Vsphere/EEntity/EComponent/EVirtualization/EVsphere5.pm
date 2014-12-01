@@ -83,7 +83,7 @@ sub addDatastore {
         # use existing datastore to store vm files
         my $datastore = pop @{ $self->getViews(mo_ref_array => $args{host_view}->datastore) };
         $log->debug('Diskless VM, use existing datastore ' . $datastore->name . ' to store VM\'s files');
-        return $datastore->name;
+        return $datastore;
     }
 
     my $container_access_ip = $args{container_access}->container_access_ip;
@@ -97,12 +97,23 @@ sub addDatastore {
        );
 
     my $host_ds_sys = $self->getView(mo_ref => $args{host_view}->configManager->datastoreSystem);
+    my $ds;
     eval {
-        $host_ds_sys->CreateNasDatastore(spec => $nas_vol_spec);
+        for my $ds_ref ( @{$host_ds_sys->datastore}) {
+            $ds = $self->getView(mo_ref => $ds_ref);
+            if ($ds->name eq $args{repository_name} ) {
+                $log->debug('Use existing datastore ' . $args{repository_name});
+                return;
+          }
+        }
+        if (! defined $ds) {
+            $ds = $host_ds_sys->CreateNasDatastore(spec => $nas_vol_spec);
+        }
     };
     if ($@) {
-        $log->debug('Use existing datastore ' . $args{repository_name});
+        $log->debug('Error during the creation of the datastore ' . $args{repository_name});
     }
+    return $ds;
 }
 
 =pod
@@ -163,13 +174,12 @@ sub startHost {
 
         # register repo in kanopya & vsphere
         my $repository = $self->addRepository(container_access => $container_access);
-        $self->addDatastore(
+        $host_conf{datastore} = $self->addDatastore(
             container_access => $container_access,
             repository_name  => $repository->repository_name,
             host_view        => $host_view,
         );
 
-        $host_conf{datastore}  = $repository->repository_name;
         $host_conf{image_type} = $disk_params->{image_type};
     }
     else {
@@ -202,6 +212,7 @@ sub startHost {
                       host_conf       => \%host_conf,
                       host_view       => $host_view,
                       datacenter_view => $datacenter_view,
+                      datastore       => $host_conf{datastore},
                   );
     my $vm_folder_view = $self->getView(mo_ref => $datacenter_view->vmFolder);
     my $comp_res_view  = $self->getView(mo_ref => $host_view->parent);
@@ -214,7 +225,7 @@ sub startHost {
             host   => $host_view,
         );
     };
-    if ($@) {
+    if (!defined($@) or $@ ne '') {
         my $errmsg = 'Error while creating the virtual machine on host '. $hypervisor->id . ' : '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -240,7 +251,7 @@ sub startHost {
             guest_id      => $guest_id,
         );
     };
-    if ($@) {
+    if (!defined($@) or $@ ne '') {
         my $errmsg = 'Error while powering on VM ' . $host->id . ' : ' . $@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -261,10 +272,10 @@ Create a VM specification on a vSphere host
 sub createVmSpec {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host_conf', 'datacenter_view', 'host_view']);
+    General::checkParams(args => \%args, required => [ 'host_conf', 'datacenter_view', 'host_view', 'datastore']);
 
     my %host_conf = %{$args{host_conf}};
-    my $ds_path   = '['.$host_conf{datastore}.']';
+    my $ds_path   = '['.$host_conf{datastore}->name.']';
     my $host_view = $args{host_view};
     my $datacenter_view = $args{datacenter_view};
     my @vm_devices;
@@ -277,7 +288,8 @@ sub createVmSpec {
         my $disk_conf_spec = $self->create_virtual_disk(
             controller_key => $controller_spec->{ide}->device->key,
             path           => $ds_path . ' ' . $host_conf{img_name} . '.' . $host_conf{image_type},
-            disksize       => $host_conf{img_size}
+            disksize       => $host_conf{img_size},
+            datastore      => $host_conf{datastore}
         );
         push(@vm_devices, $disk_conf_spec);
     }
@@ -651,7 +663,7 @@ sub create_conf_spec {
 sub create_virtual_disk {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'controller_key', 'path', 'disksize']);
+    General::checkParams(args => \%args, required => [ 'controller_key', 'path', 'disksize', 'datastore']);
 
     my $disk_vm_dev_conf_spec;
     my $disk_backing_info;
@@ -661,7 +673,8 @@ sub create_virtual_disk {
         $disk_backing_info = VirtualDiskFlatVer2BackingInfo->new(
             diskMode => 'persistent',
             fileName => $args{path},
-            split    => 0
+            split    => 0,
+            datastore => $args{datastore},
         );
 
         $disk = VirtualDisk->new(
