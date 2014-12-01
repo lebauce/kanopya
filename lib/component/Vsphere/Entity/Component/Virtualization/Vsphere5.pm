@@ -38,6 +38,7 @@ Vsphere component version 5.
 package Entity::Component::Virtualization::Vsphere5;
 use base "Entity::Component::Virtualization";
 use base "Manager::HostManager::VirtualMachineManager";
+use base "Manager::NetworkManager";
 
 use strict;
 use warnings;
@@ -210,7 +211,8 @@ sub getManagerParamsDef {
     my ($self, %args) = @_;
 
     return {
-        %{ $self->SUPER::getManagerParamsDef },
+        %{ Manager::HostManager::getManagerParamsDef($self) },
+        %{ Manager::NetworkManager::getManagerParamsDef($self) },
         core => {
             label        => 'Initial CPU number',
             type         => 'integer',
@@ -259,6 +261,51 @@ sub getHostManagerParams {
         max_core => $definition->{max_core},
         max_ram  => $definition->{max_ram},
     };
+}
+
+=pod
+=begin classdoc
+
+@return the network manager parameters as an attribute definition.
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub getNetworkManagerParams {
+    my ($self, %args) = @_;
+
+    my $hash = Manager::NetworkManager::getNetworkManagerParams($self, %args);
+
+    $hash->{interfaces}->{attributes}->{attributes}->{network}->{type} = 'enum';
+    $hash->{interfaces}->{attributes}->{attributes}->{network}->{is_editable} = 1;
+
+    my $pp = $self->param_preset;
+
+    my @nets = map { @{$_->{network}} } @{$pp->load()->{datacenters}} ;
+
+    $hash->{interfaces}->{attributes}->{attributes}->{network}->{options} = \@nets;
+
+    return $hash;
+}
+
+
+=pod
+=begin classdoc
+
+Check params required for managing network connectivity.
+
+@see <package>Manager::NetworkManager</package>
+
+=end classdoc
+=cut
+
+sub checkNetworkManagerParams {
+    my ($self, %args) = @_;
+
+    Manager::NetworkManager::checkNetworkManagerParams($self, %args);
+
 }
 
 
@@ -641,6 +688,48 @@ sub retrieveHypervisorVms {
 =pod
 =begin classdoc
 
+Retrieve all the networks from a vsphere datacenter
+
+@param datacenter_name the name of the hypervisor's datacenter
+
+@return \@networks
+
+=end classdoc
+=cut
+
+sub retrieveNetworks {
+    my ($self,%args) = @_;
+
+    General::checkParams(
+        args => \%args,
+        required => [ 'datacenter_name' ],
+    );
+
+    my $networks = ();
+
+    # retrieve views
+    my $datacenter_view = $self->findEntityView(
+                              view_type   => 'Datacenter',
+                              hash_filter => { name => $args{datacenter_name}},
+                          );
+
+    my $network_views = $self->getViews( mo_ref_array => $datacenter_view->{network});
+
+    for my $network_view (@{$network_views}) {
+        # Discard uplinks networks
+        my $tags = $network_view->{tag};
+        if ( ! defined($tags) or ! grep { $_->{key} eq 'SYSTEM/DVS.UPLINKPG'} @{$tags}) {
+            push @{$networks}, $network_view->{name};
+        }
+    }
+
+    return $networks;
+}
+
+
+=pod
+=begin classdoc
+
 Get a vsphere managed object view
 
 @param mo_ref the managed object reference
@@ -983,7 +1072,7 @@ sub registerVm {
             cluster_max_node       => 1,
             cluster_si_persistent  => 1,
             cluster_domainname     => 'my.domain',
-            cluster_basehostname   => 'vsphere-registered-vm' . $vm_view->summary->vm->value,
+            cluster_basehostname   => 'vsphere-registered-vm-' . $vm_view->summary->vm->value,
             cluster_nameserver1    => '127.0.0.1',
             cluster_nameserver2    => '127.0.0.1',
             owner_id               => $admin_user->id,
@@ -1565,10 +1654,10 @@ override DESTROY to disconnect any open session toward a vSphere instance
 =end classdoc
 =cut
 
-sub DESTROY {
-    my $self = shift;
+# sub DESTROY {
+#     my $self = shift;
 
-    $self->disconnect();
-}
+#     $self->disconnect();
+# }
 
 1;

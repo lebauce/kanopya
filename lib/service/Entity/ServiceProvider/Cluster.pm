@@ -597,6 +597,12 @@ sub configureInterfaces {
 
         $log->info("Add interface " . $interface->{interface_name} . " with " .  scalar(@netconfs) .
                    " netconfs on service " . $self->label);
+        # SMA
+        # Removing network from the key to allow the populate relations
+        # Temporary, waiting for the interfaces to be removed from cluster
+        eval {
+            delete $interface->{network};
+        };
     }
     $self->_populateRelations(relations => { interfaces => \@interfaces }, override => 1);
 }
