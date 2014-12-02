@@ -255,13 +255,58 @@ sub getHostManagerParams {
     my %args = @_;
 
     my $definition = $self->getManagerParamsDef();
-    return {
-        core     => $definition->{core},
-        ram      => $definition->{ram},
-        max_core => $definition->{max_core},
-        max_ram  => $definition->{max_ram},
+
+    my $pp = $self->param_preset;
+
+    my @dcs = map { $_->{name} } @{$pp->load()->{datacenters}} ;
+
+    my $hash = {
+        core       => $definition->{core},
+        ram        => $definition->{ram},
+        max_core   => $definition->{max_core},
+        max_ram    => $definition->{max_ram},
+        datacenter => {
+            type        => 'enum',
+            is_editable => 1,
+            options     => \@dcs
+        },
     };
+
+    return $hash;
 }
+
+
+=pod
+=begin classdoc
+
+@return an available hypervisors by calling the capacity manager
+
+@see <package>Manager::HostManager::VirtualMachineManager</package>
+
+=end classdoc
+=cut
+
+sub selectHypervisor {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args,
+                         optional => {
+                             cluster => undef,
+                             affinity => 'default',
+                         },
+                         required => [ 'ram', 'core', 'datacenter' ]);
+
+    my $datacenter = Vsphere5Datacenter->find( name => $args{datacenter});
+
+    my $hypervisors = Entity::Host::Hypervisor::Vsphere5Hypervisor->search( vsphere5_datacenter => $datacenter);
+
+    my @hv_ids = map { $_->vsphere5_hypervisor_id} @{$hypervisors};
+
+    $args{selected_hv_ids} = \@hv_ids;
+
+    $self->SUPER::selectHypervisor(%args);
+
+}
+
 
 =pod
 =begin classdoc

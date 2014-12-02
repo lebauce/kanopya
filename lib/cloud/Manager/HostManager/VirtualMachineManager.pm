@@ -329,6 +329,7 @@ sub selectHypervisor {
                          optional => {
                              cluster => undef,
                              affinity => 'default',
+                             selected_hv_ids => undef,
                          },
                          required => [ 'ram', 'core' ]);
 
@@ -358,10 +359,13 @@ sub selectHypervisor {
         # specific parameters
     }
 
+    $cm_params{selected_hv_ids} = $args{selected_hv_ids} if defined $args{selected_hv_ids};
+
     my $cm = CapacityManager::HCMCapacityManager->new(cloud_manager => $self);
 
     return $cm->selectHypervisor(
-               resources => {ram => $args{ram}, cpu => $args{core}},
+               resources => {ram => $args{ram},
+               cpu => $args{core}},
                %cm_params,
            );
 }
