@@ -73,7 +73,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
         specialized  => 'HostingPolicy'
     },

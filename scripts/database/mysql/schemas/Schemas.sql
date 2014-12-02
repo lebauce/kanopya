@@ -1667,7 +1667,7 @@ CREATE TABLE `service_template` (
   `service_template_id` int(8) unsigned NOT NULL,
   `service_name` char(64) NOT NULL,
   `service_desc` char(255) DEFAULT NULL,
-  `hosting_policy_id` int(8) unsigned NOT NULL,
+  `hosting_policy_id` int(8) unsigned DEFAULT NULL,
   `storage_policy_id` int(8) unsigned DEFAULT NULL,
   `network_policy_id` int(8) unsigned DEFAULT NULL,
   `scalability_policy_id` int(8) unsigned DEFAULT NULL,

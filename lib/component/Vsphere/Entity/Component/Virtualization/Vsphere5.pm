@@ -1193,6 +1193,7 @@ sub registerHypervisor {
 
             (my $hostname = $sp_name) =~ s/_/-/;
             $service_provider = Entity::ServiceProvider::Cluster->new(
+                service_template_id    => Entity::ServiceTemplate->findOrCreate(service_name => "vSphere registered Datacenters")->id,
                 active                 => 1,
                 cluster_name           => $sp_name,
                 cluster_min_node       => 1,
@@ -1457,7 +1458,7 @@ sub _registerTemplate {
 
     General::checkParams(args => \%args, required => [ 'policy_name', 'service_name' ]);
 
-    my $hp_hash = { policy_name => $args{policy_name}, policy_type => 'hosting_policy' };
+    my $hp_hash = { policy_name => $args{policy_name}, policy_type => 'hosting' };
 
     # policy
     my $hp;
@@ -1469,16 +1470,8 @@ sub _registerTemplate {
     }
 
     # service template
-    my $st;
-    eval {
-        $st = Entity::ServiceTemplate->find(hash => { service_name => $args{service_name} });
-    };
-    if ($@) {
-        $st = Entity::ServiceTemplate->new(
-                  service_name      => $args{service_name},
-                  hosting_policy_id => $hp->id,
-              );
-    }
+    my $st = Entity::ServiceTemplate->findOrCreate(service_name => $args{service_name});
+    $st->hosting_policy_id($hp->id);
 
     return $st;
 }
