@@ -37,6 +37,8 @@ use warnings;
 
 use EEntity;
 
+use Kanopya::Exceptions;
+
 use TryCatch;
 use Date::Simple (':all');
 use Log::Log4perl "get_logger";
@@ -185,9 +187,14 @@ sub checkNodeUp {
     # at the next reboot
     if ($args{deploy_on_disk}) {
         # Check if the host has already been deployed
-        my $hd = $args{node}->host->find(related  => 'harddisks', order_by => 'harddisk_device');
-
-        if (! (defined $hd->deployed_on_id && $hd->deployed_on_id == $args{node}->id)) {
+        my $hd;
+        try {
+            $hd = $args{node}->host->find(related  => 'harddisks', order_by => 'harddisk_device');
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $log->info("No PXE harddisk found on node " . $args{node}->node_hostname);
+        }
+        if (defined $hd and ! (defined $hd->deployed_on_id && $hd->deployed_on_id == $args{node}->id)) {
             # Try connecting to the host, delay if it fails
             try {
                 if ($args{node}->getEContext->execute(command => "true")->{exitcode}) {

@@ -1013,7 +1013,7 @@ sub registerComponents {
             component_name         => 'Vsphere',
             component_version      => 5,
             deployable             => 1,
-            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'Hypervisor' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'NetworkManager', 'Hypervisor' ],
             service_provider_types => [ 'Cluster' ],
         },
         {

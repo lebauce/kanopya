@@ -70,7 +70,7 @@ sub getManagerParamsDef {
 
     return {
         # TODO: call super on all Manager supers
-        %{ $self->SUPER::getManagerParamsDef },
+        %{ Manager::getManagerParamsDef($self) },
         interfaces => {
             label        => 'Interfaces',
             type         => 'relation',
@@ -259,7 +259,7 @@ sub getNetworkManagerParams {
 
     General::checkParams(args => \%args, optional => { "params" => {} });
 
-    my $paramdef = $self->getManagerParamsDef();
+    my $paramdef = Manager::NetworkManager::getManagerParamsDef($self);
 
     my @netconfs;
     for my $netconf (Entity::Netconf->search(hash => {})) {
