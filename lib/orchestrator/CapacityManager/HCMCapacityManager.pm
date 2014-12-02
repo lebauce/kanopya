@@ -227,6 +227,8 @@ sub selectHypervisor {
             strict_affinity      => [],
             strict_anti_affinity => [],
             affinity_weights     => {},
+            blacklisted_hv_ids   => undef,
+            selected_hv_ids      => undef,
         }
     );
 

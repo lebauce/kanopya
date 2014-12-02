@@ -375,7 +375,6 @@ sub test_hypervisor_selection {
 
         my %wanted_values;
         %wanted_values = (cpu => 1, ram => 6*$coef);
-
         if ($cm->selectHypervisor(resources => \%wanted_values) != 2) {
             die 'wrong vm placement';
         }
@@ -391,8 +390,23 @@ sub test_hypervisor_selection {
         }
 
         %wanted_values = (cpu => 1, ram => 1*$coef);
-
         if ($cm->selectHypervisor(resources => \%wanted_values) != 1) {
+            die 'wrong vm placement';
+        }
+
+        my @selected_hv_ids;
+        @selected_hv_ids = (2);
+        if ($cm->selectHypervisor(
+            resources => \%wanted_values,
+            selected_hv_ids => \@selected_hv_ids) != 2 ) {
+            die 'wrong vm placement';
+        }
+
+        my @blacklisted_hv_ids;
+        @blacklisted_hv_ids = (1);
+        if ($cm->selectHypervisor(
+            resources => \%wanted_values,
+            blacklisted_hv_ids => \@blacklisted_hv_ids) == 1 ) {
             die 'wrong vm placement';
         }
 

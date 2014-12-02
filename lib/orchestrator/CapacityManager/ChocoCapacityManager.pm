@@ -51,8 +51,19 @@ my $TIME_LIMIT_IN_MS = 20000;
 
 sub selectHypervisor {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => [ 'resources' ]);
-    my $result = $self->selectHypervisors(vms_resources_hash => {0 => $args{resources}});
+    General::checkParams(
+        args => \%args,
+        required => [ 'resources' ],
+        optionnal => {
+            blacklisted_hv_ids   => undef,
+            selected_hv_ids      => undef,
+        }
+    );
+    my $result = $self->selectHypervisors(
+                    vms_resources_hash => {0 => $args{resources}},
+                    blacklisted_hv_ids => $args{blacklisted_hv_ids},
+                    selected_hv_ids    => $args{selected_hv_ids},
+                );
     return $result->{0};
 }
 
@@ -129,7 +140,14 @@ sub resubmitHypervisor {
 
 sub selectHypervisors {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => ['vms_resources_hash']);
+    General::checkParams(
+        args => \%args, 
+        required => ['vms_resources_hash'],
+        optionnal => {
+            blacklisted_hv_ids   => undef,
+            selected_hv_ids      => undef,
+        }
+    );
 
     my $virtual_hv_resources = {
         ram => 0,
@@ -155,7 +173,11 @@ sub selectHypervisors {
         $self->_addVm(hv_id => $virtual_hv_id, vm_id => $vm_id)
     }
 
-    my $hypervisor_assignment = $self->_executeFlushHypervisor(hv_id => $virtual_hv_id);
+    my $hypervisor_assignment = $self->_executeFlushHypervisor(
+                                    hv_id => $virtual_hv_id,
+                                    blacklisted_hv_ids => $args{blacklisted_hv_ids},
+                                    selected_hv_ids    => $args{selected_hv_ids},
+                                );
 
     while( my ($k,$v) = each (%$hypervisor_assignment)) {
         if ($v == $virtual_hv_id) {
@@ -223,9 +245,30 @@ Prepare parameters and launch Choco FlushHypervisor class main
 
 sub _executeFlushHypervisor {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => ['hv_id']);
+    General::checkParams(
+        args => \%args,
+        required => ['hv_id'],
+        optionnal => {
+            blacklisted_hv_ids   => undef,
+            selected_hv_ids      => undef,
+        }
+    );
 
     my $infra_simplified = $self->_modifyInfraRemoveVmsAjustHvsSize(hv_id => $args{hv_id});
+
+    if (defined $args{selected_hv_ids}) {
+        for my $hv_id (keys %{$infra_simplified->{hvs}}) {
+            if ( not( $hv_id ~~ @{$args{selected_hv_ids}} ) and $hv_id != $args{hv_id}) {
+                delete $infra_simplified->{hvs}->{$hv_id};
+            }
+        }
+    }
+
+    if (defined $args{blacklisted_hv_ids}) {
+        for my $hv_id (@{$args{blacklisted_hv_ids}}) {
+            delete $infra_simplified->{hvs}->{$hv_id};
+        }
+    }
 
     my $tempfile = $self->_infraToTempFile(infra => $infra_simplified);
 
