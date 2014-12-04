@@ -982,10 +982,9 @@ sub getVMDetails {
     my $state = $vm_view->runtime->connectionState->val ne 'connected'
                     ? 'error' : $vm_view->runtime->powerState->val;
     # TODO : transition state MIGRATING using WaitForUpdatesEx
-
     return {
         state      => $state,
-        hypervisor => ""
+        hypervisor => $self->getView(mo_ref => $vm_view->runtime->host)->name,
     };
 }
 
@@ -1182,5 +1181,14 @@ sub synchronize {
 sub isInfrastructureSynchronized {
     return 1;
 }
+
+sub checkVMPlacementIntegrity {
+    return {};
+}
+
+sub checkHypervisorVMPlacementIntegrity {
+    return {};
+}
+
 
 1;

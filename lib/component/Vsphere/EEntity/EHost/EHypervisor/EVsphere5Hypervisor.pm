@@ -122,7 +122,7 @@ sub getVmResources {
               optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
     );
 
-    my $vsphere = $self->vsphere5;
+    my $vsphere = $self->vsphere5_datacenter->vsphere5;
 
     my $view_args       = {'hardware.systemInfo.uuid' => $self->vsphere5_uuid};
     my $hypervisor_view = $vsphere->findEntityView(

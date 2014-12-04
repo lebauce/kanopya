@@ -26,6 +26,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EEntity;
 use CapacityManager::HCMCapacityManager;
+use Entity::Operationtype;
 
 my $log = get_logger("");
 my $errmsg;
@@ -37,24 +38,12 @@ sub check {
 
     General::checkParams(args => $self->{params}, required => [ 'scalein_value', 'scalein_type' ]);
     General::checkParams(args => $self->{context}, required => [ 'host', 'cloudmanager_comp' ]);
-    $self->{context}->{host_manager_sp} = $self->{context}->{cloudmanager_comp}->service_provider;
 }
 
 
 sub prepare {
     my ($self, %args) = @_;
-
-    # Check host manager sp states
-    my @entity_states =  $self->{context}->{host_manager_sp}->entity_states;
-
-    for my $entity_state (@entity_states) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The host manager cluster <" .$self->{context}->{host_manager_sp}->cluster_name .
-                           "> is <" . $entity_state->state .
-                           "> which is not a correct state to accept scale-in"
-              );
-    }
-    # TODO Manage 'scalein' state to controll operation allowed during scalein
+    $self->{context}->{cloudmanager_comp}->increaseConsumers(operation => $self);
 }
 
 sub execute{
@@ -91,6 +80,10 @@ sub execute{
     $log->info('Total of <'.(scalar @$operation_plan).'> operation(s) to enqueue');
     for my $operation (@$operation_plan){
         $log->info('Operation enqueuing');
+        $operation->{operationtype} = Entity::Operationtype->find(hash => {
+                                          operationtype_name => $operation->{type}
+                                      });
+        
         $self->workflow->enqueue(
             %$operation
         );
@@ -100,8 +93,13 @@ sub execute{
 
 sub finish{
     my $self = shift;
-
+    $self->{context}->{cloudmanager_comp}->decreaseConsumers(operation => $self);
     delete $self->{context}->{host};
+}
+
+sub cancel {
+    my $self = shift;
+    $self->finish();
 }
 
 1;
