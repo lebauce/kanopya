@@ -258,7 +258,7 @@ Return array of linked ComponentNode instances which are master nodes.
 sub getMasterComponents {
     my $self = shift;
 
-    my @masters = $self->searchRelated(filters => ['component_nodes'], hash => { master_node => 1 });
+    my @masters = $self->search(related => 'component_nodes', hash => { master_node => 1 });
     return @masters;
 }
 

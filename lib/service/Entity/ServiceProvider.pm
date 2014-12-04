@@ -759,7 +759,8 @@ sub addComponent {
                          required => [ 'component_type_id' ],
                          optional => { 'component_configuration'       => undef,
                                        'component_extra_configuration' => undef,
-                                       'component_template_id'         => undef });
+                                       'component_template_id'         => undef,
+                                       'node' => undef });
 
     # Check if the type of the given component is installable on this type
     # of service provider.
@@ -808,7 +809,8 @@ sub addComponent {
 
     # For instance install the component on all node of the service provider,
     # use the first started node as master node for the component.
-    for my $node ($self->nodes) {
+    my @nodes = defined $args{node} ? ($args{node}) : $self->nodes;
+    for my $node (@nodes) {
         $component->registerNode(node => $node, master_node => ($node->node_number == 1));
     }
 

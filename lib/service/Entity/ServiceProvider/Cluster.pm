@@ -1094,8 +1094,9 @@ sub update {
 
     if (defined ($args{components})) {
         for my $component (@{ delete $args{components} }) {
-            $self->addComponent(component_type_id => delete $component->{component_type_id},
-                                component_configuration => $component);
+            $self->addComponent(component_type_id       => delete $component->{component_type_id},
+                                component_configuration => $component,
+                                node                    => $args{node});
         }
 
         $require_op = 1;
