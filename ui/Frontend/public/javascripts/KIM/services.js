@@ -1024,46 +1024,31 @@ function node_components_tab(cid, eid) {
             node = data[0];
         }
     });
-    var sp_id = node.service_provider_id;
-
-    var cluster_components = ajax('GET', '/api/serviceprovider/' + sp_id + '/components?expand=component_type');
-    // ugly way to have both name & version for node's component
-    // and an array of name for cluster's component (required by KanopyaFormWizard)
-    var node_component_types = {};
-    var cluster_component_types = {};
-    for (var index in cluster_components) {
-        node_component_types[cluster_components[index].component_type.pk] = {
-            'component_name' : cluster_components[index].component_type.component_name,
-            'component_version' : cluster_components[index].component_type.component_version,
-        };
-        cluster_component_types[cluster_components[index].component_type.pk] =
-            cluster_components[index].component_type.component_name;
-    }
 
     // node's components grid
-    var grid = create_grid( {
-        dataType : 'local',
+    var node_components_route = '/api/component?component_nodes.node.node_id=' + eid;
+    var grid = create_grid({
+        url: node_components_route + '&expand=component_type',
         content_container_id: cid,
         grid_id: 'node_ifaces_tab' + eid,
-        grid_class: 'node_ifaces_tab',
-        rowNum : 5,
+        rowNum : 7,
         action_delete: 'no',
         caption: 'Components',
-        colNames: [ 'id', 'Component', 'Version', ],
+        colNames: [ 'ID', 'Component', 'Version' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
-            { name: 'component_name', index: 'component_name', width: 10 },
-            { name: 'component_version', index: 'component_version', width: 10 },
+            { name: 'component_type.component_name', index: 'component_type.component_name', width: 200 },
+            { name: 'component_type.component_version', index: 'component_type.component_version', width: 200 },
         ],
     });
-    build_component_by_node_grid(grid, eid, node_component_types);
 
-    // add component
+    // add components
     var addButton   = $('<a>', { text : 'Add component' }).prependTo( $('#' + cid) )
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', function (e) {
         (new KanopyaFormWizard({
             title      : 'Add components',
+            id         : node.service_provider_id,
             displayed  : [ 'node_hostname', 'component_types' ],
             rawattrdef : {
                 node_hostname : {
@@ -1075,35 +1060,32 @@ function node_components_tab(cid, eid) {
                     type         : 'relation',
                     relation     : 'multi',
                     is_mandatory : 1,
-                    options      : cluster_component_types
+                    is_editable  : 1,
+                    hide_existing : 1,
                 }
             },
-            submitCallback  : function(data, $form, opts, onsuccess, onerror) {
-                data['nodes'] = [eid];
-                var _this = this;
-                ajax('PUT', '/api/node/' + eid, data, function() {
-                    build_component_by_node_grid(grid, eid, node_component_types);
-                    _this.closeDialog();
-                });
+            optionsCallback : function (name) {
+                if (name === 'component_types') {
+                    // Get the component types supported by this service provider only
+                    return ajax('GET', '/api/cluster/' + node.service_provider_id +
+                                       '/service_provider_type/component_types?deployable=1');
+                }
+                return false;
+            },
+            valuesCallback : function (type, id) {
+                var node_component_types = ajax('GET', node_components_route)
+                                     .map(function (component) { return component.component_type_id; });
+
+                return { component_types: node_component_types };
+            },
+            submitCallback : function(data, $form, opts, onsuccess, onerror) {
+                var params = { node: node, components: [] };
+                for (var index in data.component_types) {
+                    params.components.push({ component_type_id: data.component_types[index] });
+                }
+                ajax('PUT', '/api/cluster/' + node.service_provider_id, params, onsuccess, onerror);
             }
         })).start();
     });
 }
 
-// construct grid for node component
-function build_component_by_node_grid(grid, eid, component_types) {
-    var node_components = ajax('GET', '/api/node/' + eid + '/component_nodes?expand=component');
-    var n = 0;
-
-    grid.clearGridData(true);
-
-    $.each(node_components, function(index, val) {
-        grid.addRowData(n + 1, {
-            "pk" : index,
-            "component_name" : component_types[val.component.component_type_id].component_name,
-            "component_version" : component_types[val.component.component_type_id].component_version,
-        } );
-    } );
-
-    $(grid).trigger("reloadGrid");
-}
