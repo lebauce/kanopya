@@ -38,6 +38,8 @@ use Entity::Repository::Vsphere5Repository;
 use Entity;
 use Entity::Host::Hypervisor;
 use Entity::ContainerAccess;
+use Entity::Container::LocalContainer;
+use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Kanopya::Database;
@@ -120,6 +122,52 @@ sub addDatastore {
 
 =begin classdoc
 
+Returns a datastore for an host in vSphere
+
+@param datastore the name of the datastore
+
+@return datastore instance 
+
+=end classdoc
+
+=cut
+
+sub getDatastore {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args,
+        required => [ 'host_view', 'datastore_name'],
+    );
+
+    my $host_ds_sys = $self->getView(mo_ref => $args{host_view}->configManager->datastoreSystem);
+
+    my $ds;
+    eval {
+        my $ds_views = $self->getViews(mo_ref_array => $host_ds_sys->datastore);
+        for my $ds_view ( @{$ds_views}) {
+            # TODO: datastore should be matched with uuid
+            if ($ds_view->name eq $args{datastore_name} ) {
+                $log->debug('Use existing datastore ' . $args{datastore_name});
+                $ds = $ds_view;
+                return;
+          }
+        }
+    };
+    if($@) {
+        my $errmsg = 'Error during datastore fetching: '. $@;
+        throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
+    }
+    if ( !(defined $ds)) {
+        my $errmsg = 'Did not find datastore_view for name: '. $args{datastore_name};
+        throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
+    }
+    return $ds;
+}
+
+=pod
+
+=begin classdoc
+
 Create and start a vphere vm
 
 @param hypervisor the hypervisor that will host the vm
@@ -166,11 +214,11 @@ sub startHost {
         throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
     }
     my $host_view = $self->findEntityView(view_type   => 'HostSystem',
-                     hash_filter => {
-                         'hardware.systemInfo.uuid' => $hypervisor->vsphere5_uuid
-                     },
-                     begin_entity => $datacenter_view,
-                 );
+                        hash_filter => {
+                            'hardware.systemInfo.uuid' => $hypervisor->vsphere5_uuid
+                        },
+                        begin_entity => $datacenter_view,
+                    );
 
     if (not defined $host_view) {
         my $errmsg = 'Did not find host_view for UUID: '. $hypervisor->vsphere5_uuid;
@@ -180,12 +228,10 @@ sub startHost {
     my %host_conf = ();
     if (not $diskless) {
         my $container_access = Entity::ContainerAccess->get(id => $disk_params->{container_access_id});
+        my $repository = Entity::Repository->find(container_access => $container_access);
 
-        # register repo in kanopya & vsphere
-        my $repository = $self->addRepository(container_access => $container_access);
-        $host_conf{datastore} = $self->addDatastore(
-            container_access => $container_access,
-            repository_name  => $repository->repository_name,
+        $host_conf{datastore} = $self->getDatastore(
+            datastore_name  => $repository->repository_name,
             host_view        => $host_view,
         );
 
@@ -1069,6 +1115,42 @@ sub synchronize {
 
         # Retrieve available networks
         my $networks = $self->retrieveNetworks(datacenter_name => $dc->{name});
+
+        my $datastores = $self->retrieveDatastores(datacenter_name => $dc->{name});
+
+        my %existing_repositories = map { $_->repository_name => $_ } $self->repositories;
+
+        for my $datastore (@{$datastores}) {
+            if ( defined $existing_repositories{$datastore->{name}} ) {
+                $log->info('Already registered datastore: ' . $datastore->{name});
+                delete $existing_repositories{$datastore->{name}};
+            }
+            else {
+                $log->info('Registering datastore: ' . $datastore->{name});
+                if ($datastore->{type} eq 'NFS') {
+                    my $container = Entity::Container::LocalContainer->new(
+                        container_name          => $datastore->{name},
+                        container_size          => $datastore->{size},
+                        container_freespace     => $datastore->{freespace},
+                        container_device        => "",
+                    );
+
+                    my $nfsContainer = Entity::ContainerAccess::NfsContainerAccess->new(
+                        container               => $container,
+                        container_access_export => $datastore->{ip} . ':' . $datastore->{export},
+                        container_access_ip     => $datastore->{ip},
+                        container_access_port   => $datastore->{port},
+                        options                 => $datastore->{options},
+                    );
+                    $self->addRepository(container_access => $nfsContainer);
+                }
+            }
+        }
+
+        # Remove the datastores from the list to delete as it existe any more.
+        for my $repository (values %existing_repositories) {
+            $self->unregisterRepository(repository => $repository);
+        }
 
         #Populate dcs
         push @dcs, {

@@ -254,6 +254,8 @@ sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, optional => { "params" => {} });
+
     my $definition = $self->getManagerParamsDef();
 
     my $pp = $self->param_preset;
@@ -320,6 +322,8 @@ sub selectHypervisor {
 
 sub getNetworkManagerParams {
     my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { "params" => {} });
 
     my $hash = Manager::NetworkManager::getNetworkManagerParams($self, %args);
 
@@ -769,6 +773,58 @@ sub retrieveNetworks {
     }
 
     return $networks;
+}
+
+=pod
+=begin classdoc
+
+Retrieve all the datastore from a vsphere datacenter
+
+@param datacenter_name the name of the hypervisor's datacenter
+
+@return \@datacenters
+
+=end classdoc
+=cut
+
+sub retrieveDatastores {
+    my ($self,%args) = @_;
+
+    General::checkParams(
+        args => \%args,
+        required => [ 'datacenter_name' ],
+    );
+
+    my $datastores = ();
+
+    # retrieve views
+    my $datacenter_view = $self->findEntityView(
+                              view_type   => 'Datacenter',
+                              hash_filter => { name => $args{datacenter_name}},
+                          );
+
+    my $datastore_views = $self->getViews( mo_ref_array => $datacenter_view->{datastore});
+
+    for my $datastore_view (@{$datastore_views}) {
+        # Only choose NFS datastores
+
+        my $type = $datastore_view->{summary}->{type};
+        if ( defined($type) and $type eq 'NFS' ) {
+            my $datastore_info = {
+                type      => $type,
+                name      => $datastore_view->{name},
+                size      => $datastore_view->{summary}->{capacity},
+                freespace => $datastore_view->{summary}->{freespace},
+                export    => $datastore_view->{info}->{nas}->{remotePath},
+                ip        => $datastore_view->{info}->{nas}->{remoteHost},
+                port      => '2049',
+                options   => 'rw,no_root_squash',
+            };
+            push @{$datastores}, $datastore_info;
+        }
+    }
+
+    return $datastores;
 }
 
 
@@ -1668,6 +1724,25 @@ sub unregisterVm {
         }
     }
     $args{vm}->delete;
+}
+
+sub unregisterRepository {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'repository' ]);
+
+    my $repository = $args{repository};
+
+    $log->info("Removing repository: " . $repository->repository_name);
+    my $container_access = $repository->container_access;
+    if (defined $container_access) {
+        my $container = $container_access->container;
+        if (defined $container) {
+            $container->delete;
+        }
+        $container_access->delete;
+    }
+    $repository->delete;
 }
 
 
