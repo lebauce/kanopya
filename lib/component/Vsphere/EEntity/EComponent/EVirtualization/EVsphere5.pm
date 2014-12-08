@@ -525,8 +525,56 @@ sub scaleMemory {
     }
 }
 
+
+=pod
+
+=begin classdoc
+
+Migration for a vsphere vm.
+
+@param host the vm
+@param hypervisor the destination hypervisor
+
+=end classdoc
+
+=cut
+
 sub migrateHost {
-    throw Kanopya::Exception::NotImplemented();
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
+
+    my $host = $args{host};
+    my $hypervisor = $args{hypervisor};
+
+    my $hv_uuid = $hypervisor->vsphere5_uuid;
+
+    #get views
+    my $vm_view = $self->findEntityView(
+                      view_type    => 'VirtualMachine',
+                      hash_filter  => {
+                          'config.uuid' => $host->vsphere5_uuid,
+                      },
+                  );
+
+    my $destination_host_view = $self->findEntityView(
+                        view_type    => 'HostSystem',
+                        hash_filter  => {
+                            'hardware.systemInfo.uuid' => $hv_uuid
+                        },
+                    );
+
+    eval {
+        $vm_view->MigrateVM(
+            host     => $destination_host_view,
+            priority => VirtualMachineMovePriority->new('highPriority'),
+        );
+    };
+    if ($@) {
+        $errmsg = 'Error migrating VM '.$host->node->node_hostname.' to hypervisor ' .
+                      $hv_uuid . ' : ' . $@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 }
 
 sub resubmitNode {
@@ -981,10 +1029,16 @@ sub getVMDetails {
 
     my $state = $vm_view->runtime->connectionState->val ne 'connected'
                     ? 'error' : $vm_view->runtime->powerState->val;
+
+    my $formatted_name = $self->_formatName(
+                             name => $self->getView(mo_ref => $vm_view->runtime->host)->name,
+                             type => 'node',
+                         );
+
     # TODO : transition state MIGRATING using WaitForUpdatesEx
     return {
         state      => $state,
-        hypervisor => $self->getView(mo_ref => $vm_view->runtime->host)->name,
+        hypervisor => $formatted_name,
     };
 }
 
