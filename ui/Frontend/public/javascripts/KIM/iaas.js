@@ -272,13 +272,15 @@ function load_iaas_content (container_id) {
                     // State
                     if (obj.service_provider) {
                         iaasObject.state = obj.service_provider.cluster_state;
-                        index = iaasObject.state.indexOf(':');
-                        if (index > -1) {
-                            iaasObject.state = iaasObject.state.substring(0, index);
-                        }
-                        if (iaasObject.state in stateMap) {
-                            iaasObject.stateLabel = stateMap[iaasObject.state].label;
-                            iaasObject.stateIcon = stateMap[iaasObject.state].icon;
+                        if (iaasObject.state) {
+                            index = iaasObject.state.indexOf(':');
+                            if (index > -1) {
+                                iaasObject.state = iaasObject.state.substring(0, index);
+                            }
+                            if (iaasObject.state in stateMap) {
+                                iaasObject.stateLabel = stateMap[iaasObject.state].label;
+                                iaasObject.stateIcon = stateMap[iaasObject.state].icon;
+                            }
                         }
                     }
                     if (!iaasObject.state) {
