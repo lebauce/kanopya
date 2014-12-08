@@ -1072,7 +1072,11 @@ sub synchronize {
                 my @cluster_hvs = $self->retrieveClusterHypervisors(datacenter_name => $dc->{name},
                                                                     cluster_name    => $child->{name});
                 for my $hypervisor (@cluster_hvs) {
-                    push @hypervisors, $hypervisor;
+                    if (ref($hypervisor) eq 'ARRAY') {
+                        push @hypervisors, @$hypervisor;
+                    } else {
+                        push @hypervisors, $hypervisor;
+                    }
                 }
             }
             elsif ($child->{type} eq 'hypervisor') {
