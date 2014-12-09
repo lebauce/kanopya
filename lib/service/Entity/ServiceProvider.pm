@@ -809,7 +809,7 @@ sub addComponent {
     # For instance install the component on all node of the service provider,
     # use the first started node as master node for the component.
     for my $node ($self->nodes) {
-        $component->registerNode(node => $node, master_node => ($node->node_number == 1));
+        $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
     }
 
     # Insert default configuration for tables linked to component (when exists)
