@@ -1354,7 +1354,7 @@ sub removeMasterimages {
 =pod
 =begin classdoc
 
-Ovveride the vmms relation to raise an execption as the OpenStack iaas do not manage the hypervisors.
+Override the vmms relation to raise an execption as the OpenStack iaas do not manage the hypervisors.
 
 =end classdoc
 =cut
@@ -1362,7 +1362,7 @@ Ovveride the vmms relation to raise an execption as the OpenStack iaas do not ma
 sub vmms {
     my ($self, %args) = @_;
 
-    throw Kanopya::Exception::Internal(error => "Hypervisors not managerd by iaas " . $self->label);
+    throw Kanopya::Exception::Internal(error => "Hypervisors not managed by iaas " . $self->label);
 }
 
 sub retrieveData {
