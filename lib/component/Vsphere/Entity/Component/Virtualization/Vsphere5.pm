@@ -1762,6 +1762,21 @@ sub removeMasterimages {
 =pod
 =begin classdoc
 
+Override the vmms relation to raise an execption as the vSphere iaas do not manage the hypervisors.
+
+=end classdoc
+=cut
+
+sub vmms {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::Internal(error => "Hypervisors not managed by iaas " . $self->label);
+}
+
+
+=pod
+=begin classdoc
+
 override DESTROY to disconnect any open session toward a vSphere instance
 
 =end classdoc

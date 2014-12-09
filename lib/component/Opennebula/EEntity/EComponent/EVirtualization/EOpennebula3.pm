@@ -187,10 +187,10 @@ sub registerHypervisor {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     my $system = $self->getMasterNode->getComponent(category => "System");
-    EEntity->new(data => $system)->postStartNode(host => $args{host});
+    EEntity->new(entity => $system)->postStartNode(node => EEntity->new(entity => $args{host}->node));
 
     my $agent = $self->getMasterNode->getComponent(category => "Configurationagent");
-    EEntity->new(data => $agent)->postStartNode(host => $args{host});
+    EEntity->new(entity => $agent)->postStartNode(node => EEntity->new(entity => $args{host}->node));
 
     # hypervisor declaration
     my $hostname = $args{host}->node->node_hostname;

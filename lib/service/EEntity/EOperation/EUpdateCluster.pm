@@ -55,22 +55,22 @@ sub postrequisites {
     my ($self, %args) = @_;
     my $delay = 10;
 
-    my @hosts;
+    my @nodes;
     if ($self->{context}->{host}) {
-        $log->info("Checking component on host " . $self->{context}->{host} . " only");
-        push @hosts, $self->{context}->{host};
+        $log->info("Checking component on host " . $self->{context}->{host}->label . " only");
+        push @nodes, EEntity->new(entity =>$self->{context}->{host}->node);
     }
     else {
-        @hosts = map { EEntity->new(entity => $_->host) } $self->{context}->{cluster}->nodes;
+        @nodes = map { EEntity->new(entity => $_) } $self->{context}->{cluster}->nodes;
     }
 
     # Check if all host components are up.
-    for my $host (@hosts) {
-        if (not $host->node->checkComponents()) {
-            throw Kanopya::Exception::Internal("Failed to update " . $host->node->label);
+    for my $node (@nodes) {
+        if (not $node->checkComponents()) {
+            throw Kanopya::Exception::Internal("Failed to update " . $node->label);
         }
 
-        $self->{context}->{cluster}->postStartNode(host      => $host,
+        $self->{context}->{cluster}->postStartNode(node      => $node,
                                                    erollback => $self->{erollback});
     }
 }

@@ -195,9 +195,6 @@ sub methods {
         reconfigure => {
             description => 'reconfigure the cluster'
         },
-        addComponents => {
-            description => 'add components to this cluster',
-        },
     };
 }
 
@@ -559,9 +556,6 @@ sub addManagerParameters {
                 $component->{component_configuration}->{nameserver2} = $self->cluster_nameserver2;
                 $component->{component_configuration}->{default_gateway_id} = $self->default_gateway_id;
             }
-            # Give ref to the executor user by the service manager itself
-            $component->{component_configuration}->{executor_component_id}
-                = $self->service_manager->executor_component->id;
 
             # TODO: Check if the component is already installed
             $self->addComponent(
@@ -696,6 +690,20 @@ the cluster customer.
 sub addComponent {
     my ($self, %args) = @_;
 
+    General::checkParams(args     => \%args,
+                         required => [ 'component_type_id' ],
+                         optional => { 'component_configuration'       => undef,
+                                       'component_extra_configuration' => undef,
+                                       'component_template_id'         => undef,
+                                       'node' => undef });
+
+    if (! defined $args{component_configuration}->{executor_component_id} &&
+        defined $self->service_manager) {
+        # Give ref to the executor user by the service manager itself
+        $args{component_configuration}->{executor_component_id}
+            = $self->service_manager->executor_component->id;
+    }
+
     my $component = $self->SUPER::addComponent(%args);
     for my $method ('get', 'getConf', 'setConf') {
         # TODO: probably should not occurs.
@@ -710,53 +718,6 @@ sub addComponent {
     return $component;
 }
 
-=pod
-
-=begin classdoc
-
-Add components to nodes.
-
-@paramlist $component_types IDs of component types to add on nodes
-@paramlist $nodes IDs of nodes on which component must be added
-
-=end classdoc
-
-=cut
-
-sub addComponents {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'nodes', 'component_types' ]);
-    my @nodes = Entity::Node->search(hash => { node_id => $args{nodes} });
-    my @component_types = ClassType::ComponentType->search(hash => { component_type_id => $args{component_types} });
-
-    for my $component_type (@component_types) {
-        # check if component if installed on node's cluster
-        my $component;
-        eval {
-            my %params = defined($component_type->component_version)
-                             ? (name => $component_type->component_name, version => $component_type->component_version)
-                             : (name => $component_type->component_name);
-
-            $component = $self->getComponent(%params);
-        };
-        if($@) {
-            throw Kanopya::Exception::Internal(
-                error => "Component <$component_type->component_name> is not installed on cluster <" .
-                         $self->id . ">"
-            );
-        }
-
-        # register component on nodes
-        for my $node (@nodes) {
-            $component->registerNode(node        => $node,
-                                     master_node => ($node->node_number == 1) ? 1 : 0);
-        }
-    }
-
-    # update cluster
-    $self->update(node => $nodes[0]);
-}
 
 sub getRequiredComponents {
     my ($self, %args) = @_;
@@ -1094,8 +1055,9 @@ sub update {
 
     if (defined ($args{components})) {
         for my $component (@{ delete $args{components} }) {
-            $self->addComponent(component_type_id => delete $component->{component_type_id},
-                                component_configuration => $component);
+            $self->addComponent(component_type_id       => delete $component->{component_type_id},
+                                component_configuration => $component,
+                                node                    => $args{node});
         }
 
         $require_op = 1;
@@ -1103,7 +1065,7 @@ sub update {
 
     if (defined ($args{node})) {
         $log->info("Updating node $args{node} of cluster");
-        $context->{host} = ($args{node})->host;
+        $context->{host} = $args{node}->host;
 
         $require_op = 1;
     }

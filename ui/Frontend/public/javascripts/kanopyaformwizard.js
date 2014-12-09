@@ -393,7 +393,7 @@ var KanopyaFormWizard = (function() {
                 var optionvalue = attr.options[i][link_to_attribute_pk_name] || attr.options[i].pk ||
                                   ($.isArray(attr.options) ? attr.options[i] : i);
 
-                var option = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
+                var option = $("<option>", { value : optionvalue, text : optiontext });
                 if (attr.formatter != null) {
                     $(option).text(attr.formatter($(option).text()));
                 }
@@ -407,7 +407,14 @@ var KanopyaFormWizard = (function() {
                 }
                 if (optionvalue == value || ($.isArray(value) && $.inArray(optionvalue, value) >= 0)) {
                     $(option).attr('selected', 'selected');
+
+                    // When hide_existing flag is set, we do not insert options that are in the values.
+                    if (attr.hide_existing) {
+                        continue;
+                    }
                 }
+
+                $(option).appendTo(input);
             }
 
         // Handle other field types
