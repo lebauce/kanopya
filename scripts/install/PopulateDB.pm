@@ -1830,7 +1830,7 @@ sub registerKanopyaMaster {
                          host             => $admin_host,
                          state            => "in",
                          number           => 1,
-                         monitoring_state => 'disabled'
+                         monitoring_state => 'enabled'
                      );
 
     # Install components
