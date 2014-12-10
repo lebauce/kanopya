@@ -31,6 +31,8 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'Netconf Name. A netconf is the configuration of a network interface.'.
+                        'It can be composed by vlans associated with ip pool',
     },
     netconf_vlans => {
         label        => 'VLANs',
@@ -39,6 +41,7 @@ use constant ATTR_DEF => {
         link_to      => 'vlan',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'Vlans attached to the network interface',
     },
     netconf_poolips => {
         label        => 'Pools IPs',
@@ -47,6 +50,7 @@ use constant ATTR_DEF => {
         link_to      => 'poolip',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'IP pool consumed by the netconf',
     },
     netconf_role_id => {
         label        => 'Role',
@@ -55,6 +59,8 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'It is the role assigned to the network interface (bridge for vm (vm),'.
+                        ' load balancing interface (public), private network (private)',
     },
 };
 

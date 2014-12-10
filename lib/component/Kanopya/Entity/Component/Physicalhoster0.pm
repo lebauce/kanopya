@@ -115,7 +115,8 @@ sub getManagerParamsDef {
             unit         => 'core(s)',
             pattern      => '^\d*$',
             is_mandatory => 1,
-            order        => 1
+            order        => 1,
+            description  => 'Required number of Core',
         },
         ram => {
             label        => 'Required RAM amount',
@@ -123,21 +124,26 @@ sub getManagerParamsDef {
             unit         => 'byte',
             pattern      => '^\d*$',
             is_mandatory => 1,
-            order        => 2
+            description  => 'Required RAM amount',
+            order        => 2,
         },
         tags => {
             label        => 'Mandatory Tags',
             type         => 'enum',
             relation     => 'multi',
             is_mandatory => 0,
-            order        => 3
+            order        => 3,
+            description  => 'HCM offer tag system to filter resources. You can filter per datacenter'.
+                            ' or per users or per functionalities. Mandatorys tag are inclusive tags',
         },
         no_tags => {
             label        => 'Forbidden Tags',
             type         => 'enum',
             relation     => 'multi',
             is_mandatory => 0,
-            order        => 4
+            order        => 4,
+            description  => 'HCM offer tag system to filter resources. You can filter per datacenter '.
+                            'or per users or per functionalities. Mandatorys tag are exclusive tags',
         },
     };
 }

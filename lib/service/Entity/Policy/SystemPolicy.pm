@@ -60,6 +60,8 @@ use constant POLICY_ATTR_DEF => {
         type         => 'boolean',
         is_mandatory => 1,
         order        => 2,
+        description  => 'Set to true if the disk generated for system partition has to be kept. Say'.
+                        ' no if the system image generated could be erased after the end of the instance',
     },
     cluster_basehostname => {
         label        => 'Cluster base hostname',
@@ -67,6 +69,8 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^[A-Za-z0-9]+$',
         is_mandatory => 0,
         order        => 3,
+        description  => 'The base hostname is used to generate node hostname if you do not fill the field,'.
+                        ' the instance name will be used',
     },
     deployment_manager_id => {
         label        => "Deployment manager",
@@ -76,6 +80,7 @@ use constant POLICY_ATTR_DEF => {
         reload       => 1,
         is_mandatory => 1,
         order        => 4,
+        description  => 'It is the system used to deploy your instances',
     },
 };
 

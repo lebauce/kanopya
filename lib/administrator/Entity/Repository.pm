@@ -28,6 +28,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'It is the name of the vm image repository',
     },
     container_access_id => {
         label        => 'Container access',
@@ -35,6 +36,7 @@ use constant ATTR_DEF => {
         relation     => 'single',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'It is the export used for the vm image repository',
     },
 };
 

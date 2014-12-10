@@ -99,6 +99,7 @@ sub getManagerParamsDef {
             type         => 'enum',
             is_mandatory => 1,
             options      => \@boot_policies,
+            description  => 'Boot System used',
         },
         disk_manager_id => {
             label        => 'Disk manager',
@@ -107,7 +108,10 @@ sub getManagerParamsDef {
             pattern      => '^[0-9\.]*$',
             is_mandatory => 1,
             is_editable  => 0,
-            order        => 1
+            order        => 1,
+            description  => 'That is the system managing the disk in your storage management. '.
+                            'It could be the same (for SAN or NAS) but different too like linux'.
+                            ' nas with LVM and NFS',
         },
         export_manager_id => {
             label        => 'Export manager',
@@ -116,7 +120,10 @@ sub getManagerParamsDef {
             pattern      => '^[0-9\.]*$',
             is_mandatory => 1,
             is_editable  => 0,
-            order        => 2
+            order        => 2,
+            description  => 'That is the system managing the disk export in your storage management.'.
+                            'It could be the same (for SAN or NAS) but different too like linux nas'.
+                            ' with LVM and NFS',
         },
     };
 }

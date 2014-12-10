@@ -47,14 +47,16 @@ use constant ATTR_DEF => {
         type         => 'string',
         is_mandatory => 0,
         is_editable  => 1,
-        is_virtual   => 1
+        is_virtual   => 1,
+        description     => 'It is the options use by the client to correctly connect and mount a nfs share',
     },
     nfs_container_access_client_name => {
         label        => 'Client name',
         type         => 'string',
         is_mandatory => 0,
         is_editable  => 1,
-        is_virtual   => 1
+        is_virtual   => 1,
+        description  => 'It is the name of the nfs share',
     }
 };
 

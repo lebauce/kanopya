@@ -176,6 +176,7 @@ sub getManagerParamsDef {
             unit         => 'byte',
             pattern      => '^\d*$',
             is_mandatory => 0,
+	    description  => 'It is the size of the system image (view by the storageManager)',
         },
         masterimage_id => {
             label        => 'Master image',
@@ -183,6 +184,7 @@ sub getManagerParamsDef {
             relation     => 'single',
             pattern      => '^\d*$',
             is_mandatory => 1,
+	    description  => 'It is the original master imaged used to generate the system image',
             option       => [],
         },
     };

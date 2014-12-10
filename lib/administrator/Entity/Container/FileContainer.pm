@@ -37,9 +37,10 @@ use warnings;
 
 use constant ATTR_DEF => {
     container_access_id => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0
+        pattern         => '^[0-9\.]*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        description     => 'Access system use by the host to access to this volume',
     },
 };
 

@@ -24,6 +24,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'IaaS used to host this instance',
     },
 };
 

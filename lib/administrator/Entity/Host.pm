@@ -49,6 +49,7 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9\.]*$',
         is_mandatory => 0,
         is_editable  => 0,
+        description  => 'It is the manager of this host (IaaS for a vm, BladeManager for a blade, ...)',
     },
     hostmodel_id => {
         label        => 'Board model',
@@ -73,6 +74,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'Some servers need specific Kernel, if it is your case, choose one',
     },
     host_serial_number => {
         label        => 'Serial number',
@@ -80,12 +82,15 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'This is your UUID, it identifies your server.' .
+                        ' It could be your internal id, the vendor id, ...',
     },
     host_desc => {
         label        => 'Description',
         type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
+        description  => 'Describe your host here. Where is it rack ? DC, room, chassis, ...',
         is_editable  => 1,
     },
     active => {
@@ -97,7 +102,7 @@ use constant ATTR_DEF => {
     },
     host_ram => {
         label        => 'RAM capability',
-        description  => 'Memory capability of the physical host',
+        description  => 'Amount of Ram on the server',
         type         => 'integer',
         unit         => 'byte',
         pattern      => '^\d*$',
@@ -107,6 +112,7 @@ use constant ATTR_DEF => {
     },
     host_core => {
         label        => 'CPU capability',
+        description  => 'number of Core in your server (CPU x Core x Hyperthreading)',
         type         => 'integer',
         unit         => 'core(s)',
         pattern      => '^\d*$',
@@ -134,6 +140,7 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'add the different network interfaces of your server',
     },
     harddisks => {
         label        => 'Hard disks',
@@ -141,6 +148,7 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'add the different hard disks of your server',
     },
     ipmi_credentials => {
         label        => 'IPMI',
@@ -148,6 +156,7 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'add your ipmi credentials, HCM will be able to start and stop your server',
     },
     admin_ip => {
         label        => 'Administration ip',

@@ -43,26 +43,30 @@ use constant ATTR_DEF => {
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
+        description => 'It is the vm images repositories',
     },
     hypervisors => {
         label       => 'Hypervisors',
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
+        description => 'It is the list of hypervisor in this virtualisation manager',
     },
     overcommitment_cpu_factor => {
         label        => 'Overcommitment cpu factor',
         type         => 'integer',
         pattern      => '^\d*\.?\d+$',
         is_mandatory => 0,
-        is_editable  => 0
+        is_editable  => 0,
+        description  => 'Set a ratio for the CPU Overcommitment',
     },
     overcommitment_memory_factor => {
         label        => 'Overcommitment memory factor',
         type         => 'integer',
         pattern      => '^\d*\.?\d+$',
         is_mandatory => 0,
-        is_editable  => 0
+        is_editable  => 0,
+        description  => 'Set a ratio for the memory Overcommitment',
     },
 };
 

@@ -57,6 +57,7 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
         is_mandatory => 1,
         order        => 1,
+	description  => 'It it the domain name of the service or instance',
     },
     cluster_nameserver1 => {
         label        => 'Name server 1',
@@ -64,6 +65,7 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
         is_mandatory => 2,
         order        => 2,
+	description  => 'It is the primary domain name server (DNS)',
     },
     cluster_nameserver2 => {
         label        => 'Name server 2',
@@ -71,6 +73,7 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
         is_mandatory => 1,
         order        => 3,
+	description  => 'It is the secondary domain name server (DNS)',
     },
     default_gateway_id => {
         label        => 'Default gateway network',
@@ -79,6 +82,7 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         order        => 4,
+	description  => 'Network hosting the default gateway',
     },
     network_manager_id => {
         label        => "Network manager",
@@ -88,6 +92,7 @@ use constant POLICY_ATTR_DEF => {
         reload       => 1,
         is_mandatory => 1,
         order        => 5,
+	description  => 'It is the network manager that manage the network of this infrastructure',
     },
 };
 

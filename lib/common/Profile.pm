@@ -26,14 +26,16 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'User profile name',
     },
     profile_desc => {
         label        => 'Description',
         type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'User profile description',
     },
 };
 

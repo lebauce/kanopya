@@ -43,18 +43,21 @@ use constant ATTR_DEF => {
         pattern      => '.*',
         is_mandatory => 1,
         is_editable  => 1,
+	description  => 'This is the name of the ip pool'
     },
     poolip_first_addr => {
         label        => 'First Address',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
         is_editable  => 1,
+	description  => 'This is the first available ip that could be attached to vm',
     },
     poolip_size => {
         label        => 'Size',
         pattern      => '[0-9]{1,2}',
         is_mandatory => 1,
         is_editable  => 1,
+	description  => 'This is the number of available ip in the ip pool',
     },
     network_id => {
         label        => 'Network',
@@ -63,6 +66,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1,
+	description  => 'This is the physical network hosting this ip pool'
     },
 };
 

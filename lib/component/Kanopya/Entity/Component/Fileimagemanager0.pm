@@ -57,7 +57,8 @@ use constant ATTR_DEF => {
     image_type => {
         pattern      => '^img|vmdk|qcow2$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_extended  => 0,
+        description  => 'image type. It could be img vmdk or qcow2',
     },
     disk_type => {
         is_virtual => 1
@@ -95,12 +96,14 @@ sub getManagerParamsDef {
             label        => 'NFS repository to use',
             type         => 'enum',
             is_mandatory => 1,
+            description  => 'NFS repository that will be used',
         },
         image_type => {
             label        => 'Disk image format',
             type         => 'enum',
             is_mandatory => 1,
-            options      => [ "raw", "qcow2", "vmdk" ]
+            options      => [ "raw", "qcow2", "vmdk" ],
+            description  => 'image type. It could be img vmdk or qcow2',
         },
     };
 }

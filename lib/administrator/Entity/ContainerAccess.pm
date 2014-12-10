@@ -48,18 +48,21 @@ use constant ATTR_DEF => {
         relation     => 'single',
         pattern      => '^[0-9\.]*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is the device name of this exported volume',
     },
     export_manager_id => {
-        pattern      => '^[0-9\.]*$',
-        is_mandatory => 0,
+        pattern       => '^[0-9\.]*$',
+        is_mandatory  => 0,
+        description   => 'Export system used to access to this volume',
     },
     container_access_export => {
         label        => 'Export name',
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_editable  => 0
+        is_editable  => 0,
+        description  => 'It is the export name of this volume',
     },
     container_access_ip => {
         pattern      => '^.*$',

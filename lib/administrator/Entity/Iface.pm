@@ -37,6 +37,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'It is Iface name, it is the name of the interface in your linux system (eg. eth0)',
     },
     iface_mac_addr => {
         label        => 'MAC address',
@@ -45,6 +46,8 @@ use constant ATTR_DEF => {
                         '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'this is the mac adress of your network interface, it is really important for PXE'.
+                        ' iface (grub file will be generated with this identifier',
     },
     iface_pxe => {
         label        => 'PXE enabled',
@@ -52,18 +55,22 @@ use constant ATTR_DEF => {
         pattern      => '^[01]$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'Is this interface will be use to boot on pxe ?',
     },
     host_id => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
         is_mandatory => 1,
+        description  => 'this is the host identifier of the server hosting this network interface',
     },
     master => {
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'Master field allow to specify which iface is master for bonding configuration.'.
+                        'It is also used for route',
     },
     netconf_ifaces => {
         label        => 'Network configurations',
@@ -72,6 +79,7 @@ use constant ATTR_DEF => {
         link_to      => 'netconf',
         is_mandatory => 0,
         is_editable  => 1,
+        description => 'Choose network topology plugged on this interface',
     }
 };
 
