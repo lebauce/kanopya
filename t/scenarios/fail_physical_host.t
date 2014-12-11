@@ -62,9 +62,8 @@ sub main {
     my $cluster;
     lives_ok {
         $cluster = Kanopya::Test::Create->createCluster(
-                       cluster_name => "default_cluster_name",
                        cluster_conf => {
-                           cluster_min_node => 2,
+                           cluster_name => "default_cluster_name" . time,
                            masterimage_id   => $masterimage->id,
                        },
                    );
@@ -73,36 +72,41 @@ sub main {
     # Dynamically modify the EHost class to raise exception at postStart.
     use_ok ('EEntity::EHost');
 
-    my $fail_from_test = 0;
-    sub EEntity::EHost::postStart {
-        my ($self, %args) = @_;
+    my $fails = { "First" => 1 , "Second" => 2 };
+    for $node ("First", "Second") {
+        $cluster->cluster_min_node($fails->{$node});
 
-        if ($self->node->node_number == 2) {
-            $fail_from_test = 1;
-            throw Kanopya::Exception(error => "Second node fail !"); 
+        my $fail_from_test = 0;
+        sub EEntity::EHost::postStart {
+            my ($self, %args) = @_;
+
+            if ($self->node->node_number == $fails->{$node}) {
+                $fail_from_test = 1;
+                throw Kanopya::Exception(error => $node . " node fail !");
+            }
         }
+
+        diag('Start physical host that should fail');
+        throws_ok {
+            Kanopya::Test::Execution->startCluster(cluster => $cluster);
+        } 'Kanopya::Exception::Test', 'Start ' . $node  .  ' node';
+
+        lives_ok {
+            my ($state, $timestamp) = $cluster->reload->getState();
+            if ($state ne 'down') {
+                die "Cluster should be down, not $state";
+            }
+        } 'Cluser should be down';
+
+        my @nodes = $cluster->nodes;
+        ok(scalar(@nodes) == 0, "The cluster should have no nodes");
+
+        lives_ok {
+            if (! $fail_from_test) {
+                die "The start cluster failed, but not from the test mock";
+            }
+        } 'The ' . $node . ' node fail from test mock';
     }
-
-    diag('Start physical host that should fail');
-    throws_ok {
-        Kanopya::Test::Execution->startCluster(cluster => $cluster);
-    } 'Kanopya::Exception::Test', 'Start second node';
-
-    lives_ok {
-        my ($state, $timestamp) = $cluster->reload->getState();
-        if ($state ne 'down') {
-            die "Cluster should be down, not $state";
-        }
-    } 'Cluser should be down';
-
-    my @nodes = $cluster->nodes;
-    ok(scalar(@nodes) == 0, "The cluster should have no nodes");
-
-    lives_ok {
-        if (! $fail_from_test) {
-            die "The start cluster failed, but not from the test mock";
-        }
-    } 'The second node fail from test mock';
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
