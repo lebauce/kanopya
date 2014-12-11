@@ -901,10 +901,13 @@ var KanopyaFormWizard = (function() {
                 hash_to_fill[attr.name].push(attr.value);
 
             } else {
-                hash_to_fill[attr.name] = attr.value;
+                // Do not submit empty value for non mandatory fields
+                if (! (attr.value == "" && this.validateRules[attr.name].required == undefined)) {
+                    hash_to_fill[attr.name] = attr.value;
+                }
 
-                // If current_multi is defined, this becase the last field was a value of
-                // a multi relation, that ust finished to be filled.
+                // If current_multi is defined, this is because the last field was a value of
+                // a multi relation, that just finished to be filled.
                 if (current_multi != undefined) {
                     current_multi = undefined;
                 }
