@@ -17,21 +17,24 @@ use constant ATTR_DEF => {
        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
        label        => 'IPMI IP Address',
        is_mandatory => 1,
-       is_editable  => 1
+       is_editable  => 1,
+       description  => 'IPMI address to manage the server',
     },
     ipmi_credentials_user => {
         pattern      => '^\w*$',
         type         => 'string',
         label        => 'IPMI Username',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'IPMI user name to manage the server',
     },
     ipmi_credentials_password => {
         label        => 'Password',
         type         => 'password',
         pattern      => '^.+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'IPMI password to manage the server',
     },
 
 };

@@ -26,17 +26,20 @@ use constant ATTR_DEF => {
     ip_addr => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_extended  => 0,
+        description  => 'It is the ip address',
     },
     poolip_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_extended  => 0,
+        description  => 'It is the ip pool that contains the ip address',
     },
     iface_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_extended  => 0,
+        description  => 'It is the iface attached to the ip address',
     },
 };
 

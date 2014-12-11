@@ -25,7 +25,8 @@ use constant ATTR_DEF => {
     category_name => {
         pattern      => '^\w+$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_extended  => 0,
+        description  => 'It is the name of the component category (eg WebServer, DatabaseServer, IaaS, ...)',
     },
 };
 

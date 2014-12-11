@@ -37,6 +37,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+',
         is_delegatee => 1,
         is_mandatory => 1,
+        description  => 'It is the host with this disk',
     },
     harddisk_device => {
         label        => 'root device',
@@ -45,6 +46,7 @@ use constant ATTR_DEF => {
         default      => 'autodetect',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'It is the device name of this hard disk',
     },
     harddisk_size => {
         label        => 'Hard disk size',
@@ -53,7 +55,8 @@ use constant ATTR_DEF => {
         unit         => 'byte',
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is the size of this hard disk',
     }
 };
 

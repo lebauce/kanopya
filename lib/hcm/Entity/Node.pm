@@ -48,6 +48,8 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^[\w\d\-\.]*$',
         is_mandatory => 1,
+        description  => 'it is the hostname of the host in this service instance.'.
+                        'It could be generated if your instance is scalable',
     },
     node_number => {
         pattern      => '^\d+$',
@@ -83,6 +85,7 @@ use constant ATTR_DEF => {
         link_to      => 'component',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'The list of components deployed on the node',
     },
 };
 

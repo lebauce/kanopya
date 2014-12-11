@@ -34,6 +34,8 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 1,
+        description  => 'It is the name of the vlan (use to find the vlan in the topology building)'.
+                        ' (eg admin, sdn, public, ...)',
     },
     vlan_number => {
         label        => 'Number',
@@ -41,6 +43,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 1,
+        description  => 'It is the Vlan id',
     },
 };
 

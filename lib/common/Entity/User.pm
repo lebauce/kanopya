@@ -51,7 +51,8 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
-        is_editable  => 0
+        is_editable  => 0,
+        description  => 'It is user login information',
     },
     user_desc => {
         label        => 'Description',
@@ -59,42 +60,48 @@ use constant ATTR_DEF => {
         # Impossible to check char used because of \n doesn't match with \w
         pattern      => '.*',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is user description. Specify his business unit, company, ...',
     },
     user_password => {
         label        => 'Password',
         type         => 'password',
         pattern      => '^.+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is user password',
     },
     user_firstname => {
         label        => 'First name',
         type         => 'string',
         pattern      => '^.+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is the firstname of the user',
     },
     user_lastname => {
         label        => 'Last name',
         type         => 'string',
         pattern      => '^.+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is the lastname of the user',
     },
     user_email => {
         label        => 'Email',
         type         => 'string',
         pattern      => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is user email',
     },
     user_sshkey => {
         label        => 'SSH Public key',
         type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'It is the SSH Key of the user. HCM can push ssh key on all the managed system',
     },
     user_creationdate => {
         label        => 'Account creation date',
@@ -115,7 +122,8 @@ use constant ATTR_DEF => {
         type         => 'boolean',
         pattern      => '^\w*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'If enabled, User will be a super user even if its roles/profile',
     },
     quotas => {
         label        => 'Quotas',
@@ -123,6 +131,8 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'It is quotas of the user. HCM offers to limit users '.
+                        'on their RAM and Core consumption',
     },
     user_profiles => {
         label        => 'Profiles',
@@ -131,6 +141,8 @@ use constant ATTR_DEF => {
         link_to      => 'profile',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'HCM offers different user Profil (Administrator, Project Manager, Operator,'.
+                        ' Customer. Read more informations on full documentation on the sidebar).',
     },
 };
 

@@ -11,6 +11,8 @@
     <div id='mainmenu-container'>
     </div>
 </div>
+<div id='info-container' class="ui-layout-east">
+</div>
 <div class="ui-layout-north">
     <div id='header'>
         <h1><span id='product-name'>HCM Infrastructure Manager</span></h1>

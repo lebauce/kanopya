@@ -36,9 +36,10 @@ use warnings;
 
 use constant ATTR_DEF => {
     lv_id => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0
+        pattern         => '^[0-9\.]*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        description     => 'This is the lv corresponding to the disk',
     },
 };
 

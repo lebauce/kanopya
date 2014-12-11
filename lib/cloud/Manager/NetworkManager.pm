@@ -77,11 +77,14 @@ sub getManagerParamsDef {
             relation     => 'single_multi',
             is_editable  => 1,
             is_mandatory => 1,
+            description  => 'They are the different network interfaces',
             attributes   => {
                 attributes => {
                     policy_id => {
-                        type     => 'relation',
-                        relation => 'single',
+                        type        => 'relation',
+                        relation    => 'single',
+                        description => 'It is the original network policy used to '.
+                                       'generate the network configuration',
                     },
                     netconfs => {
                         label       => 'Network configurations',
@@ -90,12 +93,15 @@ sub getManagerParamsDef {
                         link_to     => 'netconf',
                         pattern     => '^\d*$',
                         is_editable => 1,
+                        description => 'They are the differents network topologies plug'.
+                                       ' on this network interface',
                     },
                     bonds_number => {
                         label       => 'Bonding slave count',
                         type        => 'integer',
                         pattern     => '^\d*$',
                         is_editable => 1,
+                        description	=> 'It is the bond id',
                     },
                     interface_name => {
                         label        => 'Name',
@@ -103,6 +109,7 @@ sub getManagerParamsDef {
                         pattern      => '^.*$',
                         is_editable  => 1,
                         is_mandatory => 1,
+                        description  => 'It is the name of the net interface on operating side',
                     },
                 },
             },

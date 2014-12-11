@@ -55,6 +55,7 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^\d*$',
         reload       => 1,
         is_mandatory => 1,
+	description  => 'It is the monitoring system used by this service',
     },
 };
 
