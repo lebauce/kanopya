@@ -119,6 +119,8 @@ Set the cluster as up if all node started, start the other nodes instead.
 sub finish {
     my ($self, %args) = @_;
 
+    $self->{context}->{cluster}->setState(state => "up");
+
     if (defined $self->{params}->{needhypervisor}) {
         $log->debug('Do not finish addNode workflow in case of automatic hypervisor scaleout');
 
@@ -141,10 +143,6 @@ sub finish {
                 },
             },
         });
-    }
-    # Set the cluster up instead
-    else {
-        $self->{context}->{cluster}->setState(state => "up");
     }
 
     if (defined $self->{context}->{host_manager_sp}) {

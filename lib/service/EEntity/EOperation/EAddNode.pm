@@ -115,6 +115,8 @@ sub prepare {
                            "> has to be <up|down> not <$state>"
               );
     }
+
+    $self->{context}->{cluster}->setState(state => 'updating');
 }
 
 
