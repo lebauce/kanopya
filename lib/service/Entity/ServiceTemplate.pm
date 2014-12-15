@@ -37,6 +37,7 @@ use base 'Entity';
 use strict;
 use warnings;
 
+use General;
 use Entity::Policy;
 use Entity::Policy::HostingPolicy;
 use Entity::Policy::StoragePolicy;
@@ -219,9 +220,15 @@ sub processAlteredPolicies {
         my $altered = 0;
         my $policyattrs = $policyclass->toJSON(params => $json)->{attributes};
         for my $attrname (keys %{ $policyattrs }) {
-            if (defined $args{$attrname} && "$args{$attrname}" ne "$json->{$attrname}" &&
-                ! $policyattrs->{$attrname}->{is_virtual} && ref($args{$attrname}) ne "ARRAY" &&
-                ! exists $policyclass->getPolicySelectorAttrDef->{$attrname}) {
+            my $is_alterable = (defined $args{$attrname} &&
+                                   ! $policyattrs->{$attrname}->{is_virtual} &&
+                                   ! exists $policyclass->getPolicySelectorAttrDef->{$attrname});
+            my $is_altered_scalar = (ref($args{$attrname}) ne "ARRAY" &&
+                                        "$args{$attrname}" ne "$json->{$attrname}");
+            my $is_altered_array = (ref($args{$attrname}) eq "ARRAY" &&
+                                       General::isArrayDiffers(left  => $args{$attrname},
+                                                               right => $json->{$attrname} || []));
+            if ($is_alterable && ($is_altered_scalar || $is_altered_array)) {
 
                 $log->debug("$policy <" . $policy->id . ">, attr <$attrname> value has been set: " . 
                             "$json->{$attrname} => $args{$attrname}.");
