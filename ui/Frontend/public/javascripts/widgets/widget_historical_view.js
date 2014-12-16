@@ -2,8 +2,17 @@ require('widgets/widget_common.js');
 require('jquery/jquery.multiselect.filter.min.js');
 
 $('.widget').live('widgetLoadContent',function(e, obj){
+
     // Check if loaded widget is for us
-    if (obj.widget.element.find('.clusterCombinationView').length == 0) {return;}
+    if (obj.widget.element.find('.clusterCombinationView').length === 0) {
+        return;
+    }
+
+    // Fix the bug that raises this event twice
+    if (this.sId === obj.widget.element.attr('id')) {
+        return;
+    }
+    this.sId = obj.widget.element.attr('id');
 
     var sp_id = obj.widget.metadata.service_id;
 
