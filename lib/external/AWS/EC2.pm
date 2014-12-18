@@ -336,28 +336,9 @@ sub terminateInstance {
 sub getInfrastructure {
     my ($self) = @_;
 
-#    my $hypervisors = OpenStack::Hypervisor->detailList(%args);
-#    for my $hypervisor (@$hypervisors) {
-#        my $vms = OpenStack::Hypervisor->servers(%args, id => $hypervisor->{id});
-#        my @vm_details = ();
-#        for my $vm (@$vms) {
-#            my $detail = OpenStack::Server->detail(%args, id => $vm->{uuid}, flavor_detail => 1);
-#            push @vm_details, $detail->{server};
-#        }
-#        $hypervisor->{servers} = \@vm_details;
-#    }
-
     return {
-#        'hypervisors' => $hypervisors,
         'images'    => $self->getImages,
         'instances' => $self->getInstances
-#        'volumes' => OpenStack::Volume->list(%args, all_tenants => 1),
-#        'volume_types' => OpenStack::VolumeType->list(%args),
-#        'tenants' => OpenStack::Tenant->list(%args, all_tenants => 1),
-#        'flavors' => OpenStack::Flavor->list(%args),
-#        'networks' => OpenStack::Network->list(%args),
-#        'availability_zones' => OpenStack::Zone->list(%args),
-#        'subnets' => OpenStack::Subnet->list(%args),
     }
 }
 

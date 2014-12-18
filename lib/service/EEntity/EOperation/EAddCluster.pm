@@ -97,7 +97,7 @@ sub execute {
                       service_manager_id => $self->{context}->{service_manager}->id,
                       %{ $self->{params}->{cluster_params} }
                   );
-                  
+
     # Execute create on the cluster
     $self->{context}->{cluster} = EEntity->new(data => $cluster);
     $self->{context}->{cluster}->create(managers        => $self->{params}->{managers},

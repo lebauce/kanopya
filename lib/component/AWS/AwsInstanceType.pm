@@ -97,13 +97,13 @@ Class method for getting all type names.
 =cut
 
 sub getAllNames {
-    my $dbh = Kanopya::Database::dbh;
+    my ($class) = @_;
     
-    my @names = ();
-    my $results = $dbh->selectall_arrayref('SELECT name FROM aws_instance_type');
-    foreach my $data (@$results) {
-        push @names, $data->[0];
+    my @names;
+    foreach my $type ($class->search(hash => undef)) {
+        push @names, $type->name;    
     }
+    
     return \@names;
 }
 
