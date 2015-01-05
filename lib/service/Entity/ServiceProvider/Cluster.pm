@@ -1060,7 +1060,7 @@ sub update {
                                 node                    => $args{node});
         }
 
-        $require_op = 1;
+        # $require_op = 1;
     }
 
     if (defined ($args{node})) {

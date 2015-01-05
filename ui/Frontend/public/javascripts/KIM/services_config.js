@@ -83,4 +83,12 @@ function loadServicesConfig(cid, eid) {
             }
         })).start();
     });
+    
+    var reconfigureButton = $('<a>', { text : 'Apply configuration now' })
+                              .appendTo(action_div)
+                              .button({ icons : { primary : 'ui-icon-triangle-2-e-w' } });
+    $(reconfigureButton).bind('click', function (e) {
+    	ajax('POST', '/api/cluster/' + eid + '/reconfigure');
+    });
+
 }
