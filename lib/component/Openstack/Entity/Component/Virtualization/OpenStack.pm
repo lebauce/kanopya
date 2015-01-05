@@ -1623,20 +1623,23 @@ sub _synchronizeVirtualMachines {
         }
         $node->setState(state => $vm_states->{$vm_info->{'OS-EXT-STS:vm_state'}} . ':' . time());
         my @ifaces = $vm->ifaces;
+        
+        my $nr_ifaces  = scalar @ifaces;
+        my $nr_netinfo = scalar keys %$network_info;
 
-        if (scalar @ifaces < scalar keys %$network_info) {
+        if ($nr_ifaces < $nr_netinfo) {
             # create new ifaces if missing
-            for my $i (1..((scalar keys{%$network_info}) - scalar @ifaces)) {
+            for my $i (1..($nr_netinfo - $nr_ifaces)) {
                 $vm->addIface(
-                    iface_name     => 'eth' . (scalar @ifaces) + $i - 1,
+                    iface_name     => 'eth' . $nr_ifaces + $i - 1,
                     iface_mac_addr => $self->generateMacAddress(),
                     iface_pxe      => 0,
                 );
             }
             @ifaces = $vm->ifaces;
         }
-        elsif (scalar @ifaces > scalar keys %$network_info) {
-            for my $i (1..(scalar @ifaces - (scalar keys{%$network_info}))) {
+        elsif ($nr_ifaces > $nr_netinfo) {
+            for my $i (1..($nr_ifaces - $nr_netinfo)) {
                 (pop @ifaces)->delete();
             }
             @ifaces = $vm->ifaces;
