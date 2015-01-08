@@ -118,7 +118,7 @@ sub postrequisites {
 =pod
 =begin classdoc
 
-Update the node state.
+Update the node state, and enqueue the DeployNode operation in this workflow.
 
 =end classdoc
 =cut

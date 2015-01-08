@@ -115,6 +115,7 @@ my @classes = (
     'Entity::Component::Openiscsi2',
     'Entity::Component::Virtualization',
     'Entity::Component::Virtualization::Opennebula3',
+    'Entity::Component::Virtualization::AwsAccount',
     'Entity::Component::Openssh5',
     'Entity::Component::Php5',
     'Entity::Component::Snmpd5',
@@ -155,6 +156,7 @@ my @classes = (
     'Entity::Vlan',
     'Entity::Masterimage',
     'Entity::Masterimage::GlanceMasterimage',
+    'Entity::Masterimage::AwsMasterimage',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
     'Entity::Netconf',
@@ -1125,6 +1127,13 @@ sub registerComponents {
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
+            component_name         => 'AwsAccount',
+            component_version      => 6,
+            deployable             => 1,
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
             component_name         => 'Keystone',
             component_version      => 6,
             deployable             => 1,
@@ -1938,7 +1947,7 @@ sub registerKanopyaMaster {
     $admin_cluster->service_manager($components->{'KanopyaServiceManager'}->{instance});
 
     # Check component availability
-    print "\t- Check availability of the registred components\n";
+    print "\t- Check availability of the registered components\n";
     my @components = sort { $a->priority <=> $b->priority } $admin_node->components;
     foreach my $component (map { EEntity->new(entity => $_) } @components) {
         print "\t\t- Checking component " . $component->label . "...\n";

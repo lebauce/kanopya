@@ -31,6 +31,21 @@ function iaas_vsphere_registerbutton_action(e, grid) {
     })).start();
 }
 
+function iaas_aws_registerbutton_action(e, grid) {
+    (new KanopyaFormWizard({
+        title      : 'Register an AWS account',
+        type       : 'aws',
+        id         : (!(e instanceof Object)) ? e : undefined,
+        displayed  : ['region', 'api_access_key', 'api_secret_key', 'executor_component_id' ],
+        callback   : function (iaas) {
+            handleCreate(grid);
+
+            // Raise the Iaas component synchronisation
+            ajax('POST', '/api/component/' + iaas.pk + '/synchronize');
+        }
+    })).start();
+}
+
 
 /* Temporary redefinition of a nested function of KIM/services.js */
 function NodeIndicatorDetailsHistorical(cid, node_id, elem_id) {
@@ -411,8 +426,9 @@ function load_iaas_content (container_id) {
             }))
             .append($('<div>', {
                 text: 'Register an AWS',
-                class: 'top-action aws disabled',
+                class: 'top-action aws',
                 click: function(e) {
+                    iaas_aws_registerbutton_action(e, grid);
                 }
             }))
             .appendTo($('#' + container_id).prev('.action_buttons'));
@@ -722,7 +738,7 @@ function load_iaas_content (container_id) {
         },
         action_delete: {
             callback: function (id) {
-                var url = '/api/openstack/';
+                var url = '/api/virtualization/';
                 confirmDelete(url, id, ['iaas_list']);
             }
         },

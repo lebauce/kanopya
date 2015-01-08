@@ -42,6 +42,7 @@ use Kanopya::Test::Retrieve;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Cluster;
+use Entity::Component::KanopyaExecutor;
 use Entity::Component::Openssh5;
 use Entity::Component::Linux::Debian;
 use Entity::Vlan;
@@ -192,7 +193,7 @@ sub registerNode {
     diag('Add components on the node');
     my @toregister = @{ $args{components} };
 
-    # TODO: find the proper system component type from the registred masterimage
+    # TODO: find the proper system component type from the registered masterimage
     push @toregister, Entity::Component::Openssh5->new();
     push @toregister, Entity::Component::Linux::Debian->new(
                          nameserver1        => $args{nameserver1},
@@ -261,7 +262,7 @@ sub registerComponentOnNode {
 
         # And register it on the node
         $component->registerNode(node => $node, master_node => 1);
-        diag('Created and registred ' . $args{componenttype} . ' on node ' . $node->label);
+        diag('Created and registered ' . $args{componenttype} . ' on node ' . $node->label);
     }
     return $component;
 }

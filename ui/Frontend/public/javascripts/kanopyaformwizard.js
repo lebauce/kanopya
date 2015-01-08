@@ -1252,11 +1252,19 @@ var KanopyaFormWizard = (function() {
         var error = {};
         try {
             error = JSON.parse(data.responseText);
+        } catch (e) {}
+        
+        // The error message is either in "reason" or in "error".
+        var fields = ['reason', 'error'], fields_length = fields.length, i,
+          error_str = 'An error occurred, but cannot be parsed...';
+          
+        for(i=0; i<fields_length; i++) {
+            if (error[fields[i]] !== undefined) {
+            	error_str = error[fields[i]];
+            }
         }
-        catch (err) {
-            error.reason = 'An error occurs, but can not be parsed...'
-        }
-        $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all ui-widget-content' }));
+
+        $(this.content).prepend($("<div>", { text : error_str, class : 'ui-state-error ui-corner-all ui-widget-content' }));
         this.error(data);
     }
 

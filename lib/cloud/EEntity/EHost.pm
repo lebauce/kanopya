@@ -79,7 +79,6 @@ sub stop {
 sub release {
     my $self = shift;
     my %args = @_;
-
     $self->getHostManager->releaseHost(host => $self);
 }
 

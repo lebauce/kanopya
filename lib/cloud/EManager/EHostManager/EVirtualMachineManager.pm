@@ -306,6 +306,7 @@ sub checkHypervisorVMPlacementIntegrity {
                          });
 
     my $hypervisor = $args{host};
+    $log->debug("Hypervisor (Host) is a ".ref($hypervisor));
 
     # Get hypervisor vms according to HostManager
     my $h_vms = $self->getHypervisorVMs(host => $hypervisor);
