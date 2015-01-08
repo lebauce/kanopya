@@ -596,11 +596,11 @@ sub handleResult {
             }
 
             # Cancel all the operations of the group of the operation that failed
-            for my $tofail (map { EEntity::EOperation->new(operation => $_) } @tofail) {
+            for my $tofail (map { EEntity::EOperation->new(operation => $_, skip_not_found => 1) } @tofail) {
                 if ($tofail->state ne 'pending') {
                     try {
                         $log->info("Cancelling operation " . $tofail->type . " <" . $tofail->id . ">");
-                        EEntity::EOperation->new(operation => $tofail, skip_not_found => 1)->cancel();
+                        $tofail->cancel();
                     }
                     catch ($err){
                         $log->error("Error during operation cancel :\n$err");

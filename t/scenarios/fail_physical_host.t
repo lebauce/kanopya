@@ -72,37 +72,61 @@ sub main {
     # Dynamically modify the EHost class to raise exception at postStart.
     use_ok ('EEntity::EHost');
 
-    my $fails = { "First" => 1 , "Second" => 2 };
-    for $node ("First", "Second") {
-        $cluster->cluster_min_node($fails->{$node});
+    my $fails = {
+        "First" => {
+            node_number => 1,
+            fail_from_test => 0,
+            expected_state => "down",
+            expected_nodes => 0,
+            should_fail    => 1,
+        },
+        "Second" => {
+            node_number => 2,
+            fail_from_test => 0,
+            expected_state => "up",
+            expected_nodes => 1,
+            should_fail    => 0,
+        }
+    };
 
-        my $fail_from_test = 0;
+    for $node ("First", "Second") {
+        $cluster->cluster_min_node($fails->{$node}->{node_number});
+
         sub EEntity::EHost::postStart {
             my ($self, %args) = @_;
 
-            if ($self->node->node_number == $fails->{$node}) {
-                $fail_from_test = 1;
+            if ($self->node->node_number == $fails->{$node}->{node_number}) {
+                $fails->{$node}->{fail_from_test} = 1;
                 throw Kanopya::Exception(error => $node . " node fail !");
             }
         }
 
-        diag('Start physical host that should fail');
-        throws_ok {
-            Kanopya::Test::Execution->startCluster(cluster => $cluster);
-        } 'Kanopya::Exception::Test', 'Start ' . $node  .  ' node';
+        if ($fails->{$node}->{should_fail}) {
+            diag('Start physical host that should fail at ' . $node . ' node');
+            throws_ok {
+                Kanopya::Test::Execution->startCluster(cluster => $cluster);
+            } 'Kanopya::Exception::Test', 'Start ' . $node  .  ' node';
+        }
+        else {
+            diag('Start physical host that should succeed at ' . $node . ' node');
+            lives_ok {
+                Kanopya::Test::Execution->startCluster(cluster => $cluster);
+            } 'Start ' . $node  .  ' node';
+        }
 
         lives_ok {
             my ($state, $timestamp) = $cluster->reload->getState();
-            if ($state ne 'down') {
-                die "Cluster should be down, not $state";
+            if ($state ne $fails->{$node}->{expected_state}) {
+                die "Cluster should be " . $fails->{$node}->{expected_state} . ", not $state";
             }
         } 'Cluser should be down';
 
         my @nodes = $cluster->nodes;
-        ok(scalar(@nodes) == 0, "The cluster should have no nodes");
+        ok(scalar(@nodes) == $fails->{$node}->{expected_nodes},
+            "The cluster should have " . $fails->{$node}->{expected_nodes} . " node(s), not " . scalar(@nodes));
 
         lives_ok {
-            if (! $fail_from_test) {
+            if (! $fails->{$node}->{fail_from_test}) {
                 die "The start cluster failed, but not from the test mock";
             }
         } 'The ' . $node . ' node fail from test mock';

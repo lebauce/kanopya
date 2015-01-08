@@ -135,14 +135,18 @@ sub finish {
     # Add another node in a embedded workflow if required
     my @nodes = $self->{context}->{cluster}->nodes;
     if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
-        $self->workflow->enqueueNow(workflow => {
-            name   => 'AddNode',
-            params => {
-                context => {
-                    cluster => $self->{context}->{cluster}->_entity,
+        $self->workflow->enqueueNow(
+            workflow => {
+                name   => 'AddNode',
+                params => {
+                    context => {
+                        cluster => $self->{context}->{cluster}->_entity,
+                    },
                 },
             },
-        });
+            # Enqueue the workflow as harmless, to cancel the AddNode workflow sections that failed only
+            harmless => 1,
+        );
     }
 
     if (defined $self->{context}->{host_manager_sp}) {
