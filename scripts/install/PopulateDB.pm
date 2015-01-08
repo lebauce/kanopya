@@ -1530,10 +1530,10 @@ sub registerIndicators {
                 type     => 'GAUGE',
              },
             indicators => [
-                [ 'vsphere vm/total cpu', 'vm_cpu_total', 'summary.config.numCpu', undef, undef, 'FF000099', 'Cores', undef ],
-                [ 'vsphere vm/cpu usage', 'vm_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
-                [ 'vsphere vm/total mem', 'vm_mem_total', 'summary.config.memorySizeMB', undef, undef, 'FF000099', 'MBytes', undef ],
-                [ 'vsphere vm/mem usage', 'vm_mem_usage', 'summary.quickStats.hostMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere vm/total cpu', 'vm_cpu_total', 'vsphere_vm.summary.config.numCpu', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'vsphere vm/cpu usage', 'vm_cpu_usage', 'vsphere_vm.summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'vsphere vm/total mem', 'vm_mem_total', 'vsphere_vm.summary.config.memorySizeMB', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere vm/mem usage', 'vm_mem_usage', 'vsphere_vm.summary.quickStats.hostMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
         },
         {
@@ -1543,10 +1543,10 @@ sub registerIndicators {
                 type     => 'GAUGE',
              },
             indicators => [
-                [ 'vsphere hv/total cpu', 'hv_cpu_total', 'summary.hardware.numCpuCores', undef, undef, 'FF000099', 'Cores', undef ],
-                [ 'vsphere hv/cpu usage', 'hv_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
-                [ 'vsphere hv/total mem', 'hv_mem_total', 'summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
-                [ 'vsphere hv/mem usage', 'hv_mem_usage', 'summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere hv/total cpu', 'hv_cpu_total', 'vsphere_hv.summary.hardware.numCpuCores', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'vsphere hv/cpu usage', 'hv_cpu_usage', 'vsphere_hv.summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'vsphere hv/total mem', 'hv_mem_total', 'vsphere_hv.summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
+                [ 'vsphere hv/mem usage', 'hv_mem_usage', 'vsphere_hv.summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
         },
         {
