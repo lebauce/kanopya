@@ -119,6 +119,8 @@ Set the cluster as up if all node started, start the other nodes instead.
 sub finish {
     my ($self, %args) = @_;
 
+    $self->{context}->{cluster}->setState(state => "up");
+
     if (defined $self->{params}->{needhypervisor}) {
         $log->debug('Do not finish addNode workflow in case of automatic hypervisor scaleout');
 
@@ -133,18 +135,18 @@ sub finish {
     # Add another node in a embedded workflow if required
     my @nodes = $self->{context}->{cluster}->nodes;
     if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
-        $self->workflow->enqueueNow(workflow => {
-            name   => 'AddNode',
-            params => {
-                context => {
-                    cluster => $self->{context}->{cluster}->_entity,
+        $self->workflow->enqueueNow(
+            workflow => {
+                name   => 'AddNode',
+                params => {
+                    context => {
+                        cluster => $self->{context}->{cluster}->_entity,
+                    },
                 },
             },
-        });
-    }
-    # Set the cluster up instead
-    else {
-        $self->{context}->{cluster}->setState(state => "up");
+            # Enqueue the workflow as harmless, to cancel the AddNode workflow sections that failed only
+            harmless => 1,
+        );
     }
 
     if (defined $self->{context}->{host_manager_sp}) {
