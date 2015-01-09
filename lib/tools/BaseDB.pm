@@ -2952,7 +2952,7 @@ sub parseException {
             if (ref($clob) eq '') {
                 $label = '[N/A]'
             } else {
-                $label = $clob->label;
+                $label = $clob->label."#".$clob->id;
             }
             return Kanopya::Exception::DB::DeleteCascade->new(label      => $label,
                                                               dependant  => $dependant);
