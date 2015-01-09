@@ -424,7 +424,7 @@ function load_iaas_content (container_id) {
                     iaas_vsphere_registerbutton_action(e, grid);
                 }
             }))
-            .append($('<div>', {
+            .append($('<a>', {
                 text: 'Register an AWS',
                 class: 'top-action aws',
                 click: function(e) {
