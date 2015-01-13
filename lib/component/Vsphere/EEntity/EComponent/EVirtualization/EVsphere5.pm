@@ -205,10 +205,20 @@ sub startHost {
                       );
 
     # retrieve views
-    my $datacenter_view = $self->findEntityView(view_type   => 'Datacenter',
-                                             hash_filter => {
-                                                 name => $datacenter->vsphere5_datacenter_name
-                                             });
+    my $datacenter_view;
+    foreach my $attempt (1, 2) {
+         $datacenter_view = $self->findEntityView(view_type   => 'Datacenter',
+                                                  hash_filter => {
+                                                      name => $datacenter->vsphere5_datacenter_name
+                                                  });
+         if (defined $datacenter_view) {
+             last;
+         } elsif ($attempt == 1) {
+             $log->warn("Could not get datacenter_view for name ".$datacenter->vsphere5_datacenter_name.
+                       "at first attempt, trying one more time.");
+             sleep 3;
+         }
+    }
     if (not defined $datacenter_view) {
         my $errmsg = 'Did not find datacenter_view for name: '. $datacenter->vsphere5_datacenter_name;
         throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
