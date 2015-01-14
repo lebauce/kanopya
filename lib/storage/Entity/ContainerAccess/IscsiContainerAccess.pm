@@ -40,19 +40,19 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        description     => 'Iscsi export io mode (read only, writeback, ...)',
+        description     => 'iSCSI export I/O mode (read only, writeback, ...)',
     },
     typeio => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        description     => 'Type of exported disk (diskio, fileio depending on if it is a disk or a file',
+        description     => 'Type of the exported disk (diskio, fileio depending on whether it is a disk or a file)',
     },
     lun_name => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        description     => 'The lun name is concatenated to the iqn',
+        description     => 'This LUN name will be concatenated to the IQN',
     }
 };
 

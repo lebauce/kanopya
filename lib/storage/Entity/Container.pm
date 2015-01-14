@@ -47,37 +47,37 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9\.]*$',
         is_mandatory => 0,
         is_extended  => 0,
-	description  => 'It is the storage system hosting this disk',
+	description  => 'The storage system hosting this disk',
     },
     container_name => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
-	description  => 'It is the name of the disk',
+	description  => 'The name of the disk',
     },
     container_size => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
-	description  => 'It is the size of the disk',
+	description  => 'The size of the disk',
     },
     container_device => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
-	description  => 'It is the device name of the disk',
+	description  => 'The device name of the disk',
     },
     container_filesystem => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0,
-	description  => 'It is the deployed filesystem of the disk',
+	description  => 'The filesystem deployed on the disk',
     },
     container_freespace => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
-	description  => 'It is the amount of freespace',
+	description  => 'The amount of free space',
     },
 };
 

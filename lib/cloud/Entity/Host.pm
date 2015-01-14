@@ -49,7 +49,7 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9\.]*$',
         is_mandatory => 0,
         is_editable  => 0,
-        description  => 'It is the manager of this host (IaaS for a vm, BladeManager for a blade, ...)',
+        description  => 'The manager of this host (IaaS for a VM, BladeManager for a blade, ...)',
     },
     hostmodel_id => {
         label        => 'Board model',
@@ -74,7 +74,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'Some servers need specific Kernel, if it is your case, choose one',
+        description  => 'Some servers need a specific kernel. If this is your case, choose one.',
     },
     host_serial_number => {
         label        => 'Serial number',
@@ -83,14 +83,14 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1,
         description  => 'This is your UUID, it identifies your server.' .
-                        ' It could be your internal id, the vendor id, ...',
+                        ' It could be your internal ID, the vendor ID, ...',
     },
     host_desc => {
         label        => 'Description',
         type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        description  => 'Describe your host here. Where is it rack ? DC, room, chassis, ...',
+        description  => 'Describe your host here. Where is its rack? DC, room, chassis, ...',
         is_editable  => 1,
     },
     active => {
@@ -102,7 +102,7 @@ use constant ATTR_DEF => {
     },
     host_ram => {
         label        => 'RAM capability',
-        description  => 'Amount of Ram on the server',
+        description  => 'Amount of RAM in the server',
         type         => 'integer',
         unit         => 'byte',
         pattern      => '^\d*$',
@@ -112,7 +112,7 @@ use constant ATTR_DEF => {
     },
     host_core => {
         label        => 'CPU capability',
-        description  => 'number of Core in your server (CPU x Core x Hyperthreading)',
+        description  => 'Total number of cores in your server (CPU x Core x Hyperthreading)',
         type         => 'integer',
         unit         => 'core(s)',
         pattern      => '^\d*$',
@@ -140,7 +140,7 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'add the different network interfaces of your server',
+        description  => 'Add the different network interfaces of your server.',
     },
     harddisks => {
         label        => 'Hard disks',
@@ -148,7 +148,7 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'add the different hard disks of your server',
+        description  => 'Add the different hard disks of your server.',
     },
     ipmi_credentials => {
         label        => 'IPMI',
@@ -156,14 +156,14 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'add your ipmi credentials, HCM will be able to start and stop your server',
+        description  => 'Add your IPMI credentials, HCM will be able to start and stop your server.',
     },
     admin_ip => {
-        label        => 'Administration ip',
+        label        => 'Administration IP',
         is_virtual   => 1,
     },
     remote_session_url => {
-        label        => 'Remote session url',
+        label        => 'Remote session URL',
         is_virtual   => 1,
     },
 };
@@ -185,7 +185,7 @@ sub methods {
             description => 'remove an interface from this host',
         },
         addIface => {
-            description => 'add one or more interface to  this host',
+            description => 'add one or more interfaces to this host',
         },
     };
 }

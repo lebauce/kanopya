@@ -31,8 +31,8 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'It is the role assigned to the network interface (bridge for vm (vm),'.
-                        ' load balancing interface (public), private network (private)',
+        description  => 'The role assigned to the network interface - bridge for VM (vm),'.
+                        ' load balancing interface (public), private network (private).',        
     },
 };
 

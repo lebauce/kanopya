@@ -99,7 +99,7 @@ sub getManagerParamsDef {
             type         => 'enum',
             is_mandatory => 1,
             options      => \@boot_policies,
-            description  => 'Boot System used',
+            description  => 'Boot system used',
         },
         disk_manager_id => {
             label        => 'Disk manager',
@@ -109,9 +109,9 @@ sub getManagerParamsDef {
             is_mandatory => 1,
             is_editable  => 0,
             order        => 1,
-            description  => 'That is the system managing the disk in your storage management. '.
-                            'It could be the same (for SAN or NAS) but different too like linux'.
-                            ' nas with LVM and NFS',
+            description  => 'The system managing the disk in your storage system. '.
+                            'It could be the same as the Export manager (for SAN or NAS), '.
+                            'but it might also be different (Linux NAS with LVM and NFS).',
         },
         export_manager_id => {
             label        => 'Export manager',
@@ -121,9 +121,9 @@ sub getManagerParamsDef {
             is_mandatory => 1,
             is_editable  => 0,
             order        => 2,
-            description  => 'That is the system managing the disk export in your storage management.'.
-                            'It could be the same (for SAN or NAS) but different too like linux nas'.
-                            ' with LVM and NFS',
+            description  => 'The system managing the disk export in your storage. '.
+                            'It could be the same as the Disk manager (for SAN or NAS), '.
+                            'but it might also be different (Linux NAS with LVM and NFS).',
         },
     };
 }

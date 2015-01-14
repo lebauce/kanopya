@@ -49,12 +49,12 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9\.]*$',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'It is the device name of this exported volume',
+        description  => 'The device name of the exported volume',
     },
     export_manager_id => {
         pattern       => '^[0-9\.]*$',
         is_mandatory  => 0,
-        description   => 'Export system used to access to this volume',
+        description   => 'Export system used to access the volume',
     },
     container_access_export => {
         label        => 'Export name',
@@ -62,7 +62,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_editable  => 0,
-        description  => 'It is the export name of this volume',
+        description  => 'The export name of this volume',
     },
     container_access_ip => {
         pattern      => '^.*$',

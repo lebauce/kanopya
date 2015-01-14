@@ -39,8 +39,8 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'It is log level of your apache server.'.
-                        ' It could be debug, info, notive, warn, error, critical, alert or emergency',
+        description  => 'The log level of your Apache server.'.
+                        ' It could be debug, info, notive, warn, error, critical, alert or emergency.',
     },
     apache2_serverroot => { 
         label        => 'Server root',
@@ -48,7 +48,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'it is the root directory of the web server',
+        description  => 'The root directory of the web server',
     },
     apache2_ports => { 
         label        => 'HTTP Port',
@@ -56,8 +56,8 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'It is the HTTP port used by apache. It will be used by'.
-                        ' the load balancer to dispatch request between the different nodes',
+        description  => 'The HTTP port used by Apache. It will be used by'.
+                        ' the load balancer to dispatch requests between the different nodes.',
     },
     apache2_sslports => { 
         label        => 'SSL Port',
@@ -65,15 +65,15 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'It is the https port used by apache. It will be used by the load '.
-                        'balancer to dispatch request between the different nodes',
+        description  => 'The HTTPS port used by Apache. It will be used by the load '.
+                        'balancer to dispatch requests between the different nodes.',
     },
     apache2_virtualhosts => {
         label       => 'Virtual hosts',
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
-        description  => 'It is the list of virtualhost managed by this web server',
+        description  => 'The list of "virtual hosts" managed by this web server',
     },
 };
 

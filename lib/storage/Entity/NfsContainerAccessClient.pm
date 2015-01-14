@@ -23,19 +23,19 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        description     => 'Name of the export access by the nfs client',
+        description     => 'Name of the export for the NFS client',
     },
     options => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        description     => 'Options used by the nfs client',
+        description     => 'Options for the NFS client',
     },
     nfs_container_access_id => {
         pattern => '^[0-9\.]*$',
         is_mandatory => 1,
         is_extended => 0,
-        description     => 'It is the device access by the nfs client',
+        description     => 'The device accessed by the NFS client',
     },
 };
 

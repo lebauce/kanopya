@@ -83,7 +83,7 @@ sub getManagerParamsDef {
                     policy_id => {
                         type        => 'relation',
                         relation    => 'single',
-                        description => 'It is the original network policy used to '.
+                        description => 'The original network policy used to '.
                                        'generate the network configuration',
                     },
                     netconfs => {
@@ -93,7 +93,7 @@ sub getManagerParamsDef {
                         link_to     => 'netconf',
                         pattern     => '^\d*$',
                         is_editable => 1,
-                        description => 'They are the differents network topologies plug'.
+                        description => 'The different network topologies plugged'.
                                        ' on this network interface',
                     },
                     bonds_number => {
@@ -101,7 +101,7 @@ sub getManagerParamsDef {
                         type        => 'integer',
                         pattern     => '^\d*$',
                         is_editable => 1,
-                        description	=> 'It is the bond id',
+                        description	=> 'The bond ID',
                     },
                     interface_name => {
                         label        => 'Name',
@@ -109,7 +109,7 @@ sub getManagerParamsDef {
                         pattern      => '^.*$',
                         is_editable  => 1,
                         is_mandatory => 1,
-                        description  => 'It is the name of the net interface on operating side',
+                        description  => 'The name of the network interface as seen by the operating system',
                     },
                 },
             },
