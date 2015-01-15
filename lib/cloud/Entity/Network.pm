@@ -44,7 +44,7 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'It is the network address (eg. 10.0.0.0 or 172.23.32.128)',
+        description  => 'The network address (e.g. 10.0.0.0 or 172.23.32.128)',
     },
     network_netmask => {
         label        => 'Netmask',
@@ -59,17 +59,16 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'Gateway is an optional parameter to specify '.
-                        'what is the ip of the gateway on this network',
+        description  => 'This optional parameter specifies the gateway IP on this network',
     },
     poolips => {
-        label        => 'Pools Ip',
+        label        => 'IP pools',
         type         => 'relation',
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'It is the list of ip pools available on this network.'.
-                        'This pools will be used by HCM to assigned ip adress to service instances',
+        description  => 'The list of IP pools available on this network.'.
+                        'These pools will be used by HCM to assign IP addresses to service instances.',
     },
 };
 

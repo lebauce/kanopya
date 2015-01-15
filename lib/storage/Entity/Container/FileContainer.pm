@@ -40,7 +40,7 @@ use constant ATTR_DEF => {
         pattern         => '^[0-9\.]*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        description     => 'Access system use by the host to access to this volume',
+        description     => 'The host uses this system for accessing the volume.',
     },
 };
 

@@ -37,7 +37,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'It is Iface name, it is the name of the interface in your linux system (eg. eth0)',
+        description  => 'The name of the interface in your Linux system (eg. "eth0")',
     },
     iface_mac_addr => {
         label        => 'MAC address',
@@ -46,8 +46,8 @@ use constant ATTR_DEF => {
                         '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'this is the mac adress of your network interface, it is really important for PXE'.
-                        ' iface (grub file will be generated with this identifier',
+        description  => 'The MAC address of your network interface. It is essential for the PXE'.
+                        ' interface, as it will be included in GRUB and DHCP configurations',
     },
     iface_pxe => {
         label        => 'PXE enabled',
@@ -55,22 +55,22 @@ use constant ATTR_DEF => {
         pattern      => '^[01]$',
         is_mandatory => 1,
         is_editable  => 1,
-        description  => 'Is this interface will be use to boot on pxe ?',
+        description  => 'Will this interface be used to boot through PXE?',
     },
     host_id => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
         is_mandatory => 1,
-        description  => 'this is the host identifier of the server hosting this network interface',
+        description  => 'The host identifier of the server with this network interface',
     },
     master => {
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
         is_editable  => 1,
-        description  => 'Master field allow to specify which iface is master for bonding configuration.'.
-                        'It is also used for route',
+        description  => 'You can specify which interface is the master in a bonding configuration.'.
+                        ' It is also used for routing.',
     },
     netconf_ifaces => {
         label        => 'Network configurations',
@@ -79,7 +79,7 @@ use constant ATTR_DEF => {
         link_to      => 'netconf',
         is_mandatory => 0,
         is_editable  => 1,
-        description => 'Choose network topology plugged on this interface',
+        description => 'Choose the network topology plugged on this interface.',
     }
 };
 

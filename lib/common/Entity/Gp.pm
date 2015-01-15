@@ -46,21 +46,21 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 1,
-	description  => 'It is the name of the group.',
+	description  => 'The name of the group',
     },
     gp_desc => {
         pattern      => '.*',
         is_mandatory => 0,
         is_extended  => 0,
         is_editable  => 1,
-        description  => 'It is the description of the group.(eg. Team, Business Unit, ...)',
+        description  => 'The description of the group (e.g. Team, Business Unit, ...)',
     },
     gp_type => {
         pattern      => '^\w*$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0,
-        description  => 'HCM offer a group management for all type of entity managed by the system',
+        description  => 'HCM offers a group management for all types of entities managed by the system.',
     },
 };
 

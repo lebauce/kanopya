@@ -48,7 +48,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
         is_virtual   => 1,
-        description     => 'It is the options use by the client to correctly connect and mount a nfs share',
+        description     => 'The options used by the client to correctly connect and mount the NFS share',
     },
     nfs_container_access_client_name => {
         label        => 'Client name',
@@ -56,7 +56,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
         is_virtual   => 1,
-        description  => 'It is the name of the nfs share',
+        description  => 'The name of the NFS share',
     }
 };
 

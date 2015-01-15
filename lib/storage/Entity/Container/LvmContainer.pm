@@ -39,7 +39,7 @@ use constant ATTR_DEF => {
         pattern         => '^[0-9\.]*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        description     => 'This is the lv corresponding to the disk',
+        description     => 'The Logical Volume (LV) corresponding to the disk',
     },
 };
 

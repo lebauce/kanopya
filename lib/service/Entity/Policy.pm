@@ -69,7 +69,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
-	description  => 'It is the name of the policy',
+	description  => 'You have to give a name to this policy.',
     },
     policy_desc => {
         label        => 'Description',
@@ -77,7 +77,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_editable  => 1,
-	description  => 'It is the description of the policy',
+	description  => 'You can provide a description of the policy.',
     },
     # TODO: Do not store the policy type in db.
     policy_type => {

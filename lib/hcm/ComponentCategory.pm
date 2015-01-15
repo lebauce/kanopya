@@ -26,7 +26,7 @@ use constant ATTR_DEF => {
         pattern      => '^\w+$',
         is_mandatory => 1,
         is_extended  => 0,
-        description  => 'It is the name of the component category (eg WebServer, DatabaseServer, IaaS, ...)',
+        description  => 'The name of the component category (e.g. WebServer, DatabaseServer, IaaS, ...)',
     },
 };
 

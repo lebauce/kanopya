@@ -52,8 +52,8 @@ use constant ATTR_DEF => {
         is_mandatory   => 1,
         is_extended    => 0,
         is_editable    => 1,
-        description    => 'HCM manages different class of component.'.
-                          'The component type allows to filter component.',
+        description    => 'HCM manages different classes of components.'.
+                          'The component type allows to filter the components.',
     },
     component_template_id => {
         pattern        => '^\d*$',
