@@ -25,8 +25,8 @@ INSERT INTO `aws_instance_type`
 INSERT INTO `class_type` (`class_type`) VALUES 
   ('Entity::Masterimage::AwsMasterimage');
 
-INSERT INTO `component_type` (`component_name`, `component_version`, `deployable`)
-  VALUES ('AwsAccount', 6, 1);
+INSERT INTO `component_type` (`component_type_id`, `component_name`, `component_version`, `deployable`)
+  SELECT class_type_id, 'AwsAccount', 6, 1 FROM class_type WHERE class_type = 'Entity::Masterimage::AwsMasterimage';
 
 INSERT INTO `component_type_category`
   SELECT component_type.component_type_id, component_category.component_category_id
