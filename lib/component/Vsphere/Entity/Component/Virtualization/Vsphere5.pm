@@ -154,6 +154,7 @@ sub new {
     my $self = $class->SUPER::new(%args);
     my $pp = ParamPreset->new();
     $self->param_preset_id($pp->id);
+    $self->{vsphere} = undef;
     return $self;
 }
 
@@ -167,11 +168,12 @@ sub create {
     Kanopya::Database::beginTransaction();
     my $self = $class->new(%args);
 
-    # Try to connect to the api to do not register the componnet if connexion infos are eroneous
+    # Try to connect to the API, to block registering the component if connexion infos are erroneous
     try {
-        $self->negociateConnection();
+        $self->connect();
     }
     catch ($err) {
+        $log->error($err);
         Kanopya::Database::rollbackTransaction();
         throw Kanopya::Exception::Internal::WrongValue(
                   error => "Unable to connect to the vSphere IAAS, " .
@@ -391,12 +393,20 @@ Try to open a connection to a vCenter or ESXi instance
 =cut
 
 sub connect {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => ['user_name', 'password', 'url']);
-
+    my ($self) = @_;
+    # General::checkParams(args => \%args, required => ['user_name', 'password', 'url']);
+    
+    return if defined $self->{vsphere};
+    
+    my $service_url = $self->vsphere5_url;
+    if ($service_url !~ m#://#) {
+        $service_url = "https://".$service_url;
+    }
     eval {
-        Util::connect($args{url}, $args{user_name}, $args{password});
+        $self->{vsphere} = Vim->new(service_url => $service_url);
+        $self->{vsphere}->login(
+            user_name => $self->vsphere5_login,
+            password  => $self->vsphere5_pwd );
     };
     if ($@) {
         $errmsg = 'Could not connect to vCenter server: '.$@;
@@ -416,51 +426,19 @@ End a session to a vCenter or ESXi instance
 =cut
 
 sub disconnect {
+    my ($self) = @_;
+    return unless defined $self->{vsphere};
+    
     eval {
-        Util::disconnect();
+        $self->{vsphere}->logout();
     };
     if ($@) {
         $errmsg = 'Could not disconnect from vCenter server: '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     $log->debug('A connection to vSphere has been closed');
+    $self->{vsphere} = undef;    
     return;
-}
-
-=pod
-
-=begin classdoc
-
-Check if a connection is established and if not create one using the component configuration
-
-=end classdoc
-
-=cut
-
-sub negociateConnection {
-    my ($self,%args) = @_;
-
-    $log->debug('Checking if a session to vSphere is already opened');
-    #try to grab a dummy entity to check if a session is opened
-    my $sc;
-    eval {
-        $sc = Vim::get_service_content;
-    };
-    if ($@ =~ /no global session is defined/ ||
-        $@ =~ /session object is uninitialized or not logged in/) {
-        $log->debug('opening a new session to vSphere');
-
-        $self->connect(
-            user_name => $self->vsphere5_login,
-            password  => $self->vsphere5_pwd,
-            url       => 'https://'.$self->vsphere5_url,
-        );
-        return;
-    }
-    else {
-        $log->debug('A session toward vSphere is already opened');
-        return;
-    }
 }
 
 
@@ -845,11 +823,11 @@ sub getView {
 
     General::checkParams(args => \%args, required => [ 'mo_ref' ]);
 
-    $self->negociateConnection();
+    $self->connect();
 
     my $view;
     eval {
-        $view = Vim::get_view(mo_ref => $args{mo_ref});
+        $view = $self->{vsphere}->get_view(mo_ref => $args{mo_ref});
     };
     if ($@) {
         $errmsg = 'Could not get view: '.$@;
@@ -877,11 +855,11 @@ sub getViews {
 
     General::checkParams(args => \%args, required => [ 'mo_ref_array' ]);
 
-    $self->negociateConnection();
+    $self->connect();
 
     my $views;
     eval {
-        $views = Vim::get_views(mo_ref_array => $args{mo_ref_array});
+        $views = $self->{vsphere}->get_views(mo_ref_array => $args{mo_ref_array});
     };
     if ($@) {
         $errmsg = 'Could not get views: '.$@;
@@ -928,7 +906,7 @@ sub findEntityView {
         }
     );
 
-    $self->negociateConnection();
+    $self->connect();
 
     my $hash = {
         view_type    => $args{view_type},
@@ -939,7 +917,7 @@ sub findEntityView {
 
     my $view;
     eval {
-        $view = Vim::find_entity_view(%$hash);
+        $view = $self->{vsphere}->find_entity_view(%$hash);
     };
     if ($@) {
         $errmsg = 'Could not get entity ' . keys(%{ $args{hash_filter} })
@@ -986,7 +964,7 @@ sub findEntityViews {
                              'begin_entity'   => undef,
                          });
 
-    $self->negociateConnection();
+    $self->connect();
 
     my $hash = {
         view_type    => $args{view_type},
@@ -997,7 +975,7 @@ sub findEntityViews {
 
     my $views;
     eval {
-        $views = Vim::find_entity_views(%$hash);
+        $views = $self->{vsphere}->find_entity_views(%$hash);
     };
     if ($@) {
         $errmsg = 'Could not get entities of type ' . $args{view_type} . ': ' . $@;

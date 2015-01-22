@@ -79,7 +79,7 @@ sub addDatastore {
         }
     );
 
-    $self->negociateConnection();
+    # $self->negociateConnection();
 
     if ($args{diskless}) {
         # use existing datastore to store vm files
@@ -184,8 +184,6 @@ sub startHost {
 
     $log->info('Calling startHost on EVSphere '. ref($self));
 
-    $self->negociateConnection();
-
     my $host       = $args{host};
     my $hypervisor = $args{hypervisor};
     my $guest_id   = 'debian6_64Guest';
@@ -194,6 +192,7 @@ sub startHost {
 
     if (not defined $hypervisor) {
         my $errmsg = "Cannot add node " . $args{host}->label . ", no hypervisor available";
+        $self->disconnect();
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -221,6 +220,7 @@ sub startHost {
     }
     if (not defined $datacenter_view) {
         my $errmsg = 'Did not find datacenter_view for name: '. $datacenter->vsphere5_datacenter_name;
+        $self->disconnect();
         throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
     }
     my $host_view = $self->findEntityView(view_type   => 'HostSystem',
@@ -232,6 +232,7 @@ sub startHost {
 
     if (not defined $host_view) {
         my $errmsg = 'Did not find host_view for UUID: '. $hypervisor->vsphere5_uuid;
+        $self->disconnect();
         throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
     }
 
@@ -315,6 +316,7 @@ sub startHost {
     };
     if ($@) {
         my $errmsg = 'Error while creating the virtual machine on host '. $hypervisor->id . ' : '.$@;
+        $self->disconnect();
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -341,8 +343,10 @@ sub startHost {
     };
     if ($@) {
         my $errmsg = 'Error while powering on VM ' . $host->id . ' : ' . $@;
+        $self->disconnect();
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    $self->disconnect();
 }
 
 =pod
@@ -464,8 +468,10 @@ sub scaleCpu {
         };
         if ($@) {
             $errmsg = 'Error scaling in CPU on virtual machine '.$host->node->node_hostname.': '.$@;
+            $self->disconnect();
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
+        $self->disconnect();
     }
     else {
         $errmsg = 'The host type: ' . ref $host . ' is not handled by this manager';
@@ -526,8 +532,10 @@ sub scaleMemory {
         };
         if ($@) {
             $errmsg = 'Error scaling in Memory on virtual machine '.$host->node->node_hostname.': '.$@;
+            $self->disconnect();
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
+        $self->disconnect();
     }
     else {
         $errmsg = 'The host type: ' . ref $host . ' is not handled by this manager';
@@ -583,8 +591,10 @@ sub migrateHost {
     if ($@) {
         $errmsg = 'Error migrating VM '.$host->node->node_hostname.' to hypervisor ' .
                       $hv_uuid . ' : ' . $@;
+        $self->disconnect();
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    $self->disconnect();
 }
 
 sub resubmitNode {
@@ -625,6 +635,7 @@ sub halt {
 
     # stop vm
     $vm_view->PowerOffVM;
+    $self->disconnect();
 }
 
 sub stopHost {
@@ -653,6 +664,7 @@ sub stopHost {
 
     # Dissociate disks from VM + delete VM
     $self->removeVm(host => $host, vm_view => $vm_view, rename_disk => 1);
+    $self->disconnect();
 }
 
 sub releaseHost {
@@ -690,6 +702,7 @@ sub removeVm {
 
     # delete vm
     $args{vm_view}->Destroy;
+    $self->disconnect();
 }
 
 sub dissociateDisk {
@@ -745,10 +758,13 @@ sub dissociateDisk {
             my $e_container_access = EEntity->new(entity => $container_access);
 
             # get disk filename
-            (my $disk_file_info) = grep {
-                ($_->type eq 'diskExtent') and ($_->name =~ m/$systemimage_name/)
-            } @$disk_files_info;
-            my $disk_filename = (split(/] /,$disk_file_info->name))[1];
+            my $disk_filename;
+            foreach my $file_info (@$disk_files_info) {
+                if ($file_info->type eq 'diskExtent' and $file_info->name =~ m/$systemimage_name/) {
+                    $disk_filename = (split(/] /, $file_info->name))[1];
+                }
+                last;
+            }
 
             # rename disk file
             eval {
@@ -997,6 +1013,7 @@ sub getHypervisorVMs {
             }
         }
     }
+    $self->disconnect();
 
     return {
         vm_ids       => \@vm_ids,
@@ -1034,6 +1051,7 @@ sub getVMDetails {
                    );
     };
     if ($@) {
+        $self->disconnect();
         throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure");
     }
 
@@ -1044,6 +1062,7 @@ sub getVMDetails {
                              name => $self->getView(mo_ref => $vm_view->runtime->host)->name,
                              type => 'node',
                          );
+    $self->disconnect();
 
     # TODO : transition state MIGRATING using WaitForUpdatesEx
     return {
@@ -1241,7 +1260,8 @@ sub synchronize {
     for my $datacenter (values %existing_dcs) {
         $self->unregisterDatacenter(datacenter => $datacenter);
     }
-
+    
+    $self->disconnect();
     return;
 }
 

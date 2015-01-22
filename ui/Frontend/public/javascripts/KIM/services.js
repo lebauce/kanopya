@@ -784,7 +784,7 @@ function runScaleWorkflow(type, eid, spid, successCallback) {
                     $.ajax({
                         async       : false,
                         url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
-                                      'manager_category.parent.category_name=HostManager&expand=manager_category',
+                                      'category_name=HostManager&expand=manager_category',                                      
                         type        : 'GET',
                         success     : function(hmgr) {
                             $.ajax({
