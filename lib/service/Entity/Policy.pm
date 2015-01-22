@@ -264,7 +264,7 @@ attributes, for example, the complete list of attributes of an hosting policy de
 of the value of the attribute 'host_manager'.
 
 This method implemented in the base class of policies build the static attributes definition,
-and then call getPolicyDef on the conrete policy to merge the dynamic attributes definition.
+and then call getPolicyDef on the concrete policy to merge the dynamic attributes definition.
 
 @return the attributes definiton.
 
@@ -292,7 +292,7 @@ sub toJSON {
 
         # Merge params with existing values
         # If the policy if is defined in params, instanciate it to merge params
-        # with fixed values and force its as non editable.
+        # with fixed values and force it as non editable.
         my $policy;
         if (defined $args{params}->{$class->policy_type . '_policy_id'}) {
             $policy = $class->get(id => $args{params}->{$class->policy_type . '_policy_id'});
@@ -359,7 +359,7 @@ sub getPolicyDef {
 =pod
 =begin classdoc
 
-Recursivly handle policy attributes, so handle as the same way
+Recursively handle policy attributes, so handle as the same way
 static policy attrs and dynamic attrs that depends of the managers.
 
 =end classdoc
@@ -474,8 +474,8 @@ sub handlePolicyDefAttribute {
 =begin classdoc
 
 Update the params in function of the trigger effects.
-An attribute trriger could affect the merge of the params
-with the existings values, and unset some params.
+An attribute trigger could affect the merge of the params
+with the existing values, and unset some params.
 
 @return the processed param hash
 
@@ -491,7 +491,7 @@ sub processParams {
                          optional => { 'trigger' => undef });
 
     # If the trigger attribute is set to undef, remove it further
-    # from the params merged with exiting values
+    # from the params merged with existing values
     my $trigger_unset = (defined $args{trigger} && not defined $args{params}->{$args{trigger}});
 
     # Merge params with existing values.
@@ -781,12 +781,12 @@ sub getNonEditableAttributes {
 =begin classdoc
 
 Get the param preset (dynamic attributes) of the policy in a flat
-format keys/values. It is usefull for example to display and edit
+format keys/values. For example, it is useful for displaying and editing
 the policy pattern.
 
 @return the parameters hash.
 
-@todo dispath policy type pecific params hnadling a concrete classes.
+@todo dispatch policy type-specific params handling concrete classes.
 
 =end classdoc
 =cut
@@ -801,13 +801,13 @@ sub getParams {
     my $presets = $self->param_preset;
     my $pattern = $presets ? $presets->load() : {};
 
-    # Process the multi level hash pattern to build to key/value hash
+    # Process the multi-level hash pattern to build to key/value hash
 
     # Firstly move the manager params from the manager level to the root level
     if (defined $pattern->{managers}) {
         my $managers = delete $pattern->{managers};
 
-        # Browse all the managers to get thier respective params
+        # Browse all the managers to get their respective params
         for my $manager (keys %{ $managers }) {
                 my $manager_type = $managers->{$manager}->{manager_type};
                 if (defined $manager_type) {
@@ -827,9 +827,23 @@ sub getParams {
     }
 
     # List params values are stored as hashes because they need to be merged
-    # So keep the the values of the hash as value for the param.
-    return $self->relationsHashToList(params  => $pattern,
-                                      attrdef => $class->toJSON(params => $pattern)->{attributes});
+    # So keep the values of the hash as value for the param.
+    my $hash_value_found = 0;    
+    while (my ($key, $value) = each %$pattern) {
+        if (ref($value) eq 'HASH') {
+            $hash_value_found = 1;
+            last;
+        }
+    }
+    
+    if ($hash_value_found) {
+        # Calculation of attrdef below is very costly, but hard to improve
+        # without re-doing most of the hierarchy system. 
+        return $self->relationsHashToList(params  => $pattern,
+                   attrdef => $class->toJSON(params => $pattern)->{attributes});
+    } else {
+        return $pattern;
+    }
 }
 
 
