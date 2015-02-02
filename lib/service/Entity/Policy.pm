@@ -419,7 +419,8 @@ sub handlePolicyDefAttribute {
 
         # If the id of the manager defined but do not corresponding to a available value,
         # it is an old value, so delete it.
-        if (not $manager_options->{$args{params}->{$args{attrname}}}) {
+        if (defined $args{params}->{$args{attrname}} &&
+            ! $manager_options->{$args{params}->{$args{attrname}}}) {
             delete $args{params}->{$args{attrname}};
         }
         # If no manager id defined and and attr is mandatory, use the first one as value
@@ -440,8 +441,10 @@ sub handlePolicyDefAttribute {
             my $managerparams = $manager->$paramsmethod(params => $args{params});
 
             # Add the dynamic attr of the manager to the policy attr def
-            my @dynamic_attrs = sort { $managerparams->{$a}->{order} <=> $managerparams->{$b}->{order} }
+            my @dynamic_attrs = sort { ($managerparams->{$a}->{order} || 0)
+                                           <=> ($managerparams->{$b}->{order} || 0) }
                                     keys (%{ $managerparams });
+
             for my $dynamic_attrname (@dynamic_attrs) {
                 $attrdef->{$dynamic_attrname} = $managerparams->{$dynamic_attrname};
 
@@ -453,8 +456,8 @@ sub handlePolicyDefAttribute {
                 }
 
                 # Handle the dynamic attr as the static ones, if not done by a manager
-                # TODO: With the folliwing grep, we do not detect relations single_multi
-                #       handle at the beguining of the merthod
+                # TODO: With the following grep, we do not detect relations single_multi
+                #       handled at the beguining of the method
                 if (! scalar(grep { $_ eq $dynamic_attrname } @{ $args{attributes}->{displayed} })) {
                     $class->handlePolicyDefAttribute(%args, attrname => $dynamic_attrname);
                 }
