@@ -218,13 +218,14 @@ sub processAlteredPolicies {
         # Browse the policy definition and create a derivated policy
         # if some empty attributes has been filled.
         my $altered = 0;
-        my $policyattrs = $policyclass->toJSON(params => $json)->{attributes};
+        my $policyattrs = $policyclass->toJSON(params => $merge->merge($json, \%args))->{attributes};
         for my $attrname (keys %{ $policyattrs }) {
             my $is_alterable = (defined $args{$attrname} &&
                                    ! $policyattrs->{$attrname}->{is_virtual} &&
                                    ! exists $policyclass->getPolicySelectorAttrDef->{$attrname});
-            my $is_altered_scalar = (ref($args{$attrname}) ne "ARRAY" &&
-                                        "$args{$attrname}" ne "$json->{$attrname}");
+            my $is_altered_scalar = ((ref($args{$attrname}) || "") ne "ARRAY" &&
+                                        (defined $args{$attrname} ? "$args{$attrname}" : "") ne
+                                            (defined  $json->{$attrname} ? "$json->{$attrname}" : ""));
             my $is_altered_array = (ref($args{$attrname}) eq "ARRAY" &&
                                        General::isArrayDiffers(left  => $args{$attrname},
                                                                right => $json->{$attrname} || []));
