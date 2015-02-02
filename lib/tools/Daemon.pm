@@ -386,7 +386,7 @@ Class method.
 
 sub daemonsToRun {
     return [ map ("kanopya-$_",
-        qw(aggregator collector front executor mail-notifier openstack-sync rulesengine state-manager))
+        qw(aggregator anomaly-detector collector front executor mail-notifier rulesengine state-manager))
     ];
 }
 
