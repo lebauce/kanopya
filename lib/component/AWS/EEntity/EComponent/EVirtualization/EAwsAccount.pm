@@ -208,8 +208,6 @@ sub checkUp {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
     my $node = $args{host}->node;
-    return 0 if defined $node->admin_ip_addr;
-    
     my $aws = $self->_entity;
     
     my $instance_id = $aws->_removeAwsPrefix($args{host}->host_serial_number);
@@ -218,9 +216,9 @@ sub checkUp {
     
     if (defined $vm_info->{ip}) {
         $node->update(admin_ip_addr => $vm_info->{ip});
-        return 0;
+        return 1;
     } else {
-        return 10;
+        return 0;
     }
 }
 
