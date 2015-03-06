@@ -23,7 +23,7 @@ INSERT INTO `aws_instance_type`
 ;
 
 INSERT INTO `class_type` (`class_type`) VALUES 
-  ('Entity::Masterimage::AwsMasterimage');
+  ('Entity::Masterimage::AwsMasterimage'), ('Entity::Component::Virtualization::AwsAccount');
 
 INSERT INTO `component_type` (`component_type_id`, `component_name`, `component_version`, `deployable`)
   SELECT class_type_id, 'AwsAccount', 6, 1 FROM class_type WHERE class_type = 'Entity::Masterimage::AwsMasterimage';
@@ -40,8 +40,8 @@ INSERT INTO `component_type_category`
 
 DELETE FROM `component_type_category` WHERE `component_type_id` IN
   (SELECT component_type_id FROM component_type WHERE component_name = 'AwsAccount');
-DELETE FROM `component_type` WHERE `component_name` = 'AwsAccount');
-DELETE FROM `class_type` WHERE `class_type` = 'Entity::Masterimage::AwsMasterimage');
+DELETE FROM `component_type` WHERE `component_name` = 'AwsAccount';
+DELETE FROM `class_type` WHERE `class_type` = 'Entity::Masterimage::AwsMasterimage';
 
 DROP TABLE IF EXISTS `aws_account`;
 DROP TABLE IF EXISTS `aws_instance_type`;

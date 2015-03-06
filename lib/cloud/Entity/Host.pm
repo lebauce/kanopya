@@ -439,6 +439,10 @@ sub adminIp {
     if (defined $iface and $iface->hasIp) {
         return $iface->getIPAddr;
     }
+    
+    if (defined $self->node and defined $self->node->admin_ip_addr) {
+        return $self->node->admin_ip_addr;
+    }
 
     return undef;
 }
