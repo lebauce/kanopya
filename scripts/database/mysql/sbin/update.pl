@@ -9,8 +9,14 @@ use DatabaseMigration::Transient;
 use Getopt::Long;
 use POSIX;
 
-my $mark_as_applied_until;
-GetOptions('mark_as_applied_until=s' => \$mark_as_applied_until);
+my ($mark_as_applied_until, $show_help);
+GetOptions('mark_as_applied_until=s' => \$mark_as_applied_until,
+           'help|h' => \$show_help );
+
+if ($show_help) {
+    showHelp();
+    exit 0;
+}
 
 if ($mark_as_applied_until) {
     if ($mark_as_applied_until eq 'now') {
@@ -38,11 +44,11 @@ DatabaseMigration::Transient->runAll();
 
 sub showHelp {
     print <<"HELP";
-Usage: update.pl [ --mark_as_applied_until YearMonthDayHourMinute ]
+Usage: update.pl [ --mark_as_applied_until { now | YearMonthDayHourMinute } ]
 
 Without arguments, apply all pending migrations.
 
 With --mark_as_applied_until, does not execute any migration but
-mark all migrations earlier or equal to the given time as applied.    
+mark all migrations earlier or equal to the given time as applied.
 HELP
 }

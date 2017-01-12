@@ -33,26 +33,30 @@ use constant ATTR_DEF => {
         type         => 'string',
         is_mandatory => 1,
         is_editable  => 1,
-        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+	description  => 'The IP of your HP VirtualConnect management interface',
     },
     virtualconnect_user => {
         label        => 'VirtualConnect User',
         type         => 'string',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+	description  => 'The user name for your HP VirtualConnect management account',
     },
     bladesystem_ip      => {
         label        => 'BladeSystem IP',
         type         => 'string',
         is_mandatory => 1,
         is_editable  => 1,
-        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+	description  => 'The IP of your HP C7000 management interface',
     },
     bladesystem_user    => {
         label        => 'BladeSystem User',
         type         => 'string',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+	description  => 'The user name for your HP C7000 management account',
     },
     host_type           => {
         is_virtual => 1

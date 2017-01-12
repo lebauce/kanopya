@@ -277,8 +277,11 @@ sub test_new_and_update {
     } 'Update Entity::Host attributes';
 
     lives_ok {
-        $host->update(host_core => 4, class_type_id => 1);
-        if ($host->host_core != 2 && $host->class_type->id != 1) {
+        my $entity_classtype_id = ClassType->find(
+                                      hash => { class_type => "Entity" }
+                                  )->id; # this is not always 1 !!
+        $host->update(host_core => 4, class_type_id => $entity_classtype_id);
+        if ($host->host_core != 2 && $host->class_type->id != $entity_classtype_id) {
             die "Attribute host_core and class_type_id has not been updated."
         }
     } 'Update Entity::Host attributes from diferent hierarchy levels';

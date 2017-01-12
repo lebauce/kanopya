@@ -846,6 +846,43 @@ sub findOrCreate {
     }
 }
 
+=pod
+=begin classdoc
+
+Find an instance (with the given search criteria) and update
+its values (with separate update criteria).
+
+If it does not exist, create a new instance with all values put together.
+
+@param find (Hashref) The search criteria
+@param update (Hashref) The update criteria
+@param do_not_update_existing_instance (Boolean, 1 or 0) If set to 1, do not update
+the instance found. The "update criteria" will only be used to create a new instance.
+
+@return the object found or created
+=cut
+
+sub createOrUpdate {
+    my ($class, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => [ 'find' ],
+                         optional => { 'update' => {}, 
+                                       'do_not_update_existing_instance' => 0 });
+    my $instance;
+    try {
+        # $find_copy will be modified, and we need the original content in the catch clause. 
+        my $find_copy = clone($args{find});
+        $instance = $class->find(hash => $find_copy);
+        unless ($args{do_not_update_existing_instance}) {
+            $instance->update(%{$args{update}});
+        }
+        
+    } catch (Kanopya::Exception::Internal::NotFound $ex) {
+        $instance = $class->new(%{$args{find}}, %{$args{update}});
+    }
+    
+    return $instance;
+}
 
 =pod
 =begin classdoc
@@ -2915,7 +2952,7 @@ sub parseException {
             if (ref($clob) eq '') {
                 $label = '[N/A]'
             } else {
-                $label = $clob->label;
+                $label = $clob->label."#".$clob->id;
             }
             return Kanopya::Exception::DB::DeleteCascade->new(label      => $label,
                                                               dependant  => $dependant);

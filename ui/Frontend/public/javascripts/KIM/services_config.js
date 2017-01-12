@@ -42,23 +42,53 @@ function loadServicesConfig(cid, eid) {
     $(addButton).bind('click', function (e) {
         (new KanopyaFormWizard({
             title      : 'Add components',
-            type       : 'cluster',
             id         : eid,
-            relations  : { 'components' : [ "component_type_id", "executor_component_id" ] },
-            displayed  : [ 'cluster_name', 'components' ],
+            displayed  : [ 'cluster_name', 'component_types' ],
             rawattrdef : {
-                components : {
+                cluster_name : {
+                    label       : 'Instance name',
+                    type        : 'string',
+                    is_editable : 0,
+                },
+                component_types : {
+                    label         : 'Components to add',
+                    type          : 'relation',
+                    relation      : 'multi',
+                    is_mandatory  : 1,
+                    is_editable   : 1,
                     hide_existing : 1,
-                    is_editable   : 1
                 }
             },
-            optionsCallback  : function (name) {
-                if (name === 'component_type_id') {
-                    // Get the component types supported by this service rovider only
-                    return ajax('GET', '/api/cluster/' + eid + '/service_provider_type/component_types?deployable=1');
+            optionsCallback : function (name) {
+                if (name === 'component_types') {
+                    // Get the component types supported by this service provider only
+                    return ajax('GET', '/api/cluster/' + eid +
+                                       '/service_provider_type/component_types?deployable=1');
                 }
                 return false;
             },
+            valuesCallback : function (type, id) {
+                var cluster = ajax('GET', '/api/cluster/' + eid + '?expand=components');
+                var types = cluster.components
+                                .map(function (component) { return component.component_type_id; });
+
+                return { cluster_name: cluster.cluster_name, component_types: types };
+            },
+            submitCallback : function(data, $form, opts, onsuccess, onerror) {
+                var params = { components: [] };
+                for (var index in data.component_types) {
+                    params.components.push({ component_type_id: data.component_types[index] });
+                }
+                ajax('PUT', '/api/cluster/' + eid, params, onsuccess, onerror);
+            }
         })).start();
     });
+    
+    var reconfigureButton = $('<a>', { text : 'Apply configuration now' })
+                              .appendTo(action_div)
+                              .button({ icons : { primary : 'ui-icon-triangle-2-e-w' } });
+    $(reconfigureButton).bind('click', function (e) {
+    	ajax('POST', '/api/cluster/' + eid + '/reconfigure');
+    });
+
 }

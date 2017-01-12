@@ -32,26 +32,32 @@ use constant ATTR_DEF => {
     ucs_name => {
         pattern      => '.*',
         is_mandatory => 1,
+	description  => 'Set a name for this instance of UCS',
     },
     ucs_desc => {
         pattern      => '.*',
         is_mandatory => 0,
+	description  => 'Set a description for this instance of UCS (datacenter, room, ...)',
     },
     ucs_addr => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
+	description  => 'Enter the IP adress of the Cisco UCS management interface',
     },
     ucs_login => {
         pattern      => '.*',
         is_mandatory => 1,
+	description  => 'Enter the login to access to the Cisco UCS management interface',
     },
     ucs_passwd => {
         pattern      => '.*',
         is_mandatory => 1,
+	description  => 'Enter the password to access to the Cisco UCS management interface',
     },
     ucs_ou => {
         pattern      => '.*',
         is_mandatory => 0,
+	description  => 'Enter the Organisation Unit of your Cisco UCS blade pool',
     },
 };
 

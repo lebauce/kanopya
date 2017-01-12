@@ -54,6 +54,7 @@ use constant POLICY_ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d*$',
+        description  => 'Type of hosting solution (OpenStack, vCenter, Physical Hoster, Cisco UCS, AWS, ...)',
         is_mandatory => 1,
         reload       => 1,
         order        => 1,

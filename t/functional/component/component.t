@@ -64,6 +64,7 @@ for my $componenttype (@types) {
                         ip_addr       => $ip
                     );
 
+    my $node = Entity::Node->findOrCreate(node_hostname => $hostname);
     diag('Check for component ' . $component->label . ' up');
     lives_ok {
         if (! EEntity->new(entity => $component)->isUp(node => EEntity->new(entity => $node))) {

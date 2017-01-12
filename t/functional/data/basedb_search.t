@@ -52,8 +52,10 @@ sub main {
                 if (! $instance->isa($class)) {
                     die "Instance <$instance> should isa <$class>";
                 }
-                if ($instance->class_type->class_type ne ref($instance)) {
-                    die "Instance <$instance> should have type <" . $instance->class_type->class_type . ">";
+                my $class_wanted = $instance->class_type->class_type;
+                my $class_found  = ref($instance);
+                if ($class_wanted ne $class_found) {
+                    die "Instance <$instance> should have type <$class_wanted> instead of <$class_found>";
                 }
             }
         } 'Search instancies of type ' . $class . ' and check type of each results';

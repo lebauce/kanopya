@@ -114,12 +114,13 @@ sub exception_to_status {
 }
 
 hook 'before_error_init' => sub {
-    my $exception = shift;
-    my $status = exception_to_status($exception->exception);
+    my $error = shift; # this is a Dancer::Error object.
+    # my $status = exception_to_status($error->exception);
 
-    my $message = {"status" => "error", "reason" => $exception->exception->user_message};
-    $exception->{message} = $message;
-
+    # my $message = {"status" => "error", "reason" => $error->exception->user_message};
+    $error->{code}    = exception_to_status($error->exception);
+    $error->{message} = {"status" => "error", "reason" => $error->exception->user_message};
+    $error->{exception} = undef; # otherwise, Dancer might try to convert the backtrace into JSON, and fail.
 };
 
 hook on_handler_exception => sub {

@@ -39,33 +39,41 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'The log level of your Apache server.'.
+                        ' It could be debug, info, notive, warn, error, critical, alert or emergency.',
     },
     apache2_serverroot => { 
         label        => 'Server root',
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The root directory of the web server',
     },
     apache2_ports => { 
         label        => 'HTTP Port',
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The HTTP port used by Apache. It will be used by'.
+                        ' the load balancer to dispatch requests between the different nodes.',
     },
     apache2_sslports => { 
         label        => 'SSL Port',
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The HTTPS port used by Apache. It will be used by the load '.
+                        'balancer to dispatch requests between the different nodes.',
     },
     apache2_virtualhosts => {
         label       => 'Virtual hosts',
         type        => 'relation',
         relation    => 'single_multi',
-        is_editable => 1
+        is_editable => 1,
+        description  => 'The list of "virtual hosts" managed by this web server',
     },
 };
 

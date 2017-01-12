@@ -61,24 +61,6 @@ sub create {
     my $command = "mkdir -p $dir";
     $self->_host->getEContext->execute(command => $command);
 
-    # Add all the components provided by the master image
-    if ($self->masterimage && defined $args{managers}->{deployment_manager}) {
-        # Firstly set the service provider type from masterimage
-        $self->service_provider_type_id($self->masterimage->masterimage_cluster_type->id);
-
-        my $params = $args{managers}->{deployment_manager}->{manager_params};
-        foreach my $component ($self->masterimage->components_provided) {
-            $params->{components}->{$component->component_type->component_name} = {
-                component_type => $component->component_type_id
-            };
-        }
-
-        if ($self->masterimage->masterimage_defaultkernel && ! $self->kernel) {
-            $self->kernel_id($self->masterimage->masterimage_defaultkernel->id);
-        }
-    }
-    $self->save();
-
     # Set default permissions on this cluster for the related customer
     $self->propagatePermissions(related => $self);
 
@@ -224,7 +206,7 @@ sub unregisterNode {
         $log->debug($err);
     }
 
-    $args{node}->host->setAttr(name => "host_initiatorname", value => undef, save => 1);
+    $args{node}->host->host_initiatorname(undef);
 
     return $self->_entity->unregisterNode(%args);
 }

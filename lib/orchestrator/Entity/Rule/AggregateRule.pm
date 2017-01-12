@@ -393,42 +393,42 @@ sub _updateWorkflowStatus {
     }
     elsif ($workflow->state eq 'done') {
         $log->info('Workflow <'.$workflow->id.'> done');
-        $self->setAttr(name  => 'state', value => 'enabled');
-        $self->setAttr(name  => 'workflow_id',  value => undef);
-        $self->save();
-    }
-    elsif ($workflow->state eq 'delayed') {
-        # Manage delay between 2 workflows triggering
-        # Check whether delay is finished or rule has to wait
-        my $delta = $self->workflow_untriggerable_timestamp - time();
-        if (0 >= $delta) {
-            $log->info('Workflow <'.$workflow->id.'> done, end of delay time, re-enable rule');
-            $self->setAttr(name  => 'state', value => 'enabled' );
-            $self->setAttr(name  => 'workflow_id', value => undef );
-            $self->setAttr(name  => 'workflow_untriggerable_timestamp', value => undef );
-            $self->save();
-        }
-        else {
-            $log->info('Workflow <'.$workflow->id.'> done, still delaying time for <'.($delta).'> sec');
-        }
-    }
-    elsif ($workflow->state eq 'triggered') {
-        my $wf_params = $workflow_def->paramPresets;
-        my $delay = $wf_params->{specific}->{delay};
-        $log->info('wf_params = '.(Dumper $wf_params));
 
-        if ((not defined $delay) || $delay <= 0) {
-            $log->info('Workflow <'.$workflow->id.'> done, no delay or delay <= 0, re-enable rule');
-            $self->setAttr(name  => 'state', value => 'enabled' );
-            $self->setAttr(name  => 'workflow_id',  value => undef );
-            $self->save();
+        if ($self->state eq 'delayed') {
+            # Manage delay between 2 workflows triggering
+            # Check whether delay is finished or rule has to wait
+            my $delta = $self->workflow_untriggerable_timestamp - time();
+            if ($delta <= 0) {
+                $log->debug('End of delay time, re-enable rule');
+                $self->setAttr(name => 'state', value => 'enabled');
+                $self->setAttr(name => 'workflow_id', value => undef);
+                $self->setAttr(name => 'workflow_untriggerable_timestamp', value => undef);
+                $self->save();
+                return;
+            }
+            $log->info('Rule not triggerable during <' . ($delta) . '> sec');
         }
-        else {
-            $log->info('Workflow <'.$workflow->id.'> done, delay new workflow launch');
+        elsif ($self->state eq 'triggered') {
+            my $delay = $workflow_def->paramPresets->{specific}->{delay};
+            if ((not defined $delay) || $delay <= 0) {
+                $log->debug('No delay or delay <= 0, re-enable rule');
+                $self->setAttr(name  => 'state', value => 'enabled' );
+                $self->setAttr(name  => 'workflow_id',  value => undef );
+                $self->save();
+                return;
+            }
+
+            $log->debug('Set delay');
             $self->setAttr(name  => 'state', value => 'delayed' );
             $self->setAttr(name  => 'workflow_untriggerable_timestamp', value => time() + $delay);
             $self->save();
-         }
+
+        }
+        else {
+            $self->setAttr(name  => 'state', value => 'enabled');
+            $self->setAttr(name  => 'workflow_id',  value => undef);
+            $self->save();
+        }
     }
     else {
       $log->info('unknown case <'.($self->state).'>');

@@ -37,7 +37,6 @@ use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
 use Entity::Host;
-use CapacityManagement;
 use Entity::Workflow;
 use ClassType::ComponentType;
 
@@ -116,6 +115,8 @@ sub prepare {
                            "> has to be <up|down> not <$state>"
               );
     }
+
+    $self->{context}->{cluster}->setState(state => 'updating');
 }
 
 
@@ -134,7 +135,10 @@ sub prerequisites {
     my $hypervisor_id = undef;
 
     try {
-        $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(%{ $params })
+        $hypervisor_id = $self->{context}->{host_manager}->selectHypervisor(
+                             cluster => $self->{context}->{cluster},
+                             %{ $params },
+                         );
     }
     catch (Kanopya::Exception::NotImplemented $err) {
         # Physical

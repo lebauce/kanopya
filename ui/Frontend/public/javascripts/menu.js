@@ -37,8 +37,28 @@ function add_menutree(container, label, menu_info, elem_id) {
 
     var link_li = $('<li>');
     var link_a = $('<a class="view_link"><span class="arrow"></span>' + label + '</a>');
+
     link_a.bind('click', function(event) {
-        $(this).next().toggle();
+
+        if ($(this).hasClass('selected_viewlink')) {
+            return;
+        }
+
+        if ($(this).next().css('display') !== 'block') {
+            $(this).next().toggle();
+        }
+
+        $('.selected_viewlink').removeClass('selected_viewlink')
+        $(this).addClass('selected_viewlink');
+
+        $('#view-container .master_view').hide();
+        $('#view_Instances').show();
+
+        var container_id = 'content_services_overview_static';
+        servicesList(container_id, elem_id);
+
+        return;
+        ////////////////////////////////////////////////////////
 
         var add_button;
         if ($('#instantiate_service_button') != undefined && $('#instantiate_service_button').length) {

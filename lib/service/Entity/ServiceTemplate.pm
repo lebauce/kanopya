@@ -37,6 +37,7 @@ use base 'Entity';
 use strict;
 use warnings;
 
+use General;
 use Entity::Policy;
 use Entity::Policy::HostingPolicy;
 use Entity::Policy::StoragePolicy;
@@ -73,7 +74,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
         specialized  => 'HostingPolicy'
     },
@@ -217,11 +218,18 @@ sub processAlteredPolicies {
         # Browse the policy definition and create a derivated policy
         # if some empty attributes has been filled.
         my $altered = 0;
-        my $policyattrs = $policyclass->toJSON(params => $json)->{attributes};
+        my $policyattrs = $policyclass->toJSON(params => $merge->merge($json, \%args))->{attributes};
         for my $attrname (keys %{ $policyattrs }) {
-            if (defined $args{$attrname} && "$args{$attrname}" ne "$json->{$attrname}" &&
-                ! $policyattrs->{$attrname}->{is_virtual} && ref($args{$attrname}) ne "ARRAY" &&
-                ! exists $policyclass->getPolicySelectorAttrDef->{$attrname}) {
+            my $is_alterable = (defined $args{$attrname} &&
+                                   ! $policyattrs->{$attrname}->{is_virtual} &&
+                                   ! exists $policyclass->getPolicySelectorAttrDef->{$attrname});
+            my $is_altered_scalar = ((ref($args{$attrname}) || "") ne "ARRAY" &&
+                                        (defined $args{$attrname} ? "$args{$attrname}" : "") ne
+                                            (defined  $json->{$attrname} ? "$json->{$attrname}" : ""));
+            my $is_altered_array = (ref($args{$attrname}) eq "ARRAY" &&
+                                       General::isArrayDiffers(left  => $args{$attrname},
+                                                               right => $json->{$attrname} || []));
+            if ($is_alterable && ($is_altered_scalar || $is_altered_array)) {
 
                 $log->debug("$policy <" . $policy->id . ">, attr <$attrname> value has been set: " . 
                             "$json->{$attrname} => $args{$attrname}.");

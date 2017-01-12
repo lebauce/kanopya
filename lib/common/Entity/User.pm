@@ -51,7 +51,8 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
-        is_editable  => 0
+        is_editable  => 0,
+        description  => 'The user login name, for the web interface as well as for his/her VMs',
     },
     user_desc => {
         label        => 'Description',
@@ -59,42 +60,48 @@ use constant ATTR_DEF => {
         # Impossible to check char used because of \n doesn't match with \w
         pattern      => '.*',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The user description. Specify his business unit, company, ...',
     },
     user_password => {
         label        => 'Password',
         type         => 'password',
         pattern      => '^.+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The user password',
     },
     user_firstname => {
         label        => 'First name',
         type         => 'string',
         pattern      => '^.+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The first name of the user',
     },
     user_lastname => {
         label        => 'Last name',
         type         => 'string',
         pattern      => '^.+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The last name of the user',
     },
     user_email => {
         label        => 'Email',
         type         => 'string',
         pattern      => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The e-mail address of the user',
     },
     user_sshkey => {
         label        => 'SSH Public key',
         type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'The SSH Key of the user. HCM can push SSH keys on all the managed systems.',
     },
     user_creationdate => {
         label        => 'Account creation date',
@@ -111,11 +118,12 @@ use constant ATTR_DEF => {
         is_editable  => 0
     },
     user_system => {
-        label        => 'Grant full persmissions',
+        label        => 'Grant full permissions',
         type         => 'boolean',
         pattern      => '^\w*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 1,
+        description  => 'If enabled, this user will be a super-user no matter what his roles/profiles say.',
     },
     quotas => {
         label        => 'Quotas',
@@ -123,6 +131,8 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'The quotas of the user. HCM can put an upper limit on the RAM and '.
+                        'CPU core usage of a user.',
     },
     user_profiles => {
         label        => 'Profiles',
@@ -131,6 +141,8 @@ use constant ATTR_DEF => {
         link_to      => 'profile',
         is_mandatory => 0,
         is_editable  => 1,
+        description  => 'HCM offers different user profiles (Administrator, Project Manager, Operator,'.
+                        ' Customer. Read more informations in the full user documentation.',
     },
 };
 

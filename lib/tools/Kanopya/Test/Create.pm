@@ -153,23 +153,18 @@ sub createCluster {
         $service_template_id = Entity::ServiceTemplate->find(hash => { service_name => "Generic service" })->id;
     };
 
-    # Add reqyired system component with proper configuration
-    my $system = 
     my $default_conf = {
         active                => 1,
         cluster_name          => 'DefaultCluster',
         cluster_min_node      => 1,
         cluster_max_node      => 3,
-        cluster_priority      => "100",
         cluster_si_persistent => 1,
         cluster_domainname    => 'my.domain',
         cluster_nameserver1   => '208.67.222.222',
         cluster_nameserver2   => '127.0.0.1',
         owner_id              => $args{owner_id},
         service_template_id   => $service_template_id,
-
     };
-
 
     if (defined $args{no_execution}) {
         if (defined $args{cluster_conf}) {

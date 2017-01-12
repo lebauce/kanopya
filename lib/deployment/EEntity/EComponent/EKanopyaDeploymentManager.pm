@@ -37,6 +37,8 @@ use warnings;
 
 use EEntity;
 
+use Kanopya::Exceptions;
+
 use TryCatch;
 use Date::Simple (':all');
 use Log::Log4perl "get_logger";
@@ -153,8 +155,9 @@ Try to connect to the host, and check availability of the components.
 
 sub checkNodeUp {
     my ($self, %args) = @_;
-
     General::checkParams(args => \%args, required => [ 'node', 'deploy_on_disk' ]);
+    
+    my $host = $args{node}->host; 
 
     # Duration to wait before retrying prerequistes
     my $delay = 10;
@@ -162,21 +165,24 @@ sub checkNodeUp {
     # Duration to wait for setting host broken
     my $broken_time = 240;
 
+    my $ehost = EEntity->new(entity => $host); 
     # Check how long the host is 'starting'
-    my @state = $args{node}->host->getState;
+    my @state = $host->getState;
     my $starting_time = time() - $state[1];
     if ($starting_time > $broken_time) {
-        EEntity->new(entity => $args{node}->host)->timeOuted();
+        $ehost->timeOuted();
     }
 
     my $node_ip = $args{node}->adminIp;
     if (not $node_ip) {
-        throw Kanopya::Exception::Internal(
-                  error => "Host \"" . $args{node}->host->label .  "\" has no admin ip."
-              );
+        ## throw Kanopya::Exception::Internal(
+        ##          error => "Host \"" . $args{node}->host->label .  "\" has no admin ip."
+        ##      );
+        # Let's not throw an exception here, maybe the admin IP arrives only at checkUp().
+        $node_ip = 'not yet determined';
     }
 
-    if (! EEntity->new(entity => $args{node}->host)->checkUp()) {
+    if (! $ehost->checkUp()) {
         $log->info("Host \"" . $args{node}->host->label . "\" not yet reachable at <$node_ip>");
         return $delay;
     }
@@ -185,9 +191,14 @@ sub checkNodeUp {
     # at the next reboot
     if ($args{deploy_on_disk}) {
         # Check if the host has already been deployed
-        my $hd = $args{node}->host->find(related  => 'harddisks', order_by => 'harddisk_device');
-
-        if (! (defined $hd->deployed_on_id && $hd->deployed_on_id == $args{node}->id)) {
+        my $hd;
+        try {
+            $hd = $host->find(related  => 'harddisks', order_by => 'harddisk_device');
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            $log->info("No PXE harddisk found on node " . $args{node}->node_hostname);
+        }
+        if (defined $hd and ! (defined $hd->deployed_on_id && $hd->deployed_on_id == $args{node}->id)) {
             # Try connecting to the host, delay if it fails
             try {
                 if ($args{node}->getEContext->execute(command => "true")->{exitcode}) {
@@ -214,8 +225,8 @@ sub checkNodeUp {
             # Disable PXE boot but keep the host entry
             $hd->deployed_on_id($args{node}->id);
             my $dhcp = EEntity->new(entity => $self->dhcp_component);
-            $dhcp->removeHost(host => $args{node}->host);
-            $dhcp->addHost(host => $args{node}->host, pxe => 0);
+            $dhcp->removeHost(host => $host);
+            $dhcp->addHost(host => $host, pxe => 0);
             $dhcp->applyConfiguration();
 
             # Now reboot the host
@@ -245,10 +256,10 @@ sub checkNodeUp {
     }
 
     # Node is up
-    $args{node}->host->setState(state => "up");
+    $host->setState(state => "up");
     $args{node}->setState(state => "in");
 
-    $log->info("Host \"" . $args{node}->host->label .  "\" is 'up'");
+    $log->info("Host \"" . $host->label .  "\" is 'up'");
 
     return 0;
 }

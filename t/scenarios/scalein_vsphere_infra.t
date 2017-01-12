@@ -61,7 +61,6 @@ eval {
             cluster_name           => "VSphere",
             cluster_min_node       => "1",
             cluster_max_node       => "3",
-            cluster_priority       => "100",
             cluster_si_persistent  => 1,
             cluster_domainname     => 'my.domain',
             cluster_basehostname   => 'one',

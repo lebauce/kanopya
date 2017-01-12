@@ -4,6 +4,7 @@ require('common/model.js');
 require('common/general.js');
 require('widgets/widget_common.js');
 require('jquery/jqplot/jqplot.donutRenderer.min.js');
+require('common/lib_list.js');
 
 // Must progressively move functions in the Service class
 var Service = (function(_super) {
@@ -21,49 +22,386 @@ var Service = (function(_super) {
     return Service;
 })(Model);
 
-function servicesList (container_id, elem_id) {
-    var container = $('#' + container_id);
+function servicesList(container_id, elem_id) {
 
-    $('a[href=#content_services_overview_static]').text('Service instances');
+    var instanceCollection;
+    var isRunning = false;
 
-    if($('#services_list') !=  undefined) {
-        $('#services_list').jqGrid('GridDestroy');
+    clearHtml();
+    loadInstanceCollection();
+
+    function loadInstanceCollection() {
+
+        var instanceObject;
+        var filter;
+        var index, value;
+
+        instanceCollection = [];
+
+        filter = '&cluster_id=<>,' + kanopya_cluster;
+        // If the logged user is a customer, filter the list of service
+        if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
+            filter += '&service_provider.owner_id=' + current_user.user_id;
+        }
+        if (elem_id) {
+            filter += '&service_template.service_template_id=' + elem_id;
+        }
+
+        $.getJSON(
+            '/api/cluster?expand=service_template,nodes' + filter, function(data) {
+            $.each(data, function(i, obj) {
+                instanceObject = createInstanceObject(obj);
+                instanceCollection.push(instanceObject);
+            });
+            renderHtml();
+        });
     }
 
-    var kanopya_filter = '&cluster_id=<>,' + kanopya_cluster;
+    function createInstanceObject(obj) {
 
-    // If the logged user is a customer, filter the list of service
-    var customer_filter = '';
-    if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-        customer_filter = '&service_provider.owner_id=' + current_user.user_id;
+        var stateMap = {
+            'up'       : {
+                'label': 'Up',
+                'icon' : 'fa-check',
+                'canStart' : false,
+                'canStop' : true
+            },
+            'in'       : {
+                'label': 'Up',
+                'icon' : 'fa-check',
+                'canStart' : false,
+                'canStop' : true
+            },
+            'down'     : {
+                'label': 'Down',
+                'icon' : 'fa-times',
+                'canStart' : true,
+                'canStop' : false
+            },
+            'broken'   : {
+                'label': 'Broken',
+                'icon' : 'fa-times',
+                'canStart' : false,
+                'canStop' : false
+            },
+            'off'      : {
+                'label': 'Inactive',
+                'icon' : 'fa-power-off',
+                'canStart' : false,
+                'canStop' : false
+            }
+        };
+
+        var instanceObject = {
+            'id'               : obj.pk,
+            'serviceName'      : 'Internal',
+            'instanceName'     : obj.cluster_name,
+            'active'           : obj.active,
+            'activeIcon'       : '',
+            'state'            : obj.cluster_state,
+            'stateCanStart'    : false,
+            'stateCanStop'     : false,
+            'ruleStateOk'      : 0,
+            'ruleStateVerified': 0,
+            'ruleStateUndef'   : 0,
+            'nodeNumber'       : 0
+        };
+
+        if (obj.service_template) {
+            instanceObject.serviceName = obj.service_template.service_name;
+        }
+        if (obj.nodes) {
+            instanceObject.nodeNumber = obj.nodes.length;
+        }
+        index = instanceObject.state.indexOf(':');
+        if (index > -1) {
+            instanceObject.state = instanceObject.state.substring(0, index);
+        }
+        if (!instanceObject.state && instanceObject.active == '0') {
+            instanceObject.state = 'off';
+        }
+        if (instanceObject.state in stateMap) {
+            instanceObject.stateLabel = stateMap[instanceObject.state].label;
+            instanceObject.stateIcon = stateMap[instanceObject.state].icon;
+            instanceObject.stateCanStart = stateMap[instanceObject.state].canStart;
+            instanceObject.stateCanStop = stateMap[instanceObject.state].canStop;
+        }
+
+        // Rule state
+        $.ajax({
+            url     : '/api/aggregaterule?service_provider_id=' + instanceObject.id,
+            type    : 'GET',
+            dataType: 'json',
+            async   : false,
+            success : function(data) {
+                $.each(data, function(i, obj) {
+                    if (obj.hasOwnProperty('aggregate_rule_last_eval')) {
+                        value = obj.aggregate_rule_last_eval;
+                        if (value === '1') {
+                            ++instanceObject.ruleStateVerified;
+                        } else if (value === null) {
+                            ++instanceObject.ruleStateUndef;
+                        } else if (value === '0') {
+                            ++instanceObject.ruleStateOk;
+                        }
+                    }
+                });
+            }
+        });
+
+        return instanceObject;
     }
 
-    var grid = create_grid( {
-        url: '/api/cluster?expand=service_template,nodes' + kanopya_filter + customer_filter,
-        content_container_id: container_id,
-        grid_id: 'services_list',
-        afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-            addServiceExtraData(grid, rowid, rowdata, rowelem);
-        },
-        rowNum : 25,
-        colNames: [ 'ID', 'Service', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
-            { name: 'service_template.service_name', index: 'service_template_name', width: 200 },
-            { name: 'cluster_name', index: 'service_name', width: 200 },
-            { name: 'active', index: 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
-            { name: 'cluster_state', index: 'service_state', width: 90, align : 'center', formatter:StateFormatter },
-            { name: 'rulesstate', index : 'rulesstate' },
-            { name: 'node_number', index: 'node_number', width: 150 }
-        ],
-        elem_name   : 'service',
-        details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
-        deactivate  : true
-    });
+    function renderHtml() {
 
-    //$("#services_list").on('gridChange', reloadServices);
+        // clearHtml();
 
-    function createAddServiceButton(cid, grid) {
+        // Hardcoded stuff...
+        // TODO: Get the permitted actions list from /api/attributes
+        if (current_user_has_any_profiles([ "Administrator", "Sales" ])) {
+            createAddServiceButton(container_id);
+        }
+
+        createServiceGraphs(container_id, elem_id);
+        renderTemplate();
+    }
+
+    function clearHtml() {
+        if($('#services_list') !=  undefined) {
+            $('#services_list').jqGrid('GridDestroy');
+        }
+        $('#instance-home').remove();
+    }
+
+    function renderTemplate() {
+
+        var i;
+        var templateFile = '/templates/instance-home.tmpl.html';
+
+        $.get(templateFile, function(templateHtml) {
+            var template = Handlebars.compile(templateHtml);
+            $('#' + container_id).append(template({
+                'instanceCollection': instanceCollection
+            }));
+            activateEvents();
+        });
+    }
+
+    function activateEvents() {
+
+        activateExpander();
+
+        // Detail
+        $('.list-item-info .name span').click(function() {
+            $(this)
+                .parents('.list-item')
+                .find('.button-detail')
+                .trigger('click');
+        });
+        $('.button-detail').click(function() {
+            var id = $(this).parent().data('id');
+            displayDetail(id);
+        });
+
+        // Stop
+        $('.button-stop').click(function() {
+            stopInstance(this);
+        });
+
+        // Start
+        $('.button-start').click(function() {
+            startInstance(this);
+        });
+
+        // Scale out
+        $('.button-scale-out').click(function() {
+            executeAction('addNode', this);
+        });
+    }
+
+    function getInstanceObjectById(id) {
+
+        var instanceObject = {};
+
+        for (var i = 0; i < instanceCollection.length; i++) {
+            if (instanceCollection[i].id == id) {
+                instanceObject = instanceCollection[i];
+                break;
+            }
+        }
+
+        return instanceObject;
+    }
+
+    function displayDetail(id) {
+
+        var instanceObject = getInstanceObjectById(id);
+
+        displayDetailLink(instanceObject);
+
+        show_detail(
+            'services_list',
+            'services_list',
+            id,
+            {
+                'cluster_name': instanceObject.instanceName
+            },
+            {
+                'link_to_menu': 'yes',
+                'label_key': 'cluster_name'
+            }
+        );
+    }
+
+    function displayDetailLink(instanceObject) {
+
+        var detailLinkId = 'link_view_' + instanceObject.instanceName.replace(/ /g, '_') + '_' + instanceObject.id;
+        var $detailLink = $('#' + detailLinkId);
+        if ($detailLink.length) {
+            $detailLink.parent('ul').css('display', 'block');
+        }
+    }
+
+    function startInstance(element) {
+        executeAction('start', element, 'This will start your instance.\nDo you want to continue?');
+    }
+
+    function stopInstance(element) {
+        executeAction('stop', element, 'This will stop all your running instances.\nDo you want to continue?');
+    }
+
+    function executeAction(action, element, confirmationMessage) {
+
+        if (isRunning === true) {
+            return;
+        }
+
+       if (confirmationMessage) {
+           if (confirm(confirmationMessage) === false) {
+                return false;
+            }
+       }
+
+        isRunning = true;
+
+        var id = $(element).parent().data('id');
+        startTextButtonAnimation(element);
+        $.ajax({
+            type: "POST",
+            url: '/api/cluster/' + id + '/' + action,
+            success: function() {
+                refreshItem(id);
+            },
+            complete: function() {
+                stopTextButtonAnimation(element);
+                isRunning = false;
+            }
+        });
+    }
+
+    function refreshItem(id) {
+
+        $.getJSON(
+            '/api/cluster/' + id + '?expand=service_template,nodes',
+            function(data) {
+                var instanceObject = createInstanceObject(data);
+                var $item = $('#list-item' + id);
+                var $elt, $child;
+
+                $item.children('.list-item-box').attr('class', 'list-item-box ' + instanceObject.state);
+
+                $elt = $item.find('.state');
+                $elt.children('.fa').attr('class', 'fa ' + instanceObject.stateIcon);
+                $elt.children('.label').text(instanceObject.stateLabel);
+
+                $item
+                    .find('.node')
+                    .children('.value')
+                    .text(instanceObject.nodeNumber);
+
+                $elt = $item.children('.panel');
+                $elt.attr('class', 'panel ' + instanceObject.state);
+
+                $elt = $elt.children('.button-group');
+                $child = $elt.children('.button-start');
+                if (instanceObject.stateCanStart) {
+                    if ($child.length === 0) {
+                        $elt.prepend('<button type="button" class="btn btn-action4 button-text button-start">Start</button>');
+
+                            $elt.children('.button-start').click(function() {
+                                startInstance(this);
+                            });
+
+                    }
+                } else {
+                    if ($child.length) {
+                        $child.remove();
+                    }
+                }
+
+                $child = $elt.children('.button-stop');
+                if (instanceObject.stateCanStop) {
+                    if ($child.length === 0) {
+                        $elt.prepend('<button type="button" class="btn btn-action3 button-text button-stop">Stop</button>');
+
+                            $elt.children('.button-stop').click(function() {
+                                stopInstance(this);
+                            });
+                    }
+                } else {
+                    if ($child.length) {
+                        $child.remove();
+                    }
+                }
+            }
+        );
+    }
+
+    function renderList() {
+
+        var container = $('#' + container_id);
+
+        $('a[href=#content_services_overview_static]').text('Service instances');
+
+        var kanopya_filter = '&cluster_id=<>,' + kanopya_cluster;
+        // If the logged user is a customer, filter the list of service
+        var customer_filter = '';
+        if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
+            customer_filter = '&service_provider.owner_id=' + current_user.user_id;
+        }
+
+        var grid = create_grid  ( {
+            url: '/api/cluster?expand=service_template,nodes' + kanopya_filter + customer_filter,
+            content_container_id: container_id,
+            grid_id: 'services_list',
+            afterInsertRow: function (grid, rowid, rowdata, rowelem) {
+                addServiceExtraData(grid, rowid, rowdata, rowelem);
+            },
+            rowNum : 25,
+            colNames: [ 'ID', 'Service', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],
+            colModel: [
+                { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
+                { name: 'service_template.service_name', index: 'service_template_name', width: 200 },
+                { name: 'cluster_name', index: 'service_name', width: 200 },
+                { name: 'active', index: 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
+                { name: 'cluster_state', index: 'service_state', width: 90, align : 'center', formatter:StateFormatter },
+                { name: 'rulesstate', index : 'rulesstate' },
+                { name: 'node_number', index: 'node_number', width: 150 }
+            ],
+            elem_name   : 'service',
+            // details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
+            details     : {onSelectRow: regis},
+            deactivate  : true
+        });
+
+    }
+
+    function createAddServiceButton(cid) {
+
+        if ($('#instantiate_service_button').length) {
+            return;
+        }
+
         var button = $("<button>", { id : 'instantiate_service_button', text : 'Instantiate a service'}).button({
             icons   : { primary : 'ui-icon-plusthick' }
         });
@@ -191,16 +529,10 @@ function servicesList (container_id, elem_id) {
             })).start();
         });
         
-        $('#' + cid).append(button);
+        // $('#' + cid).append(button);
+        var action_div = $('#' + cid).prevAll('.action_buttons');
+        action_div.append(button);
     };
-	
-    // Hardcoded stuff...
-    // TODO: Get the permitted actions list from /api/attributes
-    if (current_user_has_any_profiles([ "Administrator", "Sales" ])) {
-        createAddServiceButton(container_id, grid);
-    }
-
-    createServiceGraphs(container_id);
 }
 
 /*
@@ -220,7 +552,7 @@ function createServiceGraphs(cid, service_template_id) {
             $('<div>', {id : graph_cont_id})
             .append($('<span>', {text : 'Resources usage', class : 'clickable'}).prepend($('<span>', {class:'ui-icon ui-icon-triangle-1-e'}))
                     //.css({'font-size': '0.83em', 'font-weight': 'bold', 'display':'inline-block'})
-                    .css({'font-weight': 'normal', 'color' : '#555'})
+                    // .css({'font-weight': 'normal', 'color' : '#555'})
                     .click(function() {
                         $(this).find('span').toggleClass('ui-icon-triangle-1-e ui-icon-triangle-1-s');
                         $(this).next().slideToggle();
@@ -431,7 +763,8 @@ function loadServicesResources (container_id, elem_id) {
     } );
 }
 
-function runScaleWorkflow(type, eid, spid) {
+function runScaleWorkflow(type, eid, spid, successCallback) {
+
     var cont    = $('<div>');
     $('<label>', { text : type + ' amount : ', for : type }).appendTo(cont);
     var inp         = $('<input>', { id : type }).appendTo(cont);
@@ -451,7 +784,7 @@ function runScaleWorkflow(type, eid, spid) {
                     $.ajax({
                         async       : false,
                         url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
-                                      'manager_category.parent.category_name=HostManager&expand=manager_category',
+                                      'category_name=HostManager&expand=manager_category',                                      
                         type        : 'GET',
                         success     : function(hmgr) {
                             $.ajax({
@@ -463,7 +796,12 @@ function runScaleWorkflow(type, eid, spid) {
                                     scalein_value   : amount,
                                     scalein_type    : type.toLowerCase()
                                 }),
-                                success     : function() { $(cont).dialog('close'); }
+                                success     : function() {
+                                    $(cont).dialog('close');
+                                    if (successCallback && typeof successCallback == 'function') {
+                                        successCallback(eid);
+                                    }
+                                }
                             });
                         }
                     });
@@ -686,46 +1024,31 @@ function node_components_tab(cid, eid) {
             node = data[0];
         }
     });
-    var sp_id = node.service_provider_id;
-
-    var cluster_components = ajax('GET', '/api/serviceprovider/' + sp_id + '/components?expand=component_type');
-    // ugly way to have both name & version for node's component
-    // and an array of name for cluster's component (required by KanopyaFormWizard)
-    var node_component_types = {};
-    var cluster_component_types = {};
-    for (var index in cluster_components) {
-        node_component_types[cluster_components[index].component_type.pk] = {
-            'component_name' : cluster_components[index].component_type.component_name,
-            'component_version' : cluster_components[index].component_type.component_version,
-        };
-        cluster_component_types[cluster_components[index].component_type.pk] =
-            cluster_components[index].component_type.component_name;
-    }
 
     // node's components grid
-    var grid = create_grid( {
-        dataType : 'local',
+    var node_components_route = '/api/component?component_nodes.node.node_id=' + eid;
+    var grid = create_grid({
+        url: node_components_route + '&expand=component_type',
         content_container_id: cid,
         grid_id: 'node_ifaces_tab' + eid,
-        grid_class: 'node_ifaces_tab',
-        rowNum : 5,
+        rowNum : 7,
         action_delete: 'no',
         caption: 'Components',
-        colNames: [ 'id', 'Component', 'Version', ],
+        colNames: [ 'ID', 'Component', 'Version' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
-            { name: 'component_name', index: 'component_name', width: 10 },
-            { name: 'component_version', index: 'component_version', width: 10 },
+            { name: 'component_type.component_name', index: 'component_type.component_name', width: 200 },
+            { name: 'component_type.component_version', index: 'component_type.component_version', width: 200 },
         ],
     });
-    build_component_by_node_grid(grid, eid, node_component_types);
 
-    // add component
+    // add components
     var addButton   = $('<a>', { text : 'Add component' }).prependTo( $('#' + cid) )
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', function (e) {
         (new KanopyaFormWizard({
             title      : 'Add components',
+            id         : node.service_provider_id,
             displayed  : [ 'node_hostname', 'component_types' ],
             rawattrdef : {
                 node_hostname : {
@@ -737,35 +1060,32 @@ function node_components_tab(cid, eid) {
                     type         : 'relation',
                     relation     : 'multi',
                     is_mandatory : 1,
-                    options      : cluster_component_types
+                    is_editable  : 1,
+                    hide_existing : 1,
                 }
             },
-            submitCallback  : function(data, $form, opts, onsuccess, onerror) {
-                data['nodes'] = [eid];
-                var _this = this;
-                ajax('PUT', '/api/node/' + eid, data, function() {
-                    build_component_by_node_grid(grid, eid, node_component_types);
-                    _this.closeDialog();
-                });
+            optionsCallback : function (name) {
+                if (name === 'component_types') {
+                    // Get the component types supported by this service provider only
+                    return ajax('GET', '/api/cluster/' + node.service_provider_id +
+                                       '/service_provider_type/component_types?deployable=1');
+                }
+                return false;
+            },
+            valuesCallback : function (type, id) {
+                var node_component_types = ajax('GET', node_components_route)
+                                     .map(function (component) { return component.component_type_id; });
+
+                return { component_types: node_component_types };
+            },
+            submitCallback : function(data, $form, opts, onsuccess, onerror) {
+                var params = { node: node, components: [] };
+                for (var index in data.component_types) {
+                    params.components.push({ component_type_id: data.component_types[index] });
+                }
+                ajax('PUT', '/api/cluster/' + node.service_provider_id, params, onsuccess, onerror);
             }
         })).start();
     });
 }
 
-// construct grid for node component
-function build_component_by_node_grid(grid, eid, component_types) {
-    var node_components = ajax('GET', '/api/node/' + eid + '/component_nodes?expand=component');
-    var n = 0;
-
-    grid.clearGridData(true);
-
-    $.each(node_components, function(index, val) {
-        grid.addRowData(n + 1, {
-            "pk" : index,
-            "component_name" : component_types[val.component.component_type_id].component_name,
-            "component_version" : component_types[val.component.component_type_id].component_version,
-        } );
-    } );
-
-    $(grid).trigger("reloadGrid");
-}

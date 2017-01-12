@@ -393,7 +393,7 @@ var KanopyaFormWizard = (function() {
                 var optionvalue = attr.options[i][link_to_attribute_pk_name] || attr.options[i].pk ||
                                   ($.isArray(attr.options) ? attr.options[i] : i);
 
-                var option = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
+                var option = $("<option>", { value : optionvalue, text : optiontext });
                 if (attr.formatter != null) {
                     $(option).text(attr.formatter($(option).text()));
                 }
@@ -407,7 +407,14 @@ var KanopyaFormWizard = (function() {
                 }
                 if (optionvalue == value || ($.isArray(value) && $.inArray(optionvalue, value) >= 0)) {
                     $(option).attr('selected', 'selected');
+
+                    // When hide_existing flag is set, we do not insert options that are in the values.
+                    if (attr.hide_existing) {
+                        continue;
+                    }
                 }
+
+                $(option).appendTo(input);
             }
 
         // Handle other field types
@@ -894,10 +901,13 @@ var KanopyaFormWizard = (function() {
                 hash_to_fill[attr.name].push(attr.value);
 
             } else {
-                hash_to_fill[attr.name] = attr.value;
+                // Do not submit empty value for non mandatory fields
+                if (! (attr.value == "" && this.validateRules[attr.name].required == undefined)) {
+                    hash_to_fill[attr.name] = attr.value;
+                }
 
-                // If current_multi is defined, this becase the last field was a value of
-                // a multi relation, that ust finished to be filled.
+                // If current_multi is defined, this is because the last field was a value of
+                // a multi relation, that just finished to be filled.
                 if (current_multi != undefined) {
                     current_multi = undefined;
                 }
@@ -1242,11 +1252,19 @@ var KanopyaFormWizard = (function() {
         var error = {};
         try {
             error = JSON.parse(data.responseText);
+        } catch (e) {}
+        
+        // The error message is either in "reason" or in "error".
+        var fields = ['reason', 'error'], fields_length = fields.length, i,
+          error_str = 'An error occurred, but cannot be parsed...';
+          
+        for(i=0; i<fields_length; i++) {
+            if (error[fields[i]] !== undefined) {
+            	error_str = error[fields[i]];
+            }
         }
-        catch (err) {
-            error.reason = 'An error occurs, but can not be parsed...'
-        }
-        $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all ui-widget-content' }));
+
+        $(this.content).prepend($("<div>", { text : error_str, class : 'ui-state-error ui-corner-all ui-widget-content' }));
         this.error(data);
     }
 

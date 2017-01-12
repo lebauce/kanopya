@@ -335,7 +335,7 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
                 confirm_button_label = 'Delete all';
                 cancel_button_label  = 'Cancel';
             } else {
-                browser.append($('<span>', {html : 'Are you sure?'}));
+                browser.append($('<span>', {html : 'Are you sure you want to delete it?'}));
                 confirm_button_label = 'Yes';
                 cancel_button_label  = 'No';
             }
@@ -345,30 +345,43 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
     );
 }
 
-function confirmDelete(url, id, grid_ids) {
+function confirmDelete(url, id, grid_ids, options) {
 
     var confirm_button_label, cancel_button_label;
     var browser = $('<div>');
 
-    browser.append($('<span>', {html : 'Are you sure?'}));
+    options = options || {};
+    options.actionLabel = options.actionLabel || 'delete';
+
+    browser.append($('<span>',
+        {html: 'Are you sure you want to ' + options.actionLabel + ' it?'}
+    ));
     confirm_button_label = 'Yes';
     cancel_button_label  = 'No';
 
-    openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, cancel_button_label);
+    openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, cancel_button_label, options);
 }
 
-function openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, cancel_button_label) {
+function openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, cancel_button_label, options) {
 
     var buttons = {};
+
+    buttons[cancel_button_label] = function () {
+        $(this).dialog("close");
+    };
 
     buttons[confirm_button_label] = function () {
         $.ajax({
             type    : 'DELETE',
             url     : url + id,
             success : function() {
-                $.each(grid_ids, function(idx, grid_id) {
-                    $('#' + grid_id).trigger('reloadGrid')
-                });
+                if (options.successCallback && typeof options.successCallback === 'function') {
+                    options.successCallback.call(null);
+                } else {
+                    $.each(grid_ids, function(idx, grid_id) {
+                        $('#' + grid_id).trigger('reloadGrid');
+                    });
+                }
             },
             error : function(data) {
                 browser.remove();
@@ -379,7 +392,7 @@ function openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, canc
                     $(this).dialog("close");
                 }
                 failure.dialog({
-                    title: 'Error in deletion',
+                    title: 'Error',
                     modal: true,
                     width: '400px',
                     buttons: fail_buttons,
@@ -392,12 +405,8 @@ function openDeleteDialog(url, id, grid_ids, browser, confirm_button_label, canc
         $(this).dialog("close");
     };
 
-    buttons[cancel_button_label] = function () {
-        $(this).dialog("close");
-    };
-
     browser.dialog({
-        title: 'Confirm delete',
+        title: 'Confirm',
         modal: true,
         width: '400px',
         buttons: buttons,

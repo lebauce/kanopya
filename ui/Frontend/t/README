@@ -6,3 +6,6 @@ Run all tests files with nice report:
 
 -- WARNING --
 Some tests POST data and do not remove them, so let the database dirty (enqueued operations, fake entities)
+This commands runs slower and preserves the original state of the base:
+# PERL5LIB=$PERL5LIB:/opt/kanopya/ui/Frontend/lib/ prove t/*.t --exec='perl' -MKanopya::Test::PreserveDB
+

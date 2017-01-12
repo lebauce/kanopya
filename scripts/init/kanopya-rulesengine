@@ -26,7 +26,9 @@ test -x "/opt/kanopya/sbin/$EXEC" || exit 1
 # Defaults
 PERL5LIB=\
 /opt/kanopya/lib/common:\
-/opt/kanopya/lib/administrator:\
+/opt/kanopya/lib/hcm:\
+/opt/kanopya/lib/cloud:\
+/opt/kanopya/lib/storage:\
 /opt/kanopya/lib/service:\
 /opt/kanopya/lib/deployment:\
 /opt/kanopya/lib/monitor:\
@@ -36,7 +38,6 @@ PERL5LIB=\
 /opt/kanopya/lib/orchestrator:\
 /opt/kanopya/lib/mock:\
 /opt/kanopya/lib/tools
-
 export PERL5LIB
 KANOPYA_RULESENGINE_RUN=yes
 KANOPYA_RULESENGINE_OPTS="-b -p $PIDFILE"

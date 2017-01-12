@@ -36,6 +36,8 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 
+use Data::Serializer;
+use List::Compare;
 use TryCatch;
 my $err;
 
@@ -523,6 +525,45 @@ sub requireClass {
         }
         throw Kanopya::Exception::Internal(error => "$err");
     }
+}
+
+
+=pod
+=begin classdoc
+
+Compare the both arrays given in parameters.
+
+@param left the left array
+@param rigth the rigth array
+
+@return 1 if array differs, 0 instead
+
+=end classdoc
+=cut
+
+sub isArrayDiffers {
+    my %args = @_;
+
+    General::checkParams(args => \%args, optional => { 'left' => [], 'right' => [] });
+
+
+    # If nuber of elements differs, arrays differs
+    if (scalar(@{ $args{left} }) != scalar(@{ $args{right} })) {
+        return 1;
+    }
+
+    # Compare array, with all values serialized as its could contain hashrefs
+    my $serializer = Data::Serializer->new();
+    my @left_serialized = map { $serializer->serialize($_) } @{ $args{left} };
+    my @right_serialized = map { $serializer->serialize($_) } @{ $args{right} };
+
+    my $comparison = List::Compare->new({
+                         lists    => [\@left_serialized, \@right_serialized],
+                         unsorted => 1,
+                         accelerated => 1,
+                     });
+
+    return ! $comparison->is_LequivalentR();
 }
 
 1;

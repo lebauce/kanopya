@@ -347,23 +347,24 @@ sub getNodeMonitoringData {
 
     General::checkParams(args => \%args, required => [ 'node_id', 'indicator_ids' ]);
 
-    my $node = Entity::Node->get(id => $args{node_id});
-    my $manager = $self>getManager(manager_type => 'CollectorManager');
+    my $node = Entity::Node->get(id => delete $args{node_id});
+    my $manager = $self->getManager(manager_type => 'CollectorManager');
 
-    # Construst indicators params as expected by CollectorManager
-    my %indicators;
-    for my $indic_id (@{$args{indicator_ids}}) {
-        $indicators{$indic_id} = Entity::Indicator->get(id => $indic_id);
-    }
-    delete $args{indicator_ids};
+    my @cindicators = $manager->search(
+                          related => 'collector_indicators',
+                          hash => {indicator_id => delete $args{indicator_ids}},
+                      );
+    my @cindicator_ids = map {$_->id} @cindicators;
 
-    my $data = $manager->retrieveData(
-        nodelist    => [ $node->node_hostname ],
-        indicators  => \%indicators,
-        %args
-    );
+    my @nodemetrics = $node->search(
+                          related => 'nodemetrics',
+                          hash => {nodemetric_indicator_id => \@cindicator_ids}
+                      );
 
-    return $data->{$node->node_hostname} || {};
+    my %output = map {$_->nodemetric_indicator->indicator->indicator_id,
+                      $_->fetch(%args)} @nodemetrics;
+
+    return \%output;
 }
 
 
@@ -758,7 +759,8 @@ sub addComponent {
                          required => [ 'component_type_id' ],
                          optional => { 'component_configuration'       => undef,
                                        'component_extra_configuration' => undef,
-                                       'component_template_id'         => undef });
+                                       'component_template_id'         => undef,
+                                       'node' => undef });
 
     # Check if the type of the given component is installable on this type
     # of service provider.
@@ -807,8 +809,9 @@ sub addComponent {
 
     # For instance install the component on all node of the service provider,
     # use the first started node as master node for the component.
-    for my $node ($self->nodes) {
-        $component->registerNode(node => $node, master_node => ($node->node_number == 1));
+    my @nodes = defined $args{node} ? ($args{node}) : $self->nodes;
+    for my $node (@nodes) {
+        $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
     }
 
     # Insert default configuration for tables linked to component (when exists)

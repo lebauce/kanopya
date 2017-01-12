@@ -65,7 +65,8 @@ a.view_link {
 }
 
 a:hover.view_link {
-    font-weight: bold;
+    color: #7E388A;
+    cursor: pointer;
 }
 
 a.selected_viewlink {
@@ -199,13 +200,21 @@ a.top-action:hover {
 }
 
 .top-action.openstack {
-    background: url(/images/iaas-openstack.png) 0 0 no-repeat;
+    background: url(/images/iaas-openstack-32.png) 0 0 no-repeat;
 }
 
 .top-action.vcenter {
-    background: url(/images/iaas-vcenter.png) 0 0 no-repeat;
+    background: url(/images/iaas-vcenter-32.png) 0 0 no-repeat;
 }
 
 .top-action.aws {
-    background: url(/images/iaas-aws-dis.png) 0 0 no-repeat;
+    background: url(/images/iaas-aws-32-dis.png) 0 0 no-repeat;
+}
+
+#graphs_container > div {
+    margin-top: 20px;
+}
+
+#graphs_container .jqplot-title {
+    height: 40px;
 }

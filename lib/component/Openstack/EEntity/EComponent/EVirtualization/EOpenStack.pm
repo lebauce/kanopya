@@ -84,7 +84,7 @@ sub synchronize {
     my ($self, %args) = @_;
 
     my $os_infra = OpenStack::Infrastructure->load(api => $self->_api);
-    return $self->_load(infra => $os_infra);
+    return $self->_load(infra => $os_infra, config => $self->_api->{config});
 }
 
 

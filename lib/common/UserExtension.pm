@@ -43,10 +43,12 @@ use constant ATTR_DEF => {
     user_extension_key => {
         pattern      => '^.*$',
         is_mandatory => 0,
+        description  => 'Give a name to the extended field',
     },
     user_extension_value => {
         pattern      => '^.*$',
         is_mandatory => 0,
+        description  => 'Value of the extended field',
     },
 };
 

@@ -115,6 +115,7 @@ my @classes = (
     'Entity::Component::Openiscsi2',
     'Entity::Component::Virtualization',
     'Entity::Component::Virtualization::Opennebula3',
+    'Entity::Component::Virtualization::AwsAccount',
     'Entity::Component::Openssh5',
     'Entity::Component::Php5',
     'Entity::Component::Snmpd5',
@@ -155,6 +156,7 @@ my @classes = (
     'Entity::Vlan',
     'Entity::Masterimage',
     'Entity::Masterimage::GlanceMasterimage',
+    'Entity::Masterimage::AwsMasterimage',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
     'Entity::Netconf',
@@ -915,7 +917,7 @@ sub registerComponents {
             component_version      => 5,
             deployable             => 1,
             component_categories   => [ 'DBMS' ],
-            component_template     => 'components/nfsd3',
+            component_template     => 'components/mysql5',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
@@ -1013,7 +1015,7 @@ sub registerComponents {
             component_name         => 'Vsphere',
             component_version      => 5,
             deployable             => 1,
-            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'Hypervisor' ],
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'NetworkManager', 'Hypervisor' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
@@ -1123,6 +1125,13 @@ sub registerComponents {
             deployable             => 1,
             component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager', 'CollectorManager' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'AwsAccount',
+            component_version      => 6,
+            deployable             => 1,
+            component_categories   => [ 'HostManager', 'VirtualMachineManager', 'StorageManager', 'NetworkManager', 'BootManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
             component_name         => 'Keystone',
@@ -1521,10 +1530,10 @@ sub registerIndicators {
                 type     => 'GAUGE',
              },
             indicators => [
-                [ 'vsphere vm/total cpu', 'vm_cpu_total', 'summary.config.numCpu', undef, undef, 'FF000099', 'Cores', undef ],
-                [ 'vsphere vm/cpu usage', 'vm_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
-                [ 'vsphere vm/total mem', 'vm_mem_total', 'summary.config.memorySizeMB', undef, undef, 'FF000099', 'MBytes', undef ],
-                [ 'vsphere vm/mem usage', 'vm_mem_usage', 'summary.quickStats.hostMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere vm/total cpu', 'vm_cpu_total', 'vsphere_vm.summary.config.numCpu', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'vsphere vm/cpu usage', 'vm_cpu_usage', 'vsphere_vm.summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'vsphere vm/total mem', 'vm_mem_total', 'vsphere_vm.summary.config.memorySizeMB', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere vm/mem usage', 'vm_mem_usage', 'vsphere_vm.summary.quickStats.hostMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
         },
         {
@@ -1534,10 +1543,10 @@ sub registerIndicators {
                 type     => 'GAUGE',
              },
             indicators => [
-                [ 'vsphere hv/total cpu', 'hv_cpu_total', 'summary.hardware.numCpuCores', undef, undef, 'FF000099', 'Cores', undef ],
-                [ 'vsphere hv/cpu usage', 'hv_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
-                [ 'vsphere hv/total mem', 'hv_mem_total', 'summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
-                [ 'vsphere hv/mem usage', 'hv_mem_usage', 'summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere hv/total cpu', 'hv_cpu_total', 'vsphere_hv.summary.hardware.numCpuCores', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'vsphere hv/cpu usage', 'hv_cpu_usage', 'vsphere_hv.summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'vsphere hv/total mem', 'hv_mem_total', 'vsphere_hv.summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
+                [ 'vsphere hv/mem usage', 'hv_mem_usage', 'vsphere_hv.summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
         },
         {
@@ -1601,7 +1610,6 @@ sub registerKanopyaMaster {
                             cluster_type          => 0,
                             cluster_min_node      => 1,
                             cluster_max_node      => 10,
-                            cluster_priority      => 500,
                             cluster_si_persistent => 0,
                             cluster_domainname    => $args{admin_domainname},
                             cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '8.8.8.8',
@@ -1830,7 +1838,7 @@ sub registerKanopyaMaster {
                          host             => $admin_host,
                          state            => "in",
                          number           => 1,
-                         monitoring_state => 'disabled'
+                         monitoring_state => 'enabled'
                      );
 
     # Install components
@@ -1939,7 +1947,7 @@ sub registerKanopyaMaster {
     $admin_cluster->service_manager($components->{'KanopyaServiceManager'}->{instance});
 
     # Check component availability
-    print "\t- Check availability of the registred components\n";
+    print "\t- Check availability of the registered components\n";
     my @components = sort { $a->priority <=> $b->priority } $admin_node->components;
     foreach my $component (map { EEntity->new(entity => $_) } @components) {
         print "\t\t- Checking component " . $component->label . "...\n";

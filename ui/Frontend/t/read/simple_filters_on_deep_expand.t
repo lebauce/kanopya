@@ -15,8 +15,9 @@ use Kanopya::Test::TestUtils 'expectedException';
 use Data::Dumper;
 $DB::deep = 500;
 
-use Log::Log4perl;
+use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%d [ %H - %P ] %p -> %M - %m%n'});
+my $log = get_logger("");
 
 # Firstly login to the api
 APITestLib::login();
@@ -119,15 +120,14 @@ lives_ok {
 
 lives_ok {
     my $expanded_hosts_content = Dancer::from_json($expanded_hosts[3]->{content});
-
+    
     if (ref($expanded_hosts_content) eq 'ARRAY') {
         die 'Exception expected, HASH return expected'
     }
 
-    if (! ( defined $expanded_hosts_content->{exception}
-        && $expanded_hosts_content->{exception} eq 'Kanopya::Exception::Internal')) {
-
-        die 'die <Kanopya::Exception::Internal> expected';
+    if (! ( defined $expanded_hosts_content->{reason}
+        && $expanded_hosts_content->{reason} =~ m/DBI Exception/ )) {
+        die 'die <DBI::Exception> expected';
     }
 
 } 'No expansion and short name filter';

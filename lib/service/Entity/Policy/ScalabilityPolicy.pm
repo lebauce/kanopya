@@ -54,6 +54,8 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^[1-9][0-9]*$',
         is_mandatory => 1,
         order        => 1,
+        description  => 'The minimal number of nodes in your service instance. '.
+                        'In most case it is 1 but if you want high availability, set 2.',
     },
     cluster_max_node => {
         label        => 'Maximum node number',
@@ -61,13 +63,8 @@ use constant POLICY_ATTR_DEF => {
         pattern      => '^[1-9][0-9]*$',
         is_mandatory => 1,
         order        => 2,
-    },
-    cluster_priority => {
-        label        => 'Cluster priority',
-        type         => 'integer',
-        pattern      => '^[1-9][0-9]*$',
-        is_mandatory => 1,
-        order        => 3,
+        description  => 'The maximum number of nodes in your service instance. '.
+                        'If you want a simple VM set 1, for a scalable one set 2 or more.',
     },
 };
 

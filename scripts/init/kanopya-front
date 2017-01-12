@@ -29,7 +29,9 @@ test -x "$DAEMON" || exit 1
 # Defaults
 export PERL5LIB=\
 /opt/kanopya/lib/common:\
-/opt/kanopya/lib/administrator:\
+/opt/kanopya/lib/hcm:\
+/opt/kanopya/lib/cloud:\
+/opt/kanopya/lib/storage:\
 /opt/kanopya/lib/service:\
 /opt/kanopya/lib/deployment:\
 /opt/kanopya/lib/monitor:\

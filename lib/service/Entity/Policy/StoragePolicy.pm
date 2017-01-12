@@ -59,6 +59,7 @@ use constant POLICY_ATTR_DEF => {
         reload       => 1,
         is_mandatory => 1,
         order        => 1,
+	description  => 'The storage system used by your service', 
     },
 };
 

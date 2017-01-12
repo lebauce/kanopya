@@ -38,6 +38,7 @@ use constant ATTR_DEF => {
         type         => 'single',
         pattern      => '^\d+$',
         is_mandatory => 1,
+        description  => 'User limited by this quota',
     },
     resource => {
         label        => 'Resource type',
@@ -46,6 +47,7 @@ use constant ATTR_DEF => {
         pattern      => '^(ram|cpu)$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'Type of limited resource',
     },
     current => {
         label        => 'Consumed amount',
@@ -53,6 +55,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_editable  => 0,
+        description  => 'The current consumption of the resource',
     },
     quota => {
         label        => 'Limit value',
@@ -60,6 +63,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 1,
         is_editable  => 1,
+        description  => 'Value of the threshold of these quotas. For RAM, the unit is kilobytes.',
     },
 };
 

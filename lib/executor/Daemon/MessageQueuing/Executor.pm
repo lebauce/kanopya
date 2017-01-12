@@ -239,11 +239,6 @@ sub executeOperation {
                 Kanopya::Database::beginTransaction;
 
                 $operation->prepare();
-
-                Kanopya::Database::commitTransaction;
-
-                # Unlock the context objects
-                $operation->unlockContext();
             }
             catch ($err) {
                 Kanopya::Database::rollbackTransaction;
@@ -263,6 +258,12 @@ sub executeOperation {
                                                  status    => 'cancelled',
                                                  exception => $err);
             }
+
+            Kanopya::Database::commitTransaction;
+
+            # Unlock the context objects
+            $operation->unlockContext();
+
         }
 
         # Check preconditions for processing
@@ -288,8 +289,6 @@ sub executeOperation {
 
             $log->info("Step <process>");
             $operation->execute();
-
-            Kanopya::Database::commitTransaction;
         }
         catch (Kanopya::Exception::Execution::OperationInterrupted $err) {
             Kanopya::Database::rollbackTransaction;
@@ -305,6 +304,8 @@ sub executeOperation {
                                              status    => 'cancelled',
                                              exception => $err);
         }
+
+        Kanopya::Database::commitTransaction;
     }
 
     $log->info("Step <postrequisites>");
@@ -333,9 +334,6 @@ sub executeOperation {
         # Update the state of the context objects atomically
         $log->info("Step <finish>");
         $operation->finish();
-
-        # Unlock the context objects
-        $operation->unlockContext(skip_not_found => 1);
     }
     catch ($err) {
         $operation->unlockContext(skip_not_found => 1);
@@ -350,6 +348,9 @@ sub executeOperation {
                                          status    => 'cancelled',
                                          exception => $err);
     }
+
+    # Unlock the context objects
+    $operation->unlockContext(skip_not_found => 1);
 
     # Terminate the operation with success
     return $self->terminateOperation(operation => $operation,
@@ -595,11 +596,11 @@ sub handleResult {
             }
 
             # Cancel all the operations of the group of the operation that failed
-            for my $tofail (map { EEntity::EOperation->new(operation => $_) } @tofail) {
+            for my $tofail (map { EEntity::EOperation->new(operation => $_, skip_not_found => 1) } @tofail) {
                 if ($tofail->state ne 'pending') {
                     try {
                         $log->info("Cancelling operation " . $tofail->type . " <" . $tofail->id . ">");
-                        EEntity::EOperation->new(operation => $tofail, skip_not_found => 1)->cancel();
+                        $tofail->cancel();
                     }
                     catch ($err){
                         $log->error("Error during operation cancel :\n$err");
@@ -653,9 +654,6 @@ sub handleResult {
                     $tocancel->remove();
                 }
                 $workflow->cancel();
-
-                # Unlock the context objects
-                $operation->unlockContext(skip_not_found => 1);
             }
             catch ($err) {
                 $operation->unlockContext(skip_not_found => 1);
@@ -666,6 +664,9 @@ sub handleResult {
                 }
                 else { $err->rethrow(); }
             }
+
+            # Unlock the context objects
+            $operation->unlockContext(skip_not_found => 1);
 
             # Stop the workflow
             return 1;
